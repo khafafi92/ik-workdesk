@@ -1,0 +1,257 @@
+/* Attendance Result Page */
+.att-page {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    font-size: 13px;
+}
+
+.att-stats {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.att-stat-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.att-stat-label {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.att-stat-value {
+    margin-top: 8px;
+    font-size: 26px;
+    line-height: 1;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.att-stat-success {
+    color: #059669;
+}
+
+.att-stat-danger {
+    color: #e11d48;
+}
+
+.att-stat-warning {
+    color: #d97706;
+}
+
+.att-filter-card,
+.att-section {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+}
+
+.att-filter-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 14px;
+    padding: 18px;
+}
+
+.att-label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+    color: #334155;
+    font-weight: 700;
+}
+
+.att-input,
+.att-select {
+    width: 100%;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    padding: 0 12px;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.att-section-header {
+    padding: 18px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.att-section-title {
+    font-size: 18px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.att-section-desc {
+    margin-top: 4px;
+    font-size: 13px;
+    color: #64748b;
+}
+
+.att-table-wrap {
+    width: 100%;
+    overflow: auto;
+    max-height: 680px;
+}
+
+.att-table {
+    width: 100%;
+    min-width: 2200px;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+    color: #0f172a;
+}
+
+.att-table th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid #cbd5e1;
+    white-space: nowrap;
+}
+
+.att-table th.att-check-head {
+    background: #92d050;
+    color: #0f172a;
+}
+
+.att-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+    background: #ffffff;
+}
+
+.att-table tbody tr:hover td {
+    background: #f8fafc;
+}
+
+.att-nowrap {
+    white-space: nowrap;
+}
+
+.att-address {
+    min-width: 360px;
+    max-width: 460px;
+}
+
+.att-description {
+    min-width: 180px;
+    max-width: 260px;
+}
+
+.att-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.att-badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.att-badge-danger {
+    background: #ffe4e6;
+    color: #be123c;
+}
+
+.att-badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.att-badge-gray {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+.att-pagination {
+    padding: 14px 18px;
+    border-top: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+.att-summary-table {
+    min-width: 700px;
+}
+
+@media (max-width: 1200px) {
+    .att-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .att-filter-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Fix giant pagination arrows */
+.att-pagination svg,
+.fi-pagination svg,
+nav[role="navigation"] svg {
+    width: 16px !important;
+    height: 16px !important;
+    max-width: 16px !important;
+    max-height: 16px !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+.att-pagination nav {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    font-size: 13px !important;
+}
+
+.att-pagination a,
+.att-pagination span,
+nav[role="navigation"] a,
+nav[role="navigation"] span {
+    font-size: 13px !important;
+    line-height: 1.4 !important;
+}
+
+.att-download-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 12px;
+    background: #16a34a;
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none !important;
+    white-space: nowrap;
+}
+
+.att-download-btn:hover {
+    background: #15803d;
+}

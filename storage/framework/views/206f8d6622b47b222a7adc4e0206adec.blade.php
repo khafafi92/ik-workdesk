@@ -1,0 +1,1 @@
+<link rel="stylesheet" href="{{ asset('css/filament/admin/workdesk-theme.css') }}">
