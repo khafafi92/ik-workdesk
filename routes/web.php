@@ -1,18 +1,21 @@
 <?php
 
 use App\Http\Controllers\Admin\AttendanceReportDownloadController;
-
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Middleware\RequireSuperadmin;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'home');
+// Route::view('/', 'home');
+
+Route::get('/', function () {
+    return redirect()->route('login');
+});
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth'])
+    ->middleware(['auth', RequireSuperadmin::class])
     ->name('dashboard');
-
 
 Route::get('/attendance-imports/{attendanceImport}/download', [AttendanceReportDownloadController::class, 'download'])
     ->middleware(['auth'])
