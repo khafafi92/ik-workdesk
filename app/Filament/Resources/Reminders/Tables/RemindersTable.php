@@ -1,9 +1,11 @@
 <?php
 
 namespace App\Filament\Resources\Reminders\Tables;
+use Filament\Actions\ViewAction;
 
-use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
@@ -73,6 +75,7 @@ class RemindersTable
             ])
             ->defaultSort('reminder_at', 'asc')
             ->recordActions([
+                ViewAction::make(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

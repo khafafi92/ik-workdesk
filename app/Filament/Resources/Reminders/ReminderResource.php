@@ -1,7 +1,9 @@
 <?php
 
 namespace App\Filament\Resources\Reminders;
-
+use App\Filament\Resources\Reminders\Pages\ViewReminder;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 use App\Filament\Resources\Reminders\Pages\CreateReminder;
 use App\Filament\Resources\Reminders\Pages\EditReminder;
 use App\Filament\Resources\Reminders\Pages\ListReminders;
@@ -18,7 +20,8 @@ class ReminderResource extends Resource
 {
     protected static ?string $model = Reminder::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bell-alert';
 
     protected static ?string $recordTitleAttribute = 'title';
 
@@ -64,6 +67,42 @@ public static function getNavigationSort(): ?int
 {
     return 1;
 }
+// bloking reminder sesuai user
+
+public static function getEloquentQuery(): Builder
+{
+    $query = parent::getEloquentQuery()
+        ->with([
+            'employee',
+            'department',
+        ]);
+
+    $user = Auth::user();
+
+    if (! $user) {
+        return $query->whereRaw('1 = 0');
+    }
+
+    // Superadmin boleh lihat semua reminders
+    if ($user->hasRole('superadmin')) {
+        return $query;
+    }
+
+    $user->loadMissing('employee');
+
+    $employeeId = $user->employee?->id;
+
+    // Kalau user tidak punya employee profile, jangan tampilkan data orang lain
+    if (! $employeeId) {
+        return $query->whereRaw('1 = 0');
+    }
+
+    // User biasa hanya lihat reminder milik employee-nya sendiri
+    return $query->where('employee_id', $employeeId);
+}
+
+
+// end blok
 
 
 
@@ -71,8 +110,9 @@ public static function getNavigationSort(): ?int
     {
         return [
             'index' => ListReminders::route('/'),
-            'create' => CreateReminder::route('/create'),
-            'edit' => EditReminder::route('/{record}/edit'),
+        'create' => CreateReminder::route('/create'),
+        'view' => ViewReminder::route('/{record}'),
+        'edit' => EditReminder::route('/{record}/edit'),
         ];
     }
 }
