@@ -39,7 +39,7 @@ class AdminPanelProvider extends PanelProvider
             ->spa()
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
-            ->topNavigation() // Tambahkan di sini (rantai utama)
+            //->topNavigation() // Tambahkan di sini (rantai utama)
             ->font('Roboto')  // Pindahkan ke sini (rantai utama)
             ->colors([
                 'primary' => Color::hex('#0073ea'),
@@ -88,11 +88,11 @@ class AdminPanelProvider extends PanelProvider
         //     // 'gray' => Color::Slate,
         // ])
             ->renderHook(
-                PanelsRenderHook::STYLES_AFTER,
-                fn (): string => Blade::render(
-                    '<link rel="stylesheet" href="{{ asset(\'css/filament/admin/workdesk-theme.css\') }}">'
-                ),
-            )
+    PanelsRenderHook::STYLES_AFTER,
+    fn (): string => Blade::render(
+        '<link rel="stylesheet" href="{{ asset(\'css/filament/admin/workdesk-theme.css\') }}">'
+    ),
+)
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
