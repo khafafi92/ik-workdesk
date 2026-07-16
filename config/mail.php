@@ -49,16 +49,42 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        /*
+        |----------------------------------------------------------------------
+        | Mailer: KPMOG (kpmog.com)
+        |----------------------------------------------------------------------
+        */
+        'kpmog' => [
+            'transport'  => 'smtp',
+            'scheme'     => 'smtps',
+            'host'       => env('MAIL_KPMOG_HOST', 'mail.kpmog.com'),
+            'port'       => env('MAIL_KPMOG_PORT', 465),
+            'username'   => env('MAIL_KPMOG_USERNAME'),
+            'password'   => env('MAIL_KPMOG_PASSWORD'),
+            'timeout'    => null,
+        ],
+
+        /*
+        |----------------------------------------------------------------------
+        | Mailer: APCA (apca.com)
+        |----------------------------------------------------------------------
+        */
+        'apca' => [
+            'transport'  => 'smtp',
+            'scheme'     => 'smtps',
+            'host'       => env('MAIL_APCA_HOST', '127.0.0.1'),
+            'port'       => env('MAIL_APCA_PORT', 465),
+            'username'   => env('MAIL_APCA_USERNAME'),
+            'password'   => env('MAIL_APCA_PASSWORD'),
+            'timeout'    => null,
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],
 
         'postmark' => [
             'transport' => 'postmark',
-            // 'message_stream_id' => env('POSTMARK_MESSAGE_STREAM_ID'),
-            // 'client' => [
-            //     'timeout' => 5,
-            // ],
         ],
 
         'resend' => [

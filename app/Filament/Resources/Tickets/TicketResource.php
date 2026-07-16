@@ -24,7 +24,8 @@ class TicketResource extends Resource
 
     protected static ?string $slug = 'service-desk';
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-inbox-stack';
 
     protected static ?string $recordTitleAttribute = 'ticket_no';
 
@@ -262,6 +263,38 @@ class TicketResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Service Desk';
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return null;
+        }
+
+        $query = Ticket::query()->where('status', 'open');
+
+        if ($user->is_admin === true || $user->hasRole('system-admin')) {
+            $count = $query->count();
+        } else {
+            $departmentIds = $user->accessibleDepartmentIds();
+
+            if (empty($departmentIds)) {
+                return null;
+            }
+
+            $count = $query
+                ->whereIn('handler_department_id', $departmentIds)
+                ->count();
+        }
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
     }
 
     public static function getModelLabel(): string

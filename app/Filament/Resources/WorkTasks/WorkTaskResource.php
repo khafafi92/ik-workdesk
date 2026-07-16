@@ -21,7 +21,8 @@ class WorkTaskResource extends Resource
 {
     protected static ?string $model = WorkTask::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';
 
     protected static ?string $recordTitleAttribute = 'task_no';
 
@@ -137,7 +138,6 @@ class WorkTaskResource extends Resource
     //     );
     // }
 
-    // hak akses untuk melihat work logs sesuai dengan departemen
     public static function getEloquentQuery(): Builder
 {
     $query = parent::getEloquentQuery()
@@ -186,21 +186,25 @@ class WorkTaskResource extends Resource
             $departmentIds,
             $hasDepartmentScope
         ): void {
+            // Tampilkan work log dari ticket milik employee ini (sebagai requester)
             if ($employeeId) {
                 $workTaskQuery->whereHas(
                     'ticket',
                     fn (Builder $ticketQuery) =>
-                        $ticketQuery->where(
-                            'employee_id',
-                            $employeeId
-                        )
+                        $ticketQuery->where('employee_id', $employeeId)
                 );
             }
 
             if ($hasDepartmentScope && ! empty($departmentIds)) {
-                $workTaskQuery->orWhereIn(
-                    'department_id',
-                    $departmentIds
+                // Work log yang department_id-nya cocok (single workflow)
+                $workTaskQuery->orWhereIn('department_id', $departmentIds);
+
+                // [FIX Point 2] Work log dari ticket collaborative yang department-nya
+                // ada di assignments — agar handler dept bisa lihat work log terkait
+                $workTaskQuery->orWhereHas(
+                    'ticket.assignments',
+                    fn (Builder $assignQuery) =>
+                        $assignQuery->whereIn('department_id', $departmentIds)
                 );
             }
         }
@@ -386,6 +390,37 @@ class WorkTaskResource extends Resource
     public static function getNavigationLabel(): string
     {
         return 'Work Logs';
+    }
+
+    public static function getNavigationBadge(): ?string
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return null;
+        }
+
+        if ($user->is_admin === true || $user->hasRole('super-admin') || $user->hasRole('system-admin')) {
+            $count = WorkTask::query()->where('status', 'planned')->count();
+        } else {
+            $departmentIds = $user->accessibleDepartmentIds();
+
+            if (empty($departmentIds)) {
+                return null;
+            }
+
+            $count = WorkTask::query()
+                ->where('status', 'planned')
+                ->whereIn('department_id', $departmentIds)
+                ->count();
+        }
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeColor(): ?string
+    {
+        return 'danger';
     }
 
     public static function getModelLabel(): string
