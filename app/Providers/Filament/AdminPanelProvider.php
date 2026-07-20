@@ -22,7 +22,6 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 // end
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Blade;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -36,6 +35,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('panel')
             ->brandName('Internal 9')
+            ->brandLogo(fn () => view('filament.components.brand-logo-carousel'))
+            ->brandLogoHeight('3.25rem')
             ->spa()
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
@@ -49,9 +50,9 @@ class AdminPanelProvider extends PanelProvider
                 'gray' => Color::Slate,
             ])
             ->navigationItems([
-                NavigationItem::make('IK Dashboard')
+                NavigationItem::make('Internal 9')
                     ->url('/dashboard')
-                    ->icon('heroicon-o-home')
+                    ->icon('heroicon-o-squares-2x2')
                     ->sort(-10)
                     ->visible(fn (): bool => Auth::check() && Auth::user()->hasRole('superadmin')),
             ])
@@ -89,10 +90,15 @@ class AdminPanelProvider extends PanelProvider
         // ])
             ->renderHook(
     PanelsRenderHook::STYLES_AFTER,
-    fn (): string => Blade::render(
-        '<link rel="stylesheet" href="{{ asset(\'css/filament/admin/workdesk-theme.css\') }}">'
-    ),
+    fn (): string => '<link rel="stylesheet" href="' .
+        asset('css/filament/admin/workdesk-theme.css') .
+        '?v=' . filemtime(public_path('css/filament/admin/workdesk-theme.css')) .
+        '">',
 )
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_FOOTER,
+                fn (): string => view('filament.components.sidebar-collapse-footer')->render(),
+            )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([

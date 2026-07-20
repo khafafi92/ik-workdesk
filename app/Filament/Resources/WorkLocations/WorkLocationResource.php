@@ -19,7 +19,7 @@ class WorkLocationResource extends Resource
     use AdminOnlyResource;
     protected static ?string $model = WorkLocation::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;
 
     protected static ?string $recordTitleAttribute = 'gps_name';
 

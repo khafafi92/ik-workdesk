@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Reminders\Schemas;
 
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -12,6 +13,15 @@ class ReminderForm
 {
     public static function configure(Schema $schema): Schema
     {
+        $user = auth()->user();
+
+        $isSuperadmin = $user?->hasRole('superadmin') ?? false;
+
+        $user?->loadMissing('employee');
+
+        $employeeId = $user?->employee?->id;
+        $departmentId = $user?->employee?->department_id;
+
         return $schema
             ->components([
                 Select::make('reminder_type')
@@ -41,13 +51,25 @@ class ReminderForm
                     ->label('Reminder For Employee')
                     ->relationship('employee', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->required()
+                    ->visible($isSuperadmin),
+
+                Hidden::make('employee_id')
+                    ->default($employeeId)
+                    ->dehydrated(! $isSuperadmin),
 
                 Select::make('department_id')
                     ->label('Department')
                     ->relationship('department', 'name')
                     ->searchable()
-                    ->preload(),
+                    ->preload()
+                    ->required()
+                    ->visible($isSuperadmin),
+
+                Hidden::make('department_id')
+                    ->default($departmentId)
+                    ->dehydrated(! $isSuperadmin),
 
                 DateTimePicker::make('reminder_at')
                     ->label('Reminder At')

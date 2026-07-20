@@ -19,7 +19,7 @@ class AttendanceResultResource extends Resource
 {
     protected static ?string $model = AttendanceResult::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentChartBar;
 
     protected static ?string $recordTitleAttribute = 'employee_name';
 

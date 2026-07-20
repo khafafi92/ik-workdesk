@@ -20,7 +20,7 @@ class RoleResource extends Resource
     protected static ?string $model = Role::class;
 
     protected static string|BackedEnum|null $navigationIcon =
-        Heroicon::OutlinedRectangleStack;
+        Heroicon::OutlinedShieldCheck;
 
     protected static ?string $navigationLabel = 'Role Management';
 

@@ -1,5 +1,6 @@
 @php
     $data = $this->getDashboardData();
+    $canViewStatistics = $this->canViewStatistics();
 
     $statValueClass = fn(string $tone): string => match ($tone) {
         'danger' => 'ik-stat-value--danger',
@@ -25,38 +26,40 @@
             <p>Monitor service desk, work logs, reminders, and Internal 9 activity.</p>
         </div>
 
-        <div class="ik-stat-grid ik-stat-grid--tickets">
-            @foreach ($data['ticketStats'] as $stat)
-                <div class="ik-stat-card">
-                    <div class="ik-stat-label">{{ $stat['label'] }}</div>
-                    <div class="ik-stat-value {{ $statValueClass($stat['tone']) }}">
-                        {{ $stat['value'] }}
+        @if ($canViewStatistics)
+            <div class="ik-stat-grid ik-stat-grid--tickets">
+                @foreach ($data['ticketStats'] as $stat)
+                    <div class="ik-stat-card">
+                        <div class="ik-stat-label">{{ $stat['label'] }}</div>
+                        <div class="ik-stat-value {{ $statValueClass($stat['tone']) }}">
+                            {{ $stat['value'] }}
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
 
-        <div class="ik-stat-grid ik-stat-grid--work">
-            @foreach ($data['workStats'] as $stat)
-                <div class="ik-stat-card">
-                    <div class="ik-stat-label">{{ $stat['label'] }}</div>
-                    <div class="ik-stat-value {{ $statValueClass($stat['tone']) }}">
-                        {{ $stat['value'] }}
+            <div class="ik-stat-grid ik-stat-grid--work">
+                @foreach ($data['workStats'] as $stat)
+                    <div class="ik-stat-card">
+                        <div class="ik-stat-label">{{ $stat['label'] }}</div>
+                        <div class="ik-stat-value {{ $statValueClass($stat['tone']) }}">
+                            {{ $stat['value'] }}
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
 
-        <div class="ik-stat-grid ik-stat-grid--reminders">
-            @foreach ($data['reminderStats'] as $stat)
-                <div class="ik-stat-card">
-                    <div class="ik-stat-label">{{ $stat['label'] }}</div>
-                    <div class="ik-stat-value {{ $statValueClass($stat['tone']) }}">
-                        {{ $stat['value'] }}
+            <div class="ik-stat-grid ik-stat-grid--reminders">
+                @foreach ($data['reminderStats'] as $stat)
+                    <div class="ik-stat-card">
+                        <div class="ik-stat-label">{{ $stat['label'] }}</div>
+                        <div class="ik-stat-value {{ $statValueClass($stat['tone']) }}">
+                            {{ $stat['value'] }}
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
+                @endforeach
+            </div>
+        @endif
 
         <div class="ik-panel-grid">
             <div class="ik-panel">

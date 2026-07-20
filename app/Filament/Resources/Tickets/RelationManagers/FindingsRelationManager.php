@@ -188,7 +188,7 @@ class FindingsRelationManager extends RelationManager
                         'image/jpeg',
                         'image/png',
                     ])
-                    ->maxSize(10240)
+                    ->maxSize(1000000)
                     ->default([])
                     ->columnSpanFull(),
             ]);

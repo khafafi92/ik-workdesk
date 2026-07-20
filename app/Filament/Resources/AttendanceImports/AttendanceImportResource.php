@@ -20,7 +20,7 @@ class AttendanceImportResource extends Resource
 {
     protected static ?string $model = AttendanceImport::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpTray;
 
     
     protected static ?string $recordTitleAttribute = 'period_name';

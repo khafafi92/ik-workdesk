@@ -129,8 +129,7 @@ class CommentsRelationManager extends RelationManager
                         'image/jpeg',
                         'image/png',
                     ])
-                    ->maxSize(10240)
-                    ->default([])
+                    ->maxSize(102400) // 100MB max per file
                     ->columnSpanFull(),
             ]);
     }

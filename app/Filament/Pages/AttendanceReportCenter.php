@@ -3,11 +3,16 @@
 namespace App\Filament\Pages;
 
 use App\Models\AttendanceImport;
+use BackedEnum;
 use Filament\Pages\Page;
+use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 
 class AttendanceReportCenter extends Page
 {
+    protected static string|BackedEnum|null $navigationIcon =
+        Heroicon::OutlinedChartBarSquare;
+
     protected string $view =
         'filament.pages.attendance-report-center';
 

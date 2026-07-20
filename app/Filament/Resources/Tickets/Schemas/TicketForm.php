@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Tickets\Schemas;
 
 use App\Models\Department;
+use App\Models\Ticket;
 use App\Models\TicketCategory;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
@@ -43,6 +44,14 @@ class TicketForm
                         fn () => auth()->user()?->employee?->name
                             ?? 'Employee belum di-link ke user login'
                     )
+                    ->afterStateHydrated(function (TextInput $component, ?Ticket $record): void {
+                        if ($record && $record->exists) {
+                            $component->state(
+                                $record->employee?->name
+                                    ?? 'Employee belum di-link'
+                            );
+                        }
+                    })
                     ->disabled()
                     ->dehydrated(false),
 
@@ -52,6 +61,14 @@ class TicketForm
                         fn () => auth()->user()?->employee?->department?->name
                             ?? 'Department belum diisi'
                     )
+                    ->afterStateHydrated(function (TextInput $component, ?Ticket $record): void {
+                        if ($record && $record->exists) {
+                            $component->state(
+                                $record->requesterDepartment?->name
+                                    ?? 'Department belum diisi'
+                            );
+                        }
+                    })
                     ->disabled()
                     ->dehydrated(false),
 
@@ -149,7 +166,24 @@ class TicketForm
                     ->multiple()
                     ->searchable()
                     ->preload()
-                    ->visible(function (Get $get): bool {
+                    ->afterStateHydrated(function (Select $component, ?Ticket $record): void {
+                        if ($record && $record->exists) {
+                            $ids = $record->reviewerDepartments
+                                ->pluck('id')
+                                ->reject(fn ($id) => (int) $id === (int) $record->handler_department_id)
+                                ->values()
+                                ->all();
+
+                            $component->state($ids);
+                        }
+                    })
+                    ->visible(function (Get $get, ?Ticket $record): bool {
+                        // Saat View/Edit: tampilkan jika ticket workflow collaborative
+                        if ($record && $record->exists) {
+                            return $record->workflow_type === 'collaborative';
+                        }
+
+                        // Saat Create: cek dari kategori yang dipilih
                         $categoryId = $get('ticket_category_id');
 
                         if (blank($categoryId)) {
@@ -161,7 +195,11 @@ class TicketForm
                             ->where('workflow_type', 'collaborative')
                             ->exists();
                     })
-                    ->required(function (Get $get): bool {
+                    ->required(function (Get $get, ?Ticket $record): bool {
+                        if ($record && $record->exists) {
+                            return $record->workflow_type === 'collaborative';
+                        }
+
                         $categoryId = $get('ticket_category_id');
 
                         if (blank($categoryId)) {
@@ -252,8 +290,7 @@ class TicketForm
                         'image/jpeg',
                         'image/png',
                     ])
-                    ->maxSize(10240)
-                    ->default([])
+                    ->maxSize(102400) // 100MB max per file
                     ->afterStateHydrated(
                         function (
                             FileUpload $component,

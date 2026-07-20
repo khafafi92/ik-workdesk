@@ -1,1 +1,0 @@
-<link rel="stylesheet" href="<?php echo e(asset('css/filament/admin/workdesk-theme.css')); ?>"><?php /**PATH D:\Internal\ik-workdesk\storage\framework\views/206f8d6622b47b222a7adc4e0206adec.blade.php ENDPATH**/ ?>

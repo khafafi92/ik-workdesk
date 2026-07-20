@@ -26,18 +26,24 @@ class Dashboard extends BaseDashboard
         return null;
     }
 
+    public function canViewStatistics(): bool
+    {
+        return auth()->user()?->hasRole('superadmin') === true;
+    }
+
     public function getDashboardData(): array
     {
+        $canViewStatistics = $this->canViewStatistics();
         $now = now();
         $todayStart = $now->copy()->startOfDay();
         $todayEnd = $now->copy()->endOfDay();
 
         $ticketsQuery = TicketResource::getEloquentQuery();
         $workTasksQuery = WorkTaskResource::getEloquentQuery();
-        $remindersQuery = Reminder::query()
-            ->with([
-                'employee',
-                'department',
+        $remindersQuery = ReminderResource::getEloquentQuery()
+    ->with([
+        'employee',
+        'department',
             ]);
 
         $openTicketStatuses = [
@@ -52,7 +58,7 @@ class Dashboard extends BaseDashboard
             'hold',
         ];
 
-        $ticketStats = [
+        $ticketStats = $canViewStatistics ? [
             [
                 'label' => 'Total Requests',
                 'value' => (clone $ticketsQuery)->count(),
@@ -87,9 +93,9 @@ class Dashboard extends BaseDashboard
                     ->count(),
                 'tone' => 'danger',
             ],
-        ];
+        ] : [];
 
-        $workStats = [
+        $workStats = $canViewStatistics ? [
             [
                 'label' => 'Total Work Logs',
                 'value' => (clone $workTasksQuery)->count(),
@@ -119,9 +125,9 @@ class Dashboard extends BaseDashboard
                     ->count(),
                 'tone' => 'danger',
             ],
-        ];
+        ] : [];
 
-        $reminderStats = [
+        $reminderStats = $canViewStatistics ? [
             [
                 'label' => 'Pending Reminders',
                 'value' => (clone $remindersQuery)->where('status', 'pending')->count(),
@@ -143,7 +149,7 @@ class Dashboard extends BaseDashboard
                     ->count(),
                 'tone' => 'danger',
             ],
-        ];
+        ] : [];
 
         return [
             'ticketStats' => $ticketStats,
