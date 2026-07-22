@@ -28,6 +28,29 @@ class TicketResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'ticket_no';
 
+    public static function getGloballySearchableAttributes(): array
+    {
+        return [
+            'ticket_no',
+            'subject',
+            'employee.name',
+            'assigned_to',
+        ];
+    }
+
+    public static function getGlobalSearchResultTitle(Model $record): string
+    {
+        return "{$record->ticket_no} — {$record->subject}";
+    }
+
+    public static function getGlobalSearchResultDetails(Model $record): array
+    {
+        return [
+            'Requester' => $record->employee?->name ?? '-',
+            'Status' => str($record->status)->replace('_', ' ')->title()->toString(),
+        ];
+    }
+
     // pembatasan
 
     public static function shouldRegisterNavigation(): bool

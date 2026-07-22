@@ -171,23 +171,6 @@ class WorkTaskForm
                         //     ->relationship('category', 'name')
                         //     ->searchable(),
 
-                        Select::make('work_scope')
-                            ->label('Work Scope')
-                            ->options([
-                                'service_request' => 'Service Desk',
-                                'project' => 'Project',
-                                'office' => 'Office',
-                                'department' => 'Department',
-                                'maintenance' => 'Maintenance',
-                                'meeting' => 'Meeting',
-                                'other' => 'Other',
-                            ])
-                            ->default('office')
-                            ->disabled(
-                                fn (?WorkTask $record): bool => filled($record?->ticket_id)
-                            )
-                            ->required(),
-
                         TextInput::make('title')
                             ->label('Task Title')
                             ->required()
@@ -219,6 +202,15 @@ class WorkTaskForm
                                 'hold' => 'Hold',
                                 'cancel' => 'Cancel',
                             ])
+                            ->disableOptionWhen(
+                                fn (string $value, ?WorkTask $record): bool =>
+                                    $value === 'done'
+                                    && ! ($record?->canBeCompletedBy(auth()->user())
+                                        ?? (
+                                            auth()->user()?->is_admin === true
+                                            || auth()->user()?->hasRole('super-admin', 'system-admin') === true
+                                        ))
+                            )
                             ->default('planned')
                             ->required(),
 

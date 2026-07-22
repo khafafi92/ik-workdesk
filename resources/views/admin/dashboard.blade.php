@@ -5,79 +5,79 @@
 @section('page-description', 'Ringkasan Service Desk dan Work Logs.')
 
 @section('content')
-<div class="space-y-6">
+<div class="ik-dashboard-content space-y-6">
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-neutral bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Total Requests</p>
             <p class="mt-2 text-3xl font-bold text-slate-900">{{ $serviceRequestStats['total'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-danger bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Open</p>
             <p class="mt-2 text-3xl font-bold text-red-600">{{ $serviceRequestStats['open'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-warning bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">In Progress</p>
             <p class="mt-2 text-3xl font-bold text-amber-600">{{ $serviceRequestStats['in_progress'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-info bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Waiting User</p>
             <p class="mt-2 text-3xl font-bold text-blue-600">{{ $serviceRequestStats['waiting_user'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-success bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Resolved</p>
             <p class="mt-2 text-3xl font-bold text-emerald-600">{{ $serviceRequestStats['resolved'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-danger bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Overdue</p>
             <p class="mt-2 text-3xl font-bold text-rose-700">{{ $serviceRequestStats['overdue'] }}</p>
         </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-neutral bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Total Work Logs</p>
             <p class="mt-2 text-3xl font-bold text-slate-900">{{ $workLogStats['total'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-neutral bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Planned</p>
             <p class="mt-2 text-3xl font-bold text-slate-600">{{ $workLogStats['planned'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-warning bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">In Progress</p>
             <p class="mt-2 text-3xl font-bold text-amber-600">{{ $workLogStats['in_progress'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-success bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Done</p>
             <p class="mt-2 text-3xl font-bold text-emerald-600">{{ $workLogStats['done'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-danger bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Overdue Work</p>
             <p class="mt-2 text-3xl font-bold text-rose-700">{{ $workLogStats['overdue'] }}</p>
         </div>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-neutral bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Pending Reminders</p>
             <p class="mt-2 text-3xl font-bold text-slate-900">{{ $reminderStats['pending'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-info bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Today Reminders</p>
             <p class="mt-2 text-3xl font-bold text-blue-600">{{ $reminderStats['today'] }}</p>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
+        <div class="ik-stat-card ik-accent-danger bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
             <p class="text-xs text-slate-500">Overdue Reminders</p>
             <p class="mt-2 text-3xl font-bold text-rose-700">{{ $reminderStats['overdue'] }}</p>
         </div>

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 class WorkTask extends Model
 {
@@ -74,6 +75,16 @@ class WorkTask extends Model
             && $task->status !== 'done'
         ) {
             $task->completed_at = null;
+        }
+
+        if (
+            $task->isDirty('status')
+            && $task->status === 'done'
+            && ! $task->canBeCompletedBy(auth()->user())
+        ) {
+            throw ValidationException::withMessages([
+                'status' => 'Status Done hanya dapat ditetapkan oleh pembuat Service Desk atau superadmin.',
+            ]);
         }
     });
 
@@ -185,5 +196,24 @@ class WorkTask extends Model
     {
     return $this->hasMany(WorkTaskFinding::class)
         ->latest();
+    }
+
+    public function canBeCompletedBy(?User $user): bool
+    {
+        if (! $user) {
+            return false;
+        }
+
+        if (
+            $user->is_admin === true
+            || $user->hasRole('super-admin', 'system-admin')
+        ) {
+            return true;
+        }
+
+        $this->loadMissing('ticket.employee');
+
+        return $this->ticket?->employee?->user_id !== null
+            && (int) $this->ticket->employee->user_id === (int) $user->id;
     }
 }

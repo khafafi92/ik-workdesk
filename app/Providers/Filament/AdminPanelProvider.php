@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\GlobalSearch\ContextualGlobalSearchProvider;
 use App\Filament\Pages\Dashboard;
 use App\Http\Middleware\AuthenticateFilament;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -38,15 +39,19 @@ class AdminPanelProvider extends PanelProvider
             ->brandLogo(fn () => view('filament.components.brand-logo-carousel'))
             ->brandLogoHeight('3.25rem')
             ->spa()
+            ->globalSearch(ContextualGlobalSearchProvider::class)
             ->maxContentWidth(Width::Full)
             ->sidebarCollapsibleOnDesktop()
-            //->topNavigation() // Tambahkan di sini (rantai utama)
-            ->font('Roboto')  // Pindahkan ke sini (rantai utama)
+            ->sidebarWidth('17.5rem')
+            ->collapsedSidebarWidth('5.25rem')
+            ->font('Inter')
+            ->darkMode(false)
             ->colors([
                 'primary' => Color::hex('#0073ea'),
                 'success' => Color::hex('#00c875'),
                 'warning' => Color::hex('#fdab3d'),
                 'danger' => Color::hex('#e2445c'),
+                'info' => Color::hex('#579bfc'),
                 'gray' => Color::Slate,
             ])
             ->navigationItems([
@@ -89,12 +94,16 @@ class AdminPanelProvider extends PanelProvider
         //     // 'gray' => Color::Slate,
         // ])
             ->renderHook(
-    PanelsRenderHook::STYLES_AFTER,
-    fn (): string => '<link rel="stylesheet" href="' .
-        asset('css/filament/admin/workdesk-theme.css') .
-        '?v=' . filemtime(public_path('css/filament/admin/workdesk-theme.css')) .
-        '">',
-)
+                PanelsRenderHook::STYLES_AFTER,
+                fn (): string => '<link rel="stylesheet" href="' .
+                    asset('css/filament/admin/workdesk-theme.css') .
+                    '?v=' . filemtime(public_path('css/filament/admin/workdesk-theme.css')) .
+                    '">' .
+                    '<link rel="stylesheet" href="' .
+                    asset('css/filament/admin/workdesk-ui-polish.css') .
+                    '?v=' . filemtime(public_path('css/filament/admin/workdesk-ui-polish.css')) .
+                    '">',
+            )
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_FOOTER,
                 fn (): string => view('filament.components.sidebar-collapse-footer')->render(),

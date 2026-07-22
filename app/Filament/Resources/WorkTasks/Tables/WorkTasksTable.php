@@ -67,10 +67,6 @@ class WorkTasksTable
                     ->label('PIC')
                     ->searchable(),
 
-                TextColumn::make('work_scope')
-                    ->label('Scope')
-                    ->badge(),
-
                 TextColumn::make('priority')
                     ->label('Priority')
                     ->badge()
