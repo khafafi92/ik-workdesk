@@ -46,6 +46,8 @@ class AdminPanelProvider extends PanelProvider
             ->collapsedSidebarWidth('5.25rem')
             ->font('Inter')
             ->darkMode(false)
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->colors([
                 'primary' => Color::hex('#0073ea'),
                 'success' => Color::hex('#00c875'),

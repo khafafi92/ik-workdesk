@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\Tickets;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use App\Filament\Resources\Tickets\RelationManagers\CommentsRelationManager;
 use App\Filament\Resources\Tickets\Pages\CreateTicket;
 use App\Filament\Resources\Tickets\Pages\EditTicket;
 use App\Filament\Resources\Tickets\Pages\ListTickets;
@@ -276,9 +275,7 @@ class TicketResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            CommentsRelationManager::class,
-        ];
+        return [];
     }
 
     public static function getNavigationLabel(): string

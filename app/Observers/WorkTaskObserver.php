@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\WorkTask;
 use App\Notifications\WorkTaskAssignedNotification;
 use App\Services\MailerResolver;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class WorkTaskObserver
 {
@@ -28,16 +29,31 @@ class WorkTaskObserver
                     ->where('department_id', $workTask->department_id)
                     ->where('is_active', true)
             )
-            ->whereNotNull('email')
-            ->get();
+            ->get()
+            ->filter(
+                fn (User $user): bool =>
+                    $user->hasPermission('worklogs.view')
+                    || $user->hasPermission('worklogs.manage')
+            );
 
         foreach ($recipients as $user) {
             $mailerName = MailerResolver::resolveMailerName($user->email);
             $from       = MailerResolver::fromAddress($mailerName);
-
-            $user->notify(
-                new WorkTaskAssignedNotification($workTask, $mailerName, $from)
+            $notification = new WorkTaskAssignedNotification(
+                $workTask,
+                $mailerName,
+                $from
             );
+
+            NotificationFacade::sendNow(
+                $user,
+                $notification,
+                ['database']
+            );
+
+            if (filled($user->email)) {
+                $user->notify($notification);
+            }
         }
     }
 }

@@ -88,6 +88,53 @@ class WorkTask extends Model
         }
     });
 
+    static::created(function (WorkTask $task): void {
+        $task->recordActivity(
+            'work_log_created',
+            "Work Log {$task->task_no} created for "
+                . ($task->department?->name ?? 'department')
+                . "."
+        );
+    });
+
+    static::updated(function (WorkTask $task): void {
+        $trackedFields = [
+            'employee_id' => 'pic_change',
+            'status' => 'status_change',
+            'progress_percent' => 'progress_change',
+            'due_at' => 'due_date_change',
+            'notes' => 'notes_change',
+        ];
+
+        foreach ($trackedFields as $field => $activityType) {
+            if (! $task->wasChanged($field)) {
+                continue;
+            }
+
+            // Perubahan status dapat mengatur progress secara otomatis.
+            // Catat sebagai satu aktivitas status agar notifikasi tidak ganda.
+            if (
+                $field === 'progress_percent'
+                && $task->wasChanged('status')
+            ) {
+                continue;
+            }
+
+            $previous = $task->getRawOriginal($field);
+            $current = $task->getAttribute($field);
+
+            $task->recordActivity(
+                $activityType,
+                $task->activityMessage($field, $previous, $current),
+                [
+                    'field' => $field,
+                    'previous' => $previous,
+                    'current' => $current,
+                ]
+            );
+        }
+    });
+
     static::saved(function (WorkTask $task): void {
         if (! $task->ticket_id) {
             return;
@@ -104,9 +151,7 @@ class WorkTask extends Model
         | Collaborative / Multi-Department Request
         |--------------------------------------------------------------------------
         |
-        | Status collaborative dihitung oleh Ticket karena harus memeriksa:
-        | 1. Seluruh required Work Log
-        | 2. Seluruh Finding
+        | Status collaborative dihitung dari seluruh required Work Log.
         |
         */
 
@@ -196,6 +241,60 @@ class WorkTask extends Model
     {
     return $this->hasMany(WorkTaskFinding::class)
         ->latest();
+    }
+
+    public function activities(): HasMany
+    {
+        return $this->hasMany(
+            TicketComment::class,
+            'work_task_id'
+        )->latest();
+    }
+
+    public function recordActivity(
+        string $type,
+        string $message,
+        array $metadata = []
+    ): void {
+        if (! $this->ticket_id) {
+            return;
+        }
+
+        TicketComment::query()->create([
+            'ticket_id' => $this->ticket_id,
+            'work_task_id' => $this->id,
+            'department_id' => $this->department_id,
+            'user_id' => auth()->id(),
+            'activity_type' => $type,
+            'message' => $message,
+            'attachments' => [],
+            'metadata' => $metadata,
+        ]);
+    }
+
+    private function activityMessage(
+        string $field,
+        mixed $previous,
+        mixed $current
+    ): string {
+        if ($field === 'employee_id') {
+            $previous = $previous
+                ? Employee::query()->whereKey($previous)->value('name')
+                : 'Unassigned';
+            $current = $current
+                ? Employee::query()->whereKey($current)->value('name')
+                : 'Unassigned';
+
+            return "PIC changed from {$previous} to {$current}.";
+        }
+
+        return match ($field) {
+            'status' => "Status changed from {$previous} to {$current}.",
+            'progress_percent' => "Progress changed from {$previous}% to {$current}%.",
+            'due_at' => 'Due date updated.',
+            'notes' => 'Work notes updated.',
+            default => 'Work Log updated.',
+        };
     }
 
     public function canBeCompletedBy(?User $user): bool

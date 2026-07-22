@@ -6,6 +6,7 @@ use App\Models\TicketComment;
 use App\Models\User;
 use App\Notifications\TicketCommentNotification;
 use App\Services\MailerResolver;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class TicketCommentObserver
 {
@@ -22,6 +23,10 @@ class TicketCommentObserver
      */
     public function created(TicketComment $comment): void
     {
+        if ($comment->activity_type === 'work_log_created') {
+            return;
+        }
+
         $ticket = $comment->ticket;
 
         if (! $ticket) {
@@ -30,21 +35,28 @@ class TicketCommentObserver
 
         $senderUserId = $comment->user_id;
 
-        // Kumpulkan semua department ID yang terlibat
+        $isMessage = $comment->activity_type === 'message';
+
+        // Pesan grup dikirim ke seluruh department yang terlibat.
+        // Aktivitas operasional hanya dikirim ke department Work Log terkait.
         $departmentIds = collect();
 
-        if ($ticket->handler_department_id) {
-            $departmentIds->push($ticket->handler_department_id);
-        }
+        if ($isMessage) {
+            if ($ticket->handler_department_id) {
+                $departmentIds->push($ticket->handler_department_id);
+            }
 
-        if ($ticket->requester_department_id) {
-            $departmentIds->push($ticket->requester_department_id);
-        }
+            if ($ticket->requester_department_id) {
+                $departmentIds->push($ticket->requester_department_id);
+            }
 
-        // Untuk collaborative: tambahkan semua department yang ada di assignments
-        if ($ticket->workflow_type === 'collaborative') {
-            $assignedDeptIds = $ticket->assignments()->pluck('department_id');
-            $departmentIds   = $departmentIds->merge($assignedDeptIds);
+            if ($ticket->workflow_type === 'collaborative') {
+                $departmentIds = $departmentIds->merge(
+                    $ticket->assignments()->pluck('department_id')
+                );
+            }
+        } elseif ($comment->department_id) {
+            $departmentIds->push($comment->department_id);
         }
 
         $departmentIds = $departmentIds->unique()->filter()->values();
@@ -57,21 +69,39 @@ class TicketCommentObserver
                     ->whereIn('department_id', $departmentIds)
                     ->where('is_active', true)
             )
-            ->whereNotNull('email')
             ->when(
                 $senderUserId,
                 fn ($q) => $q->where('id', '!=', $senderUserId)
             )
-            ->get();
+            ->get()
+            ->filter(function (User $user) use ($isMessage): bool {
+                if ($isMessage) {
+                    return $user->hasPermission('tickets.view')
+                        || $user->hasPermission('tickets.manage');
+                }
+
+                return $user->hasPermission('worklogs.view')
+                    || $user->hasPermission('worklogs.manage');
+            });
 
         // Tambahkan requester jika belum ada dan bukan si pengirim komentar
         $requester = $ticket->employee?->user;
 
         if (
             $requester
-            && $requester->email
             && (int) $requester->id !== (int) $senderUserId
             && ! $recipients->contains('id', $requester->id)
+            && (
+                $isMessage
+                    ? (
+                        $requester->hasPermission('tickets.view')
+                        || $requester->hasPermission('tickets.manage')
+                    )
+                    : (
+                        $requester->hasPermission('worklogs.view')
+                        || $requester->hasPermission('worklogs.manage')
+                    )
+            )
         ) {
             $recipients->push($requester);
         }
@@ -79,10 +109,21 @@ class TicketCommentObserver
         foreach ($recipients as $user) {
             $mailerName = MailerResolver::resolveMailerName($user->email);
             $from       = MailerResolver::fromAddress($mailerName);
-
-            $user->notify(
-                new TicketCommentNotification($comment, $mailerName, $from)
+            $notification = new TicketCommentNotification(
+                $comment,
+                $mailerName,
+                $from
             );
+
+            NotificationFacade::sendNow(
+                $user,
+                $notification,
+                ['database']
+            );
+
+            if ($isMessage && filled($user->email)) {
+                $user->notify($notification);
+            }
         }
     }
 }

@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\WorkTask;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -11,6 +13,8 @@ use Illuminate\Notifications\Notification;
 class WorkTaskAssignedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    public string $mailer;
 
     public function __construct(
         public readonly WorkTask $workTask,
@@ -22,7 +26,37 @@ class WorkTaskAssignedNotification extends Notification implements ShouldQueue
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return filled($notifiable->routeNotificationFor('mail'))
+            ? ['mail']
+            : [];
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        $task = $this->workTask->loadMissing(['ticket', 'department']);
+        $url = route(
+            'filament.admin.resources.work-tasks.view',
+            ['record' => $task->id]
+        );
+
+        return FilamentNotification::make()
+            ->title("Work Log Baru: {$task->task_no}")
+            ->body(
+                ($task->title ?: 'Work Log baru')
+                . ($task->ticket
+                    ? " · Induk {$task->ticket->ticket_no}"
+                    : '')
+            )
+            ->icon('heroicon-o-clipboard-document-check')
+            ->info()
+            ->actions([
+                Action::make('open')
+                    ->label('Buka Work Log')
+                    ->button()
+                    ->url($url)
+                    ->markAsRead(),
+            ])
+            ->getDatabaseMessage();
     }
 
     public function toMail(object $notifiable): MailMessage

@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\WorkTasks;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use App\Filament\Resources\WorkTasks\RelationManagers\FindingsRelationManager;
+use App\Filament\Resources\WorkTasks\RelationManagers\ActivityHistoryRelationManager;
 use App\Filament\Resources\WorkTasks\Pages\CreateWorkTask;
 use App\Filament\Resources\WorkTasks\Pages\EditWorkTask;
 use App\Filament\Resources\WorkTasks\Pages\ListWorkTasks;
@@ -383,7 +383,7 @@ class WorkTaskResource extends Resource
     public static function getRelations(): array
     {
         return [
-             FindingsRelationManager::class,
+            ActivityHistoryRelationManager::class,
         ];
     }
 

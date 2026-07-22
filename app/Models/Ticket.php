@@ -112,12 +112,6 @@ class Ticket extends Model
         return;
     }
 
-    $requiredTaskIds = $requiredTasks->pluck('id');
-
-    $findings = WorkTaskFinding::query()
-        ->whereIn('work_task_id', $requiredTaskIds)
-        ->get(['id', 'status']);
-
     $allTasksDone = $requiredTasks->every(
         fn (WorkTask $task): bool => $task->status === 'done'
     );
@@ -128,22 +122,6 @@ class Ticket extends Model
             ['cancel', 'cancelled'],
             true
         )
-    );
-
-    // Collection kosong dianggap tidak mempunyai finding bermasalah.
-    $allFindingsResolved = $findings->every(
-        fn (WorkTaskFinding $finding): bool =>
-            $finding->status === 'resolved'
-    );
-
-    $hasOpenFinding = $findings->contains(
-        fn (WorkTaskFinding $finding): bool =>
-            $finding->status === 'open'
-    );
-
-    $hasRespondedFinding = $findings->contains(
-        fn (WorkTaskFinding $finding): bool =>
-            $finding->status === 'responded'
     );
 
     $hasHoldTask = $requiredTasks->contains(
@@ -162,16 +140,14 @@ class Ticket extends Model
     |--------------------------------------------------------------------------
     | FINAL RULE
     |--------------------------------------------------------------------------
-    | Ticket hanya resolved apabila:
-    | 1. Semua required Work Log sudah Done
-    | 2. Semua Finding sudah Resolved
+    | Ticket resolved apabila seluruh required Work Log sudah Done.
     */
-    if ($allTasksDone && $allFindingsResolved) {
+    if ($allTasksDone) {
         $this->updateQuietly([
             'status' => 'resolved',
             'resolved_at' => now(),
             'resolution_notes' =>
-                'All required work logs and findings have been resolved.',
+                'All required work logs have been completed.',
         ]);
 
         return;
@@ -192,7 +168,7 @@ class Ticket extends Model
     | Masih menunggu jawaban requester
     |--------------------------------------------------------------------------
     */
-    if ($hasHoldTask || $hasOpenFinding) {
+    if ($hasHoldTask) {
         $this->updateQuietly([
             'status' => 'waiting_user',
             'resolved_at' => null,
@@ -204,10 +180,10 @@ class Ticket extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | Requester sudah merespons, reviewer sedang memeriksa
+    | Minimal satu department sudah memulai pekerjaan.
     |--------------------------------------------------------------------------
     */
-    if ($hasRespondedFinding || $hasStartedTask) {
+    if ($hasStartedTask) {
         $this->updateQuietly([
             'status' => 'in_progress',
             'resolved_at' => null,
