@@ -1,34 +1,72 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#f4f7fb">
-    <title>{{ config('app.name', 'IK Workdesk') }}</title>
+    <meta name="theme-color" content="#102b3c">
+    <title>Login | {{ config('app.name', 'IK Workdesk') }}</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{ asset('css/workdesk-upgrade.css') }}">
 </head>
 
-<body class="min-h-screen bg-[#f4f7fb] font-sans text-slate-800 antialiased">
-    <div class="relative isolate min-h-screen overflow-hidden">
-        <div
-            aria-hidden="true"
-            class="pointer-events-none absolute -left-28 -top-32 h-96 w-96 rounded-full bg-blue-200/45 blur-3xl"
-        ></div>
+<body class="wd-login-page">
+    <div class="wd-login-backdrop" aria-hidden="true">
+        <img src="{{ asset('img/subsea.jpg') }}" alt="">
+    </div>
 
-        <div
-            aria-hidden="true"
-            class="pointer-events-none absolute -bottom-40 -right-28 h-[28rem] w-[28rem] rounded-full bg-indigo-200/40 blur-3xl"
-        ></div>
+    <div class="wd-login-shell">
+        <header class="wd-login-topbar">
+            <a href="{{ url('/') }}" class="wd-login-logo" aria-label="IK Workdesk">
+                <span class="wd-login-logo-mark">IK</span>
+                <span>
+                    <strong>INTERNAL 9</strong>
+                    <small>Internal workspace</small>
+                </span>
+            </a>
 
-        <div
-            aria-hidden="true"
-            class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.92),rgba(244,247,251,0.45)_48%,rgba(238,242,255,0.35))]"
-        ></div>
+            <nav class="wd-login-nav" aria-label="Website perusahaan">
+                <a href="https://www.kpmog.com" target="_blank" rel="noopener noreferrer">
+                    KPMOG
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 17 17 7M8 7h9v9" />
+                    </svg>
+                </a>
+                <a href="https://www.apcaengineering.com" target="_blank" rel="noopener noreferrer">
+                    APCA
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M7 17 17 7M8 7h9v9" />
+                    </svg>
+                </a>
+            </nav>
+        </header>
 
-        <main class="relative flex min-h-screen items-center justify-center px-5 py-10 sm:px-8">
-            {{ $slot }}
+        <main class="wd-login-scene">
+            <img src="{{ asset('img/subsea.jpg') }}" alt="" class="wd-login-scene-image" loading="eager"
+                decoding="async" fetchpriority="high">
+            <div class="wd-login-scene-shade" aria-hidden="true"></div>
+
+            {{-- <section class="wd-login-intro" aria-labelledby="login-intro-title"> --}}
+            {{-- <p class="wd-login-eyebrow">INTERNAL 9</p> --}}
+            {{-- <h1 id="login-intro-title">INTERNAL 9</h1> --}}
+            {{-- <p class="wd-login-tagline">Where Your Work Gets Done Right.</p>
+                <p class="wd-login-description">
+                    Platform terpadu untuk service desk,<br>
+                    work logs, dan manajemen tim.
+                </p> --}}
+            {{-- </section> --}}
+
+            <div class="wd-login-form-area">
+                {{ $slot }}
+            </div>
         </main>
+
+        <footer class="wd-login-footer">
+            <span>&copy; {{ now()->year }} {{ config('app.name', 'IK Workdesk') }}</span>
+            <span>APCA &times; KPMOG</span>
+        </footer>
     </div>
 </body>
+
 </html>

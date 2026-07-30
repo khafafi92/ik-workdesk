@@ -1239,3 +1239,182 @@ nav[role="navigation"] span {
         overflow-x: auto;
     }
 }
+
+/* ========================================================================
+   MONDAY.COM STYLE — Animations & Polish
+   ======================================================================== */
+
+@keyframes mn-fade-in-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.mn-stagger-1  { animation: mn-fade-in-up 0.35s ease-out 0.03s both; }
+.mn-stagger-2  { animation: mn-fade-in-up 0.35s ease-out 0.06s both; }
+.mn-stagger-3  { animation: mn-fade-in-up 0.35s ease-out 0.09s both; }
+.mn-stagger-4  { animation: mn-fade-in-up 0.35s ease-out 0.12s both; }
+.mn-stagger-5  { animation: mn-fade-in-up 0.35s ease-out 0.15s both; }
+.mn-stagger-6  { animation: mn-fade-in-up 0.35s ease-out 0.18s both; }
+.mn-stagger-7  { animation: mn-fade-in-up 0.35s ease-out 0.21s both; }
+.mn-stagger-8  { animation: mn-fade-in-up 0.35s ease-out 0.24s both; }
+.mn-stagger-9  { animation: mn-fade-in-up 0.35s ease-out 0.27s both; }
+.mn-stagger-10 { animation: mn-fade-in-up 0.35s ease-out 0.30s both; }
+.mn-stagger-11 { animation: mn-fade-in-up 0.35s ease-out 0.33s both; }
+
+/* Monday.com greeting */
+.ik-hero-greeting {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.1rem;
+    color: #0073ea;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.ik-hero-wave {
+    display: inline-block;
+    font-size: 0.8rem;
+}
+
+.ik-hero-date {
+    margin-top: 3px;
+    color: #9699a6;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Monday.com page title */
+.ik-page-title h1 {
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    color: #323338 !important;
+}
+
+.ik-page-title > p {
+    font-size: 12px !important;
+    color: #676879 !important;
+}
+
+/* Monday.com stat cards */
+.ik-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+    flex-shrink: 0;
+}
+
+.ik-stat-icon svg {
+    width: 0.8rem;
+    height: 0.8rem;
+}
+
+.ik-stat-icon--neutral  { background: #f0f1f3; color: #676879; }
+.ik-stat-icon--danger   { background: #fdebee; color: #e2445c; }
+.ik-stat-icon--warning  { background: #fef6e7; color: #fdab3d; }
+.ik-stat-icon--info     { background: #e5f1fd; color: #0073ea; }
+.ik-stat-icon--success  { background: #e1f8ed; color: #00c875; }
+
+.ik-stat-card {
+    border-color: #e6e9ef !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    transition: box-shadow 180ms ease, border-color 180ms ease !important;
+}
+
+.ik-stat-card:hover {
+    border-color: #d0d4e0 !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+.ik-stat-card .ik-stat-label {
+    font-size: 11px !important;
+    color: #676879 !important;
+}
+
+.ik-stat-card .ik-stat-value {
+    font-size: 1.125rem !important;
+    font-weight: 700 !important;
+    margin-top: 0.15rem;
+}
+
+.ik-stat-grid {
+    gap: 10px !important;
+}
+
+/* Monday.com panels */
+.ik-panel {
+    border-color: #e6e9ef !important;
+    border-radius: 8px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    transition: box-shadow 180ms ease !important;
+}
+
+.ik-panel:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06) !important;
+}
+
+.ik-panel-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 6px;
+    background: #e5f1fd;
+    color: #0073ea;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.ik-panel-icon svg {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+.ik-panel-icon--danger {
+    background: #fdebee;
+    color: #e2445c;
+}
+
+/* Monday.com empty state */
+.ik-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.ik-empty-state svg {
+    width: 1.75rem;
+    height: 1.75rem;
+    color: #c3c6d4;
+}
+
+.ik-empty-state p {
+    color: #9699a6;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Monday.com main area */
+.fi-main,
+.fi-main-ctn {
+    background: #f6f7fb !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

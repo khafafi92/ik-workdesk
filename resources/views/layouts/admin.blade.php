@@ -8,6 +8,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/workdesk-dashboard-polish.css') }}?v={{ filemtime(public_path('css/workdesk-dashboard-polish.css')) }}">
+    <link rel="stylesheet" href="{{ asset('css/workdesk-upgrade.css') }}?v={{ time() }}">
 </head>
 
 <body class="ik-workdesk-dashboard min-h-screen bg-slate-100 text-slate-800">

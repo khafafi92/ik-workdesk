@@ -1,0 +1,996 @@
+/*
+|--------------------------------------------------------------------------
+| IK WorkDesk — Monday.com Inspired Design System
+|--------------------------------------------------------------------------
+| Full Monday.com Vibe design language.
+| Clean, compact, colorful status system, minimal shadows.
+*/
+
+/* ========================================================================
+   0. DESIGN TOKENS (Monday.com Palette)
+   ======================================================================== */
+
+:root {
+    --mn-bg: #f6f7fb;
+    --mn-surface: #ffffff;
+    --mn-border: #e6e9ef;
+    --mn-border-light: #edeef2;
+    --mn-text: #323338;
+    --mn-text-secondary: #676879;
+    --mn-text-tertiary: #9699a6;
+    --mn-primary: #0073ea;
+    --mn-primary-hover: #0060c2;
+    --mn-primary-light: #cce5ff;
+    --mn-done: #00c875;
+    --mn-working: #fdab3d;
+    --mn-stuck: #e2445c;
+    --mn-purple: #a25ddc;
+    --mn-blue: #579bfc;
+    --mn-navy: #595ad4;
+    --mn-radius: 8px;
+    --mn-radius-sm: 6px;
+    --mn-shadow-xs: 0 1px 3px rgba(0, 0, 0, 0.04);
+    --mn-shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --mn-font: 'Inter', 'Figtree', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ========================================================================
+   1. KEYFRAME ANIMATIONS
+   ======================================================================== */
+
+@keyframes mn-fade-in-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mn-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes mn-scale-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+/* Stagger classes */
+.mn-stagger-1  { animation: mn-fade-in-up 0.35s ease-out 0.03s both; }
+.mn-stagger-2  { animation: mn-fade-in-up 0.35s ease-out 0.06s both; }
+.mn-stagger-3  { animation: mn-fade-in-up 0.35s ease-out 0.09s both; }
+.mn-stagger-4  { animation: mn-fade-in-up 0.35s ease-out 0.12s both; }
+.mn-stagger-5  { animation: mn-fade-in-up 0.35s ease-out 0.15s both; }
+.mn-stagger-6  { animation: mn-fade-in-up 0.35s ease-out 0.18s both; }
+.mn-stagger-7  { animation: mn-fade-in-up 0.35s ease-out 0.21s both; }
+.mn-stagger-8  { animation: mn-fade-in-up 0.35s ease-out 0.24s both; }
+.mn-stagger-9  { animation: mn-fade-in-up 0.35s ease-out 0.27s both; }
+.mn-stagger-10 { animation: mn-fade-in-up 0.35s ease-out 0.30s both; }
+.mn-stagger-11 { animation: mn-fade-in-up 0.35s ease-out 0.33s both; }
+
+/* ========================================================================
+   2. PAGE HERO — Monday.com Clean Style
+   ======================================================================== */
+
+.ik-page-hero {
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    animation: mn-fade-in 0.3s ease-out both;
+    margin-bottom: 1.25rem !important;
+}
+
+.ik-page-hero::after {
+    display: none;
+}
+
+.ik-page-hero h1 {
+    font-size: 1.35rem !important;
+    font-weight: 700 !important;
+    color: var(--mn-text) !important;
+    line-height: 1.3 !important;
+    letter-spacing: -0.01em;
+}
+
+.ik-page-hero p {
+    font-size: 0.8rem !important;
+    color: var(--mn-text-secondary) !important;
+    margin-top: 0.15rem !important;
+}
+
+.ik-hero-greeting {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-bottom: 0.1rem;
+    color: var(--mn-primary);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.ik-hero-greeting .ik-hero-wave {
+    display: inline-block;
+    font-size: 0.8rem;
+}
+
+.ik-hero-date {
+    margin-top: 0.15rem;
+    color: var(--mn-text-tertiary);
+    font-size: 0.72rem;
+    font-weight: 500;
+}
+
+/* ========================================================================
+   3. STAT CARDS — Monday.com Mini-Widget
+   ======================================================================== */
+
+.ik-dashboard-content .ik-stat-card,
+.ik-stat-card {
+    position: relative;
+    overflow: hidden;
+    background: var(--mn-surface) !important;
+    border: 1px solid var(--mn-border) !important;
+    border-radius: var(--mn-radius) !important;
+    box-shadow: var(--mn-shadow-xs) !important;
+    transition:
+        transform 180ms ease,
+        box-shadow 180ms ease,
+        border-color 180ms ease !important;
+}
+
+.ik-stat-card:hover {
+    transform: translateY(-1px) !important;
+    border-color: #d0d4e0 !important;
+    box-shadow: var(--mn-shadow-sm) !important;
+}
+
+/* Left accent bar — Monday.com color stripe */
+.ik-stat-card::before {
+    width: 3px !important;
+    border-radius: 0 3px 3px 0;
+}
+
+.ik-accent-neutral::before { background: #c3c6d4 !important; }
+.ik-accent-danger::before  { background: var(--mn-stuck) !important; }
+.ik-accent-warning::before { background: var(--mn-working) !important; }
+.ik-accent-info::before    { background: var(--mn-primary) !important; }
+.ik-accent-success::before { background: var(--mn-done) !important; }
+
+/* Icon container — Monday.com colored dot */
+.ik-stat-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 6px;
+    margin-bottom: 0.4rem;
+    flex-shrink: 0;
+}
+
+.ik-stat-icon svg {
+    width: 0.8rem;
+    height: 0.8rem;
+}
+
+.ik-stat-icon--neutral  { background: #f0f1f3; color: #676879; }
+.ik-stat-icon--danger   { background: #fdebee; color: var(--mn-stuck); }
+.ik-stat-icon--warning  { background: #fef6e7; color: var(--mn-working); }
+.ik-stat-icon--info     { background: #e5f1fd; color: var(--mn-primary); }
+.ik-stat-icon--success  { background: #e1f8ed; color: var(--mn-done); }
+
+/* ========================================================================
+   4. PANELS — Monday.com Board Style
+   ======================================================================== */
+
+.ik-dashboard-content .shadow-sm.overflow-hidden,
+.ik-dashboard-content .bg-white.border {
+    border-radius: var(--mn-radius) !important;
+    border-color: var(--mn-border) !important;
+    box-shadow: var(--mn-shadow-xs) !important;
+    transition:
+        box-shadow 180ms ease,
+        border-color 180ms ease !important;
+}
+
+.ik-dashboard-content .shadow-sm.overflow-hidden:hover,
+.ik-dashboard-content .bg-white.border:hover {
+    box-shadow: var(--mn-shadow-sm) !important;
+    border-color: #d0d4e0 !important;
+}
+
+/* Panel header icon — Monday.com compact */
+.ik-panel-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 6px;
+    background: #e5f1fd;
+    color: var(--mn-primary);
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.ik-panel-icon svg {
+    width: 0.75rem;
+    height: 0.75rem;
+}
+
+.ik-panel-icon--danger {
+    background: #fdebee;
+    color: var(--mn-stuck);
+}
+
+/* ========================================================================
+   5. STATUS BADGES — Monday.com Colored Pills
+   ======================================================================== */
+
+.ik-dashboard-content .rounded-full {
+    border-radius: 4px !important;
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    padding: 0.2rem 0.5rem !important;
+    letter-spacing: 0.01em;
+}
+
+/* ========================================================================
+   6. TABLES — Monday.com Board Style
+   ======================================================================== */
+
+.ik-dashboard-content table {
+    font-size: 0.8rem !important;
+}
+
+.ik-dashboard-content table thead {
+    background: #f5f6f8 !important;
+}
+
+.ik-dashboard-content table thead th {
+    font-size: 0.7rem !important;
+    font-weight: 600 !important;
+    color: var(--mn-text-secondary) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.04em !important;
+    padding: 0.6rem 1rem !important;
+    border-bottom: 1px solid var(--mn-border) !important;
+}
+
+.ik-dashboard-content table tbody td {
+    padding: 0.6rem 1rem !important;
+    color: var(--mn-text) !important;
+    border-bottom: 1px solid var(--mn-border-light) !important;
+}
+
+.ik-dashboard-content table td:first-child {
+    font-family: 'SF Mono', 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.72rem;
+    color: var(--mn-primary) !important;
+    font-weight: 600;
+}
+
+.ik-dashboard-content table tbody tr {
+    transition: background-color 120ms ease !important;
+}
+
+.ik-dashboard-content table tbody tr:hover {
+    background: #f5f6f8 !important;
+}
+
+/* ========================================================================
+   7. EMPTY STATE — Monday.com Clean
+   ======================================================================== */
+
+.ik-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+}
+
+.ik-empty-state svg {
+    width: 1.75rem;
+    height: 1.75rem;
+    color: #c3c6d4;
+}
+
+.ik-empty-state p {
+    color: var(--mn-text-tertiary);
+    font-size: 0.78rem;
+    font-weight: 500;
+}
+
+/* ========================================================================
+   8. TOPBAR — Monday.com Clean White
+   ======================================================================== */
+
+.ik-topbar {
+    background: var(--mn-surface) !important;
+    border-bottom: 1px solid var(--mn-border) !important;
+    box-shadow: none !important;
+}
+
+/* ========================================================================
+   9. SIDEBAR — Keep Current (White) + Monday.com Polish
+   ======================================================================== */
+
+.ik-sidebar {
+    background: var(--mn-surface) !important;
+    border-right: 1px solid var(--mn-border) !important;
+}
+
+.ik-sidebar-link {
+    border-radius: var(--mn-radius) !important;
+    font-size: 0.82rem !important;
+    font-weight: 500 !important;
+    color: var(--mn-text) !important;
+    transition: background-color 120ms ease, color 120ms ease !important;
+}
+
+.ik-sidebar-link:hover {
+    background: #f0f1f3 !important;
+    transform: none !important;
+}
+
+.ik-sidebar-link.bg-white {
+    background: var(--mn-primary-light) !important;
+    color: var(--mn-primary) !important;
+    box-shadow: none !important;
+    font-weight: 600 !important;
+}
+
+.ik-sidebar-link svg,
+.ik-sidebar-link .ik-nav-icon {
+    width: 1.1rem;
+    height: 1.1rem;
+    color: var(--mn-text-tertiary);
+}
+
+.ik-sidebar-link.bg-white svg,
+.ik-sidebar-link.bg-white .ik-nav-icon {
+    color: var(--mn-primary);
+}
+
+/* ========================================================================
+   10. LOGIN PAGE — Monday.com Clean
+   ======================================================================== */
+
+.ik-login-bg {
+    min-height: 100vh;
+    background: var(--mn-bg) !important;
+    animation: none !important;
+    background-size: auto !important;
+}
+
+.ik-login-bg::before {
+    display: none;
+}
+
+.ik-login-card {
+    animation: mn-scale-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.ik-login-brand-mark {
+    border-radius: var(--mn-radius) !important;
+    background: linear-gradient(135deg, var(--mn-primary), var(--mn-navy)) !important;
+    box-shadow: 0 4px 12px -3px rgba(0, 115, 234, 0.3) !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    font-size: 0.85rem !important;
+}
+
+.ik-login-brand-name {
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+}
+
+.ik-login-brand-sub {
+    font-size: 0.68rem !important;
+    color: var(--mn-text-tertiary) !important;
+}
+
+.ik-login-hero { animation: mn-fade-in-up 0.35s ease-out 0.1s both; }
+.ik-login-field-1 { animation: mn-fade-in-up 0.3s ease-out 0.15s both; }
+.ik-login-field-2 { animation: mn-fade-in-up 0.3s ease-out 0.2s both; }
+.ik-login-field-3 { animation: mn-fade-in-up 0.3s ease-out 0.25s both; }
+.ik-login-footer { animation: mn-fade-in 0.3s ease-out 0.35s both; }
+
+.ik-login-submit {
+    border-radius: var(--mn-radius) !important;
+    background: var(--mn-primary) !important;
+    box-shadow: 0 4px 14px -4px rgba(0, 115, 234, 0.5) !important;
+}
+
+.ik-login-submit:hover {
+    background: var(--mn-primary-hover) !important;
+}
+
+.ik-login-submit::after {
+    display: none;
+}
+
+/* ========================================================================
+   11. MAIN CONTENT AREA
+   ======================================================================== */
+
+.ik-main {
+    background: var(--mn-bg) !important;
+}
+
+/* ========================================================================
+   12. RESPONSIVE
+   ======================================================================== */
+
+@media (max-width: 1023px) {
+    .ik-page-hero {
+        margin-bottom: 1rem !important;
+    }
+}
+
+/* ========================================================================
+   13. REDUCED MOTION
+   ======================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* ========================================================================
+   14. LOGIN PAGE — Scenic glass layout
+   ======================================================================== */
+
+.wd-login-page {
+    min-height: 100vh;
+    margin: 0;
+    overflow-x: hidden;
+    color: #fff;
+    background: #0d202d;
+    font-family: var(--mn-font);
+}
+
+.wd-login-backdrop {
+    position: fixed;
+    inset: -24px;
+    z-index: -2;
+    overflow: hidden;
+    background: #0d202d;
+}
+
+.wd-login-backdrop::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(7, 18, 27, 0.63);
+}
+
+.wd-login-backdrop img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: blur(20px) saturate(0.85);
+    transform: scale(1.08);
+}
+
+.wd-login-shell {
+    width: min(1380px, calc(100% - 40px));
+    margin: 0 auto;
+    padding: 22px 0 16px;
+}
+
+.wd-login-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 58px;
+    padding: 0 6px 14px;
+}
+
+.wd-login-logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    color: #fff;
+    text-decoration: none;
+}
+
+.wd-login-logo-mark {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.52);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.13);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+}
+
+.wd-login-logo strong,
+.wd-login-logo small {
+    display: block;
+}
+
+.wd-login-logo strong {
+    font-size: 14px;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+}
+
+.wd-login-logo small {
+    margin-top: 3px;
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.wd-login-nav {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.wd-login-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 13px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.88);
+    background: rgba(255, 255, 255, 0.08);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-decoration: none;
+    backdrop-filter: blur(12px);
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.wd-login-nav a:hover {
+    border-color: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.17);
+    transform: translateY(-1px);
+}
+
+.wd-login-nav svg {
+    width: 13px;
+    height: 13px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+}
+
+.wd-login-scene {
+    position: relative;
+    display: grid;
+    min-height: min(760px, calc(100vh - 122px));
+    overflow: hidden;
+    grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 34px;
+    background: #254456;
+    box-shadow: 0 34px 90px rgba(0, 0, 0, 0.42);
+}
+
+.wd-login-scene-image,
+.wd-login-scene-shade {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.wd-login-scene-image {
+    object-fit: cover;
+    object-position: center 48%;
+}
+
+.wd-login-scene-shade {
+    background:
+        linear-gradient(90deg, rgba(7, 25, 36, 0.7) 0%, rgba(7, 25, 36, 0.22) 48%, rgba(9, 21, 29, 0.28) 100%),
+        linear-gradient(0deg, rgba(5, 15, 23, 0.44) 0%, transparent 55%);
+}
+
+.wd-login-intro,
+.wd-login-form-area {
+    position: relative;
+    z-index: 1;
+}
+
+.wd-login-intro {
+    align-self: center;
+    max-width: 560px;
+    padding: 72px clamp(42px, 7vw, 108px);
+    text-shadow: 0 3px 22px rgba(0, 0, 0, 0.38);
+}
+
+.wd-login-eyebrow {
+    margin: 0 0 18px;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+}
+
+.wd-login-intro h1 {
+    margin: 0;
+    color: #fff;
+    font-size: clamp(52px, 6vw, 88px);
+    font-weight: 800;
+    letter-spacing: -0.055em;
+    line-height: 0.9;
+}
+
+.wd-login-tagline {
+    max-width: 410px;
+    margin: 24px 0 0;
+    color: #fff;
+    font-size: clamp(17px, 1.65vw, 23px);
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.wd-login-description {
+    margin: 11px 0 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.wd-login-form-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px clamp(30px, 5vw, 76px) 48px 20px;
+}
+
+.wd-login-card {
+    width: min(100%, 430px);
+    padding: clamp(28px, 3vw, 42px);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 26px;
+    color: #fff;
+    background: linear-gradient(145deg, rgba(242, 246, 249, 0.28), rgba(208, 215, 221, 0.17));
+    box-shadow: 0 28px 60px rgba(4, 13, 20, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.24);
+    backdrop-filter: blur(24px) saturate(1.1);
+}
+
+.wd-login-card-kicker {
+    color: rgba(255, 255, 255, 0.68);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+}
+
+.wd-login-card-heading h2 {
+    margin: 7px 0 0;
+    color: #fff;
+    font-size: clamp(23px, 2vw, 29px);
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.wd-login-card-heading p {
+    margin: 7px 0 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.wd-login-status:not(:empty) {
+    display: block;
+    margin-top: 20px;
+    padding: 10px 12px;
+    border: 1px solid rgba(167, 243, 208, 0.45);
+    border-radius: 9px;
+    color: #d1fae5;
+    background: rgba(6, 95, 70, 0.28);
+    font-size: 12px;
+}
+
+.wd-login-form {
+    display: grid;
+    gap: 19px;
+    margin-top: 27px;
+}
+
+.wd-login-form label,
+.wd-login-label-row a {
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.wd-login-form label {
+    display: block;
+    margin-bottom: 7px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.wd-login-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+}
+
+.wd-login-label-row a {
+    margin-bottom: 7px;
+    color: rgba(255, 255, 255, 0.8);
+    text-underline-offset: 3px;
+}
+
+.wd-login-label-row a:hover {
+    color: #fff;
+}
+
+.wd-login-input-wrap {
+    position: relative;
+}
+
+.wd-login-input-wrap > svg {
+    position: absolute;
+    top: 50%;
+    left: 15px;
+    width: 17px;
+    height: 17px;
+    color: #7b8790;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.wd-login-input-wrap input {
+    display: block;
+    width: 100%;
+    height: 48px;
+    padding: 0 46px;
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    border-radius: 9px;
+    outline: none;
+    color: #16232c;
+    background: rgba(255, 255, 255, 0.91);
+    box-shadow: 0 5px 18px rgba(8, 20, 29, 0.1);
+    font-size: 13px;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.wd-login-input-wrap input::placeholder {
+    color: #9aa2a9;
+}
+
+.wd-login-input-wrap input:focus {
+    border-color: #7cb9ff;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(53, 143, 246, 0.2), 0 5px 18px rgba(8, 20, 29, 0.12);
+}
+
+.wd-login-password-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: grid;
+    width: 45px;
+    height: 48px;
+    padding: 0;
+    place-items: center;
+    border: 0;
+    color: #77838c;
+    background: transparent;
+    cursor: pointer;
+}
+
+.wd-login-password-toggle:hover {
+    color: #233642;
+}
+
+.wd-login-password-toggle svg {
+    width: 17px;
+    height: 17px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.7;
+}
+
+.wd-login-error {
+    margin-top: 6px !important;
+    color: #ffe1e5 !important;
+    font-size: 11px !important;
+}
+
+.wd-login-submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    width: 100%;
+    height: 48px;
+    margin-top: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 9px;
+    color: #fff;
+    background: linear-gradient(135deg, #1683ee, #3573e8);
+    box-shadow: 0 12px 26px rgba(17, 92, 189, 0.3);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: transform 160ms ease, filter 160ms ease, box-shadow 160ms ease;
+}
+
+.wd-login-submit:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 15px 32px rgba(17, 92, 189, 0.38);
+    transform: translateY(-1px);
+}
+
+.wd-login-submit:active {
+    transform: translateY(0);
+}
+
+.wd-login-submit:focus-visible,
+.wd-login-nav a:focus-visible,
+.wd-login-password-toggle:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: 3px;
+}
+
+.wd-login-submit svg {
+    width: 15px;
+    height: 15px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
+}
+
+.wd-login-card-foot {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-top: 24px;
+}
+
+.wd-login-card-foot span {
+    height: 1px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.wd-login-card-foot p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.52);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.wd-login-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 7px 0;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+    .wd-login-shell {
+        width: min(100% - 24px, 700px);
+        padding-top: 12px;
+    }
+
+    .wd-login-scene {
+        min-height: auto;
+        grid-template-columns: 1fr;
+        border-radius: 26px;
+    }
+
+    .wd-login-intro {
+        align-self: end;
+        max-width: none;
+        padding: 70px 34px 25px;
+    }
+
+    .wd-login-intro h1 {
+        font-size: clamp(45px, 12vw, 70px);
+    }
+
+    .wd-login-description {
+        display: none;
+    }
+
+    .wd-login-form-area {
+        padding: 10px 24px 32px;
+    }
+
+    .wd-login-card {
+        width: min(100%, 500px);
+    }
+
+    .wd-login-scene-shade {
+        background:
+            linear-gradient(180deg, rgba(7, 25, 36, 0.2) 0%, rgba(7, 25, 36, 0.66) 48%, rgba(5, 15, 23, 0.72) 100%);
+    }
+}
+
+@media (max-width: 520px) {
+    .wd-login-shell {
+        width: min(100% - 16px, 480px);
+        padding-top: 8px;
+    }
+
+    .wd-login-topbar {
+        min-height: 52px;
+        padding: 0 2px 8px;
+    }
+
+    .wd-login-logo small {
+        display: none;
+    }
+
+    .wd-login-nav {
+        gap: 5px;
+    }
+
+    .wd-login-nav a {
+        padding: 8px 10px;
+        font-size: 10px;
+    }
+
+    .wd-login-scene {
+        border-radius: 22px;
+    }
+
+    .wd-login-intro {
+        padding: 56px 24px 20px;
+    }
+
+    .wd-login-eyebrow {
+        margin-bottom: 13px;
+        font-size: 12px;
+    }
+
+    .wd-login-tagline {
+        margin-top: 16px;
+        font-size: 15px;
+    }
+
+    .wd-login-form-area {
+        padding: 8px 12px 18px;
+    }
+
+    .wd-login-card {
+        padding: 25px 20px;
+        border-radius: 19px;
+    }
+
+    .wd-login-footer {
+        padding: 9px 4px 0;
+        font-size: 8px;
+    }
+}
