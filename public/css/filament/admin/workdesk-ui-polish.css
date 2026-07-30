@@ -541,14 +541,14 @@ body,
 }
 
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
-    border-color: #cfe5ff !important;
-    background: linear-gradient(90deg, #e8f3ff, #f5faff) !important;
-    box-shadow: inset 3px 0 0 var(--ik-primary), var(--ik-shadow-xs) !important;
-    color: #005fbd !important;
+    border-color: transparent !important;
+    background: #f1f5f9 !important;
+    box-shadow: none !important;
+    color: #0f172a !important;
 }
 
 .fi-sidebar-item.fi-active > .fi-sidebar-item-btn > .fi-icon {
-    color: var(--ik-primary) !important;
+    color: #475569 !important;
 }
 
 .fi-sidebar-item-label {

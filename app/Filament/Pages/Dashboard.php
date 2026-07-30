@@ -5,6 +5,9 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\Reminders\ReminderResource;
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
+use App\Filament\Resources\MeetingBookings\MeetingBookingResource;
+use App\Models\MeetingBooking;
+use App\Models\MeetingRoom;
 use App\Models\Reminder;
 use BackedEnum;
 use Carbon\CarbonInterface;
@@ -151,6 +154,56 @@ class Dashboard extends BaseDashboard
             ],
         ] : [];
 
+        $todayMeetingQuery = MeetingBooking::query()
+            ->with(['room', 'organizer'])
+            ->active()
+            ->whereBetween('start_at', [$todayStart, $todayEnd]);
+        $userId = auth()->id();
+
+        $myMeetingsToday = (clone $todayMeetingQuery)
+            ->where(
+                fn ($query) =>
+                    $query
+                        ->where('organizer_id', $userId)
+                        ->orWhereHas(
+                            'participants',
+                            fn ($participantQuery) =>
+                                $participantQuery->whereKey($userId)
+                        )
+            )
+            ->orderBy('start_at')
+            ->limit(5)
+            ->get();
+
+        $roomScheduleToday = MeetingRoom::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->map(function (MeetingRoom $room) use (
+                $todayMeetingQuery,
+                $now
+            ): array {
+                $bookings = (clone $todayMeetingQuery)
+                    ->where('meeting_room_id', $room->id)
+                    ->orderBy('start_at')
+                    ->get();
+                $current = $bookings->first(
+                    fn (MeetingBooking $booking): bool =>
+                        $booking->start_at->lte($now)
+                        && $booking->end_at->gt($now)
+                );
+                $next = $bookings->first(
+                    fn (MeetingBooking $booking): bool =>
+                        $booking->start_at->gt($now)
+                );
+
+                return [
+                    'room' => $room,
+                    'current' => $current,
+                    'next' => $next,
+                ];
+            });
+
         return [
             'ticketStats' => $ticketStats,
             'workStats' => $workStats,
@@ -187,9 +240,14 @@ class Dashboard extends BaseDashboard
                 ->latest()
                 ->limit(5)
                 ->get(),
+            'myMeetingsToday' => $myMeetingsToday,
+            'roomScheduleToday' => $roomScheduleToday,
             'ticketsUrl' => TicketResource::getUrl('index'),
             'workTasksUrl' => WorkTaskResource::getUrl('index'),
             'remindersUrl' => ReminderResource::getUrl('index'),
+            'meetingCalendarUrl' => MeetingRoomCalendar::getUrl(),
+            'meetingBookingsUrl' =>
+                MeetingBookingResource::getUrl('index'),
         ];
     }
 

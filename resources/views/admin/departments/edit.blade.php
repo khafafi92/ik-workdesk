@@ -6,7 +6,10 @@
 
 @section('content')
 <x-ui.card class="max-w-2xl">
-    <x-admin.departments._form :department="$department" :action="route('admin.departments.update', $department)"
-        method="PUT" />
+    @include('admin.departments._form', [
+        'department' => $department,
+        'action' => route('admin.departments.update', $department),
+        'method' => 'PUT',
+    ])
 </x-ui.card>
 @endsection

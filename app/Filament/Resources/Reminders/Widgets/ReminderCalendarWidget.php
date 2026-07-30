@@ -3,20 +3,23 @@
 namespace App\Filament\Resources\Reminders\Widgets;
 
 use App\Filament\Resources\Reminders\ReminderResource;
-use Carbon\Carbon;
 use Filament\Widgets\Widget;
 
 class ReminderCalendarWidget extends Widget
 {
-    protected string $view = 'filament.resources.reminders.widgets.reminder-calendar-widget';
+    protected string $view =
+        'filament.resources.reminders.widgets.reminder-calendar-widget';
 
-    protected int | string | array $columnSpan = 'full';
+    protected int|string|array $columnSpan = 'full';
 
     public function getCalendarData(): array
     {
         $currentMonth = now()->startOfMonth();
         $startOfCalendar = $currentMonth->copy()->startOfWeek();
-        $endOfCalendar = $currentMonth->copy()->endOfMonth()->endOfWeek();
+        $endOfCalendar = $currentMonth
+            ->copy()
+            ->endOfMonth()
+            ->endOfWeek();
 
         $reminders = ReminderResource::getEloquentQuery()
             ->whereBetween('reminder_at', [
@@ -25,7 +28,10 @@ class ReminderCalendarWidget extends Widget
             ])
             ->orderBy('reminder_at')
             ->get()
-            ->groupBy(fn ($reminder) => $reminder->reminder_at->format('Y-m-d'));
+            ->groupBy(
+                fn ($reminder) =>
+                    $reminder->reminder_at->format('Y-m-d')
+            );
 
         $weeks = [];
         $day = $startOfCalendar->copy();
@@ -38,9 +44,11 @@ class ReminderCalendarWidget extends Widget
 
                 $week[] = [
                     'date' => $day->copy(),
-                    'isCurrentMonth' => $day->month === $currentMonth->month,
+                    'isCurrentMonth' =>
+                        $day->month === $currentMonth->month,
                     'isToday' => $day->isToday(),
-                    'reminders' => $reminders->get($dateKey, collect()),
+                    'reminders' =>
+                        $reminders->get($dateKey, collect()),
                 ];
 
                 $day->addDay();
@@ -51,7 +59,15 @@ class ReminderCalendarWidget extends Widget
 
         return [
             'title' => $currentMonth->format('F Y'),
-            'weekDays' => ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            'weekDays' => [
+                'Mon',
+                'Tue',
+                'Wed',
+                'Thu',
+                'Fri',
+                'Sat',
+                'Sun',
+            ],
             'weeks' => $weeks,
         ];
     }

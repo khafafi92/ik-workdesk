@@ -127,6 +127,66 @@ class AccessControlSeeder extends Seeder
                     'module' => 'Reminders',
                     'description' => 'Create, edit, and delete reminders.',
                 ],
+                [
+                    'name' => 'View Meeting Bookings',
+                    'code' => 'meeting-bookings.view',
+                    'module' => 'Meeting Room',
+                    'description' => 'View the meeting room calendar and own bookings.',
+                ],
+                [
+                    'name' => 'Create Meeting Bookings',
+                    'code' => 'meeting-bookings.create',
+                    'module' => 'Meeting Room',
+                    'description' => 'Create meeting room bookings.',
+                ],
+                [
+                    'name' => 'Cancel Own Meeting Bookings',
+                    'code' => 'meeting-bookings.cancel-own',
+                    'module' => 'Meeting Room',
+                    'description' => 'Cancel own future meeting room bookings.',
+                ],
+                [
+                    'name' => 'Manage Meeting Bookings',
+                    'code' => 'meeting-bookings.manage',
+                    'module' => 'Meeting Room',
+                    'description' => 'View, edit, and cancel every meeting room booking.',
+                ],
+                [
+                    'name' => 'Manage Meeting Rooms',
+                    'code' => 'meeting-rooms.manage',
+                    'module' => 'Meeting Room',
+                    'description' => 'Create, edit, activate, and deactivate meeting rooms.',
+                ],
+                [
+                    'name' => 'View Vehicle Bookings',
+                    'code' => 'vehicle-bookings.view',
+                    'module' => 'Vehicle Booking',
+                    'description' => 'View vehicle calendar and own bookings.',
+                ],
+                [
+                    'name' => 'Create Vehicle Bookings',
+                    'code' => 'vehicle-bookings.create',
+                    'module' => 'Vehicle Booking',
+                    'description' => 'Create vehicle bookings.',
+                ],
+                [
+                    'name' => 'Cancel Own Vehicle Bookings',
+                    'code' => 'vehicle-bookings.cancel-own',
+                    'module' => 'Vehicle Booking',
+                    'description' => 'Cancel own future vehicle bookings.',
+                ],
+                [
+                    'name' => 'Manage Vehicle Bookings',
+                    'code' => 'vehicle-bookings.manage',
+                    'module' => 'Vehicle Booking',
+                    'description' => 'Manage every vehicle booking.',
+                ],
+                [
+                    'name' => 'Manage Vehicles',
+                    'code' => 'vehicles.manage',
+                    'module' => 'Vehicle Booking',
+                    'description' => 'Manage vehicle master data.',
+                ],
             ];
 
             foreach ($permissions as $permissionData) {
@@ -238,6 +298,18 @@ class AccessControlSeeder extends Seeder
             ];
 
             foreach ($roles as $roleData) {
+                if ($roleData['permissions'] !== ['*']) {
+                    $roleData['permissions'] = array_values(array_unique([
+                        ...$roleData['permissions'],
+                        'meeting-bookings.view',
+                        'meeting-bookings.create',
+                        'meeting-bookings.cancel-own',
+                        'vehicle-bookings.view',
+                        'vehicle-bookings.create',
+                        'vehicle-bookings.cancel-own',
+                    ]));
+                }
+
                 $permissionCodes = $roleData['permissions'];
 
                 unset($roleData['permissions']);

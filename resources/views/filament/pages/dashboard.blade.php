@@ -111,6 +111,90 @@
                 <div class="ik-panel-header">
                     <div style="display:flex;align-items:center">
                         <div class="ik-panel-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 8.25h18M5.25 5.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25Z" /></svg>
+                        </div>
+                        <div>
+                            <h2>Meeting Rooms Today</h2>
+                            <p>Status ruangan dan jadwal berikutnya.</p>
+                        </div>
+                    </div>
+
+                    <a href="{{ $data['meetingCalendarUrl'] }}">Open Calendar</a>
+                </div>
+
+                <div class="ik-panel-body ik-panel-body--compact">
+                    @forelse ($data['roomScheduleToday'] as $schedule)
+                        <div class="ik-reminder-item">
+                            <div class="ik-reminder-meta">
+                                <span class="ik-badge {{ $schedule['current'] ? 'ik-badge--danger' : 'ik-badge--success' }}">
+                                    {{ $schedule['current'] ? 'In Use' : 'Available' }}
+                                </span>
+                                <span>{{ $schedule['room']->location ?: '-' }}</span>
+                            </div>
+                            <div class="ik-reminder-title">{{ $schedule['room']->name }}</div>
+                            <div class="ik-reminder-desc">
+                                @if ($schedule['current'])
+                                    {{ $schedule['current']->start_at->format('H:i') }}–{{ $schedule['current']->end_at->format('H:i') }}
+                                    · {{ $schedule['current']->title }}
+                                @elseif ($schedule['next'])
+                                    Next: {{ $schedule['next']->start_at->format('H:i') }}
+                                    · {{ $schedule['next']->title }}
+                                @else
+                                    Tidak ada booking berikutnya hari ini.
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="ik-empty-state">
+                            <p>Belum ada ruangan aktif.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+
+            <div class="ik-panel">
+                <div class="ik-panel-header">
+                    <div style="display:flex;align-items:center">
+                        <div class="ik-panel-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.205-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.971 5.971 0 0 0-.941-3.197m0 0A5.995 5.995 0 0 0 12 12.75a5.995 5.995 0 0 0-5.058 2.772m0 0a3 3 0 0 0-4.681 2.72 8.986 8.986 0 0 0 3.74.477m.94-3.197a5.971 5.971 0 0 0-.94 3.197M15 6.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+                        </div>
+                        <div>
+                            <h2>My Meetings Today</h2>
+                            <p>Meeting yang Anda buat atau ikuti hari ini.</p>
+                        </div>
+                    </div>
+
+                    <a href="{{ $data['meetingBookingsUrl'] }}">My Bookings</a>
+                </div>
+
+                <div class="ik-panel-body ik-panel-body--compact">
+                    @forelse ($data['myMeetingsToday'] as $meeting)
+                        <div class="ik-reminder-item">
+                            <div class="ik-reminder-meta">
+                                <span class="ik-badge ik-badge--info">
+                                    {{ $meeting->start_at->format('H:i') }}–{{ $meeting->end_at->format('H:i') }}
+                                </span>
+                                <span>{{ $meeting->room?->name ?? '-' }}</span>
+                            </div>
+                            <div class="ik-reminder-title">{{ $meeting->title }}</div>
+                            <div class="ik-reminder-desc">
+                                Organizer: {{ $meeting->organizer?->name ?? '-' }}
+                            </div>
+                        </div>
+                    @empty
+                        <div class="ik-empty-state">
+                            <p>Tidak ada meeting Anda hari ini.</p>
+                        </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
+        <div class="ik-panel-grid">
+            <div class="ik-panel">
+                <div class="ik-panel-header">
+                    <div style="display:flex;align-items:center">
+                        <div class="ik-panel-icon">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
                         </div>
                         <div>

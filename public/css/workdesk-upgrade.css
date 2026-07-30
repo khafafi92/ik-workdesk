@@ -338,8 +338,9 @@
 }
 
 .ik-sidebar-link.bg-white {
-    background: var(--mn-primary-light) !important;
-    color: var(--mn-primary) !important;
+    background: #f1f5f9 !important;
+    color: #1f2937 !important;
+    border-color: transparent !important;
     box-shadow: none !important;
     font-weight: 600 !important;
 }
@@ -353,7 +354,7 @@
 
 .ik-sidebar-link.bg-white svg,
 .ik-sidebar-link.bg-white .ik-nav-icon {
-    color: var(--mn-primary);
+    color: #4b5563;
 }
 
 /* ========================================================================
