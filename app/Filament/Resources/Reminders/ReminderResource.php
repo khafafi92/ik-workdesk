@@ -1,20 +1,22 @@
 <?php
 
 namespace App\Filament\Resources\Reminders;
-use App\Filament\Resources\Reminders\Pages\ViewReminder;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\Auth;
+
 use App\Filament\Resources\Reminders\Pages\CreateReminder;
 use App\Filament\Resources\Reminders\Pages\EditReminder;
 use App\Filament\Resources\Reminders\Pages\ListReminders;
+use App\Filament\Resources\Reminders\Pages\ViewReminder;
 use App\Filament\Resources\Reminders\Schemas\ReminderForm;
 use App\Filament\Resources\Reminders\Tables\RemindersTable;
+use App\Filament\Resources\WorkTasks\WorkTaskResource;
 use App\Models\Reminder;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 
 class ReminderResource extends Resource
 {
@@ -33,6 +35,21 @@ class ReminderResource extends Resource
     public static function table(Table $table): Table
     {
         return RemindersTable::configure($table);
+    }
+
+    public static function ensureWorkTaskSourceIsAccessible(mixed $workTaskId): void
+    {
+        if (blank($workTaskId)) {
+            return;
+        }
+
+        if (WorkTaskResource::getEloquentQuery()->whereKey($workTaskId)->exists()) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'work_task_id' => 'Task yang dipilih tidak tersedia atau tidak dapat Anda akses.',
+        ]);
     }
 
     public static function getRelations(): array
@@ -75,6 +92,7 @@ public static function getEloquentQuery(): Builder
         ->with([
             'employee',
             'department',
+            'workTask',
         ]);
 
     $user = Auth::user();

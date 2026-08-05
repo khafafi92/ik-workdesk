@@ -175,34 +175,16 @@ class Dashboard extends BaseDashboard
             ->limit(5)
             ->get();
 
-        $roomScheduleToday = MeetingRoom::query()
+        $activeRoomCount = MeetingRoom::query()
             ->where('is_active', true)
-            ->orderBy('name')
-            ->get()
-            ->map(function (MeetingRoom $room) use (
-                $todayMeetingQuery,
-                $now
-            ): array {
-                $bookings = (clone $todayMeetingQuery)
-                    ->where('meeting_room_id', $room->id)
-                    ->orderBy('start_at')
-                    ->get();
-                $current = $bookings->first(
-                    fn (MeetingBooking $booking): bool =>
-                        $booking->start_at->lte($now)
-                        && $booking->end_at->gt($now)
-                );
-                $next = $bookings->first(
-                    fn (MeetingBooking $booking): bool =>
-                        $booking->start_at->gt($now)
-                );
-
-                return [
-                    'room' => $room,
-                    'current' => $current,
-                    'next' => $next,
-                ];
-            });
+            ->count();
+        $busyRoomCount = MeetingBooking::query()
+            ->active()
+            ->where('start_at', '<=', $now)
+            ->where('end_at', '>', $now)
+            ->whereHas('room', fn ($query) => $query->where('is_active', true))
+            ->distinct()
+            ->count('meeting_room_id');
 
         return [
             'ticketStats' => $ticketStats,
@@ -241,7 +223,10 @@ class Dashboard extends BaseDashboard
                 ->limit(5)
                 ->get(),
             'myMeetingsToday' => $myMeetingsToday,
-            'roomScheduleToday' => $roomScheduleToday,
+            'meetingRoomSummary' => [
+                'available' => max(0, $activeRoomCount - $busyRoomCount),
+                'busy' => $busyRoomCount,
+            ],
             'ticketsUrl' => TicketResource::getUrl('index'),
             'workTasksUrl' => WorkTaskResource::getUrl('index'),
             'remindersUrl' => ReminderResource::getUrl('index'),

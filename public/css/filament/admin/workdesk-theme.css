@@ -805,6 +805,337 @@ nav[role="navigation"] span {
     }
 }
 
+/* Compact dashboard */
+.ik-dashboard--minimal {
+    gap: 12px !important;
+}
+
+.ik-minimal-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 2px 2px 4px;
+}
+
+.ik-minimal-hero span,
+.ik-minimal-hero time {
+    color: #676879;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.ik-minimal-hero h1 {
+    margin: 2px 0 0;
+    color: #323338;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+.ik-smart-panel,
+.ik-overview-card {
+    overflow: hidden;
+    border: 1px solid #e6e9ef;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.ik-smart-header {
+    display: flex;
+    min-height: 54px;
+    padding: 11px 16px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #eceef3;
+}
+
+.ik-smart-heading {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+}
+
+.ik-smart-heading h2 {
+    margin: 0;
+    color: #323338;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.ik-smart-heading p {
+    margin: 2px 0 0;
+    color: #676879;
+    font-size: 11px;
+}
+
+.ik-smart-icon {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    margin-right: 9px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 7px;
+    color: #0073ea;
+    background: #e5f1fd;
+}
+
+.ik-smart-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.ik-smart-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ik-smart-actions a {
+    padding: 7px 10px;
+    border-radius: 6px;
+    color: #0073ea;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.ik-smart-actions a:hover,
+.ik-smart-action--primary {
+    background: #e5f1fd;
+}
+
+.ik-meeting-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ik-meeting-metrics > div {
+    display: flex;
+    min-width: 0;
+    padding: 12px 16px;
+    align-items: center;
+    gap: 7px;
+    border-right: 1px solid #eceef3;
+}
+
+.ik-meeting-metrics > div:last-child {
+    border-right: 0;
+}
+
+.ik-meeting-metrics strong {
+    color: #323338;
+    font-size: 16px;
+}
+
+.ik-meeting-metrics span:last-child {
+    overflow: hidden;
+    color: #676879;
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ik-status-dot {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 auto;
+    border-radius: 999px;
+}
+
+.ik-status-dot--success { background: #00c875; }
+.ik-status-dot--danger { background: #e2445c; }
+.ik-status-dot--info { background: #0073ea; }
+
+.ik-reminder-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ik-reminder-lane {
+    min-width: 0;
+    border-right: 1px solid #eceef3;
+}
+
+.ik-reminder-lane:last-child {
+    border-right: 0;
+}
+
+.ik-reminder-lane-head {
+    display: flex;
+    padding: 9px 14px;
+    align-items: center;
+    justify-content: space-between;
+    color: #323338;
+    background: #f8f9fb;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.ik-reminder-lane-head strong {
+    display: grid;
+    min-width: 21px;
+    height: 21px;
+    padding: 0 5px;
+    place-items: center;
+    border-radius: 999px;
+    color: #0073ea;
+    background: #e5f1fd;
+    font-size: 10px;
+}
+
+.ik-reminder-lane--danger .ik-reminder-lane-head strong {
+    color: #e2445c;
+    background: #fdebee;
+}
+
+.ik-mini-list {
+    min-height: 68px;
+}
+
+.ik-mini-item {
+    display: grid;
+    gap: 3px;
+    padding: 9px 14px;
+    border-top: 1px solid #f0f1f3;
+}
+
+.ik-mini-item:first-child {
+    border-top: 0;
+}
+
+.ik-mini-item strong {
+    overflow: hidden;
+    color: #323338;
+    font-size: 11px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ik-mini-item span,
+.ik-mini-empty {
+    color: #9699a6;
+    font-size: 10px;
+}
+
+.ik-mini-empty {
+    padding: 18px 14px;
+    text-align: center;
+}
+
+.ik-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.ik-overview-heading {
+    display: flex;
+    padding: 10px 14px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #eceef3;
+    color: #323338;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.ik-overview-heading a {
+    color: #0073ea;
+    font-size: 10px;
+    text-decoration: none;
+}
+
+.ik-overview-metrics {
+    display: flex;
+    overflow-x: auto;
+}
+
+.ik-overview-metrics > div {
+    min-width: 86px;
+    padding: 10px 12px;
+    border-right: 1px solid #eceef3;
+}
+
+.ik-overview-metrics strong,
+.ik-overview-metrics span {
+    display: block;
+}
+
+.ik-overview-metrics strong {
+    color: #323338;
+    font-size: 16px;
+}
+
+.ik-overview-metrics span {
+    margin-top: 2px;
+    color: #676879;
+    font-size: 9px;
+    white-space: nowrap;
+}
+
+.ik-panel-grid--minimal .ik-panel-header {
+    min-height: 54px;
+    padding: 11px 14px;
+}
+
+.ik-panel-grid--minimal .ik-table th,
+.ik-panel-grid--minimal .ik-table td {
+    padding: 9px 14px;
+}
+
+@media (max-width: 760px) {
+    .ik-minimal-hero {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .ik-overview-grid,
+    .ik-panel-grid--minimal,
+    .ik-reminder-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ik-reminder-lane {
+        border-right: 0;
+        border-bottom: 1px solid #eceef3;
+    }
+
+    .ik-reminder-lane:last-child {
+        border-bottom: 0;
+    }
+
+    .ik-smart-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .ik-smart-actions {
+        width: 100%;
+    }
+
+    .ik-smart-actions a {
+        flex: 1;
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .ik-meeting-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .ik-meeting-metrics > div {
+        border-right: 0;
+        border-bottom: 1px solid #eceef3;
+    }
+}
+
 .fi-sidebar-nav {
     gap: 20px !important;
     padding: 18px 14px !important;

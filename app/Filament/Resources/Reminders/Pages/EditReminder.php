@@ -12,6 +12,8 @@ class EditReminder extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        ReminderResource::ensureWorkTaskSourceIsAccessible($data['work_task_id'] ?? null);
+
         $user = auth()->user();
 
         if (! $user || $user->hasRole('superadmin')) {

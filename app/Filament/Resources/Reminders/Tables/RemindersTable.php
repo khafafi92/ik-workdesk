@@ -1,14 +1,16 @@
 <?php
 
 namespace App\Filament\Resources\Reminders\Tables;
-use Filament\Actions\ViewAction;
 
-use Filament\Actions\DeleteAction;
+use App\Filament\Resources\WorkTasks\WorkTaskResource;
+use App\Models\Reminder;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
-
 use Filament\Actions\DeleteBulkAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Tables\Columns\IconColumn;
+use Filament\Actions\ViewAction;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -44,6 +46,17 @@ class RemindersTable
                     ->sortable()
                     ->limit(40),
 
+                TextColumn::make('workTask.task_no')
+                    ->label('Source Task')
+                    ->placeholder('Manual')
+                    ->badge()
+                    ->color('info')
+                    ->url(
+                        fn ($record): ?string => $record->workTask
+                            ? WorkTaskResource::getUrl('view', ['record' => $record->workTask])
+                            : null
+                    ),
+
                 TextColumn::make('employee.name')
                     ->label('Employee')
                     ->searchable()
@@ -69,13 +82,26 @@ class RemindersTable
                         default => 'gray',
                     }),
 
-                IconColumn::make('is_notified')
-                    ->label('Notified')
-                    ->boolean(),
             ])
             ->defaultSort('reminder_at', 'asc')
             ->recordActions([
                 ViewAction::make(),
+                Action::make('markAsDone')
+                    ->label('Done')
+                    ->icon('heroicon-o-check-circle')
+                    ->color('success')
+                    ->visible(fn (Reminder $record): bool => $record->status !== 'done')
+                    ->requiresConfirmation()
+                    ->modalHeading('Tandai reminder sebagai Done?')
+                    ->modalDescription('Reminder ini akan diselesaikan dan email pengingat berikutnya tidak akan dikirim.')
+                    ->action(function (Reminder $record): void {
+                        $record->markAsDone();
+
+                        Notification::make()
+                            ->title('Reminder berhasil ditandai Done')
+                            ->success()
+                            ->send();
+                    }),
                 EditAction::make(),
                 DeleteAction::make(),
             ])

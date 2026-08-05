@@ -50,7 +50,7 @@ class ViewWorkTask extends ViewRecord
                 ->requiresConfirmation()
                 ->modalHeading('Selesaikan Work Log')
                 ->modalDescription(
-                    'Work Log akan ditandai selesai dan status Service Desk akan diperbarui.'
+                    'Work Log akan ditandai selesai dan status Service Desk akan diperbarui. Untuk pekerjaan collaborative, Done oleh Lead akan menyelesaikan seluruh Work Log terkait.'
                 )
                 ->visible(
                     fn (): bool =>
@@ -61,7 +61,7 @@ class ViewWorkTask extends ViewRecord
                     abort_unless(
                         $this->record->canBeCompletedBy(auth()->user()),
                         403,
-                        'Hanya pembuat Service Desk atau superadmin yang dapat menyelesaikan Work Log.'
+                        'Untuk pekerjaan collaborative, hanya Lead Department atau superadmin yang dapat menyelesaikan Work Log.'
                     );
 
                     $this->record->update(['status' => 'done']);

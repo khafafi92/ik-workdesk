@@ -2,14 +2,16 @@
 
 namespace App\Services;
 
-use Illuminate\Mail\Mailer;
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\Facades\Mail;
 
 /**
  * Menentukan mailer dan FROM address yang tepat berdasarkan domain email penerima.
  *
  * Mapping domain → mailer (dikonfigurasi di config/mail.php dan .env):
+ *
  *   @kpmog.com  → mailer 'kpmog'  → from noreply@kpmog.com
+ *
  *   @apca.com   → mailer 'apca'   → from noreply@apca.com
  *   lainnya     → mailer default  → from MAIL_FROM_ADDRESS
  */
@@ -20,7 +22,7 @@ class MailerResolver
      */
     private const DOMAIN_MAP = [
         'kpmog.com' => 'kpmog',
-        'apca.com'  => 'apca',
+        'apca.com' => 'apca',
     ];
 
     /**
@@ -30,11 +32,11 @@ class MailerResolver
     private const FROM_MAP = [
         'kpmog' => [
             'address' => 'MAIL_KPMOG_FROM_ADDRESS',
-            'name'    => 'MAIL_KPMOG_FROM_NAME',
+            'name' => 'MAIL_KPMOG_FROM_NAME',
         ],
-        'apca'  => [
+        'apca' => [
             'address' => 'MAIL_APCA_FROM_ADDRESS',
-            'name'    => 'MAIL_APCA_FROM_NAME',
+            'name' => 'MAIL_APCA_FROM_NAME',
         ],
     ];
 
@@ -73,7 +75,7 @@ class MailerResolver
         if (! isset(self::FROM_MAP[$mailerName])) {
             return [
                 'address' => config('mail.from.address'),
-                'name'    => config('mail.from.name'),
+                'name' => config('mail.from.name'),
             ];
         }
 
@@ -81,7 +83,7 @@ class MailerResolver
 
         return [
             'address' => env($map['address'], config('mail.from.address')),
-            'name'    => env($map['name'], config('mail.from.name')),
+            'name' => env($map['name'], config('mail.from.name')),
         ];
     }
 }

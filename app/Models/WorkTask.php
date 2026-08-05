@@ -83,7 +83,7 @@ class WorkTask extends Model
             && ! $task->canBeCompletedBy(auth()->user())
         ) {
             throw ValidationException::withMessages([
-                'status' => 'Status Done hanya dapat ditetapkan oleh pembuat Service Desk atau superadmin.',
+                'status' => 'Status Done hanya dapat ditetapkan oleh pihak yang berwenang menyelesaikan pekerjaan.',
             ]);
         }
     });
@@ -156,6 +156,14 @@ class WorkTask extends Model
         */
 
         if ($ticket->workflow_type === 'collaborative') {
+            if (
+                $task->wasChanged('status')
+                && $task->status === 'done'
+                && $task->isCollaborativeLeadTask()
+            ) {
+                $task->completeCollaborativeTasks();
+            }
+
             $ticket->syncCollaborativeStatus();
 
             return;
@@ -251,6 +259,11 @@ class WorkTask extends Model
         )->latest();
     }
 
+    public function reminders(): HasMany
+    {
+        return $this->hasMany(Reminder::class);
+    }
+
     public function recordActivity(
         string $type,
         string $message,
@@ -312,7 +325,56 @@ class WorkTask extends Model
 
         $this->loadMissing('ticket.employee');
 
+        if ($this->ticket?->workflow_type === 'collaborative') {
+            return $this->isCollaborativeLeadTask()
+                && $user->canAccessDepartment(
+                    $this->ticket->handler_department_id
+                );
+        }
+
         return $this->ticket?->employee?->user_id !== null
             && (int) $this->ticket->employee->user_id === (int) $user->id;
+    }
+
+    public function isCollaborativeLeadTask(): bool
+    {
+        $this->loadMissing('ticket');
+
+        return $this->ticket?->workflow_type === 'collaborative'
+            && $this->department_id !== null
+            && (int) $this->department_id
+                === (int) $this->ticket->handler_department_id;
+    }
+
+    private function completeCollaborativeTasks(): void
+    {
+        $this->loadMissing('ticket.assignments.workTask');
+
+        foreach ($this->ticket->assignments->pluck('workTask')->filter() as $relatedTask) {
+            if ($relatedTask->is($this) || $relatedTask->status === 'done') {
+                continue;
+            }
+
+            $previousStatus = $relatedTask->status;
+
+            $relatedTask->updateQuietly([
+                'status' => 'done',
+                'progress_percent' => 100,
+                'start_at' => $relatedTask->start_at ?? now(),
+                'completed_at' => now(),
+            ]);
+
+            $relatedTask->recordActivity(
+                'status_change',
+                "Status changed from {$previousStatus} to done by Lead Department.",
+                [
+                    'field' => 'status',
+                    'previous' => $previousStatus,
+                    'current' => 'done',
+                    'completed_by_lead' => true,
+                    'lead_work_task_id' => $this->id,
+                ]
+            );
+        }
     }
 }
