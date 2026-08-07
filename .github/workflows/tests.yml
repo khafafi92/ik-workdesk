@@ -7,6 +7,8 @@ on:
 jobs:
   php-tests:
     runs-on: ubuntu-latest
+    env:
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
 
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +27,6 @@ jobs:
       - run: cp .env.example .env
       - run: touch database/database.sqlite
       - run: composer install --no-interaction --prefer-dist --no-scripts --no-progress
-      - run: php artisan key:generate
       - run: php artisan package:discover --ansi
       - run: npm ci
       - run: npm run build
