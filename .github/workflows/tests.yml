@@ -14,7 +14,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
-          extensions: mbstring, pdo_sqlite, sqlite3
+          extensions: mbstring, pdo_sqlite, sqlite3, dom, fileinfo, gd, intl, xml, xmlreader, xmlwriter, zip
           coverage: none
 
       - uses: actions/setup-node@v4
@@ -22,12 +22,12 @@ jobs:
           node-version: '22'
           cache: npm
 
+      - run: cp .env.example .env
+      - run: touch database/database.sqlite
       - run: composer install --no-interaction --prefer-dist
       - run: npm ci
       - run: npm run build
-      - run: cp .env.example .env
       - run: php artisan key:generate
-      - run: touch database/database.sqlite
       - run: php artisan migrate:fresh --seed --force
       - run: vendor/bin/pint --test
       - run: php artisan test
