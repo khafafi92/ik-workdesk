@@ -26,4 +26,22 @@ class MinimalDashboardTest extends TestCase
             ->assertDontSeeText('Meeting Rooms Today')
             ->assertDontSeeText('Upcoming Reminders');
     }
+
+    public function test_the_superadmin_dashboard_matches_the_compact_overview_layout(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertSeeText('Service Desk')
+            ->assertSeeText('Work Logs')
+            ->assertSeeText('ruangan tersedia')
+            ->assertSeeText('Reminder')
+            ->assertSeeText('Hari Ini')
+            ->assertSeeText('Akan Datang')
+            ->assertSeeText('Terlambat')
+            ->assertDontSeeText("Today's Reminders")
+            ->assertDontSeeText('Upcoming Reminders');
+    }
 }

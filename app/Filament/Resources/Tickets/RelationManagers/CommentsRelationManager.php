@@ -2,25 +2,25 @@
 
 namespace App\Filament\Resources\Tickets\RelationManagers;
 
-//tambahan
-use Filament\Actions\ViewAction;
-use Filament\Infolists\Components\TextEntry;
-use Illuminate\Support\HtmlString;
-//end tambahan
-
+// tambahan
+use App\Models\TicketComment;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
+// end tambahan
+
 use Filament\Actions\EditAction;
+use Filament\Actions\ViewAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Textarea;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
-use App\Models\TicketComment;
 
 class CommentsRelationManager extends RelationManager
 {
@@ -50,9 +50,9 @@ class CommentsRelationManager extends RelationManager
                     ->label('Attachments')
                     ->multiple()
                     ->maxFiles(10)
-                    ->disk('public')
+                    ->disk('local')
                     ->directory('ticket-comments')
-                    ->visibility('public')
+                    ->visibility('private')
                     ->downloadable()
                     ->openable()
                     ->previewable(false)
@@ -69,16 +69,16 @@ class CommentsRelationManager extends RelationManager
                             );
 
                             return now()->format('YmdHis')
-                                . '-'
-                                . Str::random(6)
-                                . '-'
-                                . Str::slug($originalName)
-                                . '.'
-                                . $extension;
+                                .'-'
+                                .Str::random(6)
+                                .'-'
+                                .Str::slug($originalName)
+                                .'.'
+                                .$extension;
                         }
                     )
                     ->deleteUploadedFileUsing(function (string $file): void {
-                        Storage::disk('public')->delete($file);
+                        Storage::disk('local')->delete($file);
                     })
                     ->dehydrateStateUsing(function ($state): array {
                         if (blank($state)) {
@@ -129,7 +129,6 @@ class CommentsRelationManager extends RelationManager
                         'image/jpeg',
                         'image/png',
                     ])
-                    ->maxSize(102400) // 100MB max per file
                     ->columnSpanFull(),
             ]);
     }
@@ -167,7 +166,7 @@ class CommentsRelationManager extends RelationManager
 
                         $count = count($state);
 
-                        return $count . ($count === 1 ? ' file' : ' files');
+                        return $count.($count === 1 ? ' file' : ' files');
                     })
                     ->badge(),
 
@@ -194,82 +193,48 @@ class CommentsRelationManager extends RelationManager
                         return $data;
                     }),
             ])
-//             ->recordActions([
-//                 EditAction::make()
-//                     ->label('Edit')
-//                     ->visible(
-//                     fn (TicketComment $record): bool =>
-//                     (int) $record->user_id === (int) auth()->id()
-//         ),
+            ->recordActions([
+                ViewAction::make('view')
+                    ->label('Show')
+                    ->modalHeading('Comment Detail')
+                    ->schema([
+                        TextEntry::make('user.name')
+                            ->label('From')
+                            ->placeholder('System'),
 
-//     DeleteAction::make()
-//         ->visible(
-//             fn (TicketComment $record): bool =>
-//                 (int) $record->user_id === (int) auth()->id()
-//         ),
-// ])
-//             ->defaultSort('created_at', 'desc');
-//     }
+                        TextEntry::make('message')
+                            ->label('Comment / Update')
+                            ->columnSpanFull(),
 
-->recordActions([
-    ViewAction::make('view')
-        ->label('Show')
-        ->modalHeading('Comment Detail')
-        ->schema([
-            TextEntry::make('user.name')
-                ->label('From')
-                ->placeholder('System'),
+                        TextEntry::make('attachments')
+                            ->label('Attachments')
+                            ->html()
+                            ->formatStateUsing(function (
+                                mixed $state,
+                                TicketComment $record
+                            ): HtmlString {
+                                if (blank($state)) {
+                                    return new HtmlString('No files');
+                                }
 
-            TextEntry::make('message')
-                ->label('Comment / Update')
-                ->columnSpanFull(),
+                                if (is_string($state)) {
+                                    $decoded = json_decode($state, true);
 
-            // TextEntry::make('attachments')
-            //     ->label('Attachments')
-            //     ->formatStateUsing(function ($state): string {
-            //         if (blank($state)) {
-            //             return 'No files';
-            //         }
+                                    $state = is_array($decoded)
+                                        ? $decoded
+                                        : [$state];
+                                }
 
-            //         if (is_string($state)) {
-            //             $decoded = json_decode($state, true);
+                                $links = collect($state)
+                                    ->filter()
+                                    ->values()
+                                    ->map(function (string $file, int $attachmentIndex) use ($record): string {
+                                        $url = route(
+                                            'ticket-comments.attachments.download',
+                                            [$record, $attachmentIndex]
+                                        );
 
-            //             $state = is_array($decoded)
-            //                 ? $decoded
-            //                 : [$state];
-            //         }
-
-            //         $count = count($state);
-
-            //         return $count . ($count === 1 ? ' file' : ' files');
-            //     }),
-
-            // attach to view modal, display attachments as links
-
-            TextEntry::make('attachments')
-    ->label('Attachments')
-    ->html()
-    ->formatStateUsing(function (mixed $state): HtmlString {
-        if (blank($state)) {
-            return new HtmlString('No files');
-        }
-
-        if (is_string($state)) {
-            $decoded = json_decode($state, true);
-
-            $state = is_array($decoded)
-                ? $decoded
-                : [$state];
-        }
-
-        $links = collect($state)
-            ->filter()
-            ->map(function (string $file): string {
-                $path = ltrim($file, '/');
-
-                $url = url(Storage::disk('public')->url($path));
-
-                return '<a href="' . e($url) . '"
+                                        return '<a href="'.e($url).'"
                     target="_blank"
                     rel="noopener noreferrer"
                     style="
@@ -277,36 +242,34 @@ class CommentsRelationManager extends RelationManager
                         font-weight: 600;
                         text-decoration: underline;
                     ">'
-                    . e(basename($file)) .
-                '</a>';
-            })
-            ->implode('<br>');
+                                            .e(basename($file)).
+                                        '</a>';
+                                    })
+                                    ->implode('<br>');
 
-        return new HtmlString($links ?: 'No files');
-    })
-    ->columnSpanFull(),
+                                return new HtmlString($links ?: 'No files');
+                            })
+                            ->columnSpanFull(),
 
-            // end attach to view modal, display attachments as links
+                        // end attach to view modal, display attachments as links
 
-            TextEntry::make('created_at')
-                ->label('Date & Time')
-                ->dateTime('d M Y H:i'),
-        ]),
+                        TextEntry::make('created_at')
+                            ->label('Date & Time')
+                            ->dateTime('d M Y H:i'),
+                    ]),
 
-    EditAction::make()
-        ->label('Edit')
-        ->visible(
-            fn (TicketComment $record): bool =>
-                (int) $record->user_id === (int) auth()->id()
-        ),
+                EditAction::make()
+                    ->label('Edit')
+                    ->visible(
+                        fn (TicketComment $record): bool => (int) $record->user_id === (int) auth()->id()
+                    ),
 
-    DeleteAction::make()
-        ->visible(
-            fn (TicketComment $record): bool =>
-                (int) $record->user_id === (int) auth()->id()
-        ),
-])
-->recordAction('view')
-->defaultSort('created_at', 'desc');
+                DeleteAction::make()
+                    ->visible(
+                        fn (TicketComment $record): bool => (int) $record->user_id === (int) auth()->id()
+                    ),
+            ])
+            ->recordAction('view')
+            ->defaultSort('created_at', 'desc');
     }
 }

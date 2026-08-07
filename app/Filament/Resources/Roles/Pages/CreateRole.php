@@ -36,8 +36,7 @@ class CreateRole extends CreateRecord
                 === 'system-admin'
         ) {
             throw ValidationException::withMessages([
-                'code' =>
-                    'Kode system-admin dilindungi dan tidak dapat digunakan.',
+                'code' => 'Kode system-admin dilindungi dan tidak dapat digunakan.',
             ]);
         }
 

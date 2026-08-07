@@ -2,13 +2,12 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\MeetingBookings\MeetingBookingResource;
 use App\Filament\Resources\Reminders\ReminderResource;
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
-use App\Filament\Resources\MeetingBookings\MeetingBookingResource;
 use App\Models\MeetingBooking;
 use App\Models\MeetingRoom;
-use App\Models\Reminder;
 use BackedEnum;
 use Carbon\CarbonInterface;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -31,7 +30,7 @@ class Dashboard extends BaseDashboard
 
     public function canViewStatistics(): bool
     {
-        return auth()->user()?->hasRole('superadmin') === true;
+        return auth()->user()?->hasRole('system-admin') === true;
     }
 
     public function getDashboardData(): array
@@ -44,9 +43,9 @@ class Dashboard extends BaseDashboard
         $ticketsQuery = TicketResource::getEloquentQuery();
         $workTasksQuery = WorkTaskResource::getEloquentQuery();
         $remindersQuery = ReminderResource::getEloquentQuery()
-    ->with([
-        'employee',
-        'department',
+            ->with([
+                'employee',
+                'department',
             ]);
 
         $openTicketStatuses = [
@@ -162,14 +161,12 @@ class Dashboard extends BaseDashboard
 
         $myMeetingsToday = (clone $todayMeetingQuery)
             ->where(
-                fn ($query) =>
-                    $query
-                        ->where('organizer_id', $userId)
-                        ->orWhereHas(
-                            'participants',
-                            fn ($participantQuery) =>
-                                $participantQuery->whereKey($userId)
-                        )
+                fn ($query) => $query
+                    ->where('organizer_id', $userId)
+                    ->orWhereHas(
+                        'participants',
+                        fn ($participantQuery) => $participantQuery->whereKey($userId)
+                    )
             )
             ->orderBy('start_at')
             ->limit(5)
@@ -231,8 +228,7 @@ class Dashboard extends BaseDashboard
             'workTasksUrl' => WorkTaskResource::getUrl('index'),
             'remindersUrl' => ReminderResource::getUrl('index'),
             'meetingCalendarUrl' => MeetingRoomCalendar::getUrl(),
-            'meetingBookingsUrl' =>
-                MeetingBookingResource::getUrl('index'),
+            'meetingBookingsUrl' => MeetingBookingResource::getUrl('index'),
         ];
     }
 

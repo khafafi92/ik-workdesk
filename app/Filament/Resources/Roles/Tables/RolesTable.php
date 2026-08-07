@@ -50,14 +50,12 @@ class RolesTable
             ->recordActions([
                 EditAction::make()
                     ->visible(
-                        fn (Role $record): bool =>
-                            RoleResource::canEdit($record)
+                        fn (Role $record): bool => RoleResource::canEdit($record)
                     ),
 
                 DeleteAction::make()
                     ->visible(
-                        fn (Role $record): bool =>
-                            RoleResource::canDelete($record)
+                        fn (Role $record): bool => RoleResource::canDelete($record)
                     )
                     ->before(function (Role $record): void {
                         abort_unless(

@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\WorkTasks\Pages;
 
-use App\Filament\Resources\WorkTasks\WorkTaskResource;
 use App\Filament\Resources\Tickets\TicketResource;
+use App\Filament\Resources\WorkTasks\WorkTaskResource;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -29,8 +29,7 @@ class EditWorkTask extends EditRecord
 
             DeleteAction::make()
                 ->visible(
-                    fn (): bool =>
-                        WorkTaskResource::canDelete($this->record)
+                    fn (): bool => WorkTaskResource::canDelete($this->record)
                 )
                 ->before(function (): void {
                     abort_unless(

@@ -995,3 +995,292 @@
         font-size: 8px;
     }
 }
+
+/* Compact dashboard overview, aligned with the Filament dashboard. */
+.ik-compact-overview {
+    display: grid;
+    gap: 12px;
+}
+
+.ik-compact-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.ik-compact-card {
+    overflow: hidden;
+    border: 1px solid var(--mn-border);
+    border-radius: var(--mn-radius);
+    background: var(--mn-surface);
+    box-shadow: var(--mn-shadow-xs);
+}
+
+.ik-compact-card-heading,
+.ik-compact-panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--mn-border-light);
+}
+
+.ik-compact-card-heading {
+    min-height: 38px;
+    padding: 8px 14px;
+    color: var(--mn-text);
+    font-size: 12px;
+}
+
+.ik-compact-card-heading a,
+.ik-compact-actions a {
+    color: var(--mn-primary);
+    font-size: 10px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.ik-compact-metrics {
+    display: grid;
+}
+
+.ik-compact-metrics--six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.ik-compact-metrics--five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+
+.ik-compact-metrics > div {
+    min-width: 0;
+    padding: 10px 12px;
+    border-right: 1px solid var(--mn-border-light);
+}
+
+.ik-compact-metrics > div:last-child { border-right: 0; }
+
+.ik-compact-metrics strong,
+.ik-compact-metrics span {
+    display: block;
+}
+
+.ik-compact-metrics strong {
+    color: var(--mn-text);
+    font-size: 16px;
+    line-height: 1.2;
+}
+
+.ik-compact-metrics span {
+    overflow: hidden;
+    margin-top: 3px;
+    color: var(--mn-text-secondary);
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ik-compact-panel-heading {
+    min-height: 54px;
+    padding: 10px 16px;
+}
+
+.ik-compact-title {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+}
+
+.ik-compact-icon {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    margin-right: 9px;
+    flex: 0 0 auto;
+    place-items: center;
+    border-radius: 7px;
+    color: var(--mn-primary);
+    background: #e5f1fd;
+}
+
+.ik-compact-icon svg {
+    width: 14px;
+    height: 14px;
+}
+
+.ik-compact-title strong,
+.ik-compact-title span {
+    display: block;
+}
+
+.ik-compact-title strong {
+    color: var(--mn-text);
+    font-size: 14px;
+}
+
+.ik-compact-title div > span {
+    margin-top: 2px;
+    color: var(--mn-text-secondary);
+    font-size: 11px;
+}
+
+.ik-compact-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+}
+
+.ik-compact-actions a {
+    padding: 7px 10px;
+    border-radius: 6px;
+}
+
+.ik-compact-actions a:hover,
+.ik-compact-actions .ik-compact-action-primary {
+    background: #e5f1fd;
+}
+
+.ik-compact-meeting-metrics,
+.ik-compact-reminder-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ik-compact-meeting-metrics > div {
+    display: flex;
+    min-width: 0;
+    padding: 12px 16px;
+    align-items: center;
+    gap: 7px;
+    border-right: 1px solid var(--mn-border-light);
+}
+
+.ik-compact-meeting-metrics > div:last-child { border-right: 0; }
+
+.ik-compact-meeting-metrics i {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 auto;
+    border-radius: 999px;
+}
+
+.ik-compact-meeting-metrics i.is-success { background: var(--mn-done); }
+.ik-compact-meeting-metrics i.is-danger { background: var(--mn-stuck); }
+.ik-compact-meeting-metrics i.is-info { background: var(--mn-primary); }
+
+.ik-compact-meeting-metrics strong {
+    color: var(--mn-text);
+    font-size: 16px;
+}
+
+.ik-compact-meeting-metrics span {
+    overflow: hidden;
+    color: var(--mn-text-secondary);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ik-compact-reminder-lane {
+    min-width: 0;
+    border-right: 1px solid var(--mn-border-light);
+}
+
+.ik-compact-reminder-lane:last-child { border-right: 0; }
+
+.ik-compact-lane-heading {
+    display: flex;
+    padding: 9px 14px;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8f9fb;
+    color: var(--mn-text);
+    font-size: 11px;
+}
+
+.ik-compact-lane-heading span {
+    display: grid;
+    min-width: 21px;
+    height: 21px;
+    padding: 0 5px;
+    place-items: center;
+    border-radius: 999px;
+    color: var(--mn-primary);
+    background: #e5f1fd;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.ik-compact-reminder-lane.is-danger .ik-compact-lane-heading span {
+    color: var(--mn-stuck);
+    background: #fdebee;
+}
+
+.ik-compact-list { min-height: 68px; }
+
+.ik-compact-list-item {
+    display: grid;
+    gap: 3px;
+    padding: 9px 14px;
+    border-top: 1px solid #f0f1f3;
+}
+
+.ik-compact-list-item:first-child { border-top: 0; }
+
+.ik-compact-list-item strong {
+    overflow: hidden;
+    color: var(--mn-text);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ik-compact-list-item span,
+.ik-compact-empty {
+    color: var(--mn-text-tertiary);
+    font-size: 10px;
+}
+
+.ik-compact-empty {
+    padding: 18px 14px;
+    text-align: center;
+}
+
+@media (max-width: 900px) {
+    .ik-compact-summary-grid,
+    .ik-compact-reminder-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ik-compact-reminder-lane {
+        border-right: 0;
+        border-bottom: 1px solid var(--mn-border-light);
+    }
+
+    .ik-compact-reminder-lane:last-child { border-bottom: 0; }
+}
+
+@media (max-width: 640px) {
+    .ik-compact-panel-heading {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .ik-compact-actions,
+    .ik-compact-actions a {
+        width: 100%;
+        text-align: center;
+    }
+
+    .ik-compact-metrics {
+        display: flex;
+        overflow-x: auto;
+    }
+
+    .ik-compact-metrics > div { min-width: 86px; }
+
+    .ik-compact-meeting-metrics { grid-template-columns: 1fr; }
+
+    .ik-compact-meeting-metrics > div {
+        border-right: 0;
+        border-bottom: 1px solid var(--mn-border-light);
+    }
+
+    .ik-compact-meeting-metrics > div:last-child { border-bottom: 0; }
+}

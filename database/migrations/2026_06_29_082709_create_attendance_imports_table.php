@@ -10,30 +10,30 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('attendance_imports', function (Blueprint $table) {
-        $table->id();
+    {
+        Schema::create('attendance_imports', function (Blueprint $table) {
+            $table->id();
 
-        $table->foreignId('uploaded_by_user_id')
-            ->nullable()
-            ->constrained('users')
-            ->nullOnDelete();
+            $table->foreignId('uploaded_by_user_id')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
 
-        $table->string('period_name')->nullable();
+            $table->string('period_name')->nullable();
 
-        $table->string('attendance_file_name')->nullable();
-        $table->string('attendance_file_path')->nullable();
+            $table->string('attendance_file_name')->nullable();
+            $table->string('attendance_file_path')->nullable();
 
-        $table->string('work_hour_file_name')->nullable();
-        $table->string('work_hour_file_path')->nullable();
+            $table->string('work_hour_file_name')->nullable();
+            $table->string('work_hour_file_path')->nullable();
 
-        $table->string('status')->default('draft');
-        $table->text('notes')->nullable();
+            $table->string('status')->default('draft');
+            $table->text('notes')->nullable();
 
-        $table->timestamp('processed_at')->nullable();
-        $table->timestamps();
-    });
-}
+            $table->timestamp('processed_at')->nullable();
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

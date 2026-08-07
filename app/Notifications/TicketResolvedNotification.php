@@ -27,10 +27,10 @@ class TicketResolvedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $ticket      = $this->ticket;
-        $viewUrl     = route('filament.admin.resources.service-desk.view', ['record' => $ticket->id]);
+        $ticket = $this->ticket;
+        $viewUrl = route('filament.admin.resources.service-desk.view', ['record' => $ticket->id]);
         $fromAddress = $this->from['address'] ?? config('mail.from.address');
-        $fromName    = $this->from['name']    ?? config('mail.from.name');
+        $fromName = $this->from['name'] ?? config('mail.from.name');
 
         $resolvedAt = $ticket->resolved_at
             ? $ticket->resolved_at->format('d M Y H:i')

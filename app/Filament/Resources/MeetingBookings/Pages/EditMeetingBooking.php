@@ -25,6 +25,10 @@ class EditMeetingBooking extends EditRecord
         $data['duration_hours'] = (string) (
             $start->diffInMinutes($end) / 60
         );
+        $data['participants'] = $this->record
+            ->participants()
+            ->pluck('users.id')
+            ->all();
 
         return $data;
     }
@@ -57,8 +61,7 @@ class EditMeetingBooking extends EditRecord
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(
-                    fn (): bool =>
-                        $this->record->canBeCompleted()
+                    fn (): bool => $this->record->canBeCompleted()
                 )
                 ->requiresConfirmation()
                 ->modalHeading('Finish this meeting?')

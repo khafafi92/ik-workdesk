@@ -96,8 +96,8 @@
 
                     @if (filled($activity->attachments))
                         <div class="ik-collab-files">
-                            @foreach ((array) $activity->attachments as $file)
-                                <a href="{{ url(\Illuminate\Support\Facades\Storage::disk('public')->url($file)) }}" target="_blank" rel="noopener noreferrer">
+                            @foreach (array_values((array) $activity->attachments) as $attachmentIndex => $file)
+                                <a href="{{ route('ticket-comments.attachments.download', [$activity, $attachmentIndex]) }}" target="_blank" rel="noopener noreferrer">
                                     {{ basename($file) }}
                                 </a>
                             @endforeach

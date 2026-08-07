@@ -15,8 +15,7 @@ class EditVehicle extends EditRecord
         return [
             DeleteAction::make()
                 ->visible(
-                    fn (): bool =>
-                        ! $this->record->bookings()->exists()
+                    fn (): bool => ! $this->record->bookings()->exists()
                 ),
         ];
     }

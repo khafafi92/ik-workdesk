@@ -6,8 +6,8 @@ use App\Models\Vehicle;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
@@ -35,15 +35,12 @@ class VehicleBookingForm
                         ->relationship(
                             name: 'vehicle',
                             titleAttribute: 'name',
-                            modifyQueryUsing:
-                                fn (Builder $query): Builder =>
-                                    $query
-                                        ->where('is_active', true)
-                                        ->orderBy('name')
+                            modifyQueryUsing: fn (Builder $query): Builder => $query
+                                ->where('is_active', true)
+                                ->orderBy('name')
                         )
                         ->getOptionLabelFromRecordUsing(
-                            fn (Vehicle $vehicle): string =>
-                                $vehicle->name
+                            fn (Vehicle $vehicle): string => $vehicle->name
                                 .' · '
                                 .$vehicle->plate_number
                                 .' · '
@@ -51,8 +48,7 @@ class VehicleBookingForm
                                 .' people'
                         )
                         ->default(
-                            fn () =>
-                                request()->integer('vehicle_id')
+                            fn () => request()->integer('vehicle_id')
                                 ?: null
                         )
                         ->searchable()
@@ -68,8 +64,7 @@ class VehicleBookingForm
                         ->displayFormat('d/m/Y')
                         ->minDate(today())
                         ->default(
-                            fn () =>
-                                request()->query('start_at')
+                            fn () => request()->query('start_at')
                                     ? Carbon::parse(
                                         request()->query('start_at')
                                     )->toDateString()
@@ -84,8 +79,7 @@ class VehicleBookingForm
                         ->seconds(false)
                         ->minutesStep(15)
                         ->default(
-                            fn (): string =>
-                                request()->query('start_at')
+                            fn (): string => request()->query('start_at')
                                     ? Carbon::parse(
                                         request()->query('start_at')
                                     )->format('H:i')
@@ -164,14 +158,12 @@ class VehicleBookingForm
                     Placeholder::make('requester_name')
                         ->label('Requester')
                         ->content(
-                            fn (): string =>
-                                auth()->user()?->name ?? '-'
+                            fn (): string => auth()->user()?->name ?? '-'
                         ),
                     Placeholder::make('department_name')
                         ->label('Department')
                         ->content(
-                            fn (): string =>
-                                auth()->user()?->employee?->department?->name
+                            fn (): string => auth()->user()?->employee?->department?->name
                                 ?? '-'
                         ),
                 ])

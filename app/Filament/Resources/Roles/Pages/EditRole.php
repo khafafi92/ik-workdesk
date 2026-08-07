@@ -38,8 +38,7 @@ class EditRole extends EditRecord
                 === 'system-admin'
         ) {
             throw ValidationException::withMessages([
-                'code' =>
-                    'Kode system-admin dilindungi dan tidak dapat digunakan.',
+                'code' => 'Kode system-admin dilindungi dan tidak dapat digunakan.',
             ]);
         }
 
@@ -90,10 +89,9 @@ class EditRole extends EditRecord
         return [
             DeleteAction::make()
                 ->visible(
-                    fn (): bool =>
-                        RoleResource::canDelete(
-                            $this->record
-                        )
+                    fn (): bool => RoleResource::canDelete(
+                        $this->record
+                    )
                 )
                 ->before(function (): void {
                     abort_unless(

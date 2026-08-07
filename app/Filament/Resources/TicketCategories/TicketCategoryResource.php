@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources\TicketCategories;
+
 use App\Filament\Resources\Concerns\AdminOnlyResource;
 use App\Filament\Resources\TicketCategories\Pages\CreateTicketCategory;
 use App\Filament\Resources\TicketCategories\Pages\EditTicketCategory;
@@ -17,6 +18,7 @@ use Filament\Tables\Table;
 class TicketCategoryResource extends Resource
 {
     use AdminOnlyResource;
+
     protected static ?string $model = TicketCategory::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;

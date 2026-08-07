@@ -108,7 +108,7 @@ class TicketCommentObserver
 
         foreach ($recipients as $user) {
             $mailerName = MailerResolver::resolveMailerName($user->email);
-            $from       = MailerResolver::fromAddress($mailerName);
+            $from = MailerResolver::fromAddress($mailerName);
             $notification = new TicketCommentNotification(
                 $comment,
                 $mailerName,

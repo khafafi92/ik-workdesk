@@ -149,6 +149,45 @@ class MeetingBookingTest extends TestCase
         ]);
     }
 
+    public function test_booking_rejects_participants_above_room_capacity(): void
+    {
+        $organizer = User::factory()->create();
+        $participants = User::factory()->count(8)->create();
+        $room = $this->createRoom();
+
+        $this->expectException(ValidationException::class);
+
+        app(MeetingBookingService::class)->create([
+            'meeting_room_id' => $room->id,
+            'organizer_id' => $organizer->id,
+            'participants' => $participants->modelKeys(),
+            'title' => 'Over capacity meeting',
+            'start_at' => '2026-08-03 13:00:00',
+            'end_at' => '2026-08-03 14:00:00',
+        ]);
+    }
+
+    public function test_booking_saves_participants_within_room_capacity(): void
+    {
+        $organizer = User::factory()->create();
+        $participants = User::factory()->count(7)->create();
+        $room = $this->createRoom();
+
+        $booking = app(MeetingBookingService::class)->create([
+            'meeting_room_id' => $room->id,
+            'organizer_id' => $organizer->id,
+            'participants' => $participants->modelKeys(),
+            'title' => 'Full capacity meeting',
+            'start_at' => '2026-08-03 13:00:00',
+            'end_at' => '2026-08-03 14:00:00',
+        ]);
+
+        $this->assertEqualsCanonicalizing(
+            $participants->modelKeys(),
+            $booking->participants()->pluck('users.id')->all()
+        );
+    }
+
     public function test_room_name_can_change_without_losing_booking(): void
     {
         $organizer = User::factory()->create();

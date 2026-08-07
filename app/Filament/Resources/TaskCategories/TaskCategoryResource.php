@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources\TaskCategories;
+
 use App\Filament\Resources\Concerns\AdminOnlyResource;
 use App\Filament\Resources\TaskCategories\Pages\CreateTaskCategory;
 use App\Filament\Resources\TaskCategories\Pages\EditTaskCategory;
@@ -17,6 +18,7 @@ use Filament\Tables\Table;
 class TaskCategoryResource extends Resource
 {
     use AdminOnlyResource;
+
     protected static ?string $model = TaskCategory::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
@@ -44,11 +46,6 @@ class TaskCategoryResource extends Resource
     {
         return 'Task Categories';
     }
-
-    // public static function getModelLabel(): string
-    // {
-    //     return 'Task Category';
-    // }
 
     public static function getPluralModelLabel(): string
     {

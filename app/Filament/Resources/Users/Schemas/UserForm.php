@@ -4,12 +4,13 @@ namespace App\Filament\Resources\Users\Schemas;
 
 use App\Models\Employee;
 use App\Models\User;
+use App\Services\RoleAssignmentService;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -48,10 +49,9 @@ class UserForm
                                         ->get()
                                         ->mapWithKeys(
                                             fn (Employee $employee): array => [
-                                                $employee->id =>
-                                                    $employee->name
-                                                    . ' - '
-                                                    . (
+                                                $employee->id => $employee->name
+                                                    .' - '
+                                                    .(
                                                         $employee
                                                             ->department
                                                             ?->name
@@ -107,12 +107,10 @@ class UserForm
                             ->password()
                             ->revealable()
                             ->required(
-                                fn (string $operation): bool =>
-                                    $operation === 'create'
+                                fn (string $operation): bool => $operation === 'create'
                             )
                             ->dehydrated(
-                                fn (?string $state): bool =>
-                                    filled($state)
+                                fn (?string $state): bool => filled($state)
                             )
                             ->minLength(8)
                             ->helperText(
@@ -123,12 +121,10 @@ class UserForm
                             ->label('Super Administrator')
                             ->default(false)
                             ->visible(
-                                fn (): bool =>
-                                    auth()->user()?->is_admin === true
+                                fn (): bool => auth()->user()?->is_admin === true
                             )
                             ->dehydrated(
-                                fn (): bool =>
-                                    auth()->user()?->is_admin === true
+                                fn (): bool => auth()->user()?->is_admin === true
                             )
                             ->helperText(
                                 'Hanya Super Administrator yang dapat mengubah status ini.'
@@ -147,22 +143,11 @@ class UserForm
                             ->relationship(
                                 name: 'roles',
                                 titleAttribute: 'name',
-                                modifyQueryUsing:
-                                    function (Builder $query): Builder {
-                                        $query->where('is_active', true);
-
-                                        // User Manager biasa tidak dapat melihat
-                                        // atau memberikan System Administrator.
-                                        if (auth()->user()?->is_admin !== true) {
-                                            $query->where(
-                                                'code',
-                                                '!=',
-                                                'system-admin'
-                                            );
-                                        }
-
-                                        return $query->orderBy('name');
-                                    }
+                                modifyQueryUsing: function (Builder $query): Builder {
+                                    return app(RoleAssignmentService::class)
+                                        ->constrainAssignableRoles($query, auth()->user())
+                                        ->orderBy('name');
+                                }
                             )
                             ->saveRelationshipsUsing(
                                 function (
@@ -171,44 +156,9 @@ class UserForm
                                 ): void {
                                     $actor = auth()->user();
 
-                                    $roleIds = collect($state ?? [])
-                                        ->map(fn ($id): int => (int) $id)
-                                        ->filter()
-                                        ->unique();
-
-                                    /*
-                                     * Non-Super Admin tidak boleh memberikan
-                                     * role system-admin meskipun request dimanipulasi.
-                                     */
-                                    if ($actor?->is_admin !== true) {
-                                        $systemAdminRoleId =
-                                            \App\Models\Role::query()
-                                                ->where(
-                                                    'code',
-                                                    'system-admin'
-                                                )
-                                                ->value('id');
-
-                                        if ($systemAdminRoleId) {
-                                            $roleIds = $roleIds->reject(
-                                                fn (int $id): bool =>
-                                                    $id ===
-                                                    (int) $systemAdminRoleId
-                                            );
-                                        }
-                                    }
-
-                                    /*
-                                     * Hanya role aktif yang dapat diberikan.
-                                     */
-                                    $allowedRoleIds =
-                                        \App\Models\Role::query()
-                                            ->where('is_active', true)
-                                            ->whereIn('id', $roleIds->all())
-                                            ->pluck('id');
-
                                     $record->roles()->sync(
-                                        $allowedRoleIds->all()
+                                        app(RoleAssignmentService::class)
+                                            ->filterAssignableRoleIds($actor, $state ?? [])
                                     );
                                 }
                             )
@@ -233,11 +183,9 @@ class UserForm
                             ->relationship(
                                 name: 'accessibleDepartments',
                                 titleAttribute: 'name',
-                                modifyQueryUsing:
-                                    fn (Builder $query): Builder =>
-                                        $query
-                                            ->where('is_active', true)
-                                            ->orderBy('name')
+                                modifyQueryUsing: fn (Builder $query): Builder => $query
+                                    ->where('is_active', true)
+                                    ->orderBy('name')
                             )
                             ->searchable()
                             ->bulkToggleable()

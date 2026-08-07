@@ -10,7 +10,7 @@ class RequireSuperadmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user()?->hasRole('superadmin')) {
+        if (! $request->user()?->hasRole('system-admin')) {
             return redirect('/panel');
         }
 

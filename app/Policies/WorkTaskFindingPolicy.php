@@ -9,23 +9,19 @@ class WorkTaskFindingPolicy
 {
     public function viewAny(User $user): bool
     {
-        return true;
+        return $this->hasViewPermission($user);
     }
 
     public function view(
         User $user,
         WorkTaskFinding $workTaskFinding
     ): bool {
-        return true;
+        return $this->canAccessFinding($user, $workTaskFinding);
     }
 
     public function create(User $user): bool
     {
-        /*
-         * Department pemilik Work Log akan diperiksa
-         * di FindingsRelationManager.
-         */
-        return true;
+        return $user->hasPermission('worklogs.manage');
     }
 
     public function update(
@@ -38,15 +34,15 @@ class WorkTaskFindingPolicy
             $workTaskFinding->workTask?->department_id
         );
 
-        $isRequester =
-            (int) $user->employee_id ===
+        $isRequester = (int) $user->employee?->id ===
             (int) $workTaskFinding->workTask?->ticket?->employee_id;
 
         /*
          * Reviewer boleh mengelola finding.
          * Requester boleh mengisi response melalui halaman ticket.
          */
-        return $isReviewerDepartment || $isRequester;
+        return $this->canAccessFinding($user, $workTaskFinding)
+            && ($isReviewerDepartment || $isRequester);
     }
 
     public function delete(
@@ -55,9 +51,10 @@ class WorkTaskFindingPolicy
     ): bool {
         $workTaskFinding->loadMissing('workTask');
 
-        return $user->belongsToDepartment(
-            $workTaskFinding->workTask?->department_id
-        );
+        return $user->hasPermission('worklogs.manage')
+            && $user->belongsToDepartment(
+                $workTaskFinding->workTask?->department_id
+            );
     }
 
     public function restore(
@@ -72,5 +69,63 @@ class WorkTaskFindingPolicy
         WorkTaskFinding $workTaskFinding
     ): bool {
         return false;
+    }
+
+    private function hasViewPermission(User $user): bool
+    {
+        return $user->hasPermission('worklogs.view')
+            || $user->hasPermission('worklogs.manage')
+            || $user->hasPermission('tickets.view')
+            || $user->hasPermission('tickets.manage');
+    }
+
+    private function canAccessFinding(
+        User $user,
+        WorkTaskFinding $finding
+    ): bool {
+        if (! $this->hasViewPermission($user)) {
+            return false;
+        }
+
+        if ($user->is_admin || $user->hasRole('system-admin')) {
+            return true;
+        }
+
+        $finding->loadMissing('workTask.ticket.assignments');
+        $workTask = $finding->workTask;
+
+        if (! $workTask) {
+            return false;
+        }
+
+        if (
+            $user->employee
+            && (int) $workTask->ticket?->employee_id ===
+                (int) $user->employee->id
+        ) {
+            return true;
+        }
+
+        $departmentIds = $user->accessibleDepartmentIds();
+
+        return in_array((int) $workTask->department_id, $departmentIds, true)
+            || in_array(
+                (int) $workTask->ticket?->requester_department_id,
+                $departmentIds,
+                true
+            )
+            || in_array(
+                (int) $workTask->ticket?->handler_department_id,
+                $departmentIds,
+                true
+            )
+            || $workTask->ticket?->assignments
+                ->contains(
+                    fn ($assignment): bool => in_array(
+                        (int) $assignment->department_id,
+                        $departmentIds,
+                        true
+                    )
+                ) === true;
     }
 }

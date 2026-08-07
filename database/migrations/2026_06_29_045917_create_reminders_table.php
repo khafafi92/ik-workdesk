@@ -10,33 +10,33 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('reminders', function (Blueprint $table) {
-        $table->id();
+    {
+        Schema::create('reminders', function (Blueprint $table) {
+            $table->id();
 
-        $table->foreignId('employee_id')
-            ->nullable()
-            ->constrained('employees')
-            ->nullOnDelete();
+            $table->foreignId('employee_id')
+                ->nullable()
+                ->constrained('employees')
+                ->nullOnDelete();
 
-        $table->foreignId('department_id')
-            ->nullable()
-            ->constrained('departments')
-            ->nullOnDelete();
+            $table->foreignId('department_id')
+                ->nullable()
+                ->constrained('departments')
+                ->nullOnDelete();
 
-        $table->string('reminder_type')->default('general');
-        $table->string('title');
-        $table->text('description')->nullable();
+            $table->string('reminder_type')->default('general');
+            $table->string('title');
+            $table->text('description')->nullable();
 
-        $table->timestamp('reminder_at');
-        $table->string('status')->default('pending');
+            $table->timestamp('reminder_at');
+            $table->string('status')->default('pending');
 
-        $table->boolean('is_notified')->default(false);
-        $table->timestamp('notified_at')->nullable();
+            $table->boolean('is_notified')->default(false);
+            $table->timestamp('notified_at')->nullable();
 
-        $table->timestamps();
-    });
-}
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

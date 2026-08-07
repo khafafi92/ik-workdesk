@@ -3,17 +3,18 @@
 namespace App\Filament\Resources\MeetingBookings\Schemas;
 
 use App\Models\MeetingRoom;
+use App\Models\User;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 
 class MeetingBookingForm
 {
@@ -36,15 +37,12 @@ class MeetingBookingForm
                         ->relationship(
                             name: 'room',
                             titleAttribute: 'name',
-                            modifyQueryUsing:
-                                fn (Builder $query): Builder =>
-                                    $query
-                                        ->where('is_active', true)
-                                        ->orderBy('name')
+                            modifyQueryUsing: fn (Builder $query): Builder => $query
+                                ->where('is_active', true)
+                                ->orderBy('name')
                         )
                         ->getOptionLabelFromRecordUsing(
-                            fn (MeetingRoom $room): string =>
-                                $room->name
+                            fn (MeetingRoom $room): string => $room->name
                                 .' · '
                                 .($room->location ?: 'Location not set')
                                 .' · '
@@ -54,8 +52,7 @@ class MeetingBookingForm
                         ->searchable()
                         ->preload()
                         ->default(
-                            fn () =>
-                                request()->integer('meeting_room_id')
+                            fn () => request()->integer('meeting_room_id')
                                 ?: null
                         )
                         ->required(),
@@ -66,8 +63,7 @@ class MeetingBookingForm
                         ->displayFormat('d/m/Y')
                         ->minDate(today())
                         ->default(
-                            fn () =>
-                                request()->query('start_at')
+                            fn () => request()->query('start_at')
                                     ? Carbon::parse(
                                         request()->query('start_at')
                                     )->toDateString()
@@ -177,17 +173,15 @@ class MeetingBookingForm
 
                     Select::make('participants')
                         ->label('Participants')
-                        ->relationship(
-                            name: 'participants',
-                            titleAttribute: 'name',
-                            modifyQueryUsing:
-                                fn (Builder $query): Builder =>
-                                    $query
-                                        ->whereKeyNot(auth()->id())
-                                        ->orderBy('name')
+                        ->options(
+                            fn (): array => User::query()
+                                ->whereKeyNot(auth()->id())
+                                ->orderBy('name')
+                                ->pluck('name', 'id')
+                                ->all()
                         )
                         ->multiple()
-                        ->searchable(['name', 'email'])
+                        ->searchable()
                         ->preload()
                         ->columnSpanFull(),
 
@@ -225,14 +219,12 @@ class MeetingBookingForm
                     Placeholder::make('organizer_name')
                         ->label('Organizer')
                         ->content(
-                            fn (): string =>
-                                auth()->user()?->name ?? '-'
+                            fn (): string => auth()->user()?->name ?? '-'
                         ),
                     Placeholder::make('department_name')
                         ->label('Department')
                         ->content(
-                            fn (): string =>
-                                auth()->user()?->employee?->department?->name
+                            fn (): string => auth()->user()?->employee?->department?->name
                                 ?? '-'
                         ),
                 ])

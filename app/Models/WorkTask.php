@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\DocumentNumberGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Validation\ValidationException;
@@ -31,199 +32,186 @@ class WorkTask extends Model
         'due_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
-   
 
     // pengganti booted
 
     protected static function booted(): void
-{
-    static::saving(function (WorkTask $task): void {
-        /*
-        |--------------------------------------------------------------------------
-        | Otomatisasi Work Log
-        |--------------------------------------------------------------------------
-        */
+    {
+        static::saving(function (WorkTask $task): void {
+            /*
+            |--------------------------------------------------------------------------
+            | Otomatisasi Work Log
+            |--------------------------------------------------------------------------
+            */
 
-        if ($task->status === 'planned') {
-            $task->progress_percent = 0;
-        }
-
-        if (
-            in_array($task->status, ['in_progress', 'done'], true)
-            && empty($task->start_at)
-        ) {
-            $task->start_at = now();
-        }
-
-        if (
-            $task->status === 'in_progress'
-            && (int) $task->progress_percent === 0
-        ) {
-            $task->progress_percent = 10;
-        }
-
-        if ($task->status === 'done') {
-            $task->progress_percent = 100;
-
-            if (empty($task->completed_at)) {
-                $task->completed_at = now();
-            }
-        }
-
-        if (
-            $task->isDirty('status')
-            && $task->status !== 'done'
-        ) {
-            $task->completed_at = null;
-        }
-
-        if (
-            $task->isDirty('status')
-            && $task->status === 'done'
-            && ! $task->canBeCompletedBy(auth()->user())
-        ) {
-            throw ValidationException::withMessages([
-                'status' => 'Status Done hanya dapat ditetapkan oleh pihak yang berwenang menyelesaikan pekerjaan.',
-            ]);
-        }
-    });
-
-    static::created(function (WorkTask $task): void {
-        $task->recordActivity(
-            'work_log_created',
-            "Work Log {$task->task_no} created for "
-                . ($task->department?->name ?? 'department')
-                . "."
-        );
-    });
-
-    static::updated(function (WorkTask $task): void {
-        $trackedFields = [
-            'employee_id' => 'pic_change',
-            'status' => 'status_change',
-            'progress_percent' => 'progress_change',
-            'due_at' => 'due_date_change',
-            'notes' => 'notes_change',
-        ];
-
-        foreach ($trackedFields as $field => $activityType) {
-            if (! $task->wasChanged($field)) {
-                continue;
+            if ($task->status === 'planned') {
+                $task->progress_percent = 0;
             }
 
-            // Perubahan status dapat mengatur progress secara otomatis.
-            // Catat sebagai satu aktivitas status agar notifikasi tidak ganda.
             if (
-                $field === 'progress_percent'
-                && $task->wasChanged('status')
+                in_array($task->status, ['in_progress', 'done'], true)
+                && empty($task->start_at)
             ) {
-                continue;
+                $task->start_at = now();
             }
 
-            $previous = $task->getRawOriginal($field);
-            $current = $task->getAttribute($field);
-
-            $task->recordActivity(
-                $activityType,
-                $task->activityMessage($field, $previous, $current),
-                [
-                    'field' => $field,
-                    'previous' => $previous,
-                    'current' => $current,
-                ]
-            );
-        }
-    });
-
-    static::saved(function (WorkTask $task): void {
-        if (! $task->ticket_id) {
-            return;
-        }
-
-        $ticket = $task->ticket()->first();
-
-        if (! $ticket) {
-            return;
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Collaborative / Multi-Department Request
-        |--------------------------------------------------------------------------
-        |
-        | Status collaborative dihitung dari seluruh required Work Log.
-        |
-        */
-
-        if ($ticket->workflow_type === 'collaborative') {
             if (
-                $task->wasChanged('status')
+                $task->status === 'in_progress'
+                && (int) $task->progress_percent === 0
+            ) {
+                $task->progress_percent = 10;
+            }
+
+            if ($task->status === 'done') {
+                $task->progress_percent = 100;
+
+                if (empty($task->completed_at)) {
+                    $task->completed_at = now();
+                }
+            }
+
+            if (
+                $task->isDirty('status')
+                && $task->status !== 'done'
+            ) {
+                $task->completed_at = null;
+            }
+
+            if (
+                $task->isDirty('status')
                 && $task->status === 'done'
-                && $task->isCollaborativeLeadTask()
+                && ! $task->canBeCompletedBy(auth()->user())
             ) {
-                $task->completeCollaborativeTasks();
+                throw ValidationException::withMessages([
+                    'status' => 'Status Done hanya dapat ditetapkan oleh pihak yang berwenang menyelesaikan pekerjaan.',
+                ]);
+            }
+        });
+
+        static::created(function (WorkTask $task): void {
+            $task->recordActivity(
+                'work_log_created',
+                "Work Log {$task->task_no} created for "
+                    .($task->department?->name ?? 'department')
+                    .'.'
+            );
+        });
+
+        static::updated(function (WorkTask $task): void {
+            $trackedFields = [
+                'employee_id' => 'pic_change',
+                'status' => 'status_change',
+                'progress_percent' => 'progress_change',
+                'due_at' => 'due_date_change',
+                'notes' => 'notes_change',
+            ];
+
+            foreach ($trackedFields as $field => $activityType) {
+                if (! $task->wasChanged($field)) {
+                    continue;
+                }
+
+                // Perubahan status dapat mengatur progress secara otomatis.
+                // Catat sebagai satu aktivitas status agar notifikasi tidak ganda.
+                if (
+                    $field === 'progress_percent'
+                    && $task->wasChanged('status')
+                ) {
+                    continue;
+                }
+
+                $previous = $task->getRawOriginal($field);
+                $current = $task->getAttribute($field);
+
+                $task->recordActivity(
+                    $activityType,
+                    $task->activityMessage($field, $previous, $current),
+                    [
+                        'field' => $field,
+                        'previous' => $previous,
+                        'current' => $current,
+                    ]
+                );
+            }
+        });
+
+        static::saved(function (WorkTask $task): void {
+            if (! $task->ticket_id) {
+                return;
             }
 
-            $ticket->syncCollaborativeStatus();
+            $ticket = $task->ticket()->first();
 
-            return;
-        }
+            if (! $ticket) {
+                return;
+            }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Single Department Request
-        |--------------------------------------------------------------------------
-        */
+            /*
+            |--------------------------------------------------------------------------
+            | Collaborative / Multi-Department Request
+            |--------------------------------------------------------------------------
+            |
+            | Status collaborative dihitung dari seluruh required Work Log.
+            |
+            */
 
-        $ticketStatus = match ($task->status) {
-            'planned' => 'open',
-            'in_progress' => 'in_progress',
-            'hold' => 'waiting_user',
-            'done' => 'resolved',
-            'cancel' => 'cancel',
-            default => 'open',
-        };
+            if ($ticket->workflow_type === 'collaborative') {
+                if (
+                    $task->wasChanged('status')
+                    && $task->status === 'done'
+                    && $task->isCollaborativeLeadTask()
+                ) {
+                    $task->completeCollaborativeTasks();
+                }
 
-        $ticketData = [
-            'status' => $ticketStatus,
-        ];
+                $ticket->syncCollaborativeStatus();
 
-        if ($task->status === 'done') {
-            $ticketData['resolved_at'] =
-                $task->completed_at ?? now();
+                return;
+            }
 
-            $ticketData['resolution_notes'] =
-                filled($task->notes)
-                    ? $task->notes
-                    : null;
-        } else {
-            $ticketData['resolved_at'] = null;
-            $ticketData['resolution_notes'] = null;
-        }
+            /*
+            |--------------------------------------------------------------------------
+            | Single Department Request
+            |--------------------------------------------------------------------------
+            */
 
-        $ticket->update($ticketData);
-    });
-}
+            $ticketStatus = match ($task->status) {
+                'planned' => 'open',
+                'in_progress' => 'in_progress',
+                'hold' => 'waiting_user',
+                'done' => 'resolved',
+                'cancel' => 'cancel',
+                default => 'open',
+            };
+
+            $ticketData = [
+                'status' => $ticketStatus,
+            ];
+
+            if ($task->status === 'done') {
+                $ticketData['resolved_at'] =
+                    $task->completed_at ?? now();
+
+                $ticketData['resolution_notes'] =
+                    filled($task->notes)
+                        ? $task->notes
+                        : null;
+            } else {
+                $ticketData['resolved_at'] = null;
+                $ticketData['resolution_notes'] = null;
+            }
+
+            $ticket->update($ticketData);
+        });
+    }
 
     // end of pengganti booted
 
-
     public static function generateTaskNo(): string
     {
-        $prefix = 'TSK-' . now()->format('Ym') . '-';
+        $prefix = 'TSK-'.now()->format('Ym').'-';
 
-        $lastTask = static::where('task_no', 'like', $prefix . '%')
-            ->orderByDesc('task_no')
-            ->first();
-
-        $nextNumber = 1;
-
-        if ($lastTask) {
-            $lastNumber = (int) substr($lastTask->task_no, -4);
-            $nextNumber = $lastNumber + 1;
-        }
-
-        return $prefix . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        return app(DocumentNumberGenerator::class)->next($prefix);
     }
 
     public function ticket()
@@ -245,10 +233,11 @@ class WorkTask extends Model
     {
         return $this->belongsTo(TaskCategory::class, 'task_category_id');
     }
+
     public function findings(): HasMany
     {
-    return $this->hasMany(WorkTaskFinding::class)
-        ->latest();
+        return $this->hasMany(WorkTaskFinding::class)
+            ->latest();
     }
 
     public function activities(): HasMany
@@ -318,7 +307,7 @@ class WorkTask extends Model
 
         if (
             $user->is_admin === true
-            || $user->hasRole('super-admin', 'system-admin')
+            || $user->hasRole('system-admin')
         ) {
             return true;
         }

@@ -57,12 +57,6 @@ class WorkTasksTable
                     ->label('Request Category')
                     ->searchable(),
 
-                // TextColumn::make('category.name')
-                //     ->label('Task Category')
-                //     ->searchable()
-                //     ->placeholder('-')
-                //     ->toggleable(),
-
                 TextColumn::make('employee.name')
                     ->label('PIC')
                     ->searchable(),
@@ -113,14 +107,12 @@ class WorkTasksTable
 
                 EditAction::make()
                     ->visible(
-                        fn ($record): bool =>
-                            WorkTaskResource::canEdit($record)
+                        fn ($record): bool => WorkTaskResource::canEdit($record)
                     ),
 
                 DeleteAction::make()
                     ->visible(
-                        fn ($record): bool =>
-                            WorkTaskResource::canDelete($record)
+                        fn ($record): bool => WorkTaskResource::canDelete($record)
                     )
                     ->before(function ($record): void {
                         abort_unless(
@@ -134,8 +126,7 @@ class WorkTasksTable
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->visible(
-                            fn (): bool =>
-                                WorkTaskResource::canDeleteAny()
+                            fn (): bool => WorkTaskResource::canDeleteAny()
                         )
                         ->before(function (): void {
                             abort_unless(

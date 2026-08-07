@@ -29,8 +29,7 @@ class ReminderCalendarWidget extends Widget
             ->orderBy('reminder_at')
             ->get()
             ->groupBy(
-                fn ($reminder) =>
-                    $reminder->reminder_at->format('Y-m-d')
+                fn ($reminder) => $reminder->reminder_at->format('Y-m-d')
             );
 
         $weeks = [];
@@ -44,11 +43,9 @@ class ReminderCalendarWidget extends Widget
 
                 $week[] = [
                     'date' => $day->copy(),
-                    'isCurrentMonth' =>
-                        $day->month === $currentMonth->month,
+                    'isCurrentMonth' => $day->month === $currentMonth->month,
                     'isToday' => $day->isToday(),
-                    'reminders' =>
-                        $reminders->get($dateKey, collect()),
+                    'reminders' => $reminders->get($dateKey, collect()),
                 ];
 
                 $day->addDay();

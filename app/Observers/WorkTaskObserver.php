@@ -31,14 +31,13 @@ class WorkTaskObserver
             )
             ->get()
             ->filter(
-                fn (User $user): bool =>
-                    $user->hasPermission('worklogs.view')
+                fn (User $user): bool => $user->hasPermission('worklogs.view')
                     || $user->hasPermission('worklogs.manage')
             );
 
         foreach ($recipients as $user) {
             $mailerName = MailerResolver::resolveMailerName($user->email);
-            $from       = MailerResolver::fromAddress($mailerName);
+            $from = MailerResolver::fromAddress($mailerName);
             $notification = new WorkTaskAssignedNotification(
                 $workTask,
                 $mailerName,

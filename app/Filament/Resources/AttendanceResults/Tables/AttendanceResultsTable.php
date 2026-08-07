@@ -13,15 +13,15 @@ class AttendanceResultsTable
     public static function configure(Table $table): Table
     {
         return $table
-    ->defaultPaginationPageOption(25)
-    ->paginationPageOptions([
-        10,
-        25,
-        50,
-        100,
-    ])
-    ->searchOnBlur()
-    ->defaultSort('attendance_date', 'desc')
+            ->defaultPaginationPageOption(25)
+            ->paginationPageOptions([
+                10,
+                25,
+                50,
+                100,
+            ])
+            ->searchOnBlur()
+            ->defaultSort('attendance_date', 'desc')
             ->columns([
                 TextColumn::make('attendance_import_id')
                     ->numeric()

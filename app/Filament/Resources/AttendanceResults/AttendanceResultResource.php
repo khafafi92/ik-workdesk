@@ -49,41 +49,41 @@ class AttendanceResultResource extends Resource
     }
 
     public static function canCreate(): bool
-{
-    return auth()->user()
-        ?->hasPermission('attendance.manage') === true;
-}
+    {
+        return auth()->user()
+            ?->hasPermission('attendance.manage') === true;
+    }
 
-public static function canDeleteAny(): bool
-{
-    return auth()->user()
-        ?->hasPermission('attendance.manage') === true;
-}
+    public static function canDeleteAny(): bool
+    {
+        return auth()->user()
+            ?->hasPermission('attendance.manage') === true;
+    }
 
     public static function getNavigationLabel(): string
-{
-    return 'Report Results';
-}
+    {
+        return 'Report Results';
+    }
 
-public static function getModelLabel(): string
-{
-    return 'Attendance Result';
-}
+    public static function getModelLabel(): string
+    {
+        return 'Attendance Result';
+    }
 
-public static function getPluralModelLabel(): string
-{
-    return 'Attendance Results';
-}
+    public static function getPluralModelLabel(): string
+    {
+        return 'Attendance Results';
+    }
 
-public static function getNavigationGroup(): ?string
-{
-    return 'Attendance Report';
-}
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Attendance Report';
+    }
 
-public static function getNavigationSort(): ?int
-{
-    return 2;
-}
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
+    }
 
     public static function shouldRegisterNavigation(): bool
     {

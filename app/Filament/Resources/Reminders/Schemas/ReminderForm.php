@@ -20,7 +20,7 @@ class ReminderForm
     {
         $user = auth()->user();
 
-        $isSuperadmin = $user?->hasRole('superadmin') ?? false;
+        $isSuperadmin = $user?->hasRole('system-admin') ?? false;
 
         $user?->loadMissing('employee');
 

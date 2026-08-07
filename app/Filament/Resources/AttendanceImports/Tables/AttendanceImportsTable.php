@@ -86,9 +86,8 @@ class AttendanceImportsTable
                     ->icon('heroicon-o-table-cells')
                     ->color('info')
                     ->visible(
-                        fn (): bool =>
-                            auth()->user()
-                                ?->hasPermission('attendance.view') === true
+                        fn (): bool => auth()->user()
+                            ?->hasPermission('attendance.view') === true
                     )
                     ->before(function (): void {
                         abort_unless(
@@ -99,11 +98,10 @@ class AttendanceImportsTable
                         );
                     })
                     ->url(
-                        fn (AttendanceImport $record): string =>
-                            AttendanceImportResource::getUrl(
-                                'results',
-                                ['record' => $record]
-                            )
+                        fn (AttendanceImport $record): string => AttendanceImportResource::getUrl(
+                            'results',
+                            ['record' => $record]
+                        )
                     ),
 
                 Action::make('process')
@@ -112,9 +110,8 @@ class AttendanceImportsTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->visible(
-                        fn (): bool =>
-                            auth()->user()
-                                ?->hasPermission('attendance.manage') === true
+                        fn (): bool => auth()->user()
+                            ?->hasPermission('attendance.manage') === true
                     )
                     ->before(function (): void {
                         abort_unless(
@@ -141,9 +138,8 @@ class AttendanceImportsTable
 
                 EditAction::make()
                     ->visible(
-                        fn (): bool =>
-                            auth()->user()
-                                ?->hasPermission('attendance.manage') === true
+                        fn (): bool => auth()->user()
+                            ?->hasPermission('attendance.manage') === true
                     )
                     ->before(function (): void {
                         abort_unless(
@@ -155,9 +151,8 @@ class AttendanceImportsTable
 
                 DeleteAction::make()
                     ->visible(
-                        fn (): bool =>
-                            auth()->user()
-                                ?->hasPermission('attendance.manage') === true
+                        fn (): bool => auth()->user()
+                            ?->hasPermission('attendance.manage') === true
                     )
                     ->before(function (): void {
                         abort_unless(
@@ -171,11 +166,10 @@ class AttendanceImportsTable
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->visible(
-                            fn (): bool =>
-                                auth()->user()
-                                    ?->hasPermission(
-                                        'attendance.manage'
-                                    ) === true
+                            fn (): bool => auth()->user()
+                                ?->hasPermission(
+                                    'attendance.manage'
+                                ) === true
                         )
                         ->before(function (): void {
                             abort_unless(

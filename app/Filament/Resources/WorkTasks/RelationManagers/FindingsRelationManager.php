@@ -3,21 +3,21 @@
 namespace App\Filament\Resources\WorkTasks\RelationManagers;
 
 use App\Models\WorkTaskFinding;
-use Filament\Infolists\Components\TextEntry;
-use Illuminate\Support\HtmlString;
-use Filament\Actions\DeleteAction;
 use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\HtmlString;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
@@ -96,9 +96,9 @@ class FindingsRelationManager extends RelationManager
                     ->label('Reviewer Attachments')
                     ->multiple()
                     ->maxFiles(10)
-                    ->disk('public')
+                    ->disk('local')
                     ->directory('work-task-findings')
-                    ->visibility('public')
+                    ->visibility('private')
                     ->downloadable()
                     ->openable()
                     ->previewable(false)
@@ -115,16 +115,16 @@ class FindingsRelationManager extends RelationManager
                             );
 
                             return now()->format('YmdHis')
-                                . '-'
-                                . Str::random(6)
-                                . '-'
-                                . Str::slug($originalName)
-                                . '.'
-                                . $extension;
+                                .'-'
+                                .Str::random(6)
+                                .'-'
+                                .Str::slug($originalName)
+                                .'.'
+                                .$extension;
                         }
                     )
                     ->deleteUploadedFileUsing(function (string $file): void {
-                        Storage::disk('public')->delete($file);
+                        Storage::disk('local')->delete($file);
                     })
                     ->dehydrateStateUsing(function ($state): array {
                         if (blank($state)) {
@@ -175,7 +175,6 @@ class FindingsRelationManager extends RelationManager
                         'image/jpeg',
                         'image/png',
                     ])
-                    ->maxSize(1000000)
                     ->default([])
                     ->columnSpanFull(),
 
@@ -183,8 +182,7 @@ class FindingsRelationManager extends RelationManager
                     ->label('Requester Response / Clarification')
                     ->placeholder('Belum ada respons dari requester.')
                     ->visible(
-                        fn (?WorkTaskFinding $record): bool =>
-                            filled($record?->requester_response)
+                        fn (?WorkTaskFinding $record): bool => filled($record?->requester_response)
                     )
                     ->columnSpanFull(),
 
@@ -193,11 +191,23 @@ class FindingsRelationManager extends RelationManager
                     ->placeholder('Tidak ada attachment respons.')
                     ->listWithLineBreaks()
                     ->bulleted()
-                    ->formatStateUsing(function (string $state): HtmlString {
-                        $url = url('/storage/' . ltrim($state, '/'));
+                    ->formatStateUsing(function (
+                        string $state,
+                        WorkTaskFinding $record
+                    ): HtmlString {
+                        $attachmentIndex = array_search(
+                            $state,
+                            array_values((array) $record->response_attachments),
+                            true
+                        );
+                        $url = route('findings.attachments.download', [
+                            $record,
+                            'response',
+                            $attachmentIndex,
+                        ]);
 
                         return new HtmlString(
-                            '<a href="' . e($url) . '"
+                            '<a href="'.e($url).'"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style="
@@ -205,13 +215,12 @@ class FindingsRelationManager extends RelationManager
                                     font-weight: 600;
                                     text-decoration: underline;
                                 ">'
-                            . e(basename($state))
-                            . '</a>'
+                            .e(basename($state))
+                            .'</a>'
                         );
                     })
                     ->visible(
-                        fn (?WorkTaskFinding $record): bool =>
-                            filled($record?->response_attachments)
+                        fn (?WorkTaskFinding $record): bool => filled($record?->response_attachments)
                     )
                     ->columnSpanFull(),
 
@@ -219,8 +228,7 @@ class FindingsRelationManager extends RelationManager
                     ->label('Responded By')
                     ->placeholder('-')
                     ->visible(
-                        fn (?WorkTaskFinding $record): bool =>
-                            filled($record?->responded_at)
+                        fn (?WorkTaskFinding $record): bool => filled($record?->responded_at)
                     ),
 
                 TextEntry::make('responded_at')
@@ -228,8 +236,7 @@ class FindingsRelationManager extends RelationManager
                     ->dateTime('d M Y H:i')
                     ->placeholder('-')
                     ->visible(
-                        fn (?WorkTaskFinding $record): bool =>
-                            filled($record?->responded_at)
+                        fn (?WorkTaskFinding $record): bool => filled($record?->responded_at)
                     ),
             ]);
     }
@@ -248,7 +255,7 @@ class FindingsRelationManager extends RelationManager
             );
     }
 
-    //end function
+    // end function
 
     public function table(Table $table): Table
     {
@@ -301,14 +308,14 @@ class FindingsRelationManager extends RelationManager
                     ->label('Add Finding')
                     ->modalHeading('Add Due Diligence Finding')
                     ->visible(
-                    fn (): bool => $this->currentUserCanManageFindings()
-                )
-                     ->before(function (): void {
-                 abort_unless(
-                    $this->currentUserCanManageFindings(),
-                    403,
-                    'Anda bukan anggota department reviewer untuk Work Log ini.'
-                    );
+                        fn (): bool => $this->currentUserCanManageFindings()
+                    )
+                    ->before(function (): void {
+                        abort_unless(
+                            $this->currentUserCanManageFindings(),
+                            403,
+                            'Anda bukan anggota department reviewer untuk Work Log ini.'
+                        );
                     })
                     ->mutateDataUsing(function (array $data): array {
                         $data['created_by_user_id'] = auth()->id();
@@ -319,31 +326,31 @@ class FindingsRelationManager extends RelationManager
                     }),
             ])
             ->recordActions([
-    EditAction::make()
-        ->modalHeading('Edit Due Diligence Finding')
-        ->visible(
-            fn (): bool => $this->currentUserCanManageFindings()
-        )
-        ->before(function (): void {
-            abort_unless(
-                $this->currentUserCanManageFindings(),
-                403,
-                'Anda bukan anggota department reviewer untuk Work Log ini.'
-            );
-        }),
+                EditAction::make()
+                    ->modalHeading('Edit Due Diligence Finding')
+                    ->visible(
+                        fn (): bool => $this->currentUserCanManageFindings()
+                    )
+                    ->before(function (): void {
+                        abort_unless(
+                            $this->currentUserCanManageFindings(),
+                            403,
+                            'Anda bukan anggota department reviewer untuk Work Log ini.'
+                        );
+                    }),
 
-    DeleteAction::make()
-        ->visible(
-            fn (): bool => $this->currentUserCanManageFindings()
-        )
-        ->before(function (): void {
-            abort_unless(
-                $this->currentUserCanManageFindings(),
-                403,
-                'Anda bukan anggota department reviewer untuk Work Log ini.'
-            );
-        }),
-])
+                DeleteAction::make()
+                    ->visible(
+                        fn (): bool => $this->currentUserCanManageFindings()
+                    )
+                    ->before(function (): void {
+                        abort_unless(
+                            $this->currentUserCanManageFindings(),
+                            403,
+                            'Anda bukan anggota department reviewer untuk Work Log ini.'
+                        );
+                    }),
+            ])
             ->defaultSort('created_at', 'desc');
     }
 }

@@ -107,14 +107,12 @@ class TicketsTable
 
                 EditAction::make()
                     ->visible(
-                        fn ($record): bool =>
-                            TicketResource::canEdit($record)
+                        fn ($record): bool => TicketResource::canEdit($record)
                     ),
 
                 DeleteAction::make()
                     ->visible(
-                        fn ($record): bool =>
-                            TicketResource::canDelete($record)
+                        fn ($record): bool => TicketResource::canDelete($record)
                     )
                     ->before(function ($record): void {
                         abort_unless(
@@ -128,8 +126,7 @@ class TicketsTable
                 BulkActionGroup::make([
                     DeleteBulkAction::make()
                         ->visible(
-                            fn (): bool =>
-                                TicketResource::canDeleteAny()
+                            fn (): bool => TicketResource::canDeleteAny()
                         )
                         ->before(function (): void {
                             abort_unless(

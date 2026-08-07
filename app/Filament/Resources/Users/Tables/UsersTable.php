@@ -72,8 +72,7 @@ class UsersTable
 
                 DeleteAction::make()
                     ->visible(
-                        fn (User $record): bool =>
-                            UserResource::canDelete($record)
+                        fn (User $record): bool => UserResource::canDelete($record)
                     )
                     ->before(function (User $record): void {
                         abort_unless(

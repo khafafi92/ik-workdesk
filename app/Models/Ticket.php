@@ -57,184 +57,169 @@ class Ticket extends Model
 
     public function workTasks()
     {
-    return $this->hasMany(WorkTask::class);
+        return $this->hasMany(WorkTask::class);
     }
 
     public function assignments(): HasMany
     {
-    return $this->hasMany(TicketAssignment::class)
-        ->orderBy('sort_order');
+        return $this->hasMany(TicketAssignment::class)
+            ->orderBy('sort_order');
     }
 
     public function reviewerDepartments(): BelongsToMany
     {
-    return $this->belongsToMany(
-        Department::class,
-        'ticket_assignments'
-    )
-        ->withPivot([
-            'work_task_id',
-            'is_required',
-            'sort_order',
-            'notes',
-        ])
-        ->withTimestamps()
-        ->orderByPivot('sort_order');
+        return $this->belongsToMany(
+            Department::class,
+            'ticket_assignments'
+        )
+            ->withPivot([
+                'work_task_id',
+                'is_required',
+                'sort_order',
+                'notes',
+            ])
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
     }
 
     public function findings(): HasManyThrough
     {
-    return $this->hasManyThrough(
-        WorkTaskFinding::class,
-        WorkTask::class,
-        'ticket_id',
-        'work_task_id',
-        'id',
-        'id'
-    );
+        return $this->hasManyThrough(
+            WorkTaskFinding::class,
+            WorkTask::class,
+            'ticket_id',
+            'work_task_id',
+            'id',
+            'id'
+        );
     }
 
     public function syncCollaborativeStatus(): void
-{
-    if ($this->workflow_type !== 'collaborative') {
-        return;
-    }
+    {
+        if ($this->workflow_type !== 'collaborative') {
+            return;
+        }
 
-    $requiredTasks = $this->assignments()
-        ->where('is_required', true)
-        ->with('workTask')
-        ->get()
-        ->pluck('workTask')
-        ->filter()
-        ->values();
+        $requiredTasks = $this->assignments()
+            ->where('is_required', true)
+            ->with('workTask')
+            ->get()
+            ->pluck('workTask')
+            ->filter()
+            ->values();
 
-    if ($requiredTasks->isEmpty()) {
-        return;
-    }
+        if ($requiredTasks->isEmpty()) {
+            return;
+        }
 
-    $allTasksDone = $requiredTasks->every(
-        fn (WorkTask $task): bool => $task->status === 'done'
-    );
+        $allTasksDone = $requiredTasks->every(
+            fn (WorkTask $task): bool => $task->status === 'done'
+        );
 
-    $allTasksCancelled = $requiredTasks->every(
-        fn (WorkTask $task): bool => in_array(
-            $task->status,
-            ['cancel', 'cancelled'],
-            true
-        )
-    );
+        $allTasksCancelled = $requiredTasks->every(
+            fn (WorkTask $task): bool => in_array(
+                $task->status,
+                ['cancel', 'cancelled'],
+                true
+            )
+        );
 
-    $hasHoldTask = $requiredTasks->contains(
-        fn (WorkTask $task): bool => $task->status === 'hold'
-    );
+        $hasHoldTask = $requiredTasks->contains(
+            fn (WorkTask $task): bool => $task->status === 'hold'
+        );
 
-    $hasStartedTask = $requiredTasks->contains(
-        fn (WorkTask $task): bool => in_array(
-            $task->status,
-            ['in_progress', 'done', 'cancel', 'cancelled'],
-            true
-        )
-    );
+        $hasStartedTask = $requiredTasks->contains(
+            fn (WorkTask $task): bool => in_array(
+                $task->status,
+                ['in_progress', 'done', 'cancel', 'cancelled'],
+                true
+            )
+        );
 
-    /*
-    |--------------------------------------------------------------------------
-    | FINAL RULE
-    |--------------------------------------------------------------------------
-    | Ticket resolved apabila seluruh required Work Log sudah Done.
-    */
-    if ($allTasksDone) {
+        /*
+        |--------------------------------------------------------------------------
+        | FINAL RULE
+        |--------------------------------------------------------------------------
+        | Ticket resolved apabila seluruh required Work Log sudah Done.
+        */
+        if ($allTasksDone) {
+            $this->update([
+                'status' => 'resolved',
+                'resolved_at' => now(),
+                'resolution_notes' => 'All required work logs have been completed.',
+            ]);
+
+            return;
+        }
+
+        if ($allTasksCancelled) {
+            $this->updateQuietly([
+                'status' => 'cancel',
+                'resolved_at' => null,
+                'resolution_notes' => null,
+            ]);
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Masih menunggu jawaban requester
+        |--------------------------------------------------------------------------
+        */
+        if ($hasHoldTask) {
+            $this->updateQuietly([
+                'status' => 'waiting_user',
+                'resolved_at' => null,
+                'resolution_notes' => null,
+            ]);
+
+            return;
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Minimal satu department sudah memulai pekerjaan.
+        |--------------------------------------------------------------------------
+        */
+        if ($hasStartedTask) {
+            $this->updateQuietly([
+                'status' => 'in_progress',
+                'resolved_at' => null,
+                'resolution_notes' => null,
+            ]);
+
+            return;
+        }
+
         $this->updateQuietly([
-            'status' => 'resolved',
-            'resolved_at' => now(),
-            'resolution_notes' =>
-                'All required work logs have been completed.',
-        ]);
-
-        return;
-    }
-
-    if ($allTasksCancelled) {
-        $this->updateQuietly([
-            'status' => 'cancel',
+            'status' => 'open',
             'resolved_at' => null,
             'resolution_notes' => null,
         ]);
-
-        return;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Masih menunggu jawaban requester
-    |--------------------------------------------------------------------------
-    */
-    if ($hasHoldTask) {
-        $this->updateQuietly([
-            'status' => 'waiting_user',
-            'resolved_at' => null,
-            'resolution_notes' => null,
-        ]);
-
-        return;
-    }
-
-    /*
-    |--------------------------------------------------------------------------
-    | Minimal satu department sudah memulai pekerjaan.
-    |--------------------------------------------------------------------------
-    */
-    if ($hasStartedTask) {
-        $this->updateQuietly([
-            'status' => 'in_progress',
-            'resolved_at' => null,
-            'resolution_notes' => null,
-        ]);
-
-        return;
-    }
-
-    $this->updateQuietly([
-        'status' => 'open',
-        'resolved_at' => null,
-        'resolution_notes' => null,
-    ]);
     }
 
     public function comments(): HasMany
     {
-    return $this->hasMany(TicketComment::class);
+        return $this->hasMany(TicketComment::class);
     }
-
-    // public function usesDueDiligenceFindings(): bool
-    // {
-    // $categoryName = TicketCategory::query()
-    //     ->whereKey($this->ticket_category_id)
-    //     ->value('name');
-
-    // return $this->workflow_type === 'collaborative'
-    //     && str_contains(
-    //         strtolower((string) $categoryName),
-    //         'due diligence'
-    //     );
-    // }
 
     public function usesDueDiligenceFindings(): bool
-{
-    if ($this->workflow_type !== 'collaborative') {
-        return false;
+    {
+        if ($this->workflow_type !== 'collaborative') {
+            return false;
+        }
+
+        $categoryCode = strtolower((string) $this->category?->code);
+        $categoryName = strtolower((string) $this->category?->name);
+
+        $isDueDiligenceCategory = $categoryCode === 'dd'
+            || str_contains($categoryName, 'due diligence');
+
+        if (! $isDueDiligenceCategory) {
+            return false;
+        }
+
+        return $this->assignments()->exists();
     }
-
-    $categoryCode = strtolower((string) $this->category?->code);
-    $categoryName = strtolower((string) $this->category?->name);
-
-    $isDueDiligenceCategory = $categoryCode === 'dd'
-        || str_contains($categoryName, 'due diligence');
-
-    if (! $isDueDiligenceCategory) {
-        return false;
-    }
-
-    return $this->assignments()->exists();
-}
-
 }

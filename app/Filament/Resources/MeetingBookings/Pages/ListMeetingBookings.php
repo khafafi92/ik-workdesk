@@ -19,22 +19,19 @@ class ListMeetingBookings extends ListRecords
         $tabs = [
             'my-bookings' => Tab::make('My Bookings')
                 ->modifyQueryUsing(
-                    fn (Builder $query): Builder =>
-                        $query->where(
-                            fn (Builder $bookingQuery) =>
-                                $bookingQuery
-                                    ->where(
-                                        'organizer_id',
-                                        auth()->id()
-                                    )
-                                    ->orWhereHas(
-                                        'participants',
-                                        fn (Builder $participantQuery) =>
-                                            $participantQuery->whereKey(
-                                                auth()->id()
-                                            )
-                                    )
-                        )
+                    fn (Builder $query): Builder => $query->where(
+                        fn (Builder $bookingQuery) => $bookingQuery
+                            ->where(
+                                'organizer_id',
+                                auth()->id()
+                            )
+                            ->orWhereHas(
+                                'participants',
+                                fn (Builder $participantQuery) => $participantQuery->whereKey(
+                                    auth()->id()
+                                )
+                            )
+                    )
                 ),
         ];
 

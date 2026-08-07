@@ -20,11 +20,10 @@ class ListVehicleBookings extends ListRecords
         $tabs = [
             'my-bookings' => Tab::make('My Bookings')
                 ->modifyQueryUsing(
-                    fn (Builder $query): Builder =>
-                        $query->where(
-                            'requester_id',
-                            auth()->id()
-                        )
+                    fn (Builder $query): Builder => $query->where(
+                        'requester_id',
+                        auth()->id()
+                    )
                 ),
         ];
 

@@ -3,13 +3,13 @@
 namespace App\Filament\Resources\WorkTasks\RelationManagers;
 
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
+use App\Models\TicketComment;
 use Filament\Actions\ViewAction;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class ActivityHistoryRelationManager extends RelationManager
@@ -44,8 +44,7 @@ class ActivityHistoryRelationManager extends RelationManager
                     ->label('Activity')
                     ->badge()
                     ->formatStateUsing(
-                        fn (string $state): string =>
-                            str($state)->replace('_', ' ')->title()->toString()
+                        fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()
                     ),
 
                 TextColumn::make('user.name')
@@ -61,7 +60,7 @@ class ActivityHistoryRelationManager extends RelationManager
                 TextColumn::make('attachments')
                     ->label('Files')
                     ->formatStateUsing(
-                        fn (mixed $state): string => count((array) $state) . ' file(s)'
+                        fn (mixed $state): string => count((array) $state).' file(s)'
                     ),
 
                 TextColumn::make('created_at')
@@ -91,8 +90,7 @@ class ActivityHistoryRelationManager extends RelationManager
                         TextEntry::make('activity_type')
                             ->label('Activity Type')
                             ->formatStateUsing(
-                                fn (string $state): string =>
-                                    str($state)->replace('_', ' ')->title()->toString()
+                                fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()
                             ),
 
                         TextEntry::make('message')
@@ -103,8 +101,13 @@ class ActivityHistoryRelationManager extends RelationManager
                             ->label('Attachments')
                             ->html()
                             ->formatStateUsing(
-                                fn (mixed $state): HtmlString =>
-                                    $this->attachmentLinks($state)
+                                fn (
+                                    mixed $state,
+                                    TicketComment $record
+                                ): HtmlString => $this->attachmentLinks(
+                                    $state,
+                                    $record
+                                )
                             )
                             ->columnSpanFull(),
 
@@ -117,18 +120,24 @@ class ActivityHistoryRelationManager extends RelationManager
             ->defaultSort('created_at', 'desc');
     }
 
-    private function attachmentLinks(mixed $state): HtmlString
-    {
+    private function attachmentLinks(
+        mixed $state,
+        TicketComment $record
+    ): HtmlString {
         $links = collect((array) $state)
             ->filter()
-            ->map(function (string $file): string {
-                $url = url(Storage::disk('public')->url(ltrim($file, '/')));
+            ->values()
+            ->map(function (string $file, int $attachmentIndex) use ($record): string {
+                $url = route(
+                    'ticket-comments.attachments.download',
+                    [$record, $attachmentIndex]
+                );
 
-                return '<a href="' . e($url) . '" target="_blank" '
-                    . 'rel="noopener noreferrer" style="color:#2563eb;'
-                    . 'font-weight:600;text-decoration:underline">'
-                    . e(basename($file))
-                    . '</a>';
+                return '<a href="'.e($url).'" target="_blank" '
+                    .'rel="noopener noreferrer" style="color:#2563eb;'
+                    .'font-weight:600;text-decoration:underline">'
+                    .e(basename($file))
+                    .'</a>';
             })
             ->implode('<br>');
 

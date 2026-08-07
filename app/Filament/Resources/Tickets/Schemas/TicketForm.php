@@ -106,8 +106,7 @@ class TicketForm
                     ->searchable()
                     ->live()
                     ->disabled(
-                        fn (Get $get): bool =>
-                            blank($get('handler_department_id'))
+                        fn (Get $get): bool => blank($get('handler_department_id'))
                     )
                     ->afterStateUpdated(
                         function (mixed $state, Set $set): void {
@@ -231,9 +230,9 @@ class TicketForm
                     ->label('Attachments')
                     ->multiple()
                     ->maxFiles(10)
-                    ->disk('public')
+                    ->disk('local')
                     ->directory('service-request-attachments')
-                    ->visibility('public')
+                    ->visibility('private')
                     ->downloadable()
                     ->openable()
                     ->previewable(false)
@@ -250,17 +249,17 @@ class TicketForm
                             );
 
                             return now()->format('YmdHis')
-                                . '-'
-                                . Str::random(6)
-                                . '-'
-                                . Str::slug($originalName)
-                                . '.'
-                                . $extension;
+                                .'-'
+                                .Str::random(6)
+                                .'-'
+                                .Str::slug($originalName)
+                                .'.'
+                                .$extension;
                         }
                     )
                     ->deleteUploadedFileUsing(
                         function (string $file): void {
-                            Storage::disk('public')->delete($file);
+                            Storage::disk('local')->delete($file);
                         }
                     )
                     ->dehydrateStateUsing(function ($state): array {
@@ -290,7 +289,6 @@ class TicketForm
                         'image/jpeg',
                         'image/png',
                     ])
-                    ->maxSize(102400) // 100MB max per file
                     ->afterStateHydrated(
                         function (
                             FileUpload $component,

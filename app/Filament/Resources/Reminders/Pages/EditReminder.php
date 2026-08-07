@@ -16,7 +16,7 @@ class EditReminder extends EditRecord
 
         $user = auth()->user();
 
-        if (! $user || $user->hasRole('superadmin')) {
+        if (! $user || $user->hasRole('system-admin')) {
             return $data;
         }
 

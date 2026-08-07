@@ -9,22 +9,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
-{
-    Schema::create('ticket_categories', function (Blueprint $table) {
-        $table->id();
+    public function up(): void
+    {
+        Schema::create('ticket_categories', function (Blueprint $table) {
+            $table->id();
 
-        $table->foreignId('handler_department_id')
-            ->nullable()
-            ->constrained('departments')
-            ->nullOnDelete();
+            $table->foreignId('handler_department_id')
+                ->nullable()
+                ->constrained('departments')
+                ->nullOnDelete();
 
-        $table->string('name');
-        $table->string('code')->nullable();
-        $table->boolean('is_active')->default(true);
-        $table->timestamps();
-    });
-}
+            $table->string('name');
+            $table->string('code')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

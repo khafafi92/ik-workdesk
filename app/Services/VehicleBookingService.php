@@ -128,6 +128,18 @@ class VehicleBookingService
             ]);
         }
 
+        $passengersCount = (int) ($data['passengers_count'] ?? 1);
+
+        if ($passengersCount < 1 || $passengersCount > $vehicle->capacity) {
+            throw ValidationException::withMessages([
+                'data.passengers_count' => sprintf(
+                    'Jumlah penumpang harus antara 1 dan %d sesuai kapasitas %s.',
+                    $vehicle->capacity,
+                    $vehicle->name
+                ),
+            ]);
+        }
+
         $start = Carbon::parse($data['start_at']);
         $end = Carbon::parse($data['end_at']);
 

@@ -28,7 +28,7 @@ class LocationReportForm
 
                 FileUpload::make('attendance_file_path')
                     ->label('File Lokasi Absen')
-                    ->disk('public')
+                    ->disk('local')
                     ->directory('attendance-imports')
                     ->acceptedFileTypes([
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

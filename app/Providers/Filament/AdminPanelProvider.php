@@ -14,7 +14,6 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
-use Filament\Widgets\AccountWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -29,8 +28,6 @@ class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        //
-
         return $panel
             ->default()
             ->id('admin')
@@ -61,49 +58,17 @@ class AdminPanelProvider extends PanelProvider
                     ->url('/dashboard')
                     ->icon('heroicon-o-squares-2x2')
                     ->sort(-10)
-                    ->visible(fn (): bool => Auth::check() && Auth::user()->hasRole('superadmin')),
+                    ->visible(fn (): bool => Auth::check() && Auth::user()->hasRole('system-admin')),
             ])
-
-        //
-        //     return $panel
-        // ->default()
-        // ->id('admin')
-        // ->path('panel')
-        // ->brandName('Internal 9')
-        // ->brandName('IK Workdesk')
-        // // ->login()
-        // // ->spa()
-        // // ->maxContentWidth(Width::Full)
-        // // ->sidebarCollapsibleOnDesktop()
-        // // ->navigationItems([
-        // //     NavigationItem::make('Beranda')
-        // //         ->url('/dashboard')
-        // //         ->icon('heroicon-o-home')
-        // //         ->sort(-10)
-        // //         ->font('Roboto'),
-        // // ])
-        // // ->colors([
-        // //     'primary' => Color::hex('#0073ea'), // Biru khas Monday.com
-        // //             'success' => Color::hex('#00c875'), // Hijau 'Done'
-        // //             'warning' => Color::hex('#fdab3d'), // Jingga 'Working on it'
-        // //             'danger'  => Color::hex('#e2445c'), // Merah jambu 'Stuck'
-        // //             'gray'    => Color::Slate,
-
-        //     // 'primary' => Color::Blue,
-        //     // 'success' => Color::Emerald,
-        //     // 'warning' => Color::Amber,
-        //     // 'danger' => Color::Rose,
-        //     // 'gray' => Color::Slate,
-        // ])
             ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
-                fn (): string => '<link rel="stylesheet" href="' .
-                    asset('css/filament/admin/workdesk-theme.css') .
-                    '?v=' . filemtime(public_path('css/filament/admin/workdesk-theme.css')) .
-                    '">' .
-                    '<link rel="stylesheet" href="' .
-                    asset('css/filament/admin/workdesk-ui-polish.css') .
-                    '?v=' . filemtime(public_path('css/filament/admin/workdesk-ui-polish.css')) .
+                fn (): string => '<link rel="stylesheet" href="'.
+                    asset('css/filament/admin/workdesk-theme.css').
+                    '?v='.filemtime(public_path('css/filament/admin/workdesk-theme.css')).
+                    '">'.
+                    '<link rel="stylesheet" href="'.
+                    asset('css/filament/admin/workdesk-ui-polish.css').
+                    '?v='.filemtime(public_path('css/filament/admin/workdesk-ui-polish.css')).
                     '">',
             )
             ->renderHook(
@@ -116,9 +81,7 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
-            ->widgets([
-                // AccountWidget::class,
-            ])
+            ->widgets([])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

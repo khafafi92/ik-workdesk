@@ -55,13 +55,13 @@ return [
         |----------------------------------------------------------------------
         */
         'kpmog' => [
-            'transport'  => 'smtp',
-            'scheme'     => 'smtps',
-            'host'       => env('MAIL_KPMOG_HOST', 'mail.kpmog.com'),
-            'port'       => env('MAIL_KPMOG_PORT', 465),
-            'username'   => env('MAIL_KPMOG_USERNAME'),
-            'password'   => env('MAIL_KPMOG_PASSWORD'),
-            'timeout'    => null,
+            'transport' => 'smtp',
+            'scheme' => 'smtps',
+            'host' => env('MAIL_KPMOG_HOST', 'mail.kpmog.com'),
+            'port' => env('MAIL_KPMOG_PORT', 465),
+            'username' => env('MAIL_KPMOG_USERNAME'),
+            'password' => env('MAIL_KPMOG_PASSWORD'),
+            'timeout' => null,
         ],
 
         /*
@@ -70,13 +70,13 @@ return [
         |----------------------------------------------------------------------
         */
         'apca' => [
-            'transport'  => 'smtp',
-            'scheme'     => 'smtps',
-            'host'       => env('MAIL_APCA_HOST', '127.0.0.1'),
-            'port'       => env('MAIL_APCA_PORT', 465),
-            'username'   => env('MAIL_APCA_USERNAME'),
-            'password'   => env('MAIL_APCA_PASSWORD'),
-            'timeout'    => null,
+            'transport' => 'smtp',
+            'scheme' => 'smtps',
+            'host' => env('MAIL_APCA_HOST', '127.0.0.1'),
+            'port' => env('MAIL_APCA_PORT', 465),
+            'username' => env('MAIL_APCA_USERNAME'),
+            'password' => env('MAIL_APCA_PASSWORD'),
+            'timeout' => null,
         ],
 
         'ses' => [

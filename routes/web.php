@@ -3,11 +3,12 @@
 use App\Http\Controllers\Admin\AttendanceReportDownloadController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\FindingAttachmentDownloadController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TicketAttachmentDownloadController;
+use App\Http\Controllers\TicketCommentAttachmentDownloadController;
 use App\Http\Middleware\RequireSuperadmin;
 use Illuminate\Support\Facades\Route;
-
-// Route::view('/', 'home');
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -21,7 +22,32 @@ Route::get('/attendance-imports/{attendanceImport}/download', [AttendanceReportD
     ->middleware(['auth'])
     ->name('attendance-imports.download');
 
-Route::middleware(['auth', 'verified'])
+Route::get(
+    '/ticket-comments/{ticketComment}/attachments/{attachmentIndex}',
+    TicketCommentAttachmentDownloadController::class
+)
+    ->whereNumber('attachmentIndex')
+    ->middleware(['auth'])
+    ->name('ticket-comments.attachments.download');
+
+Route::get(
+    '/tickets/{ticket}/attachments/{attachmentIndex}',
+    TicketAttachmentDownloadController::class
+)
+    ->whereNumber('attachmentIndex')
+    ->middleware(['auth'])
+    ->name('tickets.attachments.download');
+
+Route::get(
+    '/findings/{workTaskFinding}/attachments/{attachmentType}/{attachmentIndex}',
+    FindingAttachmentDownloadController::class
+)
+    ->whereIn('attachmentType', ['reviewer', 'response'])
+    ->whereNumber('attachmentIndex')
+    ->middleware(['auth'])
+    ->name('findings.attachments.download');
+
+Route::middleware(['auth', 'verified', RequireSuperadmin::class])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

@@ -13,9 +13,8 @@ class TicketCreatedNotification extends Notification implements ShouldQueue
     use Queueable;
 
     /**
-     * @param  Ticket  $ticket
      * @param  string  $mailerName  Nama mailer: 'kpmog', 'apca', atau 'log'/'smtp'
-     * @param  array   $from        ['address' => ..., 'name' => ...]
+     * @param  array  $from  ['address' => ..., 'name' => ...]
      */
     public function __construct(
         public readonly Ticket $ticket,
@@ -33,16 +32,16 @@ class TicketCreatedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $ticket      = $this->ticket;
-        $viewUrl     = route('filament.admin.resources.service-desk.view', ['record' => $ticket->id]);
+        $ticket = $this->ticket;
+        $viewUrl = route('filament.admin.resources.service-desk.view', ['record' => $ticket->id]);
         $fromAddress = $this->from['address'] ?? config('mail.from.address');
-        $fromName    = $this->from['name']    ?? config('mail.from.name');
+        $fromName = $this->from['name'] ?? config('mail.from.name');
 
         $priority = match ($ticket->priority) {
-            'high'   => '🔴 High',
+            'high' => '🔴 High',
             'medium' => '🟡 Medium',
-            'low'    => '🟢 Low',
-            default  => $ticket->priority ?? '-',
+            'low' => '🟢 Low',
+            default => $ticket->priority ?? '-',
         };
 
         return (new MailMessage)

@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources\Departments;
+
 use App\Filament\Resources\Concerns\AdminOnlyResource;
 use App\Filament\Resources\Departments\Pages\CreateDepartment;
 use App\Filament\Resources\Departments\Pages\EditDepartment;
@@ -17,6 +18,7 @@ use Filament\Tables\Table;
 class DepartmentResource extends Resource
 {
     use AdminOnlyResource;
+
     protected static ?string $model = Department::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;

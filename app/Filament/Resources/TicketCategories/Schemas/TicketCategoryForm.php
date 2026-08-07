@@ -53,12 +53,10 @@ class TicketCategoryForm
                     ->searchable()
                     ->preload()
                     ->visible(
-                        fn (Get $get): bool =>
-                            $get('workflow_type') === 'collaborative'
+                        fn (Get $get): bool => $get('workflow_type') === 'collaborative'
                     )
                     ->required(
-                        fn (Get $get): bool =>
-                            $get('workflow_type') === 'collaborative'
+                        fn (Get $get): bool => $get('workflow_type') === 'collaborative'
                     )
                     ->helperText(
                         'Department tambahan yang akan ikut mengerjakan collaborative request.'

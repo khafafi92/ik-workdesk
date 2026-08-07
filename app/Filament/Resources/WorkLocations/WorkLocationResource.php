@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources\WorkLocations;
+
 use App\Filament\Resources\Concerns\AdminOnlyResource;
 use App\Filament\Resources\WorkLocations\Pages\CreateWorkLocation;
 use App\Filament\Resources\WorkLocations\Pages\EditWorkLocation;
@@ -17,6 +18,7 @@ use Filament\Tables\Table;
 class WorkLocationResource extends Resource
 {
     use AdminOnlyResource;
+
     protected static ?string $model = WorkLocation::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;

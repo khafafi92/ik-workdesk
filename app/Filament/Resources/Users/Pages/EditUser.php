@@ -90,8 +90,7 @@ class EditUser extends EditRecord
 
             if (! $otherSuperAdminExists) {
                 throw ValidationException::withMessages([
-                    'is_admin' =>
-                        'Super Administrator terakhir tidak dapat diturunkan.',
+                    'is_admin' => 'Super Administrator terakhir tidak dapat diturunkan.',
                 ]);
             }
         }
@@ -171,10 +170,9 @@ class EditUser extends EditRecord
         return [
             DeleteAction::make()
                 ->visible(
-                    fn (): bool =>
-                        UserResource::canDelete(
-                            $this->record
-                        )
+                    fn (): bool => UserResource::canDelete(
+                        $this->record
+                    )
                 )
                 ->before(function (): void {
                     abort_unless(

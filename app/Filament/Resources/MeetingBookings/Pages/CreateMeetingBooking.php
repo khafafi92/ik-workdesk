@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\MeetingBookings\Pages;
 
 use App\Filament\Resources\MeetingBookings\MeetingBookingResource;
-use App\Models\MeetingBooking;
 use App\Services\MeetingBookingService;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;

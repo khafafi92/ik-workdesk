@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\WorkTasks\Pages;
 
-use App\Filament\Resources\WorkTasks\WorkTaskResource;
 use App\Filament\Resources\Tickets\TicketResource;
+use App\Filament\Resources\WorkTasks\WorkTaskResource;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
@@ -14,7 +14,7 @@ class ViewWorkTask extends ViewRecord
 {
     protected static string $resource = WorkTaskResource::class;
 
-    public function mount(int | string $record): void
+    public function mount(int|string $record): void
     {
         parent::mount($record);
 
@@ -53,15 +53,14 @@ class ViewWorkTask extends ViewRecord
                     'Work Log akan ditandai selesai dan status Service Desk akan diperbarui. Untuk pekerjaan collaborative, Done oleh Lead akan menyelesaikan seluruh Work Log terkait.'
                 )
                 ->visible(
-                    fn (): bool =>
-                        $this->record->status !== 'done'
+                    fn (): bool => $this->record->status !== 'done'
                         && $this->record->canBeCompletedBy(auth()->user())
                 )
                 ->action(function (): void {
                     abort_unless(
                         $this->record->canBeCompletedBy(auth()->user()),
                         403,
-                        'Untuk pekerjaan collaborative, hanya Lead Department atau superadmin yang dapat menyelesaikan Work Log.'
+                        'Untuk pekerjaan collaborative, hanya Lead Department atau System Administrator yang dapat menyelesaikan Work Log.'
                     );
 
                     $this->record->update(['status' => 'done']);
@@ -81,14 +80,12 @@ class ViewWorkTask extends ViewRecord
 
             EditAction::make()
                 ->visible(
-                    fn (): bool =>
-                        WorkTaskResource::canEdit($this->record)
+                    fn (): bool => WorkTaskResource::canEdit($this->record)
                 ),
 
             DeleteAction::make()
                 ->visible(
-                    fn (): bool =>
-                        WorkTaskResource::canDelete($this->record)
+                    fn (): bool => WorkTaskResource::canDelete($this->record)
                 )
                 ->before(function (): void {
                     abort_unless(

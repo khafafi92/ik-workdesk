@@ -1,58 +1,81 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# IK WorkDesk
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+IK WorkDesk adalah platform operasional internal berbasis Laravel dan Filament untuk Service Desk, Work Logs, Attendance, Reminder, Meeting Room, Vehicle Booking, serta workflow kolaboratif antar-department.
 
-## About Laravel
+## Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.3+
+- Composer 2
+- Node.js 22+
+- Database yang didukung Laravel (SQLite dapat digunakan untuk development)
+- Queue worker untuk notification dan email asynchronous
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Instalasi development
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+npm install
+copy .env.example .env
+php artisan key:generate
+php artisan migrate --seed
+npm run build
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Untuk menjalankan server, queue, log viewer, dan Vite secara bersamaan:
 
-## Contributing
+```bash
+composer dev
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Pengujian
 
-## Code of Conduct
+```bash
+composer test
+vendor/bin/pint --test
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+GitHub Actions menjalankan instalasi dependency, build frontend, migration, Pint, dan seluruh PHPUnit test pada setiap push dan pull request.
 
-## Security Vulnerabilities
+## Storage dan keamanan file
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+File Attendance, Service Desk, Collaboration Room, dan Findings disimpan di `storage/app/private`. File tidak boleh disajikan langsung melalui `/storage`; download harus melalui route yang melakukan authorization terhadap record induknya.
 
-## License
+Saat memperbarui instalasi lama, lakukan simulasi lalu migrasikan upload sensitif dengan perintah berikut. Perintah memverifikasi checksum sebelum menghapus salinan public.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+php artisan storage:migrate-private-uploads --dry-run
+php artisan storage:migrate-private-uploads
+```
+
+## Queue dan notification
+
+Notification email menggunakan queued notification. Production wajib menjalankan worker:
+
+```bash
+php artisan queue:work --tries=3
+```
+
+Konfigurasi mailer berada di `.env` dan `config/mail.php`. Jangan menyimpan credential SMTP di repository.
+
+## Authorization
+
+Akses menggunakan role dan permission. Beberapa permission utama:
+
+- `tickets.view`, `tickets.create`, `tickets.manage`
+- `attendance.view`, `attendance.upload`, `attendance.manage`
+- permission Meeting Room dan Vehicle Booking
+
+Route legacy `/admin/departments` hanya tersedia untuk superadmin. Resource Filament dan endpoint download tetap wajib melakukan authorization masing-masing.
+
+## Deployment
+
+```bash
+composer install --no-dev --optimize-autoloader
+npm ci
+npm run build
+php artisan migrate --force
+php artisan optimize
+```
+
+Setelah deployment, restart queue worker dan pastikan `storage` serta `bootstrap/cache` dapat ditulis oleh user web server.

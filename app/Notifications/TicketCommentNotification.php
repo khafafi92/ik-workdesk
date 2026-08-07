@@ -48,9 +48,9 @@ class TicketCommentNotification extends Notification implements ShouldQueue
             $url = route(
                 'filament.admin.resources.service-desk.view',
                 ['record' => $ticket->id]
-            ) . "#activity-{$comment->id}";
+            )."#activity-{$comment->id}";
             $title = "Balasan Baru: {$ticket->ticket_no}";
-            $body = "{$sender}: " . mb_strimwidth(
+            $body = "{$sender}: ".mb_strimwidth(
                 strip_tags($comment->message),
                 0,
                 160,
@@ -92,12 +92,12 @@ class TicketCommentNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $comment     = $this->comment;
-        $ticket      = $comment->ticket;
-        $sender      = $comment->user?->name ?? 'System';
-        $viewUrl     = route('filament.admin.resources.service-desk.view', ['record' => $ticket->id]);
+        $comment = $this->comment;
+        $ticket = $comment->ticket;
+        $sender = $comment->user?->name ?? 'System';
+        $viewUrl = route('filament.admin.resources.service-desk.view', ['record' => $ticket->id]);
         $fromAddress = $this->from['address'] ?? config('mail.from.address');
-        $fromName    = $this->from['name']    ?? config('mail.from.name');
+        $fromName = $this->from['name'] ?? config('mail.from.name');
 
         $preview = mb_substr(strip_tags($comment->message), 0, 200);
         if (mb_strlen($comment->message) > 200) {
@@ -119,7 +119,7 @@ class TicketCommentNotification extends Notification implements ShouldQueue
             ->when(
                 $hasAttachments,
                 fn (MailMessage $mail) => $mail->line(
-                    '📎 ' . count($comment->attachments) . ' lampiran tersedia.'
+                    '📎 '.count($comment->attachments).' lampiran tersedia.'
                 )
             )
             ->action('Lihat Ticket', $viewUrl)

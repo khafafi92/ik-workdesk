@@ -8,7 +8,9 @@ use App\Models\Ticket;
 use App\Models\TicketAssignment;
 use App\Models\User;
 use App\Models\WorkTask;
+use App\Notifications\TicketResolvedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class CollaborativeLeadCompletionTest extends TestCase
@@ -17,6 +19,8 @@ class CollaborativeLeadCompletionTest extends TestCase
 
     public function test_lead_done_completes_all_collaborative_tasks_and_resolves_the_ticket(): void
     {
+        Notification::fake();
+
         $requesterDepartment = $this->createDepartment('REQ', 'Requester');
         $it = $this->createDepartment('IT', 'Information Technology');
         $hr = $this->createDepartment('HR', 'Human Resources');
@@ -74,6 +78,10 @@ class CollaborativeLeadCompletionTest extends TestCase
         $this->assertSame(100, (int) $legalTask->fresh()->progress_percent);
         $this->assertSame('resolved', $ticket->fresh()->status);
         $this->assertNotNull($ticket->fresh()->resolved_at);
+        Notification::assertSentTo(
+            $requesterUser,
+            TicketResolvedNotification::class
+        );
     }
 
     private function createDepartment(string $code, string $name): Department

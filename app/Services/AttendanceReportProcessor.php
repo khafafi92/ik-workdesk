@@ -8,6 +8,7 @@ use App\Models\AttendanceResult;
 use App\Models\WorkHourRecord;
 use App\Models\WorkLocation;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
@@ -19,58 +20,30 @@ class AttendanceReportProcessor
     public function process(AttendanceImport $import): void
     {
         try {
-            /*
-            |--------------------------------------------------------------------------
-            | Hapus hasil proses lama
-            |--------------------------------------------------------------------------
-            */
+            DB::transaction(function () use ($import): void {
+                AttendanceRecord::query()
+                    ->where('attendance_import_id', $import->id)
+                    ->delete();
 
-            AttendanceRecord::query()
-                ->where('attendance_import_id', $import->id)
-                ->delete();
+                AttendanceResult::query()
+                    ->where('attendance_import_id', $import->id)
+                    ->delete();
 
-            AttendanceResult::query()
-                ->where('attendance_import_id', $import->id)
-                ->delete();
+                WorkHourRecord::query()
+                    ->where('attendance_import_id', $import->id)
+                    ->delete();
 
-            WorkHourRecord::query()
-                ->where('attendance_import_id', $import->id)
-                ->delete();
+                $this->processActivityFile($import);
+                $this->processAllTimeFile($import);
 
-            /*
-            |--------------------------------------------------------------------------
-            | Proses file
-            |--------------------------------------------------------------------------
-            */
-
-            $this->processActivityFile($import);
-            $this->processAllTimeFile($import);
-
-            $import->update([
-                'status' => 'processed',
-                'processed_at' => now(),
-                'notes' => 'Processed successfully at '
-                    .now()->format('d M Y H:i:s'),
-            ]);
+                $import->update([
+                    'status' => 'processed',
+                    'processed_at' => now(),
+                    'notes' => 'Processed successfully at '
+                        .now()->format('d M Y H:i:s'),
+                ]);
+            });
         } catch (Throwable $exception) {
-            /*
-            |--------------------------------------------------------------------------
-            | Bersihkan data setengah jadi
-            |--------------------------------------------------------------------------
-            */
-
-            AttendanceRecord::query()
-                ->where('attendance_import_id', $import->id)
-                ->delete();
-
-            AttendanceResult::query()
-                ->where('attendance_import_id', $import->id)
-                ->delete();
-
-            WorkHourRecord::query()
-                ->where('attendance_import_id', $import->id)
-                ->delete();
-
             $import->update([
                 'status' => 'failed',
                 'processed_at' => null,
@@ -90,8 +63,9 @@ class AttendanceReportProcessor
             );
         }
 
-        $path = Storage::disk('public')
-            ->path($import->attendance_file_path);
+        $path = $this->resolveImportPath(
+            $import->attendance_file_path
+        );
 
         if (! file_exists($path)) {
             throw new RuntimeException(
@@ -287,7 +261,9 @@ class AttendanceReportProcessor
             );
         }
 
-        $path = Storage::disk('public')->path($import->work_hour_file_path);
+        $path = $this->resolveImportPath(
+            $import->work_hour_file_path
+        );
 
         if (! file_exists($path)) {
             throw new RuntimeException(
@@ -743,6 +719,20 @@ class AttendanceReportProcessor
         $value = preg_replace('/[^a-z0-9]+/', '_', $value);
 
         return trim($value, '_');
+    }
+
+    private function resolveImportPath(string $filePath): string
+    {
+        if (Storage::disk('local')->exists($filePath)) {
+            return Storage::disk('local')->path($filePath);
+        }
+
+        // Compatibility for imports uploaded before private storage was enabled.
+        if (Storage::disk('public')->exists($filePath)) {
+            return Storage::disk('public')->path($filePath);
+        }
+
+        return Storage::disk('local')->path($filePath);
     }
 
     private function distanceMeters(float $lat1, float $lon1, float $lat2, float $lon2): float

@@ -34,7 +34,7 @@ class ProcessAttendanceReport implements ShouldQueue
             'status' => 'processing',
             'processed_at' => null,
             'notes' => 'Processing started at '
-                . now()->format('d M Y H:i:s'),
+                .now()->format('d M Y H:i:s'),
         ]);
 
         $processor->process($import->fresh());
@@ -48,7 +48,7 @@ class ProcessAttendanceReport implements ShouldQueue
                 'status' => 'failed',
                 'processed_at' => null,
                 'notes' => 'Processing failed: '
-                    . (
+                    .(
                         $exception?->getMessage()
                         ?? 'Unknown error'
                     ),

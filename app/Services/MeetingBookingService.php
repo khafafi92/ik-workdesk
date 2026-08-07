@@ -51,11 +51,17 @@ class MeetingBookingService
                 ->lockForUpdate()
                 ->findOrFail($data['meeting_room_id']);
 
-            $this->validateSchedule($room, $data);
+            $participantIds = $this->participantIds($data);
+            unset($data['participants']);
+
+            $this->validateSchedule($room, $data, participantIds: $participantIds);
 
             $data['status'] = 'confirmed';
 
-            return MeetingBooking::query()->create($data);
+            $booking = MeetingBooking::query()->create($data);
+            $booking->participants()->sync($participantIds);
+
+            return $booking;
         });
     }
 
@@ -69,13 +75,18 @@ class MeetingBookingService
                     ->lockForUpdate()
                     ->findOrFail($data['meeting_room_id']);
 
+                $participantIds = $this->participantIds($data);
+                unset($data['participants']);
+
                 $this->validateSchedule(
                     $room,
                     $data,
-                    $booking->id
+                    $booking->id,
+                    $participantIds
                 );
 
                 $booking->update($data);
+                $booking->participants()->sync($participantIds);
 
                 return $booking;
             }
@@ -173,11 +184,25 @@ class MeetingBookingService
     private function validateSchedule(
         MeetingRoom $room,
         array $data,
-        ?int $exceptBookingId = null
+        ?int $exceptBookingId = null,
+        array $participantIds = []
     ): void {
         if (! $room->is_active) {
             throw ValidationException::withMessages([
                 'data.meeting_room_id' => 'Ruangan ini sedang tidak aktif.',
+            ]);
+        }
+
+        $attendeeCount = 1 + count($participantIds);
+
+        if ($attendeeCount > $room->capacity) {
+            throw ValidationException::withMessages([
+                'data.participants' => sprintf(
+                    'Jumlah peserta (%d termasuk organizer) melebihi kapasitas %s (%d orang).',
+                    $attendeeCount,
+                    $room->name,
+                    $room->capacity
+                ),
             ]);
         }
 
@@ -241,5 +266,19 @@ class MeetingBookingService
                 ),
             ]);
         }
+    }
+
+    private function participantIds(array $data): array
+    {
+        $organizerId = isset($data['organizer_id'])
+            ? (int) $data['organizer_id']
+            : null;
+
+        return collect($data['participants'] ?? [])
+            ->map(fn ($id): int => (int) $id)
+            ->filter(fn (int $id): bool => $id > 0 && $id !== $organizerId)
+            ->unique()
+            ->values()
+            ->all();
     }
 }

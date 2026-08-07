@@ -35,12 +35,10 @@ class FindingsRelationManager extends RelationManager
         return $ownerRecord->usesDueDiligenceFindings();
     }
 
-
     protected function currentUserCanRespond(): bool
     {
         return auth()->check();
     }
-
 
     public function form(Schema $schema): Schema
     {
@@ -78,11 +76,23 @@ class FindingsRelationManager extends RelationManager
                     ->placeholder('No attachments')
                     ->listWithLineBreaks()
                     ->bulleted()
-                    ->formatStateUsing(function (string $state): HtmlString {
-                        $url = url('/storage/' . ltrim($state, '/'));
+                    ->formatStateUsing(function (
+                        string $state,
+                        WorkTaskFinding $record
+                    ): HtmlString {
+                        $attachmentIndex = array_search(
+                            $state,
+                            array_values((array) $record->attachments),
+                            true
+                        );
+                        $url = route('findings.attachments.download', [
+                            $record,
+                            'reviewer',
+                            $attachmentIndex,
+                        ]);
 
                         return new HtmlString(
-                            '<a href="' . e($url) . '"
+                            '<a href="'.e($url).'"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 style="
@@ -90,8 +100,8 @@ class FindingsRelationManager extends RelationManager
                                     font-weight: 600;
                                     text-decoration: underline;
                                 ">'
-                            . e(basename($state))
-                            . '</a>'
+                            .e(basename($state))
+                            .'</a>'
                         );
                     })
                     ->columnSpanFull(),
@@ -109,9 +119,9 @@ class FindingsRelationManager extends RelationManager
                     ->label('Response Attachments')
                     ->multiple()
                     ->maxFiles(10)
-                    ->disk('public')
+                    ->disk('local')
                     ->directory('work-task-finding-responses')
-                    ->visibility('public')
+                    ->visibility('private')
                     ->downloadable()
                     ->openable()
                     ->previewable(false)
@@ -128,16 +138,16 @@ class FindingsRelationManager extends RelationManager
                             );
 
                             return now()->format('YmdHis')
-                                . '-'
-                                . Str::random(6)
-                                . '-'
-                                . Str::slug($originalName)
-                                . '.'
-                                . $extension;
+                                .'-'
+                                .Str::random(6)
+                                .'-'
+                                .Str::slug($originalName)
+                                .'.'
+                                .$extension;
                         }
                     )
                     ->deleteUploadedFileUsing(function (string $file): void {
-                        Storage::disk('public')->delete($file);
+                        Storage::disk('local')->delete($file);
                     })
                     ->dehydrateStateUsing(function ($state): array {
                         if (blank($state)) {
@@ -188,7 +198,6 @@ class FindingsRelationManager extends RelationManager
                         'image/jpeg',
                         'image/png',
                     ])
-                    ->maxSize(1000000)
                     ->default([])
                     ->columnSpanFull(),
             ]);
@@ -247,21 +256,19 @@ class FindingsRelationManager extends RelationManager
             ])
             ->recordActions([
                 EditAction::make('respond')
-                    
 
                     ->label('Respond / Feedback')
                     ->modalHeading('Respond to Due Diligence Finding')
                     ->visible(
-                    fn (WorkTaskFinding $record): bool =>
-                        $this->currentUserCanRespond()
-                        && $record->status !== 'resolved'
-                        )
-                     ->before(function (): void {
-                    abort_unless(
-                        $this->currentUserCanRespond(),
-                        403,
-                        'Hanya requester yang dapat memberikan respons.'
-                    );
+                        fn (WorkTaskFinding $record): bool => $this->currentUserCanRespond()
+                            && $record->status !== 'resolved'
+                    )
+                    ->before(function (): void {
+                        abort_unless(
+                            $this->currentUserCanRespond(),
+                            403,
+                            'Hanya requester yang dapat memberikan respons.'
+                        );
                     })
                     ->mutateDataUsing(
                         function (

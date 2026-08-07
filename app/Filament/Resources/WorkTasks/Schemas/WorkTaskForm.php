@@ -2,9 +2,6 @@
 
 namespace App\Filament\Resources\WorkTasks\Schemas;
 
-use Filament\Schemas\Components\Utilities\Get;
-use Filament\Schemas\Components\Utilities\Set;
-
 use App\Models\Employee;
 use App\Models\WorkTask;
 use Filament\Forms\Components\DateTimePicker;
@@ -13,8 +10,9 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\HtmlString;
 
 class WorkTaskForm
@@ -78,16 +76,27 @@ class WorkTaskForm
                             ->placeholder('No attachments')
                             ->listWithLineBreaks()
                             ->bulleted()
-                            ->formatStateUsing(function (mixed $state): HtmlString|string {
+                            ->formatStateUsing(function (
+                                mixed $state,
+                                WorkTask $record
+                            ): HtmlString|string {
                                 if (! is_string($state) || blank($state)) {
                                     return '-';
                                 }
 
                                 $fileName = basename($state);
-                                $fileUrl = url('/storage/' . ltrim($state, '/'));
+                                $attachmentIndex = array_search(
+                                    $state,
+                                    array_values((array) $record->ticket?->attachments),
+                                    true
+                                );
+                                $fileUrl = route(
+                                    'tickets.attachments.download',
+                                    [$record->ticket, $attachmentIndex]
+                                );
 
                                 return new HtmlString(
-                                    '<a href="' . e($fileUrl) . '"
+                                    '<a href="'.e($fileUrl).'"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         style="
@@ -95,7 +104,7 @@ class WorkTaskForm
                                             font-weight: 600;
                                             text-decoration: underline;
                                         ">'
-                                        . e($fileName) .
+                                        .e($fileName).
                                     '</a>'
                                 );
                             })
@@ -166,11 +175,6 @@ class WorkTaskForm
                             ->helperText('PIC hanya menampilkan employee dari department yang dipilih.')
                             ->nullable(),
 
-                        // Select::make('task_category_id')
-                        //     ->label('Task Category')
-                        //     ->relationship('category', 'name')
-                        //     ->searchable(),
-
                         TextInput::make('title')
                             ->label('Task Title')
                             ->required()
@@ -203,12 +207,11 @@ class WorkTaskForm
                                 'cancel' => 'Cancel',
                             ])
                             ->disableOptionWhen(
-                                fn (string $value, ?WorkTask $record): bool =>
-                                    $value === 'done'
+                                fn (string $value, ?WorkTask $record): bool => $value === 'done'
                                     && ! ($record?->canBeCompletedBy(auth()->user())
                                         ?? (
                                             auth()->user()?->is_admin === true
-                                            || auth()->user()?->hasRole('super-admin', 'system-admin') === true
+                                            || auth()->user()?->hasRole('system-admin') === true
                                         ))
                             )
                             ->default('planned')

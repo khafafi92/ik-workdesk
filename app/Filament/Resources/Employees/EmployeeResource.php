@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Filament\Resources\Employees;
+
 use App\Filament\Resources\Concerns\AdminOnlyResource;
 use App\Filament\Resources\Employees\Pages\CreateEmployee;
 use App\Filament\Resources\Employees\Pages\EditEmployee;
@@ -17,6 +18,7 @@ use Filament\Tables\Table;
 class EmployeeResource extends Resource
 {
     use AdminOnlyResource;
+
     protected static ?string $model = Employee::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;

@@ -15,8 +15,7 @@ class EditTicket extends EditRecord
         return [
             DeleteAction::make()
                 ->visible(
-                    fn (): bool =>
-                        TicketResource::canDelete($this->record)
+                    fn (): bool => TicketResource::canDelete($this->record)
                 )
                 ->before(function (): void {
                     abort_unless(

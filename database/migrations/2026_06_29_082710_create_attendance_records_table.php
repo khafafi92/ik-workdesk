@@ -10,33 +10,33 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('attendance_records', function (Blueprint $table) {
-        $table->id();
+    {
+        Schema::create('attendance_records', function (Blueprint $table) {
+            $table->id();
 
-        $table->foreignId('attendance_import_id')
-            ->nullable()
-            ->constrained('attendance_imports')
-            ->cascadeOnDelete();
+            $table->foreignId('attendance_import_id')
+                ->nullable()
+                ->constrained('attendance_imports')
+                ->cascadeOnDelete();
 
-        $table->string('employee_name');
-        $table->date('attendance_date')->nullable();
+            $table->string('employee_name');
+            $table->date('attendance_date')->nullable();
 
-        $table->time('clock_in')->nullable();
-        $table->time('clock_out')->nullable();
+            $table->time('clock_in')->nullable();
+            $table->time('clock_out')->nullable();
 
-        $table->string('location_gps_name')->nullable();
-        $table->text('location_address')->nullable();
-        $table->string('location_coordinate')->nullable();
+            $table->string('location_gps_name')->nullable();
+            $table->text('location_address')->nullable();
+            $table->string('location_coordinate')->nullable();
 
-        $table->decimal('latitude', 11, 8)->nullable();
-        $table->decimal('longitude', 11, 8)->nullable();
+            $table->decimal('latitude', 11, 8)->nullable();
+            $table->decimal('longitude', 11, 8)->nullable();
 
-        $table->jsonb('raw_data')->nullable();
+            $table->jsonb('raw_data')->nullable();
 
-        $table->timestamps();
-    });
-}
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

@@ -4,7 +4,6 @@ namespace App\Livewire;
 
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Models\Ticket;
-use App\Models\TicketComment;
 use Filament\Notifications\Notification;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -40,7 +39,10 @@ class TicketCollaborationRoom extends Component
         $this->validate([
             'message' => ['required', 'string', 'max:5000'],
             'messageFiles' => ['array', 'max:10'],
-            'messageFiles.*' => ['file', 'max:102400'],
+            'messageFiles.*' => [
+                'file',
+                'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png',
+            ],
         ]);
 
         $context = $this->activityContext($ticket);
@@ -148,17 +150,17 @@ class TicketCollaborationRoom extends Component
             ->filter(fn ($file): bool => $file instanceof TemporaryUploadedFile)
             ->map(function (TemporaryUploadedFile $file) use ($directory): string {
                 $name = now()->format('YmdHis')
-                    . '-'
-                    . Str::random(6)
-                    . '-'
-                    . Str::slug(pathinfo(
+                    .'-'
+                    .Str::random(6)
+                    .'-'
+                    .Str::slug(pathinfo(
                         $file->getClientOriginalName(),
                         PATHINFO_FILENAME
                     ))
-                    . '.'
-                    . strtolower($file->getClientOriginalExtension());
+                    .'.'
+                    .strtolower($file->getClientOriginalExtension());
 
-                return $file->storeAs($directory, $name, 'public');
+                return $file->storeAs($directory, $name, 'local');
             })
             ->values()
             ->all();

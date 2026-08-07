@@ -3,12 +3,14 @@
 namespace App\Filament\Resources\Tickets\Pages;
 
 use App\Filament\Resources\Tickets\TicketResource;
+use App\Models\TaskCategory;
 use App\Models\Ticket;
 use App\Models\TicketAssignment;
 use App\Models\TicketCategory;
-use App\Models\TaskCategory;
 use App\Models\WorkTask;
+use App\Services\DocumentNumberGenerator;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 class CreateTicket extends CreateRecord
@@ -55,22 +57,10 @@ class CreateTicket extends CreateRecord
         |--------------------------------------------------------------------------
         */
 
-        $prefix = 'REQ-' . now()->format('Ym') . '-';
+        $prefix = 'REQ-'.now()->format('Ym').'-';
 
-        $lastTicket = Ticket::query()
-            ->where('ticket_no', 'like', $prefix . '%')
-            ->orderByDesc('ticket_no')
-            ->first();
-
-        $nextNumber = 1;
-
-        if ($lastTicket) {
-            $lastNumber = (int) substr($lastTicket->ticket_no, -4);
-            $nextNumber = $lastNumber + 1;
-        }
-
-        $data['ticket_no'] = $prefix
-            . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        $data['ticket_no'] = app(DocumentNumberGenerator::class)
+            ->next($prefix);
 
         if (empty($data['reported_at'])) {
             $data['reported_at'] = now();
@@ -93,76 +83,77 @@ class CreateTicket extends CreateRecord
         return $data;
     }
 
-    protected function afterCreate(): void
+    protected function handleRecordCreation(array $data): Model
     {
-        /** @var Ticket $ticket */
-        $ticket = $this->record;
+        return DB::transaction(function () use ($data): Ticket {
+            $ticket = new Ticket($data);
+            $ticket->save();
 
-        /*
-        |--------------------------------------------------------------------------
-        | Tentukan department yang mengerjakan
-        |--------------------------------------------------------------------------
-        */
+            /*
+            |--------------------------------------------------------------------------
+            | Tentukan department yang mengerjakan
+            |--------------------------------------------------------------------------
+            */
 
-        $departmentIds = collect([
-            $ticket->handler_department_id,
-        ]);
+            $departmentIds = collect([
+                $ticket->handler_department_id,
+            ]);
 
-        if ($ticket->workflow_type === 'collaborative') {
-            $departmentIds = $departmentIds->merge(
-                $this->reviewerDepartmentIds
-            );
-        }
-
-        $departmentIds = $departmentIds
-            ->filter()
-            ->map(fn ($id): int => (int) $id)
-            ->unique()
-            ->values();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Buat Work Log dan Ticket Assignment per department
-        |--------------------------------------------------------------------------
-        */
-
-        DB::transaction(
-            function () use ($ticket, $departmentIds): void {
-                foreach (
-                    $departmentIds as $index => $departmentId
-                ) {
-                    $workTask = WorkTask::create([
-                        'task_no' => WorkTask::generateTaskNo(),
-                        'ticket_id' => $ticket->id,
-                        'department_id' => $departmentId,
-                        'employee_id' => null,
-                        'task_category_id' => $this->resolveTaskCategoryId(
-                            $ticket,
-                            (int) $departmentId
-                        ),
-                        'work_scope' => 'service_request',
-                        'title' => $ticket->subject,
-                        'description' => $ticket->description,
-                        'priority' => $ticket->priority,
-                        'status' => 'planned',
-                        'progress_percent' => 0,
-                        'due_at' => $ticket->due_at,
-                        'notes' => 'Auto generated from service request '
-                            . $ticket->ticket_no,
-                    ]);
-
-                    TicketAssignment::create([
-                        'ticket_id' => $ticket->id,
-                        'department_id' => $departmentId,
-                        'work_task_id' => $workTask->id,
-                        'is_required' => true,
-                        'sort_order' => $index + 1,
-                        'notes' => $index === 0
-                            ? 'Lead department'
-                            : 'Reviewer department',
-                    ]);
-                }
+            if ($ticket->workflow_type === 'collaborative') {
+                $departmentIds = $departmentIds->merge(
+                    $this->reviewerDepartmentIds
+                );
             }
+
+            $departmentIds = $departmentIds
+                ->filter()
+                ->map(fn ($id): int => (int) $id)
+                ->unique()
+                ->values();
+
+            /*
+            |--------------------------------------------------------------------------
+            | Buat Work Log dan Ticket Assignment per department
+            |--------------------------------------------------------------------------
+            */
+
+            foreach (
+                $departmentIds as $index => $departmentId
+            ) {
+                $workTask = WorkTask::create([
+                    'task_no' => WorkTask::generateTaskNo(),
+                    'ticket_id' => $ticket->id,
+                    'department_id' => $departmentId,
+                    'employee_id' => null,
+                    'task_category_id' => $this->resolveTaskCategoryId(
+                        $ticket,
+                        (int) $departmentId
+                    ),
+                    'work_scope' => 'service_request',
+                    'title' => $ticket->subject,
+                    'description' => $ticket->description,
+                    'priority' => $ticket->priority,
+                    'status' => 'planned',
+                    'progress_percent' => 0,
+                    'due_at' => $ticket->due_at,
+                    'notes' => 'Auto generated from service request '
+                        .$ticket->ticket_no,
+                ]);
+
+                TicketAssignment::create([
+                    'ticket_id' => $ticket->id,
+                    'department_id' => $departmentId,
+                    'work_task_id' => $workTask->id,
+                    'is_required' => true,
+                    'sort_order' => $index + 1,
+                    'notes' => $index === 0
+                        ? 'Lead department'
+                        : 'Reviewer department',
+                ]);
+            }
+
+            return $ticket;
+        }
         );
     }
 
@@ -197,7 +188,7 @@ class CreateTicket extends CreateRecord
                         ->orWhere('name', $name)
                         ->orWhereRaw(
                             'lower(name) like ?',
-                            ['%' . strtolower($name) . '%']
+                            ['%'.strtolower($name).'%']
                         );
                 }
             })

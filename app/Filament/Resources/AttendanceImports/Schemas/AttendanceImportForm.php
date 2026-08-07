@@ -8,6 +8,8 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class AttendanceImportForm
 {
@@ -30,13 +32,18 @@ class AttendanceImportForm
                     ->label('File Lokasi Absen')
                     ->helperText('Opsional untuk rekap total jam kerja.')
                     ->nullable()
-                    ->disk('public')
+                    ->disk('local')
                     ->directory('attendance-imports')
+                    ->getUploadedFileNameForStorageUsing(
+                        fn (TemporaryUploadedFile $file): string => Str::uuid()
+                            .'.'
+                            .$file->getClientOriginalExtension()
+                    )
+                    ->storeFileNamesIn('attendance_file_name')
                     ->acceptedFileTypes([
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'application/vnd.ms-excel',
                     ])
-                    ->preserveFilenames()
                     ->downloadable()
                     ->openable()
                     ->columnSpanFull(),
@@ -45,13 +52,18 @@ class AttendanceImportForm
                     ->label('File Total Jam Kerja')
                     ->helperText('Opsional kalau hanya ingin proses lokasi absen.')
                     ->nullable()
-                    ->disk('public')
+                    ->disk('local')
                     ->directory('attendance-imports')
+                    ->getUploadedFileNameForStorageUsing(
+                        fn (TemporaryUploadedFile $file): string => Str::uuid()
+                            .'.'
+                            .$file->getClientOriginalExtension()
+                    )
+                    ->storeFileNamesIn('work_hour_file_name')
                     ->acceptedFileTypes([
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'application/vnd.ms-excel',
                     ])
-                    ->preserveFilenames()
                     ->downloadable()
                     ->openable()
                     ->columnSpanFull(),

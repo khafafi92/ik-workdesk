@@ -43,7 +43,7 @@ class WorkTaskAssignedNotification extends Notification implements ShouldQueue
             ->title("Work Log Baru: {$task->task_no}")
             ->body(
                 ($task->title ?: 'Work Log baru')
-                . ($task->ticket
+                .($task->ticket
                     ? " · Induk {$task->ticket->ticket_no}"
                     : '')
             )
@@ -61,17 +61,17 @@ class WorkTaskAssignedNotification extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $task        = $this->workTask;
-        $ticket      = $task->ticket;
-        $viewUrl     = route('filament.admin.resources.work-tasks.view', ['record' => $task->id]);
+        $task = $this->workTask;
+        $ticket = $task->ticket;
+        $viewUrl = route('filament.admin.resources.work-tasks.view', ['record' => $task->id]);
         $fromAddress = $this->from['address'] ?? config('mail.from.address');
-        $fromName    = $this->from['name']    ?? config('mail.from.name');
+        $fromName = $this->from['name'] ?? config('mail.from.name');
 
         $priority = match ($task->priority) {
-            'high'   => '🔴 High',
+            'high' => '🔴 High',
             'medium' => '🟡 Medium',
-            'low'    => '🟢 Low',
-            default  => $task->priority ?? '-',
+            'low' => '🟢 Low',
+            default => $task->priority ?? '-',
         };
 
         $due = $task->due_at

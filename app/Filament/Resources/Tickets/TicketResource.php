@@ -1,8 +1,7 @@
 <?php
 
 namespace App\Filament\Resources\Tickets;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+
 use App\Filament\Resources\Tickets\Pages\CreateTicket;
 use App\Filament\Resources\Tickets\Pages\EditTicket;
 use App\Filament\Resources\Tickets\Pages\ListTickets;
@@ -13,8 +12,9 @@ use App\Models\Ticket;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 class TicketResource extends Resource
 {
@@ -22,7 +22,6 @@ class TicketResource extends Resource
 
     protected static ?string $slug = 'service-desk';
 
-    // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-inbox-stack';
 
     protected static ?string $recordTitleAttribute = 'ticket_no';
@@ -120,47 +119,32 @@ class TicketResource extends Resource
                         )
                         ->orWhereHas(
                             'assignments',
-                            fn (Builder $assignmentQuery) =>
-                                $assignmentQuery->whereIn(
-                                    'department_id',
-                                    $departmentIds
-                                )
+                            fn (Builder $assignmentQuery) => $assignmentQuery->whereIn(
+                                'department_id',
+                                $departmentIds
+                            )
                         );
                 }
             }
         );
     }
 
-    // protected static function currentUserHasDepartmentScope(): bool
-    // {
-    //     $user = auth()->user();
-
-    //     return $user !== null
-    //         && (
-    //             $user->is_admin === true
-    //             || $user->hasRole('system-admin')
-    //             || $user->hasPermission('tickets.manage')
-    //             || $user->hasRole('department-manager')
-    //         );
-    // }
-
     // agar ticket yang dibuat dapat dilihat oleh orang lain sesuai dengan departement.
     protected static function currentUserHasDepartmentScope(): bool
-{
-    $user = auth()->user();
+    {
+        $user = auth()->user();
 
-    return $user !== null
-        && (
-            $user->is_admin === true
-            || $user->hasRole('system-admin')
-            || $user->hasPermission('tickets.manage')
-            || $user->hasPermission('tickets.view')
-            || $user->hasRole('department-manager')
-        );
-}
+        return $user !== null
+            && (
+                $user->is_admin === true
+                || $user->hasRole('system-admin')
+                || $user->hasPermission('tickets.manage')
+                || $user->hasPermission('tickets.view')
+                || $user->hasRole('department-manager')
+            );
+    }
 
     // end pembatasan
-
 
     protected static function currentUserCanAccessTicket(
         Model $record
@@ -260,8 +244,6 @@ class TicketResource extends Resource
     }
 
     // end pembatasan
-
-
 
     public static function form(Schema $schema): Schema
     {

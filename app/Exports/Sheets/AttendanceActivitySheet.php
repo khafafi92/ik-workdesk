@@ -6,13 +6,13 @@ use App\Models\AttendanceImport;
 use App\Models\AttendanceResult;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
-use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 
-class AttendanceActivitySheet implements FromCollection, WithHeadings, WithMapping, WithTitle, ShouldAutoSize, WithColumnFormatting
+class AttendanceActivitySheet implements FromCollection, ShouldAutoSize, WithColumnFormatting, WithHeadings, WithMapping, WithTitle
 {
     public function __construct(
         protected AttendanceImport $import
@@ -78,8 +78,6 @@ class AttendanceActivitySheet implements FromCollection, WithHeadings, WithMappi
             $row->location_check,
             $row->duration_text,
             $row->checkout_check,
-            // $row->matched_location_name,
-            // $row->distance_meters,
         ];
     }
 

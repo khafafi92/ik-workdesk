@@ -93,6 +93,24 @@ class VehicleBookingTest extends TestCase
         ]);
     }
 
+    public function test_vehicle_booking_rejects_passengers_above_capacity(): void
+    {
+        $user = User::factory()->create();
+        $vehicle = $this->createVehicle();
+
+        $this->expectException(ValidationException::class);
+
+        app(VehicleBookingService::class)->create([
+            'vehicle_id' => $vehicle->id,
+            'requester_id' => $user->id,
+            'title' => 'Over capacity trip',
+            'destination' => 'Jakarta',
+            'passengers_count' => 6,
+            'start_at' => '2026-08-03 13:00:00',
+            'end_at' => '2026-08-03 14:00:00',
+        ]);
+    }
+
     public function test_authenticated_user_can_open_vehicle_pages(): void
     {
         config()->set('app.env', 'local');

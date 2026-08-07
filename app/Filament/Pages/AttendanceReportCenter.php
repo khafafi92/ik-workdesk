@@ -70,17 +70,17 @@ class AttendanceReportCenter extends Page
     |--------------------------------------------------------------------------
     */
 
-    public function getTitle(): string | Htmlable
+    public function getTitle(): string|Htmlable
     {
         return 'Attendance Report Center';
     }
 
-    public function getHeading(): string | Htmlable
+    public function getHeading(): string|Htmlable
     {
         return 'Attendance Report Center';
     }
 
-    public function getSubheading(): string | Htmlable | null
+    public function getSubheading(): string|Htmlable|null
     {
         return 'Pilih periode upload, lalu buka Activity Check atau Total Jam Kerja.';
     }
@@ -143,8 +143,8 @@ class AttendanceReportCenter extends Page
 
         return url(
             '/panel/attendance-imports/'
-            . $this->attendanceImportId
-            . '/results#activity-check'
+            .$this->attendanceImportId
+            .'/results#activity-check'
         );
     }
 
@@ -156,8 +156,8 @@ class AttendanceReportCenter extends Page
 
         return url(
             '/panel/attendance-imports/'
-            . $this->attendanceImportId
-            . '/results#work-hour-summary'
+            .$this->attendanceImportId
+            .'/results#work-hour-summary'
         );
     }
 

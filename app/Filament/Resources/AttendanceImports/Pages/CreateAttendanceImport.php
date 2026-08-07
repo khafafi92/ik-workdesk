@@ -15,11 +15,17 @@ class CreateAttendanceImport extends CreateRecord
         $data['attendance_file_path'] = $this->normalizeFilePath($data['attendance_file_path'] ?? null);
         $data['work_hour_file_path'] = $this->normalizeFilePath($data['work_hour_file_path'] ?? null);
 
-        if (! empty($data['attendance_file_path'])) {
+        if (
+            ! empty($data['attendance_file_path'])
+            && empty($data['attendance_file_name'])
+        ) {
             $data['attendance_file_name'] = basename($data['attendance_file_path']);
         }
 
-        if (! empty($data['work_hour_file_path'])) {
+        if (
+            ! empty($data['work_hour_file_path'])
+            && empty($data['work_hour_file_name'])
+        ) {
             $data['work_hour_file_name'] = basename($data['work_hour_file_path']);
         }
 

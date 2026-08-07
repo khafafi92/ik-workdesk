@@ -22,7 +22,6 @@ class AttendanceImportResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowUpTray;
 
-    
     protected static ?string $recordTitleAttribute = 'period_name';
 
     protected static function currentUserCanUploadAttendance(): bool
@@ -52,7 +51,6 @@ class AttendanceImportResource extends Resource
             //
         ];
     }
-
 
     public static function getNavigationLabel(): string
     {

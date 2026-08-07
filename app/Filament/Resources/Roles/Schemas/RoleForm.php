@@ -42,13 +42,11 @@ class RoleForm
                             ->unique(ignoreRecord: true)
                             ->maxLength(100)
                             ->disabled(
-                                fn (?Role $record): bool =>
-                                    $record?->code
+                                fn (?Role $record): bool => $record?->code
                                         === 'system-admin'
                             )
                             ->dehydrated(
-                                fn (?Role $record): bool =>
-                                    $record?->code
+                                fn (?Role $record): bool => $record?->code
                                         !== 'system-admin'
                             ),
 
@@ -61,13 +59,11 @@ class RoleForm
                             ->label('Active')
                             ->default(true)
                             ->disabled(
-                                fn (?Role $record): bool =>
-                                    $record?->code
+                                fn (?Role $record): bool => $record?->code
                                         === 'system-admin'
                             )
                             ->dehydrated(
-                                fn (?Role $record): bool =>
-                                    $record?->code
+                                fn (?Role $record): bool => $record?->code
                                         !== 'system-admin'
                             ),
                     ])
@@ -84,50 +80,49 @@ class RoleForm
                             ->relationship(
                                 name: 'permissions',
                                 titleAttribute: 'name',
-                                modifyQueryUsing:
-                                    function (
-                                        Builder $query
-                                    ): Builder {
-                                        $actor = auth()->user();
+                                modifyQueryUsing: function (
+                                    Builder $query
+                                ): Builder {
+                                    $actor = auth()->user();
 
-                                        $query->orderBy('name');
+                                    $query->orderBy('name');
 
-                                        /*
-                                         * Super Admin dapat melihat
-                                         * seluruh permission.
-                                         */
-                                        if (
-                                            $actor?->is_admin
-                                                === true
-                                        ) {
-                                            return $query;
-                                        }
-
-                                        /*
-                                         * User Manager hanya dapat
-                                         * memberikan permission
-                                         * yang dia miliki sendiri.
-                                         */
-                                        $allowedIds = $actor
-                                            ?->roles()
-                                            ->with(
-                                                'permissions:id'
-                                            )
-                                            ->get()
-                                            ->pluck(
-                                                'permissions'
-                                            )
-                                            ->flatten()
-                                            ->pluck('id')
-                                            ->unique()
-                                            ->values()
-                                            ->all() ?? [];
-
-                                        return $query->whereIn(
-                                            'permissions.id',
-                                            $allowedIds
-                                        );
+                                    /*
+                                     * Super Admin dapat melihat
+                                     * seluruh permission.
+                                     */
+                                    if (
+                                        $actor?->is_admin
+                                            === true
+                                    ) {
+                                        return $query;
                                     }
+
+                                    /*
+                                     * User Manager hanya dapat
+                                     * memberikan permission
+                                     * yang dia miliki sendiri.
+                                     */
+                                    $allowedIds = $actor
+                                        ?->roles()
+                                        ->with(
+                                            'permissions:id'
+                                        )
+                                        ->get()
+                                        ->pluck(
+                                            'permissions'
+                                        )
+                                        ->flatten()
+                                        ->pluck('id')
+                                        ->unique()
+                                        ->values()
+                                        ->all() ?? [];
+
+                                    return $query->whereIn(
+                                        'permissions.id',
+                                        $allowedIds
+                                    );
+                                }
                             )
                             ->searchable()
                             ->bulkToggleable()

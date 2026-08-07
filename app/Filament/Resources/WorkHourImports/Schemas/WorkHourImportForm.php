@@ -31,7 +31,7 @@ class WorkHourImportForm
 
                 FileUpload::make('work_hour_file_path')
                     ->label('File Total Jam Kerja')
-                    ->disk('public')
+                    ->disk('local')
                     ->directory('attendance-imports')
                     ->acceptedFileTypes([
                         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',

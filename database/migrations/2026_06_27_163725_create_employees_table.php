@@ -10,19 +10,19 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('employees', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
-        $table->string('employee_no')->nullable();
-        $table->string('name');
-        $table->string('email')->nullable();
-        $table->string('phone')->nullable();
-        $table->string('position')->nullable();
-        $table->boolean('is_active')->default(true);
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('employees', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('employee_no')->nullable();
+            $table->string('name');
+            $table->string('email')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('position')->nullable();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

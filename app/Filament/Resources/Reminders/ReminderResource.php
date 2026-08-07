@@ -22,7 +22,6 @@ class ReminderResource extends Resource
 {
     protected static ?string $model = Reminder::class;
 
-    // protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bell-alert';
 
     protected static ?string $recordTitleAttribute = 'title';
@@ -59,78 +58,74 @@ class ReminderResource extends Resource
         ];
     }
 
-
     public static function getNavigationLabel(): string
-{
-    return 'Reminders';
-}
-
-public static function getModelLabel(): string
-{
-    return 'Reminder';
-}
-
-public static function getPluralModelLabel(): string
-{
-    return 'Reminders';
-}
-
-public static function getNavigationGroup(): ?string
-{
-    return 'Notifications';
-}
-
-public static function getNavigationSort(): ?int
-{
-    return 1;
-}
-// bloking reminder sesuai user
-
-public static function getEloquentQuery(): Builder
-{
-    $query = parent::getEloquentQuery()
-        ->with([
-            'employee',
-            'department',
-            'workTask',
-        ]);
-
-    $user = Auth::user();
-
-    if (! $user) {
-        return $query->whereRaw('1 = 0');
+    {
+        return 'Reminders';
     }
 
-    // Superadmin boleh lihat semua reminders
-    if ($user->hasRole('superadmin')) {
-        return $query;
+    public static function getModelLabel(): string
+    {
+        return 'Reminder';
     }
 
-    $user->loadMissing('employee');
-
-    $employeeId = $user->employee?->id;
-
-    // Kalau user tidak punya employee profile, jangan tampilkan data orang lain
-    if (! $employeeId) {
-        return $query->whereRaw('1 = 0');
+    public static function getPluralModelLabel(): string
+    {
+        return 'Reminders';
     }
 
-    // User biasa hanya lihat reminder milik employee-nya sendiri
-    return $query->where('employee_id', $employeeId);
-}
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Notifications';
+    }
 
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
+    // bloking reminder sesuai user
 
-// end blok
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()
+            ->with([
+                'employee',
+                'department',
+                'workTask',
+            ]);
 
+        $user = Auth::user();
 
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        // Superadmin boleh lihat semua reminders
+        if ($user->hasRole('system-admin')) {
+            return $query;
+        }
+
+        $user->loadMissing('employee');
+
+        $employeeId = $user->employee?->id;
+
+        // Kalau user tidak punya employee profile, jangan tampilkan data orang lain
+        if (! $employeeId) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        // User biasa hanya lihat reminder milik employee-nya sendiri
+        return $query->where('employee_id', $employeeId);
+    }
+
+    // end blok
 
     public static function getPages(): array
     {
         return [
             'index' => ListReminders::route('/'),
-        'create' => CreateReminder::route('/create'),
-        'view' => ViewReminder::route('/{record}'),
-        'edit' => EditReminder::route('/{record}/edit'),
+            'create' => CreateReminder::route('/create'),
+            'view' => ViewReminder::route('/{record}'),
+            'edit' => EditReminder::route('/{record}/edit'),
         ];
     }
 }

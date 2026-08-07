@@ -6,6 +6,7 @@ use Filament\Facades\Filament;
 use Filament\GlobalSearch\GlobalSearchResults;
 use Filament\GlobalSearch\Providers\Contracts\GlobalSearchProvider;
 use Filament\GlobalSearch\Providers\DefaultGlobalSearchProvider;
+use Filament\Resources\Resource;
 
 class ContextualGlobalSearchProvider implements GlobalSearchProvider
 {
@@ -50,7 +51,7 @@ class ContextualGlobalSearchProvider implements GlobalSearchProvider
 
         $resourcePaths = collect(Filament::getResources())
             ->mapWithKeys(fn (string $resource): array => [
-                $resource => trim($panel->getPath() . '/' . $resource::getSlug($panel), '/'),
+                $resource => trim($panel->getPath().'/'.$resource::getSlug($panel), '/'),
             ])
             ->sortByDesc(fn (string $path): int => strlen($path));
 
@@ -58,7 +59,7 @@ class ContextualGlobalSearchProvider implements GlobalSearchProvider
             $path = trim($path, '/');
 
             foreach ($resourcePaths as $resource => $resourcePath) {
-                if ($path === $resourcePath || str_starts_with($path, $resourcePath . '/')) {
+                if ($path === $resourcePath || str_starts_with($path, $resourcePath.'/')) {
                     return $resource;
                 }
             }

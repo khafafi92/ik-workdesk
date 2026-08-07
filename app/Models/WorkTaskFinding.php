@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\DocumentNumberGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -33,45 +34,28 @@ class WorkTaskFinding extends Model
 
     protected static function booted(): void
     {
-    static::creating(function (WorkTaskFinding $finding): void {
-        // Kode generate finding_no yang sudah ada tetap di sini.
-    });
+        static::creating(function (WorkTaskFinding $finding): void {
+            // Kode generate finding_no yang sudah ada tetap di sini.
+        });
 
-    static::saved(function (WorkTaskFinding $finding): void {
-        $finding->loadMissing('workTask.ticket');
+        static::saved(function (WorkTaskFinding $finding): void {
+            $finding->loadMissing('workTask.ticket');
 
-        $finding->workTask?->ticket?->syncCollaborativeStatus();
-    });
+            $finding->workTask?->ticket?->syncCollaborativeStatus();
+        });
 
-    static::deleted(function (WorkTaskFinding $finding): void {
-        $finding->loadMissing('workTask.ticket');
+        static::deleted(function (WorkTaskFinding $finding): void {
+            $finding->loadMissing('workTask.ticket');
 
-        $finding->workTask?->ticket?->syncCollaborativeStatus();
-    });
+            $finding->workTask?->ticket?->syncCollaborativeStatus();
+        });
     }
 
     public static function generateFindingNo(): string
     {
-        $prefix = 'FND-' . now()->format('Ym') . '-';
+        $prefix = 'FND-'.now()->format('Ym').'-';
 
-        $lastFinding = static::query()
-            ->where('finding_no', 'like', $prefix . '%')
-            ->orderByDesc('finding_no')
-            ->first();
-
-        $nextNumber = 1;
-
-        if ($lastFinding) {
-            $lastNumber = (int) substr(
-                $lastFinding->finding_no,
-                -4
-            );
-
-            $nextNumber = $lastNumber + 1;
-        }
-
-        return $prefix
-            . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+        return app(DocumentNumberGenerator::class)->next($prefix);
     }
 
     public function workTask(): BelongsTo

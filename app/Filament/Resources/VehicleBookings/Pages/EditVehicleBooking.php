@@ -52,8 +52,7 @@ class EditVehicleBooking extends EditRecord
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(
-                    fn (): bool =>
-                        $this->record->canBeCompleted()
+                    fn (): bool => $this->record->canBeCompleted()
                 )
                 ->requiresConfirmation()
                 ->action(function (): void {
