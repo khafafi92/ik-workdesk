@@ -24,10 +24,11 @@ jobs:
 
       - run: cp .env.example .env
       - run: touch database/database.sqlite
-      - run: composer install --no-interaction --prefer-dist
+      - run: composer install --no-interaction --prefer-dist --no-scripts --no-progress
+      - run: php artisan key:generate
+      - run: php artisan package:discover --ansi
       - run: npm ci
       - run: npm run build
-      - run: php artisan key:generate
       - run: php artisan migrate:fresh --seed --force
       - run: vendor/bin/pint --test
       - run: php artisan test
