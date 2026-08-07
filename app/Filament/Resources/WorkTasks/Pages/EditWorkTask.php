@@ -4,6 +4,7 @@ namespace App\Filament\Resources\WorkTasks\Pages;
 
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
+use App\Services\WorkTaskMutationGuard;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -11,6 +12,15 @@ use Filament\Resources\Pages\EditRecord;
 class EditWorkTask extends EditRecord
 {
     protected static string $resource = WorkTaskResource::class;
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return app(WorkTaskMutationGuard::class)->validate(
+            auth()->user(),
+            $data,
+            $this->record
+        );
+    }
 
     protected function getHeaderActions(): array
     {

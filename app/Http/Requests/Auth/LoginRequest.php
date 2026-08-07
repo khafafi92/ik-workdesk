@@ -50,6 +50,15 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        if (! Auth::user()?->isActiveForAccess()) {
+            Auth::guard('web')->logout();
+            RateLimiter::hit($this->throttleKey());
+
+            throw ValidationException::withMessages([
+                'email' => 'Akun employee sudah tidak aktif.',
+            ]);
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

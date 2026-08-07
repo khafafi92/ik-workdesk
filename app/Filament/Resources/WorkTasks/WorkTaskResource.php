@@ -99,15 +99,8 @@ class WorkTaskResource extends Resource
                 }
 
                 if ($hasDepartmentScope && ! empty($departmentIds)) {
-                    // Work log yang department_id-nya cocok (single workflow)
+                    // Setiap department hanya melihat Work Log miliknya sendiri.
                     $workTaskQuery->orWhereIn('department_id', $departmentIds);
-
-                    // [FIX Point 2] Work log dari ticket collaborative yang department-nya
-                    // ada di assignments â€” agar handler dept bisa lihat work log terkait
-                    $workTaskQuery->orWhereHas(
-                        'ticket.assignments',
-                        fn (Builder $assignQuery) => $assignQuery->whereIn('department_id', $departmentIds)
-                    );
                 }
             }
         );

@@ -22,6 +22,7 @@ use App\Services\AttendanceReportProcessor;
 use App\Services\DocumentNumberGenerator;
 use App\Services\RoleAssignmentService;
 use Database\Seeders\AdminUserSeeder;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -164,6 +165,30 @@ class SecurityHardeningTest extends TestCase
         $this->seed(AdminUserSeeder::class);
 
         $this->assertDatabaseCount('users', 0);
+    }
+
+    public function test_database_seeder_installs_default_access_control(): void
+    {
+        config()->set('workdesk.bootstrap_admin', [
+            'name' => null,
+            'email' => null,
+            'password' => null,
+        ]);
+
+        $this->seed(DatabaseSeeder::class);
+
+        $this->assertDatabaseHas('roles', [
+            'code' => 'system-admin',
+            'is_active' => true,
+        ]);
+        $this->assertDatabaseHas('permissions', [
+            'code' => 'attendance.view',
+            'is_active' => true,
+        ]);
+        $this->assertDatabaseHas('meeting_rooms', [
+            'code' => 'RMEET-L9',
+            'is_active' => true,
+        ]);
     }
 
     public function test_ticket_comment_attachment_requires_ticket_access(): void

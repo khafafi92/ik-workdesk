@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\WorkTasks\Schemas;
 
+use App\Filament\Resources\Tickets\TicketResource;
 use App\Models\Employee;
 use App\Models\WorkTask;
 use Filament\Forms\Components\DateTimePicker;
@@ -13,6 +14,7 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\HtmlString;
 
 class WorkTaskForm
@@ -134,12 +136,38 @@ class WorkTaskForm
                             ->disabled(
                                 fn (?WorkTask $record): bool => filled($record?->ticket_id)
                             )
-                            ->relationship('ticket', 'ticket_no')
+                            ->relationship(
+                                name: 'ticket',
+                                titleAttribute: 'ticket_no',
+                                modifyQueryUsing: fn (Builder $query): Builder => $query
+                                    ->whereIn(
+                                        'tickets.id',
+                                        TicketResource::getEloquentQuery()
+                                            ->select('tickets.id')
+                                    )
+                            )
                             ->searchable(),
 
                         Select::make('department_id')
                             ->label('Department')
-                            ->relationship('department', 'name')
+                            ->relationship(
+                                name: 'department',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: function (Builder $query): Builder {
+                                    $user = auth()->user();
+
+                                    if (! $user) {
+                                        return $query->whereRaw('1 = 0');
+                                    }
+
+                                    return $query
+                                        ->where('is_active', true)
+                                        ->whereIn(
+                                            'departments.id',
+                                            $user->accessibleDepartmentIds()
+                                        );
+                                }
+                            )
                             ->searchable()
                             ->preload()
                             ->live()

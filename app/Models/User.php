@@ -97,7 +97,15 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        return $this->isActiveForAccess();
+    }
+
+    public function isActiveForAccess(): bool
+    {
+        $this->loadMissing('employee');
+
+        return $this->employee === null
+            || $this->employee->is_active === true;
     }
 
     public function hasRole(string ...$roleCodes): bool
