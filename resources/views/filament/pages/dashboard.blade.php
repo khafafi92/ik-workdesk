@@ -9,8 +9,6 @@
         default => 'Selamat malam',
     };
     $firstName = explode(' ', auth()->user()->name ?? 'User')[0];
-    $availableRoomCount = $data['meetingRoomSummary']['available'];
-    $busyRoomCount = $data['meetingRoomSummary']['busy'];
     $statusBadgeClass = fn (?string $status): string => match ($status) {
         'open', 'cancel' => 'ik-badge--danger',
         'in_progress' => 'ik-badge--warning',
@@ -63,45 +61,6 @@
                 </section>
             </div>
         @endif
-
-        <section class="ik-smart-panel ik-meeting-summary">
-            <div class="ik-smart-header">
-                <div class="ik-smart-heading">
-                    <span class="ik-smart-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 8.25h18M5.25 5.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25Z" />
-                        </svg>
-                    </span>
-                    <div>
-                        <h2>Meeting</h2>
-                        <p>Ringkasan ruangan dan jadwal hari ini.</p>
-                    </div>
-                </div>
-
-                <div class="ik-smart-actions">
-                    <a href="{{ $data['meetingCalendarUrl'] }}">Kalender</a>
-                    <a href="{{ $data['meetingBookingsUrl'] }}" class="ik-smart-action--primary">Booking Saya</a>
-                </div>
-            </div>
-
-            <div class="ik-meeting-metrics">
-                <div>
-                    <span class="ik-status-dot ik-status-dot--success"></span>
-                    <strong>{{ $availableRoomCount }}</strong>
-                    <span>ruangan tersedia</span>
-                </div>
-                <div>
-                    <span class="ik-status-dot ik-status-dot--danger"></span>
-                    <strong>{{ $busyRoomCount }}</strong>
-                    <span>sedang dipakai</span>
-                </div>
-                <div>
-                    <span class="ik-status-dot ik-status-dot--info"></span>
-                    <strong>{{ $data['myMeetingsToday']->count() }}</strong>
-                    <span>meeting saya</span>
-                </div>
-            </div>
-        </section>
 
         <section class="ik-smart-panel ik-reminder-hub">
             <div class="ik-smart-header">

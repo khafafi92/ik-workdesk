@@ -2,12 +2,9 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Resources\MeetingBookings\MeetingBookingResource;
 use App\Filament\Resources\Reminders\ReminderResource;
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
-use App\Models\MeetingBooking;
-use App\Models\MeetingRoom;
 use BackedEnum;
 use Carbon\CarbonInterface;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -153,36 +150,6 @@ class Dashboard extends BaseDashboard
             ],
         ] : [];
 
-        $todayMeetingQuery = MeetingBooking::query()
-            ->with(['room', 'organizer'])
-            ->active()
-            ->whereBetween('start_at', [$todayStart, $todayEnd]);
-        $userId = auth()->id();
-
-        $myMeetingsToday = (clone $todayMeetingQuery)
-            ->where(
-                fn ($query) => $query
-                    ->where('organizer_id', $userId)
-                    ->orWhereHas(
-                        'participants',
-                        fn ($participantQuery) => $participantQuery->whereKey($userId)
-                    )
-            )
-            ->orderBy('start_at')
-            ->limit(5)
-            ->get();
-
-        $activeRoomCount = MeetingRoom::query()
-            ->where('is_active', true)
-            ->count();
-        $busyRoomCount = MeetingBooking::query()
-            ->active()
-            ->where('start_at', '<=', $now)
-            ->where('end_at', '>', $now)
-            ->whereHas('room', fn ($query) => $query->where('is_active', true))
-            ->distinct()
-            ->count('meeting_room_id');
-
         return [
             'ticketStats' => $ticketStats,
             'workStats' => $workStats,
@@ -219,16 +186,9 @@ class Dashboard extends BaseDashboard
                 ->latest()
                 ->limit(5)
                 ->get(),
-            'myMeetingsToday' => $myMeetingsToday,
-            'meetingRoomSummary' => [
-                'available' => max(0, $activeRoomCount - $busyRoomCount),
-                'busy' => $busyRoomCount,
-            ],
             'ticketsUrl' => TicketResource::getUrl('index'),
             'workTasksUrl' => WorkTaskResource::getUrl('index'),
             'remindersUrl' => ReminderResource::getUrl('index'),
-            'meetingCalendarUrl' => MeetingRoomCalendar::getUrl(),
-            'meetingBookingsUrl' => MeetingBookingResource::getUrl('index'),
         ];
     }
 

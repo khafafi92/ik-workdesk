@@ -42,8 +42,6 @@ class CollaborativeLeadCompletionTest extends TestCase
             'is_active' => true,
         ]);
 
-        $this->actingAs($leadUser);
-
         $ticket = Ticket::query()->create([
             'ticket_no' => 'REQ-202608-0001',
             'employee_id' => $requester->id,
@@ -64,11 +62,12 @@ class CollaborativeLeadCompletionTest extends TestCase
             'completed_at' => now(),
         ]);
 
-        $this->assertTrue($leadTask->canBeCompletedBy($leadUser));
-        $this->assertFalse($leadTask->canBeCompletedBy($requesterUser));
+        $this->assertFalse($leadTask->canBeCompletedBy($leadUser));
+        $this->assertTrue($leadTask->canBeCompletedBy($requesterUser));
         $this->assertFalse($legalTask->canBeCompletedBy($leadUser));
         $this->assertSame(0, (int) $legalTask->progress_percent);
 
+        $this->actingAs($requesterUser);
         $leadTask->update(['status' => 'done']);
 
         $this->assertSame('done', $leadTask->fresh()->status);
@@ -78,10 +77,58 @@ class CollaborativeLeadCompletionTest extends TestCase
         $this->assertSame(100, (int) $legalTask->fresh()->progress_percent);
         $this->assertSame('resolved', $ticket->fresh()->status);
         $this->assertNotNull($ticket->fresh()->resolved_at);
+        $this->assertSame(
+            $requesterUser->id,
+            $leadTask->fresh()->completed_by_user_id
+        );
         Notification::assertSentTo(
             $requesterUser,
             TicketResolvedNotification::class
         );
+    }
+
+    public function test_legacy_requester_lead_work_log_does_not_require_a_pic(): void
+    {
+        $requesterDepartment = $this->createDepartment('REQ', 'Requester');
+        $it = $this->createDepartment('IT', 'Information Technology');
+        $requesterUser = User::factory()->create();
+        $requester = Employee::query()->create([
+            'user_id' => $requesterUser->id,
+            'department_id' => $requesterDepartment->id,
+            'name' => 'Requester',
+            'is_active' => true,
+        ]);
+        $ticket = Ticket::query()->create([
+            'ticket_no' => 'REQ-202608-0099',
+            'employee_id' => $requester->id,
+            'requester_department_id' => $requesterDepartment->id,
+            'handler_department_id' => $it->id,
+            'subject' => 'Legacy requester work log',
+            'workflow_type' => 'collaborative',
+            'status' => 'open',
+        ]);
+        $primaryTask = $this->createAssignedTask($ticket, $it, 1);
+        $requesterTask = WorkTask::query()->create([
+            'task_no' => 'TSK-202608-0099',
+            'ticket_id' => $ticket->id,
+            'department_id' => $requesterDepartment->id,
+            'title' => $ticket->subject,
+            'status' => 'planned',
+        ]);
+        TicketAssignment::query()->create([
+            'ticket_id' => $ticket->id,
+            'department_id' => $requesterDepartment->id,
+            'work_task_id' => $requesterTask->id,
+            'is_required' => true,
+            'sort_order' => 2,
+        ]);
+
+        $this->actingAs($requesterUser);
+        $primaryTask->update(['status' => 'done']);
+
+        $this->assertSame('done', $requesterTask->fresh()->status);
+        $this->assertNull($requesterTask->fresh()->employee_id);
+        $this->assertSame('resolved', $ticket->fresh()->status);
     }
 
     private function createDepartment(string $code, string $name): Department
@@ -98,10 +145,17 @@ class CollaborativeLeadCompletionTest extends TestCase
         Department $department,
         int $sortOrder,
     ): WorkTask {
+        $pic = Employee::query()->create([
+            'department_id' => $department->id,
+            'name' => $department->name.' PIC',
+            'is_active' => true,
+        ]);
+
         $task = WorkTask::query()->create([
             'task_no' => 'TSK-202608-'.str_pad((string) $sortOrder, 4, '0', STR_PAD_LEFT),
             'ticket_id' => $ticket->id,
             'department_id' => $department->id,
+            'employee_id' => $pic->id,
             'title' => $ticket->subject,
             'status' => 'planned',
             'progress_percent' => 0,

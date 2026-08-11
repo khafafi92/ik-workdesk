@@ -215,15 +215,6 @@ class AccessControlSeeder extends Seeder
                     'permissions' => ['*'],
                 ],
                 [
-                    'name' => 'User Manager',
-                    'code' => 'user-manager',
-                    'description' => 'Manage user accounts and application roles.',
-                    'permissions' => [
-                        'users.manage',
-                        'roles.manage',
-                    ],
-                ],
-                [
                     'name' => 'Attendance Operator',
                     'code' => 'attendance-operator',
                     'description' => 'View, upload, and manage attendance.',
@@ -234,20 +225,11 @@ class AccessControlSeeder extends Seeder
                     ],
                 ],
                 [
-                    'name' => 'Attendance Viewer',
-                    'code' => 'attendance-viewer',
-                    'description' => 'View attendance reports only.',
-                    'permissions' => [
-                        'attendance.view',
-                    ],
-                ],
-                [
-                    'name' => 'Department Reviewer',
-                    'code' => 'department-reviewer',
-                    'description' => 'Manage work logs and findings for selected departments.',
+                    'name' => 'Supervisor',
+                    'code' => 'supervisor',
+                    'description' => 'Supervise work logs and findings for selected departments.',
                     'permissions' => [
                         'tickets.view',
-                        'tickets.manage',
                         'worklogs.view',
                         'worklogs.manage',
                         'findings.view',
@@ -263,8 +245,11 @@ class AccessControlSeeder extends Seeder
                     'permissions' => [
                         'tickets.create',
                         'tickets.view',
+                        'tickets.manage',
                         'worklogs.view',
+                        'worklogs.manage',
                         'findings.view',
+                        'findings.manage',
                         'comments.create',
                         'reminders.view',
                     ],
@@ -282,34 +267,9 @@ class AccessControlSeeder extends Seeder
                         'reminders.view',
                     ],
                 ],
-                [
-                    'name' => 'General User',
-                    'code' => 'general-user',
-                    'description' => 'Standard application user.',
-                    'permissions' => [
-                        'tickets.create',
-                        'tickets.view',
-                        'worklogs.view',
-                        'findings.respond',
-                        'comments.create',
-                        'reminders.view',
-                    ],
-                ],
             ];
 
             foreach ($roles as $roleData) {
-                if ($roleData['permissions'] !== ['*']) {
-                    $roleData['permissions'] = array_values(array_unique([
-                        ...$roleData['permissions'],
-                        'meeting-bookings.view',
-                        'meeting-bookings.create',
-                        'meeting-bookings.cancel-own',
-                        'vehicle-bookings.view',
-                        'vehicle-bookings.create',
-                        'vehicle-bookings.cancel-own',
-                    ]));
-                }
-
                 $permissionCodes = $roleData['permissions'];
 
                 unset($roleData['permissions']);

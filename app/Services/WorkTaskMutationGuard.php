@@ -17,11 +17,19 @@ class WorkTaskMutationGuard
         array $data,
         ?WorkTask $record = null
     ): array {
+        $isManager = $record?->canBeManagedBy($actor)
+            ?? $actor->hasPermission('worklogs.manage');
+        $isAssignedPic = $record?->isAssignedTo($actor) === true;
+
         abort_unless(
-            $actor->hasPermission('worklogs.manage'),
+            $isManager || $isAssignedPic,
             403,
             'Anda tidak memiliki izin mengelola Work Log.'
         );
+
+        if ($isAssignedPic && ! $isManager) {
+            $this->validateAssignedPicChanges($data, $record);
+        }
 
         $this->validateImmutableSource($data, $record);
 
@@ -68,6 +76,45 @@ class WorkTaskMutationGuard
         }
 
         return $data;
+    }
+
+    private function validateAssignedPicChanges(array $data, WorkTask $record): void
+    {
+        $candidate = clone $record;
+        $candidate->fill($data);
+        $forbiddenFields = [
+            'ticket_id',
+            'department_id',
+            'employee_id',
+            'task_category_id',
+            'work_scope',
+            'title',
+            'description',
+            'priority',
+            'due_at',
+            'completed_at',
+        ];
+
+        if ($candidate->isDirty($forbiddenFields)) {
+            throw ValidationException::withMessages([
+                'status' => 'PIC hanya dapat memperbarui status pelaksanaan, progress, waktu mulai, dan notes.',
+            ]);
+        }
+
+        if (
+            array_key_exists('status', $data)
+            && ! in_array($data['status'], ['planned', 'in_progress', 'hold'], true)
+        ) {
+            throw ValidationException::withMessages([
+                'status' => 'PIC hanya dapat memilih Planned, In Progress, atau Hold. Done dikonfirmasi oleh requester.',
+            ]);
+        }
+
+        if ((int) ($data['progress_percent'] ?? $record->progress_percent) >= 100) {
+            throw ValidationException::withMessages([
+                'progress_percent' => 'Progress PIC maksimal 99%. Status Done dikonfirmasi oleh requester.',
+            ]);
+        }
     }
 
     private function validateImmutableSource(

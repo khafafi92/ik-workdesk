@@ -72,6 +72,13 @@ class AdminPanelProvider extends PanelProvider
                     '">',
             )
             ->renderHook(
+                PanelsRenderHook::SCRIPTS_AFTER,
+                fn (): string => '<script src="'.
+                    asset('js/filament/admin/notification-drawer.js').
+                    '?v='.filemtime(public_path('js/filament/admin/notification-drawer.js')).
+                    '" defer></script>',
+            )
+            ->renderHook(
                 PanelsRenderHook::SIDEBAR_FOOTER,
                 fn (): string => view('filament.components.sidebar-collapse-footer')->render(),
             )

@@ -58,7 +58,8 @@ class WorkTasksTable
                     ->searchable(),
 
                 TextColumn::make('employee.name')
-                    ->label('PIC')
+                    ->label('PIC / Pelaksana')
+                    ->placeholder('Belum ditentukan')
                     ->searchable(),
 
                 TextColumn::make('priority')
@@ -99,6 +100,11 @@ class WorkTasksTable
                     ->label('Completed At')
                     ->dateTime('d M Y H:i')
                     ->sortable()
+                    ->toggleable(isToggledHiddenByDefault: true),
+
+                TextColumn::make('completedBy.name')
+                    ->label('Marked Done By')
+                    ->placeholder('-')
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->defaultSort('created_at', 'desc')

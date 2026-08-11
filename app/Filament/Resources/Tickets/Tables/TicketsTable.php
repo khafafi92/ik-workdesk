@@ -79,8 +79,10 @@ class TicketsTable
                         default => 'gray',
                     }),
 
-                TextColumn::make('assigned_to')
+                TextColumn::make('workTasks.employee.name')
                     ->label('Assigned To')
+                    ->placeholder('Belum ditentukan')
+                    ->separator(', ')
                     ->searchable()
                     ->toggleable(),
 

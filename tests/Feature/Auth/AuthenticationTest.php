@@ -16,7 +16,12 @@ class AuthenticationTest extends TestCase
     {
         $response = $this->get('/login');
 
-        $response->assertStatus(200);
+        $response
+            ->assertStatus(200)
+            ->assertSee('type="password"', false)
+            ->assertSee('x-bind:type="showPassword ? \'text\' : \'password\'"', false)
+            ->assertSee('https://www.kpmog.com', false)
+            ->assertSee('https://www.apcaengineering.com', false);
     }
 
     public function test_users_can_authenticate_using_the_login_screen(): void

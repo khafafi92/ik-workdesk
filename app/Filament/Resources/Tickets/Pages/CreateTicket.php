@@ -108,6 +108,10 @@ class CreateTicket extends CreateRecord
             $departmentIds = $departmentIds
                 ->filter()
                 ->map(fn ($id): int => (int) $id)
+                ->reject(
+                    fn (int $departmentId): bool => $ticket->workflow_type === 'collaborative'
+                        && (int) $ticket->requester_department_id === $departmentId
+                )
                 ->unique()
                 ->values();
 

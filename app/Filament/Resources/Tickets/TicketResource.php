@@ -32,7 +32,7 @@ class TicketResource extends Resource
             'ticket_no',
             'subject',
             'employee.name',
-            'assigned_to',
+            'workTasks.employee.name',
         ];
     }
 
@@ -69,6 +69,7 @@ class TicketResource extends Resource
             ->with([
                 'employee.department',
                 'assignments.department',
+                'workTasks.employee',
             ]);
 
         $user = auth()->user();

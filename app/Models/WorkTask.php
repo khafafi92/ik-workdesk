@@ -24,6 +24,7 @@ class WorkTask extends Model
         'start_at',
         'due_at',
         'completed_at',
+        'completed_by_user_id',
         'notes',
     ];
 
@@ -63,10 +64,43 @@ class WorkTask extends Model
             }
 
             if ($task->status === 'done') {
+                if (
+                    empty($task->employee_id)
+                    && ! $task->isRequesterLeadWorkLog()
+                ) {
+                    throw ValidationException::withMessages([
+                        'employee_id' => 'PIC / pelaksana harus ditentukan sebelum Work Log dapat diselesaikan.',
+                    ]);
+                }
+
+                if ($task->isCollaborativePrimaryTask()) {
+                    $task->loadMissing('ticket.assignments.workTask.department');
+
+                    $unassignedDepartments = $task->ticket->assignments
+                        ->pluck('workTask')
+                        ->filter(fn (?WorkTask $relatedTask): bool => $relatedTask !== null
+                            && empty($relatedTask->employee_id)
+                            && ! $relatedTask->isRequesterLeadWorkLog())
+                        ->map(fn (WorkTask $relatedTask): string => $relatedTask->department?->name
+                            ?? $relatedTask->task_no)
+                        ->values();
+
+                    if ($unassignedDepartments->isNotEmpty()) {
+                        throw ValidationException::withMessages([
+                            'employee_id' => 'Semua Work Log collaborative harus memiliki PIC / pelaksana sebelum diselesaikan. Belum ada PIC: '
+                                .$unassignedDepartments->join(', ').'.',
+                        ]);
+                    }
+                }
+
                 $task->progress_percent = 100;
 
                 if (empty($task->completed_at)) {
                     $task->completed_at = now();
+                }
+
+                if (empty($task->completed_by_user_id)) {
+                    $task->completed_by_user_id = auth()->id();
                 }
             }
 
@@ -75,6 +109,7 @@ class WorkTask extends Model
                 && $task->status !== 'done'
             ) {
                 $task->completed_at = null;
+                $task->completed_by_user_id = null;
             }
 
             if (
@@ -159,7 +194,7 @@ class WorkTask extends Model
                 if (
                     $task->wasChanged('status')
                     && $task->status === 'done'
-                    && $task->isCollaborativeLeadTask()
+                    && $task->isCollaborativePrimaryTask()
                 ) {
                     $task->completeCollaborativeTasks();
                 }
@@ -227,6 +262,11 @@ class WorkTask extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function completedBy()
+    {
+        return $this->belongsTo(User::class, 'completed_by_user_id');
     }
 
     public function category()
@@ -315,17 +355,46 @@ class WorkTask extends Model
         $this->loadMissing('ticket.employee');
 
         if ($this->ticket?->workflow_type === 'collaborative') {
-            return $this->isCollaborativeLeadTask()
-                && $user->canAccessDepartment(
-                    $this->ticket->handler_department_id
-                );
+            return $this->isCollaborativePrimaryTask()
+                && $this->ticket?->employee?->user_id !== null
+                && (int) $this->ticket->employee->user_id === (int) $user->id;
         }
 
         return $this->ticket?->employee?->user_id !== null
             && (int) $this->ticket->employee->user_id === (int) $user->id;
     }
 
-    public function isCollaborativeLeadTask(): bool
+    public function isAssignedTo(?User $user): bool
+    {
+        return $user?->employee?->id !== null
+            && $this->employee_id !== null
+            && (int) $this->employee_id === (int) $user->employee->id;
+    }
+
+    public function canBeManagedBy(?User $user): bool
+    {
+        return $user !== null
+            && $user->hasPermission('worklogs.manage')
+            && $user->canAccessDepartment($this->department_id);
+    }
+
+    public function canUpdateExecutionBy(?User $user): bool
+    {
+        return $this->canBeManagedBy($user)
+            || $this->isAssignedTo($user);
+    }
+
+    public function canBeClaimedBy(?User $user): bool
+    {
+        return $user?->employee !== null
+            && $user->employee->is_active === true
+            && $user->hasPermission('worklogs.view')
+            && $user->belongsToDepartment($this->department_id)
+            && $this->employee_id === null
+            && ! in_array($this->status, ['done', 'cancel'], true);
+    }
+
+    public function isCollaborativePrimaryTask(): bool
     {
         $this->loadMissing('ticket');
 
@@ -333,6 +402,17 @@ class WorkTask extends Model
             && $this->department_id !== null
             && (int) $this->department_id
                 === (int) $this->ticket->handler_department_id;
+    }
+
+    public function isRequesterLeadWorkLog(): bool
+    {
+        $this->loadMissing('ticket');
+
+        return $this->ticket?->workflow_type === 'collaborative'
+            && $this->department_id !== null
+            && $this->ticket->requester_department_id !== null
+            && (int) $this->department_id
+                === (int) $this->ticket->requester_department_id;
     }
 
     private function completeCollaborativeTasks(): void
@@ -351,17 +431,18 @@ class WorkTask extends Model
                 'progress_percent' => 100,
                 'start_at' => $relatedTask->start_at ?? now(),
                 'completed_at' => now(),
+                'completed_by_user_id' => auth()->id(),
             ]);
 
             $relatedTask->recordActivity(
                 'status_change',
-                "Status changed from {$previousStatus} to done by Lead Department.",
+                "Status changed from {$previousStatus} to done by Requester Lead.",
                 [
                     'field' => 'status',
                     'previous' => $previousStatus,
                     'current' => 'done',
-                    'completed_by_lead' => true,
-                    'lead_work_task_id' => $this->id,
+                    'completed_by_requester' => true,
+                    'primary_work_task_id' => $this->id,
                 ]
             );
         }

@@ -55,6 +55,12 @@ class User extends Authenticatable implements FilamentUser
             ->withTimestamps();
     }
 
+    public function directPermissions(): BelongsToMany
+    {
+        return $this->belongsToMany(Permission::class, 'permission_user')
+            ->withTimestamps();
+    }
+
     public function accessibleDepartments(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -136,6 +142,18 @@ class User extends Authenticatable implements FilamentUser
     public function hasPermission(string $permissionCode): bool
     {
         if ($this->is_admin === true) {
+            return true;
+        }
+
+        $this->loadMissing('directPermissions');
+
+        if (
+            $this->directPermissions
+                ->where('is_active', true)
+                ->contains(
+                    fn (Permission $permission): bool => $permission->code === $permissionCode
+                )
+        ) {
             return true;
         }
 

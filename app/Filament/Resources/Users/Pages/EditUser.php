@@ -6,6 +6,8 @@ use App\Filament\Resources\Users\UserResource;
 use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
+use App\Services\RoleAssignmentService;
+use App\Services\UserAdditionalAccessService;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Validation\ValidationException;
@@ -16,12 +18,24 @@ class EditUser extends EditRecord
 
     protected ?int $selectedEmployeeId = null;
 
+    protected ?int $selectedRoleId = null;
+
+    protected array $selectedAdditionalAccess = [];
+
     protected function mutateFormDataBeforeFill(
         array $data
     ): array {
         $data['employee_id'] = $this->record
             ->employee()
             ->value('id');
+
+        $roleId = $this->record
+            ->roles()
+            ->orderBy('roles.id')
+            ->value('roles.id');
+        $data['role_ids'] = $roleId ? [(int) $roleId] : [];
+        $data['additional_access'] = app(UserAdditionalAccessService::class)
+            ->stateFor($this->record);
 
         return $data;
     }
@@ -44,6 +58,24 @@ class EditUser extends EditRecord
                 : null;
 
         unset($data['employee_id']);
+
+        $roleIds = app(RoleAssignmentService::class)
+            ->filterAssignableRoleIds(
+                $actor,
+                (array) ($data['role_ids'] ?? [])
+            );
+
+        if (count($roleIds) !== 1 || count((array) ($data['role_ids'] ?? [])) !== 1) {
+            throw ValidationException::withMessages([
+                'role_ids' => 'Pilih tepat satu role yang tersedia.',
+            ]);
+        }
+
+        $this->selectedRoleId = $roleIds[0];
+        unset($data['role_ids']);
+
+        $this->selectedAdditionalAccess = (array) ($data['additional_access'] ?? []);
+        unset($data['additional_access']);
 
         /*
         |--------------------------------------------------------------------------
@@ -101,6 +133,12 @@ class EditUser extends EditRecord
     protected function afterSave(): void
     {
         $actor = auth()->user();
+
+        $this->record->roles()->sync([$this->selectedRoleId]);
+        app(UserAdditionalAccessService::class)->sync(
+            $this->record,
+            $this->selectedAdditionalAccess
+        );
 
         /*
         |--------------------------------------------------------------------------

@@ -64,81 +64,27 @@ class RoleResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::currentUserCanManageRoles();
+        return false;
     }
 
     public static function canViewAny(): bool
     {
-        return static::currentUserCanManageRoles();
+        return false;
     }
 
     public static function canCreate(): bool
     {
-        return static::currentUserCanManageRoles();
+        return false;
     }
 
     public static function canEdit(Model $record): bool
     {
-        $actor = auth()->user();
-
-        if (
-            ! $actor
-            || ! static::currentUserCanManageRoles()
-            || ! $record instanceof Role
-        ) {
-            return false;
-        }
-
-        if ($actor->is_admin === true) {
-            return true;
-        }
-
-        /*
-         * Role system-admin hanya dapat diedit Super Admin.
-         */
-        if ($record->code === 'system-admin') {
-            return false;
-        }
-
-        /*
-         * Non-Super Admin tidak boleh mengedit role
-         * yang memiliki permission melebihi miliknya.
-         */
-        $allowedPermissionIds =
-            static::currentUserPermissionIds();
-
-        return ! $record->permissions()
-            ->whereNotIn(
-                'permissions.id',
-                $allowedPermissionIds
-            )
-            ->exists();
+        return false;
     }
 
     public static function canDelete(Model $record): bool
     {
-        if (
-            ! $record instanceof Role
-            || ! static::canEdit($record)
-        ) {
-            return false;
-        }
-
-        /*
-         * Role utama sistem tidak dapat dihapus.
-         */
-        if ($record->code === 'system-admin') {
-            return false;
-        }
-
-        /*
-         * Role yang masih digunakan user tidak dapat dihapus.
-         */
-        if ($record->users()->exists()) {
-            return false;
-        }
-
-        return true;
+        return false;
     }
 
     public static function form(Schema $schema): Schema

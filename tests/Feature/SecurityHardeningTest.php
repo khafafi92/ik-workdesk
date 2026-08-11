@@ -118,7 +118,7 @@ class SecurityHardeningTest extends TestCase
             ->assertOk();
     }
 
-    public function test_user_manager_cannot_assign_a_role_with_extra_permissions(): void
+    public function test_non_admin_cannot_assign_a_role_with_extra_permissions(): void
     {
         $actor = User::factory()->create(['is_admin' => false]);
         $manageUsers = Permission::query()->create([
@@ -132,13 +132,18 @@ class SecurityHardeningTest extends TestCase
             'is_active' => true,
         ]);
         $userManager = Role::query()->create([
-            'name' => 'User Manager',
-            'code' => 'user-manager',
+            'name' => 'Limited User Manager',
+            'code' => 'limited-user-manager',
             'is_active' => true,
         ]);
         $attendanceOperator = Role::query()->create([
             'name' => 'Attendance Operator',
             'code' => 'attendance-operator',
+            'is_active' => true,
+        ]);
+        $systemAdmin = Role::query()->create([
+            'name' => 'System Administrator',
+            'code' => 'system-admin',
             'is_active' => true,
         ]);
         $userManager->permissions()->attach($manageUsers);
@@ -149,6 +154,7 @@ class SecurityHardeningTest extends TestCase
             ->filterAssignableRoleIds($actor, [
                 $userManager->id,
                 $attendanceOperator->id,
+                $systemAdmin->id,
             ]);
 
         $this->assertSame([$userManager->id], $allowedIds);

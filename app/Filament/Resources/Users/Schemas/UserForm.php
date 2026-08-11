@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\Users\Schemas;
 
 use App\Models\Employee;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\RoleAssignmentService;
+use App\Services\UserAdditionalAccessService;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -133,42 +135,27 @@ class UserForm
                     ->columns(2)
                     ->columnSpanFull(),
 
-                Section::make('Roles & Permissions')
+                Section::make('Pilih Role')
                     ->description(
-                        'Satu user dapat memiliki lebih dari satu role.'
+                        'Centang satu role utama untuk menentukan akses user.'
                     )
                     ->schema([
-                        CheckboxList::make('roles')
-                            ->label('Roles')
-                            ->relationship(
-                                name: 'roles',
-                                titleAttribute: 'name',
-                                modifyQueryUsing: function (Builder $query): Builder {
-                                    return app(RoleAssignmentService::class)
-                                        ->constrainAssignableRoles($query, auth()->user())
-                                        ->orderBy('name');
-                                }
-                            )
-                            ->saveRelationshipsUsing(
-                                function (
-                                    User $record,
-                                    ?array $state
-                                ): void {
-                                    $actor = auth()->user();
-
-                                    $record->roles()->sync(
-                                        app(RoleAssignmentService::class)
-                                            ->filterAssignableRoleIds($actor, $state ?? [])
-                                    );
-                                }
-                            )
-                            ->searchable()
-                            ->bulkToggleable()
-                            ->required()
+                        CheckboxList::make('role_ids')
+                            ->label('Role')
+                            ->hiddenLabel()
+                            ->options(function (): array {
+                                return app(RoleAssignmentService::class)
+                                    ->constrainAssignableRoles(
+                                        Role::query(),
+                                        auth()->user()
+                                    )
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                                    ->all();
+                            })
                             ->columns(2)
-                            ->helperText(
-                                'Role menentukan menu dan tindakan yang dapat digunakan.'
-                            )
+                            ->maxItems(1)
+                            ->required()
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -193,6 +180,22 @@ class UserForm
                             ->helperText(
                                 'Department asal employee otomatis tetap dapat diakses. Pilih hanya department tambahan.'
                             )
+                            ->columnSpanFull(),
+                    ])
+                    ->columnSpanFull(),
+
+                Section::make('Akses Tambahan')
+                    ->description(
+                        'Aktifkan hanya menu tambahan yang dibutuhkan user. System Administrator selalu memiliki seluruh akses.'
+                    )
+                    ->schema([
+                        CheckboxList::make('additional_access')
+                            ->label('Akses Tambahan')
+                            ->hiddenLabel()
+                            ->options(
+                                fn (): array => app(UserAdditionalAccessService::class)->options()
+                            )
+                            ->columns(3)
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),

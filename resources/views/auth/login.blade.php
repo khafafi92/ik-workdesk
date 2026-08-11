@@ -48,6 +48,7 @@
                     </svg>
                     <input
                         id="password"
+                        type="password"
                         x-bind:type="showPassword ? 'text' : 'password'"
                         name="password"
                         required

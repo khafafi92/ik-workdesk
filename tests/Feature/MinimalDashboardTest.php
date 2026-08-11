@@ -10,7 +10,7 @@ class MinimalDashboardTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_dashboard_uses_the_compact_meeting_and_reminder_layout(): void
+    public function test_the_dashboard_uses_the_compact_reminder_layout_without_meeting_summary(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);
 
@@ -18,11 +18,12 @@ class MinimalDashboardTest extends TestCase
             ->get('/panel')
             ->assertOk()
             ->assertSeeText('Ringkasan kerja hari ini')
-            ->assertSeeText('ruangan tersedia')
             ->assertSeeText('Reminder')
             ->assertSeeText('Hari Ini')
             ->assertSeeText('Akan Datang')
             ->assertSeeText('Terlambat')
+            ->assertDontSeeText('ruangan tersedia')
+            ->assertDontSeeText('Booking Saya')
             ->assertDontSeeText('Meeting Rooms Today')
             ->assertDontSeeText('Upcoming Reminders');
     }

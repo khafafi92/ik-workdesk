@@ -43,6 +43,43 @@ class ViewWorkTask extends ViewRecord
                 )
                 ->visible(fn (): bool => filled($this->record->ticket_id)),
 
+            Action::make('claimTask')
+                ->label('Ambil Task')
+                ->icon('heroicon-o-hand-raised')
+                ->color('primary')
+                ->requiresConfirmation()
+                ->modalHeading('Ambil Work Log ini?')
+                ->modalDescription(
+                    'Anda akan ditetapkan sebagai PIC dan dapat memperbarui status, progress, waktu mulai, serta notes.'
+                )
+                ->visible(
+                    fn (): bool => $this->record->canBeClaimedBy(auth()->user())
+                )
+                ->action(function (): void {
+                    abort_unless(
+                        $this->record->fresh()->canBeClaimedBy(auth()->user()),
+                        403,
+                        'Work Log sudah memiliki PIC atau tidak dapat Anda ambil.'
+                    );
+
+                    $this->record->update([
+                        'employee_id' => auth()->user()->employee->id,
+                    ]);
+
+                    Notification::make()
+                        ->title('Task berhasil diambil')
+                        ->body('Anda sekarang menjadi PIC Work Log ini.')
+                        ->success()
+                        ->send();
+
+                    $this->redirect(
+                        WorkTaskResource::getUrl(
+                            'edit',
+                            ['record' => $this->record]
+                        )
+                    );
+                }),
+
             Action::make('markAsDone')
                 ->label('Mark as Done')
                 ->icon('heroicon-o-check-circle')
@@ -50,7 +87,7 @@ class ViewWorkTask extends ViewRecord
                 ->requiresConfirmation()
                 ->modalHeading('Selesaikan Work Log')
                 ->modalDescription(
-                    'Work Log akan ditandai selesai dan status Service Desk akan diperbarui. Untuk pekerjaan collaborative, Done oleh Lead akan menyelesaikan seluruh Work Log terkait.'
+                    'Work Log akan ditandai selesai dan status Service Desk akan diperbarui. Pastikan PIC / pelaksana sudah ditentukan. Untuk pekerjaan collaborative, konfirmasi Done oleh requester akan menyelesaikan seluruh Work Log terkait.'
                 )
                 ->visible(
                     fn (): bool => $this->record->status !== 'done'
@@ -60,8 +97,18 @@ class ViewWorkTask extends ViewRecord
                     abort_unless(
                         $this->record->canBeCompletedBy(auth()->user()),
                         403,
-                        'Untuk pekerjaan collaborative, hanya Lead Department atau System Administrator yang dapat menyelesaikan Work Log.'
+                        'Untuk pekerjaan collaborative, hanya requester sebagai lead atau System Administrator yang dapat menyelesaikan Work Log.'
                     );
+
+                    if (blank($this->record->employee_id)) {
+                        Notification::make()
+                            ->title('PIC / pelaksana belum ditentukan')
+                            ->body('Minta pengelola department tujuan menetapkan PIC sebelum Work Log diselesaikan.')
+                            ->warning()
+                            ->send();
+
+                        return;
+                    }
 
                     $this->record->update(['status' => 'done']);
 
@@ -75,6 +122,7 @@ class ViewWorkTask extends ViewRecord
                         'status',
                         'progress_percent',
                         'completed_at',
+                        'completed_by_user_id',
                     ]);
                 }),
 

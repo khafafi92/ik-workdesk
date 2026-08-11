@@ -49,6 +49,7 @@ class WorkTaskResource extends Resource
             ->with([
                 'category',
                 'employee',
+                'completedBy',
                 'ticket.category',
                 'ticket.employee.department',
                 'ticket.handlerDepartment',
@@ -181,11 +182,8 @@ class WorkTaskResource extends Resource
     {
         $user = auth()->user();
 
-        return $user !== null
-            && $user->hasPermission('worklogs.manage')
-            && $user->canAccessDepartment(
-                $record->department_id
-            );
+        return $record instanceof WorkTask
+            && $record->canUpdateExecutionBy($user);
     }
 
     public static function canDelete(Model $record): bool

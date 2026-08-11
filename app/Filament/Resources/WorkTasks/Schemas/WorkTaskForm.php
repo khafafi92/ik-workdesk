@@ -180,7 +180,7 @@ class WorkTaskForm
                             ->required(),
 
                         Select::make('employee_id')
-                            ->label('PIC / Assigned To')
+                            ->label('PIC / Pelaksana')
                             ->options(function (Get $get): array {
                                 $departmentId = $get('department_id');
 
@@ -198,20 +198,32 @@ class WorkTaskForm
                             ->searchable()
                             ->preload()
                             ->disabled(
-                                fn (Get $get): bool => blank($get('department_id'))
+                                fn (Get $get, ?WorkTask $record): bool => blank($get('department_id'))
+                                    || ($record !== null
+                                        && ! $record->canBeManagedBy(auth()->user()))
                             )
-                            ->helperText('PIC hanya menampilkan employee dari department yang dipilih.')
+                            ->helperText(
+                                'PIC dipilih oleh pengelola department tujuan dan wajib diisi sebelum pekerjaan diselesaikan.'
+                            )
                             ->nullable(),
 
                         TextInput::make('title')
                             ->label('Task Title')
                             ->required()
                             ->maxLength(255)
+                            ->disabled(
+                                fn (?WorkTask $record): bool => $record !== null
+                                    && ! $record->canBeManagedBy(auth()->user())
+                            )
                             ->columnSpanFull(),
 
                         Textarea::make('description')
                             ->label('Work Description')
                             ->rows(4)
+                            ->disabled(
+                                fn (?WorkTask $record): bool => $record !== null
+                                    && ! $record->canBeManagedBy(auth()->user())
+                            )
                             ->columnSpanFull(),
 
                         Select::make('priority')
@@ -223,6 +235,10 @@ class WorkTaskForm
                                 'urgent' => 'Urgent',
                             ])
                             ->default('medium')
+                            ->disabled(
+                                fn (?WorkTask $record): bool => $record !== null
+                                    && ! $record->canBeManagedBy(auth()->user())
+                            )
                             ->required(),
 
                         Select::make('status')
@@ -235,12 +251,18 @@ class WorkTaskForm
                                 'cancel' => 'Cancel',
                             ])
                             ->disableOptionWhen(
-                                fn (string $value, ?WorkTask $record): bool => $value === 'done'
+                                fn (string $value, ?WorkTask $record): bool => (
+                                    $value === 'done'
                                     && ! ($record?->canBeCompletedBy(auth()->user())
                                         ?? (
                                             auth()->user()?->is_admin === true
                                             || auth()->user()?->hasRole('system-admin') === true
                                         ))
+                                ) || (
+                                    $record?->isAssignedTo(auth()->user()) === true
+                                    && ! $record->canBeManagedBy(auth()->user())
+                                    && in_array($value, ['done', 'cancel'], true)
+                                )
                             )
                             ->default('planned')
                             ->required(),
@@ -256,10 +278,25 @@ class WorkTaskForm
                             ->label('Start At'),
 
                         DateTimePicker::make('due_at')
-                            ->label('Due At'),
+                            ->label('Due At')
+                            ->disabled(
+                                fn (?WorkTask $record): bool => $record !== null
+                                    && ! $record->canBeManagedBy(auth()->user())
+                            ),
 
                         DateTimePicker::make('completed_at')
-                            ->label('Completed At'),
+                            ->label('Completed At')
+                            ->disabled(
+                                fn (?WorkTask $record): bool => $record !== null
+                                    && ! $record->canBeManagedBy(auth()->user())
+                            ),
+
+                        TextEntry::make('completedBy.name')
+                            ->label('Marked Done By')
+                            ->placeholder('-')
+                            ->visible(
+                                fn (?WorkTask $record): bool => filled($record?->completed_at)
+                            ),
 
                         Textarea::make('notes')
                             ->label('Notes')

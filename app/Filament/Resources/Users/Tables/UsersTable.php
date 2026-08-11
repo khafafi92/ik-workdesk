@@ -41,7 +41,7 @@ class UsersTable
                     ->searchable(),
 
                 TextColumn::make('roles.name')
-                    ->label('Roles')
+                    ->label('Role')
                     ->badge()
                     ->separator(',')
                     ->placeholder('No Role'),

@@ -38,6 +38,7 @@
                     </svg>
                     <input
                         id="password"
+                        type="password"
                         x-bind:type="showPassword ? 'text' : 'password'"
                         name="password"
                         required
@@ -71,6 +72,7 @@
                     </svg>
                     <input
                         id="password_confirmation"
+                        type="password"
                         x-bind:type="showPassword ? 'text' : 'password'"
                         name="password_confirmation"
                         required

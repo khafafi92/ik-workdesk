@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Roles\Schemas;
 
+use App\Models\Permission;
 use App\Models\Role;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Textarea;
@@ -13,6 +14,23 @@ use Illuminate\Database\Eloquent\Builder;
 
 class RoleForm
 {
+    private const AUTOMATIC_BOOKING_PERMISSIONS = [
+        'meeting-bookings.view',
+        'meeting-bookings.create',
+        'meeting-bookings.cancel-own',
+        'vehicle-bookings.view',
+        'vehicle-bookings.create',
+        'vehicle-bookings.cancel-own',
+    ];
+
+    private const HIDDEN_BOOKING_PERMISSIONS = [
+        ...self::AUTOMATIC_BOOKING_PERMISSIONS,
+        'meeting-bookings.manage',
+        'meeting-rooms.manage',
+        'vehicle-bookings.manage',
+        'vehicles.manage',
+    ];
+
     public static function configure(Schema $schema): Schema
     {
         return $schema
@@ -72,7 +90,7 @@ class RoleForm
 
                 Section::make('Permissions')
                     ->description(
-                        'Pilih tindakan yang diperbolehkan untuk role ini.'
+                        'Pilih akses utama role. Meeting Room dan Vehicle Booking tersedia otomatis sehingga tidak perlu dipilih satu per satu.'
                     )
                     ->schema([
                         CheckboxList::make('permissions')
@@ -85,7 +103,12 @@ class RoleForm
                                 ): Builder {
                                     $actor = auth()->user();
 
-                                    $query->orderBy('name');
+                                    $query
+                                        ->whereNotIn(
+                                            'code',
+                                            self::HIDDEN_BOOKING_PERMISSIONS
+                                        )
+                                        ->orderBy('name');
 
                                     /*
                                      * Super Admin dapat melihat
@@ -121,6 +144,31 @@ class RoleForm
                                     return $query->whereIn(
                                         'permissions.id',
                                         $allowedIds
+                                    );
+                                }
+                            )
+                            ->saveRelationshipsUsing(
+                                function (Role $record, ?array $state): void {
+                                    $automaticIds = Permission::query()
+                                        ->whereIn(
+                                            'code',
+                                            self::AUTOMATIC_BOOKING_PERMISSIONS
+                                        )
+                                        ->pluck('id');
+                                    $existingHiddenIds = $record->permissions()
+                                        ->whereIn(
+                                            'code',
+                                            self::HIDDEN_BOOKING_PERMISSIONS
+                                        )
+                                        ->pluck('permissions.id');
+
+                                    $record->permissions()->sync(
+                                        collect($state ?? [])
+                                            ->merge($automaticIds)
+                                            ->merge($existingHiddenIds)
+                                            ->map(fn ($id): int => (int) $id)
+                                            ->unique()
+                                            ->all()
                                     );
                                 }
                             )

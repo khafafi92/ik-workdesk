@@ -56,7 +56,7 @@ class TicketForm
                     ->dehydrated(false),
 
                 TextInput::make('requester_department_display')
-                    ->label('Requester Department')
+                    ->label('Requester / Lead Department')
                     ->default(
                         fn () => auth()->user()?->employee?->department?->name
                             ?? 'Department belum diisi'
@@ -73,7 +73,7 @@ class TicketForm
                     ->dehydrated(false),
 
                 Select::make('handler_department_id')
-                    ->label('Lead / Destination Department')
+                    ->label('Primary Destination Department')
                     ->relationship('handlerDepartment', 'name')
                     ->searchable()
                     ->preload()
@@ -133,6 +133,10 @@ class TicketForm
                                 ->defaultReviewerDepartments
                                 ->pluck('id')
                                 ->map(fn ($id): int => (int) $id)
+                                ->reject(
+                                    fn (int $id): bool => $id
+                                        === (int) auth()->user()?->employee?->department_id
+                                )
                                 ->values()
                                 ->all();
 
@@ -145,7 +149,7 @@ class TicketForm
                     ->required(),
 
                 Select::make('reviewer_department_ids')
-                    ->label('Reviewer Departments')
+                    ->label('Additional Destination Departments')
                     ->options(function (Get $get): array {
                         $leadDepartmentId = $get('handler_department_id');
 
@@ -156,6 +160,14 @@ class TicketForm
                                     'id',
                                     '!=',
                                     $leadDepartmentId
+                                )
+                            )
+                            ->when(
+                                auth()->user()?->employee?->department_id,
+                                fn ($query, $requesterDepartmentId) => $query->where(
+                                    'id',
+                                    '!=',
+                                    $requesterDepartmentId
                                 )
                             )
                             ->orderBy('name')
@@ -211,7 +223,7 @@ class TicketForm
                             ->exists();
                     })
                     ->helperText(
-                        'Lead Department otomatis ikut mengerjakan. Pilih department tambahan yang akan melakukan review.'
+                        'Requester adalah lead permintaan. Pilih department tambahan yang ikut mengerjakan atau melakukan review.'
                     )
                     ->columnSpanFull(),
 
