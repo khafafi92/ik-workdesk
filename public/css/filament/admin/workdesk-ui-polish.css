@@ -1396,3 +1396,74 @@ label:has(> input[type="checkbox"].fi-checkbox-input) {
 input[type="checkbox"]:not(.fi-checkbox-input) {
     accent-color: #0068d9;
 }
+
+/* ========================================================================
+   IK WorkDesk — solid surfaces without glass / fog effects
+   ======================================================================== */
+
+body,
+.fi-body,
+.fi-main,
+.fi-main-ctn {
+    background: #f3f5f8 !important;
+    background-image: none !important;
+}
+
+.fi-sidebar,
+.fi-sidebar-header,
+.fi-topbar,
+.fi-section,
+.fi-section-header,
+.fi-ta-ctn,
+.fi-ta-header,
+.fi-ta-empty-state,
+.fi-wi-stats-overview-stat,
+.fi-sc-tabs,
+.fi-tabs,
+.fi-in-entry-wrp,
+.fi-fo-repeater-item,
+.fi-fo-builder-item,
+.fi-dropdown-panel,
+.fi-modal-window,
+.fi-modal-header,
+.fi-modal-footer,
+.fi-no-notification,
+.ik-collab-room,
+.ik-collab-card,
+.ik-stat-card,
+.ik-panel,
+.ik-smart-panel,
+.ik-overview-card,
+.att-stat-card,
+.att-filter-card,
+.att-section,
+.mr-calendar-hero,
+.mr-calendar-scroll {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.fi-ta-table thead,
+.ik-collab-header,
+.ik-panel-header,
+.ik-page-title {
+    background: #eef2f7 !important;
+    background-image: none !important;
+}
+
+.ik-page-title::after {
+    display: none !important;
+}
+
+.ik-collab-participants span {
+    background-color: #ffffff !important;
+}
+
+/* Disabled means unavailable, not covered by a translucent white layer. */
+.fi-disabled,
+[disabled],
+[aria-disabled="true"] {
+    opacity: 1 !important;
+}
