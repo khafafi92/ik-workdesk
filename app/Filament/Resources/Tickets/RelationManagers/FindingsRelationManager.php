@@ -37,7 +37,11 @@ class FindingsRelationManager extends RelationManager
 
     protected function currentUserCanRespond(): bool
     {
-        return auth()->check();
+        $user = auth()->user();
+
+        return $user?->employee?->id !== null
+            && (int) $this->getOwnerRecord()->employee_id
+                === (int) $user->employee->id;
     }
 
     public function form(Schema $schema): Schema

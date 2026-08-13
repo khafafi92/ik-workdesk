@@ -7,6 +7,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Models\WorkTask;
 use App\Services\WorkTaskMutationGuard;
@@ -53,6 +54,36 @@ class AssignedPicExecutionTest extends TestCase
         }
     }
 
+    public function test_assigned_pic_can_adjust_priority_and_due_date_with_activity_log(): void
+    {
+        [$user, $task] = $this->assignedPicContext();
+        $this->actingAs($user);
+
+        $data = app(WorkTaskMutationGuard::class)->validate($user, [
+            'priority' => 'urgent',
+            'due_at' => '2026-08-20 17:00:00',
+        ], $task);
+        $task->update($data);
+
+        $this->assertSame('urgent', $task->fresh()->priority);
+        $this->assertSame(
+            '2026-08-20 17:00:00',
+            $task->fresh()->due_at?->format('Y-m-d H:i:s')
+        );
+        $this->assertDatabaseHas('ticket_comments', [
+            'ticket_id' => $task->ticket_id,
+            'work_task_id' => $task->id,
+            'user_id' => $user->id,
+            'activity_type' => 'priority_change',
+        ]);
+        $this->assertDatabaseHas('ticket_comments', [
+            'ticket_id' => $task->ticket_id,
+            'work_task_id' => $task->id,
+            'user_id' => $user->id,
+            'activity_type' => 'due_date_change',
+        ]);
+    }
+
     private function assignedPicContext(): array
     {
         $department = Department::query()->create([
@@ -78,9 +109,22 @@ class AssignedPicExecutionTest extends TestCase
             'is_active' => true,
         ]);
         $role->permissions()->attach($permission);
+        $ticketPermission = Permission::query()->create([
+            'name' => 'View Service Desk',
+            'code' => 'tickets.view',
+            'is_active' => true,
+        ]);
+        $role->permissions()->attach($ticketPermission);
         $user->roles()->attach($role);
+        $ticket = Ticket::query()->create([
+            'ticket_no' => 'R PIC-'.str_pad((string) $user->id, 4, '0', STR_PAD_LEFT),
+            'handler_department_id' => $department->id,
+            'subject' => 'Assigned PIC task',
+            'reported_at' => now(),
+        ]);
         $task = WorkTask::query()->create([
             'task_no' => 'TSK-202608-8801',
+            'ticket_id' => $ticket->id,
             'department_id' => $department->id,
             'employee_id' => $employee->id,
             'title' => 'Assigned task',

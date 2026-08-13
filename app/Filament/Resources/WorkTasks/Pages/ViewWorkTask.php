@@ -7,6 +7,7 @@ use App\Filament\Resources\WorkTasks\WorkTaskResource;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 
@@ -18,7 +19,10 @@ class ViewWorkTask extends ViewRecord
     {
         parent::mount($record);
 
-        if (WorkTaskResource::canEdit($this->record)) {
+        if (
+            WorkTaskResource::canEdit($this->record)
+            && ! $this->record->canBeApprovedBy(auth()->user())
+        ) {
             $this->redirect(
                 WorkTaskResource::getUrl(
                     'edit',
@@ -31,6 +35,56 @@ class ViewWorkTask extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('approveLegalTask')
+                ->label('Approve untuk Legal')
+                ->icon('heroicon-o-shield-check')
+                ->color('success')
+                ->requiresConfirmation()
+                ->modalHeading('Approve task Legal?')
+                ->modalDescription('Setelah di-approve, task akan muncul dan dapat dikerjakan oleh divisi Legal.')
+                ->visible(fn (): bool => $this->record->canBeApprovedBy(auth()->user()))
+                ->action(function (): void {
+                    $this->record->approveLegalTask(auth()->user());
+
+                    Notification::make()
+                        ->title('Task Legal berhasil di-approve')
+                        ->body('Task sekarang sudah muncul di divisi Legal.')
+                        ->success()
+                        ->send();
+
+                    $this->redirect(WorkTaskResource::getUrl('index'));
+                }),
+
+            Action::make('rejectLegalTask')
+                ->label('Reject untuk Legal')
+                ->icon('heroicon-o-x-circle')
+                ->color('danger')
+                ->requiresConfirmation()
+                ->modalHeading('Reject task Legal?')
+                ->modalDescription('Task Legal tidak dapat dikerjakan. Alasan penolakan akan terlihat oleh requester dan Legal.')
+                ->schema([
+                    Textarea::make('rejection_reason')
+                        ->label('Alasan Penolakan')
+                        ->required()
+                        ->rows(4)
+                        ->maxLength(2000),
+                ])
+                ->visible(fn (): bool => $this->record->canBeApprovedBy(auth()->user()))
+                ->action(function (array $data): void {
+                    $this->record->rejectLegalTask(
+                        auth()->user(),
+                        $data['rejection_reason']
+                    );
+
+                    Notification::make()
+                        ->title('Task Legal telah ditolak')
+                        ->body('Keputusan dan alasan penolakan sudah dicatat.')
+                        ->danger()
+                        ->send();
+
+                    $this->redirect(WorkTaskResource::getUrl('index'));
+                }),
+
             Action::make('openCollaborationRoom')
                 ->label('Open Collaboration Room')
                 ->icon('heroicon-o-chat-bubble-left-right')

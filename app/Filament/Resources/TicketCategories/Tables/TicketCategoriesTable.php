@@ -34,6 +34,10 @@ class TicketCategoriesTable
                 IconColumn::make('is_active')
                     ->label('Active')
                     ->boolean(),
+
+                IconColumn::make('requires_permit')
+                    ->label('Permit & KBLI')
+                    ->boolean(),
             ])
             ->defaultSort('handler_department_id')
             ->recordActions([

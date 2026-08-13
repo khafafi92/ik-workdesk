@@ -3,11 +3,14 @@
 namespace App\Filament\Resources\WorkTasks\Tables;
 
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
+use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -85,6 +88,30 @@ class WorkTasksTable
                         default => 'gray',
                     }),
 
+                TextColumn::make('approval_status')
+                    ->label('Legal Approval')
+                    ->formatStateUsing(fn (?string $state): string => match ($state) {
+                        'pending' => 'Menunggu CBO',
+                        'approved' => 'Approved',
+                        'rejected' => 'Rejected',
+                        default => 'Tidak diperlukan',
+                    })
+                    ->badge()
+                    ->color(fn (?string $state): string => match ($state) {
+                        'pending' => 'warning',
+                        'approved' => 'success',
+                        'rejected' => 'danger',
+                        default => 'gray',
+                    })
+                    ->toggleable(),
+
+                TextColumn::make('rejection_reason')
+                    ->label('Rejection Reason')
+                    ->placeholder('-')
+                    ->wrap()
+                    ->limit(50)
+                    ->toggleable(isToggledHiddenByDefault: true),
+
                 TextColumn::make('progress_percent')
                     ->label('Progress')
                     ->suffix('%')
@@ -109,6 +136,56 @@ class WorkTasksTable
             ])
             ->defaultSort('created_at', 'desc')
             ->recordActions([
+                Action::make('approveLegalTask')
+                    ->label('Approve Legal')
+                    ->icon('heroicon-o-shield-check')
+                    ->color('success')
+                    ->requiresConfirmation()
+                    ->modalHeading('Approve task Legal?')
+                    ->modalDescription('Setelah di-approve, task akan muncul dan dapat dikerjakan oleh divisi Legal.')
+                    ->visible(
+                        fn ($record): bool => $record->canBeApprovedBy(auth()->user())
+                    )
+                    ->action(function ($record): void {
+                        $record->approveLegalTask(auth()->user());
+
+                        Notification::make()
+                            ->title('Task Legal berhasil di-approve')
+                            ->body('Task sekarang sudah muncul di divisi Legal.')
+                            ->success()
+                            ->send();
+                    }),
+
+                Action::make('rejectLegalTask')
+                    ->label('Reject Legal')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Reject task Legal?')
+                    ->modalDescription('Alasan penolakan wajib diisi dan akan terlihat oleh requester serta Legal.')
+                    ->schema([
+                        Textarea::make('rejection_reason')
+                            ->label('Alasan Penolakan')
+                            ->required()
+                            ->rows(4)
+                            ->maxLength(2000),
+                    ])
+                    ->visible(
+                        fn ($record): bool => $record->canBeApprovedBy(auth()->user())
+                    )
+                    ->action(function ($record, array $data): void {
+                        $record->rejectLegalTask(
+                            auth()->user(),
+                            $data['rejection_reason']
+                        );
+
+                        Notification::make()
+                            ->title('Task Legal telah ditolak')
+                            ->body('Keputusan dan alasan penolakan sudah dicatat.')
+                            ->danger()
+                            ->send();
+                    }),
+
                 ViewAction::make(),
 
                 EditAction::make()

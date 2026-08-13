@@ -18,7 +18,7 @@ class EditUser extends EditRecord
 
     protected ?int $selectedEmployeeId = null;
 
-    protected ?int $selectedRoleId = null;
+    protected array $selectedRoleIds = [];
 
     protected array $selectedAdditionalAccess = [];
 
@@ -29,11 +29,12 @@ class EditUser extends EditRecord
             ->employee()
             ->value('id');
 
-        $roleId = $this->record
+        $data['role_ids'] = $this->record
             ->roles()
             ->orderBy('roles.id')
-            ->value('roles.id');
-        $data['role_ids'] = $roleId ? [(int) $roleId] : [];
+            ->pluck('roles.id')
+            ->map(fn ($id): int => (int) $id)
+            ->all();
         $data['additional_access'] = app(UserAdditionalAccessService::class)
             ->stateFor($this->record);
 
@@ -65,13 +66,20 @@ class EditUser extends EditRecord
                 (array) ($data['role_ids'] ?? [])
             );
 
-        if (count($roleIds) !== 1 || count((array) ($data['role_ids'] ?? [])) !== 1) {
+        $requestedRoleIds = collect((array) ($data['role_ids'] ?? []))
+            ->map(fn ($id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($roleIds === [] || count($roleIds) !== count($requestedRoleIds)) {
             throw ValidationException::withMessages([
-                'role_ids' => 'Pilih tepat satu role yang tersedia.',
+                'role_ids' => 'Pilih minimal satu role yang tersedia dan dapat Anda berikan.',
             ]);
         }
 
-        $this->selectedRoleId = $roleIds[0];
+        $this->selectedRoleIds = $roleIds;
         unset($data['role_ids']);
 
         $this->selectedAdditionalAccess = (array) ($data['additional_access'] ?? []);
@@ -134,7 +142,7 @@ class EditUser extends EditRecord
     {
         $actor = auth()->user();
 
-        $this->record->roles()->sync([$this->selectedRoleId]);
+        $this->record->roles()->sync($this->selectedRoleIds);
         app(UserAdditionalAccessService::class)->sync(
             $this->record,
             $this->selectedAdditionalAccess

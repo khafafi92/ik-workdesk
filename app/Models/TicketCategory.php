@@ -13,11 +13,13 @@ class TicketCategory extends Model
         'name',
         'code',
         'workflow_type',
+        'requires_permit',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'requires_permit' => 'boolean',
     ];
 
     public function handlerDepartment(): BelongsTo

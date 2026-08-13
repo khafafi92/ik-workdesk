@@ -16,7 +16,7 @@ class CreateUser extends CreateRecord
 
     protected ?int $selectedEmployeeId = null;
 
-    protected ?int $selectedRoleId = null;
+    protected array $selectedRoleIds = [];
 
     protected array $selectedAdditionalAccess = [];
 
@@ -45,13 +45,20 @@ class CreateUser extends CreateRecord
                 (array) ($data['role_ids'] ?? [])
             );
 
-        if (count($roleIds) !== 1 || count((array) ($data['role_ids'] ?? [])) !== 1) {
+        $requestedRoleIds = collect((array) ($data['role_ids'] ?? []))
+            ->map(fn ($id): int => (int) $id)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($roleIds === [] || count($roleIds) !== count($requestedRoleIds)) {
             throw ValidationException::withMessages([
-                'role_ids' => 'Pilih tepat satu role yang tersedia.',
+                'role_ids' => 'Pilih minimal satu role yang tersedia dan dapat Anda berikan.',
             ]);
         }
 
-        $this->selectedRoleId = $roleIds[0];
+        $this->selectedRoleIds = $roleIds;
         unset($data['role_ids']);
 
         $this->selectedAdditionalAccess = (array) ($data['additional_access'] ?? []);
@@ -77,7 +84,7 @@ class CreateUser extends CreateRecord
     {
         $actor = auth()->user();
 
-        $this->record->roles()->sync([$this->selectedRoleId]);
+        $this->record->roles()->sync($this->selectedRoleIds);
         app(UserAdditionalAccessService::class)->sync(
             $this->record,
             $this->selectedAdditionalAccess

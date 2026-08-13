@@ -137,7 +137,7 @@ class UserForm
 
                 Section::make('Pilih Role')
                     ->description(
-                        'Centang satu role utama untuk menentukan akses user.'
+                        'Pilih satu atau beberapa role. Akses user merupakan gabungan dari seluruh role yang dipilih.'
                     )
                     ->schema([
                         CheckboxList::make('role_ids')
@@ -154,7 +154,7 @@ class UserForm
                                     ->all();
                             })
                             ->columns(2)
-                            ->maxItems(1)
+                            ->bulkToggleable()
                             ->required()
                             ->columnSpanFull(),
                     ])

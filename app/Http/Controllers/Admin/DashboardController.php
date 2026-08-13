@@ -25,7 +25,7 @@ class DashboardController extends Controller
             'resolved' => Ticket::where('status', 'resolved')->count(),
             'overdue' => Ticket::whereNotNull('due_at')
                 ->whereDate('due_at', '<', $today)
-                ->whereNotIn('status', ['resolved', 'closed', 'cancel'])
+                ->whereNotIn('status', ['resolved', 'closed', 'cancel', 'rejected'])
                 ->count(),
         ];
 

@@ -20,6 +20,7 @@
         <div class="is-success"><span>Done</span><strong>{{ $summary['done'] }}</strong></div>
     </div>
 
+    @if ($this->canPostMessage($ticket))
     <form wire:submit="addMessage" class="ik-collab-composer">
         <label for="collaboration-message">Post to all participating departments</label>
         <textarea
@@ -56,6 +57,12 @@
         @endif
         @error('messageFiles.*') <p class="ik-collab-error">{{ $message }}</p> @enderror
     </form>
+    @else
+        <div class="ik-collab-composer">
+            <strong>Menunggu approval CBO</strong>
+            <p>Divisi Legal hanya dapat melihat request ini. Komentar dan aktivitas pengerjaan akan tersedia setelah task di-approve.</p>
+        </div>
+    @endif
 
     <div class="ik-collab-timeline">
         @forelse ($timeline as $activity)

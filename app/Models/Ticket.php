@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\DocumentNumberGenerator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use Illuminate\Validation\ValidationException;
 
 class Ticket extends Model
 {
@@ -15,6 +17,9 @@ class Ticket extends Model
         'requester_department_id',
         'handler_department_id',
         'ticket_category_id',
+        'permit_company_id',
+        'permit_kbli_id',
+        'permit_kbli_unavailable',
         'subject',
         'description',
         'attachments',
@@ -33,7 +38,72 @@ class Ticket extends Model
         'due_at' => 'datetime',
         'resolved_at' => 'datetime',
         'attachments' => 'array',
+        'permit_kbli_unavailable' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Ticket $ticket): void {
+            $requiresPermit = $ticket->ticket_category_id
+                && TicketCategory::query()
+                    ->whereKey($ticket->ticket_category_id)
+                    ->where('requires_permit', true)
+                    ->exists();
+
+            if (! $requiresPermit) {
+                $ticket->permit_company_id = null;
+                $ticket->permit_kbli_id = null;
+                $ticket->permit_kbli_unavailable = false;
+
+                if ($ticket->status === 'discussion') {
+                    $ticket->status = 'open';
+                }
+
+                return;
+            }
+
+            if (! $ticket->permit_company_id) {
+                throw ValidationException::withMessages([
+                    'permit_company_id' => 'Permit Company wajib dipilih untuk kategori ini.',
+                ]);
+            }
+
+            if ($ticket->permit_kbli_unavailable) {
+                $ticket->permit_kbli_id = null;
+                $ticket->status = 'discussion';
+
+                return;
+            }
+
+            if (! $ticket->permit_kbli_id) {
+                throw ValidationException::withMessages([
+                    'permit_kbli_id' => 'Pilih KBLI atau tandai bahwa KBLI belum tersedia.',
+                ]);
+            }
+
+            $validKbli = PermitKbli::query()
+                ->whereKey($ticket->permit_kbli_id)
+                ->where('permit_company_id', $ticket->permit_company_id)
+                ->exists();
+
+            if (! $validKbli) {
+                throw ValidationException::withMessages([
+                    'permit_kbli_id' => 'KBLI tidak sesuai dengan Permit Company yang dipilih.',
+                ]);
+            }
+
+            if ($ticket->status === 'discussion') {
+                $ticket->status = 'open';
+            }
+        });
+    }
+
+    public static function generateRequestNo(): string
+    {
+        $prefix = 'R-'.now()->format('d/m/y').'-';
+
+        return app(DocumentNumberGenerator::class)->next($prefix);
+    }
 
     public function employee()
     {
@@ -53,6 +123,22 @@ class Ticket extends Model
     public function category()
     {
         return $this->belongsTo(TicketCategory::class, 'ticket_category_id');
+    }
+
+    public function permitCompany()
+    {
+        return $this->belongsTo(PermitCompany::class);
+    }
+
+    public function permitKbli()
+    {
+        return $this->belongsTo(PermitKbli::class);
+    }
+
+    public function requiresPermitDiscussion(): bool
+    {
+        return $this->permit_company_id !== null
+            && $this->permit_kbli_unavailable === true;
     }
 
     public function workTasks()

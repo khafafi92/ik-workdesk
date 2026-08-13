@@ -37,6 +37,16 @@ class WorkTaskFindingPolicy
         $isRequester = (int) $user->employee?->id ===
             (int) $workTaskFinding->workTask?->ticket?->employee_id;
 
+        if (
+            $workTaskFinding->workTask?->isLegalApprovalLocked()
+            && $isReviewerDepartment
+            && ! $isRequester
+            && ! $user->is_admin
+            && ! $user->hasRole('system-admin')
+        ) {
+            return false;
+        }
+
         /*
          * Reviewer boleh mengelola finding.
          * Requester boleh mengisi response melalui halaman ticket.
@@ -51,7 +61,8 @@ class WorkTaskFindingPolicy
     ): bool {
         $workTaskFinding->loadMissing('workTask');
 
-        return $user->hasPermission('worklogs.manage')
+        return ! $workTaskFinding->workTask?->isLegalApprovalLocked()
+            && $user->hasPermission('worklogs.manage')
             && $user->belongsToDepartment(
                 $workTaskFinding->workTask?->department_id
             );

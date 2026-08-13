@@ -70,6 +70,8 @@ class TicketResource extends Resource
                 'employee.department',
                 'assignments.department',
                 'workTasks.employee',
+                'permitCompany',
+                'permitKbli',
             ]);
 
         $user = auth()->user();
@@ -216,9 +218,39 @@ class TicketResource extends Resource
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()
-            ?->hasPermission('tickets.manage') === true
-            && static::currentUserCanAccessTicket($record);
+        $user = auth()->user();
+
+        if (
+            ! $user
+            || ! $user->hasPermission('tickets.manage')
+            || ! static::currentUserCanAccessTicket($record)
+        ) {
+            return false;
+        }
+
+        if ($user->is_admin || $user->hasRole('system-admin')) {
+            return true;
+        }
+
+        if (
+            $record->workTasks()
+                ->where('status', '!=', 'planned')
+                ->exists()
+        ) {
+            return false;
+        }
+
+        if (
+            $user->employee
+            && (int) $record->employee_id === (int) $user->employee->id
+        ) {
+            return true;
+        }
+
+        return ! $record->workTasks()
+            ->where('approval_status', 'pending')
+            ->whereIn('department_id', $user->accessibleDepartmentIds())
+            ->exists();
     }
 
     public static function canDelete(Model $record): bool

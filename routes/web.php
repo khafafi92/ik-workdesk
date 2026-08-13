@@ -7,6 +7,7 @@ use App\Http\Controllers\FindingAttachmentDownloadController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketAttachmentDownloadController;
 use App\Http\Controllers\TicketCommentAttachmentDownloadController;
+use App\Http\Controllers\WorkTaskPermitResultDownloadController;
 use App\Http\Middleware\RequireSuperadmin;
 use Illuminate\Support\Facades\Route;
 
@@ -46,6 +47,14 @@ Route::get(
     ->whereNumber('attachmentIndex')
     ->middleware(['auth'])
     ->name('findings.attachments.download');
+
+Route::get(
+    '/work-tasks/{workTask}/permit-results/{attachmentIndex}',
+    WorkTaskPermitResultDownloadController::class
+)
+    ->whereNumber('attachmentIndex')
+    ->middleware(['auth'])
+    ->name('work-tasks.permit-results.download');
 
 Route::middleware(['auth', 'verified', RequireSuperadmin::class])
     ->prefix('admin')

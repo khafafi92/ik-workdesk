@@ -38,6 +38,7 @@ class WorkTaskResource extends Resource
                 || $user->hasRole('system-admin')
                 || $user->hasPermission('worklogs.view')
                 || $user->hasPermission('worklogs.manage')
+                || $user->hasPermission('legal-tasks.approve')
             );
     }
 
@@ -50,7 +51,11 @@ class WorkTaskResource extends Resource
                 'category',
                 'employee',
                 'completedBy',
+                'approvedBy',
+                'rejectedBy',
                 'ticket.category',
+                'ticket.permitCompany',
+                'ticket.permitKbli',
                 'ticket.employee.department',
                 'ticket.handlerDepartment',
                 'ticket.requesterDepartment',
@@ -70,10 +75,11 @@ class WorkTaskResource extends Resource
             return $query;
         }
 
-        if (
-            ! $user->hasPermission('worklogs.view')
-            && ! $user->hasPermission('worklogs.manage')
-        ) {
+        $canApproveLegalTasks = $user->hasPermission('legal-tasks.approve');
+        $canViewWorkLogs = $user->hasPermission('worklogs.view')
+            || $user->hasPermission('worklogs.manage');
+
+        if (! $canApproveLegalTasks && ! $canViewWorkLogs) {
             return $query->whereRaw('1 = 0');
         }
 
@@ -81,19 +87,34 @@ class WorkTaskResource extends Resource
         $departmentIds = $user->accessibleDepartmentIds();
         $hasDepartmentScope = static::currentUserHasDepartmentScope();
 
-        if (! $employeeId && (empty($departmentIds) || ! $hasDepartmentScope)) {
+        if (
+            ! $canApproveLegalTasks
+            && ! $employeeId
+            && (empty($departmentIds) || ! $hasDepartmentScope)
+        ) {
             return $query->whereRaw('1 = 0');
         }
 
         return $query->where(
             function (Builder $workTaskQuery) use (
+                $canApproveLegalTasks,
+                $canViewWorkLogs,
                 $employeeId,
                 $departmentIds,
                 $hasDepartmentScope
             ): void {
+                // CBO melihat seluruh lifecycle keputusan Legal, bukan hanya inbox Pending.
+                if ($canApproveLegalTasks) {
+                    $workTaskQuery->whereNotNull('approval_status');
+                }
+
+                if (! $canViewWorkLogs) {
+                    return;
+                }
+
                 // Tampilkan work log dari ticket milik employee ini (sebagai requester)
                 if ($employeeId) {
-                    $workTaskQuery->whereHas(
+                    $workTaskQuery->orWhereHas(
                         'ticket',
                         fn (Builder $ticketQuery) => $ticketQuery->where('employee_id', $employeeId)
                     );
@@ -133,6 +154,7 @@ class WorkTaskResource extends Resource
             && (
                 $user->hasPermission('worklogs.view')
                 || $user->hasPermission('worklogs.manage')
+                || $user->hasPermission('legal-tasks.approve')
             );
     }
 
@@ -151,9 +173,18 @@ class WorkTaskResource extends Resource
             return true;
         }
 
+        if (
+            $record instanceof WorkTask
+            && $user->hasPermission('legal-tasks.approve')
+            && $record->approval_status !== null
+        ) {
+            return true;
+        }
+
         return (
             $user->hasPermission('worklogs.view')
             || $user->hasPermission('worklogs.manage')
+            || $user->hasPermission('legal-tasks.approve')
         )
             && (
                 (
@@ -241,7 +272,9 @@ class WorkTaskResource extends Resource
             return null;
         }
 
-        if ($user->is_admin === true || $user->hasRole('system-admin')) {
+        if ($user->hasPermission('legal-tasks.approve')) {
+            $count = WorkTask::query()->where('approval_status', 'pending')->count();
+        } elseif ($user->is_admin === true || $user->hasRole('system-admin')) {
             $count = WorkTask::query()->where('status', 'planned')->count();
         } else {
             $departmentIds = $user->accessibleDepartmentIds();

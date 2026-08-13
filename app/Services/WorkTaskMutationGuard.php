@@ -90,23 +90,30 @@ class WorkTaskMutationGuard
             'work_scope',
             'title',
             'description',
-            'priority',
-            'due_at',
             'completed_at',
         ];
 
         if ($candidate->isDirty($forbiddenFields)) {
             throw ValidationException::withMessages([
-                'status' => 'PIC hanya dapat memperbarui status pelaksanaan, progress, waktu mulai, dan notes.',
+                'status' => 'PIC hanya dapat memperbarui priority, due date, status pelaksanaan, progress, waktu mulai, notes, dan hasil Permit jika tersedia.',
             ]);
         }
 
         if (
             array_key_exists('status', $data)
-            && ! in_array($data['status'], ['planned', 'in_progress', 'hold'], true)
+            && ! in_array($data['status'], ['planned', 'in_progress', 'hold', 'cancel'], true)
         ) {
             throw ValidationException::withMessages([
-                'status' => 'PIC hanya dapat memilih Planned, In Progress, atau Hold. Done dikonfirmasi oleh requester.',
+                'status' => 'PIC dapat memilih Planned, In Progress, Hold, atau Cancel. Done dikonfirmasi oleh requester.',
+            ]);
+        }
+
+        if (
+            ($data['status'] ?? $record->status) === 'cancel'
+            && ! $record->canBeCancelledBy(auth()->user())
+        ) {
+            throw ValidationException::withMessages([
+                'status' => 'Hanya department penerima task yang dapat melakukan Cancel.',
             ]);
         }
 

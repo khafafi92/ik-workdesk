@@ -35,6 +35,11 @@ class TicketCollaborationRoom extends Component
     {
         $ticket = $this->ticket();
         $this->authorizeTicket($ticket);
+        abort_unless(
+            $this->canPostMessage($ticket),
+            403,
+            'Divisi Legal hanya dapat melihat request sampai task di-approve oleh CBO.'
+        );
 
         $this->validate([
             'message' => ['required', 'string', 'max:5000'],
@@ -79,10 +84,45 @@ class TicketCollaborationRoom extends Component
             'pic_change' => 'PIC Changed',
             'status_change' => 'Status Changed',
             'progress_change' => 'Progress Updated',
+            'priority_change' => 'Priority Updated',
             'due_date_change' => 'Due Date Updated',
+            'legal_approval_rejected' => 'Legal Approval Rejected',
             'notes_change' => 'Notes Updated',
             default => Str::of($type)->replace('_', ' ')->title()->toString(),
         };
+    }
+
+    public function canPostMessage(?Ticket $ticket = null): bool
+    {
+        $user = auth()->user();
+
+        if (! $user || ! $user->hasPermission('comments.create')) {
+            return false;
+        }
+
+        if ($user->is_admin || $user->hasRole('system-admin')) {
+            return true;
+        }
+
+        $ticket ??= $this->ticket();
+
+        if (
+            $user->employee
+            && (int) $ticket->employee_id === (int) $user->employee->id
+        ) {
+            return true;
+        }
+
+        $departmentIds = $user->accessibleDepartmentIds();
+
+        if ($departmentIds === []) {
+            return true;
+        }
+
+        return ! $ticket->workTasks()
+            ->whereIn('approval_status', ['pending', 'rejected'])
+            ->whereIn('department_id', $departmentIds)
+            ->exists();
     }
 
     public function render(): View

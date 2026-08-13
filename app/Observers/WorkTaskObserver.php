@@ -18,6 +18,25 @@ class WorkTaskObserver
      */
     public function created(WorkTask $workTask): void
     {
+        if ($workTask->isAwaitingLegalApproval()) {
+            return;
+        }
+
+        $this->notifyDepartment($workTask);
+    }
+
+    public function updated(WorkTask $workTask): void
+    {
+        if (
+            $workTask->wasChanged('approval_status')
+            && $workTask->approval_status === 'approved'
+        ) {
+            $this->notifyDepartment($workTask);
+        }
+    }
+
+    private function notifyDepartment(WorkTask $workTask): void
+    {
         if (! $workTask->department_id) {
             return;
         }

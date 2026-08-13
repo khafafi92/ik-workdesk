@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Tickets\Schemas;
 
 use App\Models\Department;
+use App\Models\PermitCompany;
+use App\Models\PermitKbli;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use Filament\Forms\Components\DateTimePicker;
@@ -11,6 +13,8 @@ use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
@@ -112,6 +116,9 @@ class TicketForm
                         function (mixed $state, Set $set): void {
                             if (blank($state)) {
                                 $set('reviewer_department_ids', []);
+                                $set('permit_company_id', null);
+                                $set('permit_kbli_id', null);
+                                $set('permit_kbli_unavailable', false);
 
                                 return;
                             }
@@ -119,6 +126,12 @@ class TicketForm
                             $category = TicketCategory::query()
                                 ->with('defaultReviewerDepartments')
                                 ->find($state);
+
+                            if (! $category?->requires_permit) {
+                                $set('permit_company_id', null);
+                                $set('permit_kbli_id', null);
+                                $set('permit_kbli_unavailable', false);
+                            }
 
                             if (
                                 ! $category
@@ -225,6 +238,83 @@ class TicketForm
                     ->helperText(
                         'Requester adalah lead permintaan. Pilih department tambahan yang ikut mengerjakan atau melakukan review.'
                     )
+                    ->columnSpanFull(),
+
+                Section::make('Permit')
+                    ->description('Wajib untuk Request Category yang membutuhkan data Permit dan KBLI.')
+                    ->visible(function (Get $get, ?Ticket $record): bool {
+                        $categoryId = $get('ticket_category_id')
+                            ?? $record?->ticket_category_id;
+
+                        return filled($categoryId)
+                            && TicketCategory::query()
+                                ->whereKey($categoryId)
+                                ->where('requires_permit', true)
+                                ->exists();
+                    })
+                    ->columns(2)
+                    ->schema([
+                        Select::make('permit_company_id')
+                            ->label('Permit Company')
+                            ->options(
+                                fn (): array => PermitCompany::query()
+                                    ->where('is_active', true)
+                                    ->orderBy('name')
+                                    ->pluck('name', 'id')
+                                    ->all()
+                            )
+                            ->searchable()
+                            ->preload()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set): void {
+                                $set('permit_kbli_id', null);
+                                $set('permit_kbli_unavailable', false);
+                            })
+                            ->required(),
+
+                        Select::make('permit_kbli_id')
+                            ->label('KBLI')
+                            ->options(function (Get $get): array {
+                                if (blank($get('permit_company_id'))) {
+                                    return [];
+                                }
+
+                                return PermitKbli::query()
+                                    ->where('permit_company_id', $get('permit_company_id'))
+                                    ->where('is_active', true)
+                                    ->orderBy('code')
+                                    ->get()
+                                    ->mapWithKeys(fn (PermitKbli $kbli): array => [
+                                        $kbli->id => "{$kbli->code} - {$kbli->name}",
+                                    ])
+                                    ->all();
+                            })
+                            ->searchable()
+                            ->preload()
+                            ->disabled(
+                                fn (Get $get): bool => blank($get('permit_company_id'))
+                                    || (bool) $get('permit_kbli_unavailable')
+                            )
+                            ->required(
+                                fn (Get $get): bool => filled($get('permit_company_id'))
+                                    && ! (bool) $get('permit_kbli_unavailable')
+                            ),
+
+                        Toggle::make('permit_kbli_unavailable')
+                            ->label('Tidak ada / belum terdaftar di KBLI')
+                            ->live()
+                            ->afterStateUpdated(function (mixed $state, Set $set): void {
+                                if ($state) {
+                                    $set('permit_kbli_id', null);
+                                    $set('status', 'discussion');
+                                } else {
+                                    $set('status', 'open');
+                                }
+                            })
+                            ->visible(fn (Get $get): bool => filled($get('permit_company_id')))
+                            ->helperText('Jika aktif, status Service Desk otomatis menjadi Discussion.')
+                            ->columnSpanFull(),
+                    ])
                     ->columnSpanFull(),
 
                 TextInput::make('subject')
@@ -342,11 +432,14 @@ class TicketForm
                         'open' => 'Open',
                         'in_progress' => 'In Progress',
                         'waiting_user' => 'Waiting User',
+                        'discussion' => 'Discussion',
                         'resolved' => 'Resolved',
                         'closed' => 'Closed',
                         'cancel' => 'Cancel',
+                        'rejected' => 'Rejected',
                     ])
                     ->default('open')
+                    ->disabled(fn (?Ticket $record): bool => $record !== null)
                     ->required(),
 
                 DateTimePicker::make('reported_at')

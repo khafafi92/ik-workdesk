@@ -145,6 +145,16 @@ class User extends Authenticatable implements FilamentUser
             return true;
         }
 
+        $this->loadMissing('roles');
+
+        if (
+            $this->roles
+                ->where('is_active', true)
+                ->contains(fn (Role $role): bool => $role->code === 'system-admin')
+        ) {
+            return true;
+        }
+
         $this->loadMissing('directPermissions');
 
         if (

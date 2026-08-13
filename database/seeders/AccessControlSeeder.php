@@ -88,6 +88,12 @@ class AccessControlSeeder extends Seeder
                     'module' => 'Work Logs',
                     'description' => 'Edit work logs for accessible departments.',
                 ],
+                [
+                    'name' => 'Approve Legal Tasks',
+                    'code' => 'legal-tasks.approve',
+                    'module' => 'Work Logs',
+                    'description' => 'Approve Legal work logs before they are released to the Legal department.',
+                ],
 
                 [
                     'name' => 'View Findings',
@@ -265,6 +271,16 @@ class AccessControlSeeder extends Seeder
                         'findings.respond',
                         'comments.create',
                         'reminders.view',
+                    ],
+                ],
+                [
+                    'name' => 'Chief Business Officer',
+                    'code' => 'cbo',
+                    'description' => 'Approve work logs addressed to the Legal department.',
+                    'permissions' => [
+                        'tickets.view',
+                        'worklogs.view',
+                        'legal-tasks.approve',
                     ],
                 ],
             ];

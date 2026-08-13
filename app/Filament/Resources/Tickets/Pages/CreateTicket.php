@@ -8,7 +8,6 @@ use App\Models\Ticket;
 use App\Models\TicketAssignment;
 use App\Models\TicketCategory;
 use App\Models\WorkTask;
-use App\Services\DocumentNumberGenerator;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -57,10 +56,7 @@ class CreateTicket extends CreateRecord
         |--------------------------------------------------------------------------
         */
 
-        $prefix = 'REQ-'.now()->format('Ym').'-';
-
-        $data['ticket_no'] = app(DocumentNumberGenerator::class)
-            ->next($prefix);
+        $data['ticket_no'] = Ticket::generateRequestNo();
 
         if (empty($data['reported_at'])) {
             $data['reported_at'] = now();

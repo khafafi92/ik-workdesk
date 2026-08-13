@@ -28,32 +28,51 @@ class TicketsTable
                 TextColumn::make('ticket_no')
                     ->label('Request No')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('subject')
                     ->label('Subject')
                     ->searchable()
-                    ->limit(35),
+                    ->limit(35)
+                    ->toggleable(),
 
                 TextColumn::make('employee.name')
                     ->label('Requester')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('requesterDepartment.name')
                     ->label('From Dept')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('handlerDepartment.name')
                     ->label('To Dept')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('category.name')
                     ->label('Category')
                     ->searchable()
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
+
+                TextColumn::make('permitCompany.name')
+                    ->label('Permit')
+                    ->badge()
+                    ->placeholder('-')
+                    ->toggleable(),
+
+                TextColumn::make('permitKbli.code')
+                    ->label('KBLI')
+                    ->placeholder(fn ($record): string => $record->permit_kbli_unavailable
+                        ? 'Belum terdaftar'
+                        : '-')
+                    ->toggleable(),
 
                 TextColumn::make('priority')
                     ->label('Priority')
@@ -64,7 +83,8 @@ class TicketsTable
                         'high' => 'warning',
                         'urgent' => 'danger',
                         default => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
 
                 TextColumn::make('status')
                     ->label('Status')
@@ -73,11 +93,21 @@ class TicketsTable
                         'open' => 'danger',
                         'in_progress' => 'warning',
                         'waiting_user' => 'info',
+                        'discussion' => 'warning',
                         'resolved' => 'success',
                         'closed' => 'gray',
                         'cancel' => 'gray',
+                        'rejected' => 'danger',
                         default => 'gray',
-                    }),
+                    })
+                    ->toggleable(),
+
+                TextColumn::make('resolution_notes')
+                    ->label('Decision / Resolution')
+                    ->placeholder('-')
+                    ->wrap()
+                    ->limit(60)
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('workTasks.employee.name')
                     ->label('Assigned To')
@@ -89,7 +119,8 @@ class TicketsTable
                 TextColumn::make('reported_at')
                     ->label('Reported At')
                     ->dateTime('d M Y H:i')
-                    ->sortable(),
+                    ->sortable()
+                    ->toggleable(),
 
                 TextColumn::make('due_at')
                     ->label('Due At')

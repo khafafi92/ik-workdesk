@@ -26,6 +26,12 @@ class TicketObserver
             return;
         }
 
+        $ticket->loadMissing('handlerDepartment');
+
+        if ($ticket->handlerDepartment?->isLegal()) {
+            return;
+        }
+
         $recipients = User::query()
             ->whereHas(
                 'employee',

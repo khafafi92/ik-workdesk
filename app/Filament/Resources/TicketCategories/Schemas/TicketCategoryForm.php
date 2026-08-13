@@ -46,6 +46,11 @@ class TicketCategoryForm
                     ->label('Code')
                     ->maxLength(50),
 
+                Toggle::make('requires_permit')
+                    ->label('Requires Permit & KBLI')
+                    ->helperText('Jika aktif, form Permit Company dan KBLI muncul dan wajib dilengkapi pada Service Desk kategori ini.')
+                    ->default(false),
+
                 Select::make('reviewerDepartments')
                     ->label('Default Reviewer Departments')
                     ->relationship('reviewerDepartments', 'name')
