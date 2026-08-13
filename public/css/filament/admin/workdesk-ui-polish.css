@@ -991,3 +991,234 @@ body,
         font-size: 0.85rem !important;
     }
 }
+
+/* ========================================================================
+   IK WorkDesk — firm rectangular controls
+   ======================================================================== */
+
+:root {
+    --ik-control-radius: 4px;
+    --ik-shadow-xs: none;
+    --ik-shadow-sm: none;
+    --ik-shadow-md: none;
+}
+
+/* Buttons and interactive controls */
+.fi-btn,
+.fi-icon-btn,
+.fi-btn-group,
+.fi-pagination-item-btn,
+.fi-pagination-next-btn,
+.fi-pagination-previous-btn,
+.fi-tabs,
+.fi-tabs-item,
+.fi-dropdown-list-item,
+.fi-sidebar-item-btn,
+.fi-sidebar-group-btn,
+.fi-sidebar-group-dropdown-trigger-btn,
+.fi-topbar-item-btn,
+.fi-theme-switcher-btn,
+.fi-fo-toggle-buttons .fi-btn,
+.ik-collab-composer button,
+.ik-collab-response-form button,
+.ik-collab-respond,
+.ik-collab-file-picker,
+.att-download-btn,
+.ik-smart-actions a,
+.mr-calendar-nav button,
+.mr-calendar-today,
+.mr-calendar-open {
+    border-radius: var(--ik-control-radius) !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+.fi-btn {
+    border: 1px solid rgba(15, 23, 42, 0.22) !important;
+    font-weight: 800 !important;
+}
+
+.fi-btn:hover,
+.fi-icon-btn:hover {
+    box-shadow: none !important;
+    transform: none !important;
+    filter: brightness(0.93);
+}
+
+.fi-btn.fi-color-primary:not(.fi-outlined) {
+    border-color: #004f9e !important;
+    background: #0068d9 !important;
+    color: #ffffff !important;
+}
+
+.fi-btn.fi-color-success:not(.fi-outlined) {
+    border-color: #006f48 !important;
+    background: #008f5d !important;
+    color: #ffffff !important;
+}
+
+.fi-btn.fi-color-danger:not(.fi-outlined) {
+    border-color: #a91f35 !important;
+    background: #c92d46 !important;
+    color: #ffffff !important;
+}
+
+.fi-btn.fi-color-warning:not(.fi-outlined) {
+    border-color: #995f00 !important;
+    background: #bd7600 !important;
+    color: #ffffff !important;
+}
+
+.fi-btn.fi-color-info:not(.fi-outlined) {
+    border-color: #1554b8 !important;
+    background: #2468cf !important;
+    color: #ffffff !important;
+}
+
+/* Statuses and labels */
+.fi-badge,
+.ik-badge,
+.att-badge,
+.ik-collab-participants span,
+.ik-collab-badges span,
+.ik-collab-selected-files span,
+.ik-reminder-lane-head strong,
+.rem-cal-month {
+    border-radius: var(--ik-control-radius) !important;
+    box-shadow: none !important;
+    font-weight: 800 !important;
+}
+
+.fi-badge.fi-color-primary {
+    border-color: #004f9e !important;
+    background: #0068d9 !important;
+    color: #ffffff !important;
+}
+
+.fi-badge.fi-color-success {
+    border-color: #006f48 !important;
+    background: #008f5d !important;
+    color: #ffffff !important;
+}
+
+.fi-badge.fi-color-danger {
+    border-color: #a91f35 !important;
+    background: #c92d46 !important;
+    color: #ffffff !important;
+}
+
+.fi-badge.fi-color-warning {
+    border-color: #995f00 !important;
+    background: #bd7600 !important;
+    color: #ffffff !important;
+}
+
+.fi-badge.fi-color-info {
+    border-color: #1554b8 !important;
+    background: #2468cf !important;
+    color: #ffffff !important;
+}
+
+.fi-badge.fi-color-gray,
+.fi-badge:not(.fi-color) {
+    border-color: #475569 !important;
+    background: #64748b !important;
+    color: #ffffff !important;
+}
+
+.fi-badge .fi-icon,
+.fi-badge .fi-badge-label {
+    color: inherit !important;
+}
+
+.ik-badge--info,
+.att-badge-info,
+.rem-cal-month {
+    border-color: #004f9e !important;
+    background: #0068d9 !important;
+    color: #ffffff !important;
+}
+
+.ik-badge--success,
+.att-badge-success {
+    border-color: #006f48 !important;
+    background: #008f5d !important;
+    color: #ffffff !important;
+}
+
+.ik-badge--danger,
+.att-badge-danger {
+    border-color: #a91f35 !important;
+    background: #c92d46 !important;
+    color: #ffffff !important;
+}
+
+.ik-badge--warning,
+.att-badge-warning {
+    border-color: #995f00 !important;
+    background: #bd7600 !important;
+    color: #ffffff !important;
+}
+
+.ik-badge--gray,
+.att-badge-gray {
+    border-color: #475569 !important;
+    background: #64748b !important;
+    color: #ffffff !important;
+}
+
+.fi-tabs-item.fi-active,
+.fi-tabs-item[aria-selected="true"] {
+    border-color: #004f9e !important;
+    background: #0068d9 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+
+/* Inputs and switches */
+.fi-input-wrp,
+.fi-fo-toggle-buttons-wrp,
+.fi-fo-modal-table-select,
+.fi-select-input,
+.fi-textarea {
+    border-radius: var(--ik-control-radius) !important;
+    box-shadow: none !important;
+}
+
+.fi-input-wrp:focus-within {
+    outline: 2px solid rgba(0, 104, 217, 0.35);
+    outline-offset: 0;
+    box-shadow: none !important;
+}
+
+.fi-toggle,
+.fi-toggle > :first-child {
+    border-radius: 3px !important;
+    box-shadow: none !important;
+}
+
+/* Flat surfaces: separation comes from borders, never shadows. */
+.fi-section,
+.fi-ta-ctn,
+.fi-dropdown-panel,
+.fi-modal-window,
+.fi-no-notification,
+.fi-sidebar,
+.fi-topbar,
+.ik-stat-card,
+.ik-panel,
+.ik-smart-panel,
+.ik-overview-card,
+.att-stat-card,
+.att-filter-card,
+.att-section,
+.mr-calendar-hero,
+.mr-calendar-scroll {
+    box-shadow: none !important;
+}
+
+.ik-stat-card:hover,
+.ik-panel:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
