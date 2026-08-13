@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\Tickets\Pages\CreateTicket;
 use App\Models\Department;
 use App\Models\PermitCompany;
 use App\Models\PermitKbli;
@@ -12,6 +13,7 @@ use App\Models\WorkTask;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class PermitWorkflowTest extends TestCase
@@ -105,6 +107,24 @@ class PermitWorkflowTest extends TestCase
             ->get('/panel/service-desk/create')
             ->assertOk()
             ->assertDontSee('Permit Company');
+    }
+
+    public function test_kbli_can_be_selected_from_the_popup_picker(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $company = PermitCompany::query()->where('code', 'KPMOG')->firstOrFail();
+        $category = $this->permitCategory();
+
+        Livewire::actingAs($admin)
+            ->test(CreateTicket::class)
+            ->fillForm([
+                'ticket_category_id' => $category->id,
+                'permit_company_id' => $company->id,
+            ])
+            ->assertFormComponentActionExists('permit_kbli_id', 'select')
+            ->assertFormComponentActionEnabled('permit_kbli_id', 'select')
+            ->mountFormComponentAction('permit_kbli_id', 'select')
+            ->assertFormComponentActionMounted('permit_kbli_id', 'select');
     }
 
     public function test_missing_kbli_sets_discussion_and_survives_work_log_creation(): void

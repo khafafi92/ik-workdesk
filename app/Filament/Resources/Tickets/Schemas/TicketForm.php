@@ -2,14 +2,17 @@
 
 namespace App\Filament\Resources\Tickets\Schemas;
 
+use App\Filament\Resources\Tickets\Tables\PermitKblisPickerTable;
 use App\Models\Department;
 use App\Models\PermitCompany;
 use App\Models\PermitKbli;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
+use Filament\Forms\Components\ModalTableSelect;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -18,6 +21,8 @@ use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Filament\Support\Enums\Width;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -272,25 +277,34 @@ class TicketForm
                             })
                             ->required(),
 
-                        Select::make('permit_kbli_id')
+                        ModalTableSelect::make('permit_kbli_id')
                             ->label('KBLI')
-                            ->options(function (Get $get): array {
-                                if (blank($get('permit_company_id'))) {
-                                    return [];
-                                }
-
-                                return PermitKbli::query()
-                                    ->where('permit_company_id', $get('permit_company_id'))
-                                    ->where('is_active', true)
-                                    ->orderBy('code')
-                                    ->get()
-                                    ->mapWithKeys(fn (PermitKbli $kbli): array => [
-                                        $kbli->id => "{$kbli->code} - {$kbli->name}",
-                                    ])
-                                    ->all();
-                            })
-                            ->searchable()
-                            ->preload()
+                            ->placeholder('Klik untuk memilih KBLI')
+                            ->relationship(
+                                name: 'permitKbli',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query, Get $get): Builder => $query
+                                    ->where('permit_company_id', (int) $get('permit_company_id'))
+                                    ->where('is_active', true),
+                            )
+                            ->getOptionLabelFromRecordUsing(
+                                fn (PermitKbli $record): string => "{$record->code} — {$record->name}"
+                            )
+                            ->tableConfiguration(PermitKblisPickerTable::class)
+                            ->tableArguments(
+                                fn (Get $get): array => [
+                                    'permit_company_id' => (int) $get('permit_company_id'),
+                                ]
+                            )
+                            ->selectAction(
+                                fn (Action $action): Action => $action
+                                    ->label('Pilih KBLI')
+                                    ->modalHeading('Pilih KBLI')
+                                    ->modalDescription('Cari menggunakan nomor atau nama KBLI, lalu pilih satu baris yang sesuai.')
+                                    ->modalSubmitActionLabel('Gunakan KBLI')
+                                    ->modalWidth(Width::SevenExtraLarge)
+                                    ->slideOver(false)
+                            )
                             ->disabled(
                                 fn (Get $get): bool => blank($get('permit_company_id'))
                                     || (bool) $get('permit_kbli_unavailable')
@@ -298,7 +312,8 @@ class TicketForm
                             ->required(
                                 fn (Get $get): bool => filled($get('permit_company_id'))
                                     && ! (bool) $get('permit_kbli_unavailable')
-                            ),
+                            )
+                            ->helperText('Daftar hanya menampilkan KBLI aktif milik Permit Company yang dipilih.'),
 
                         Toggle::make('permit_kbli_unavailable')
                             ->label('Tidak ada / belum terdaftar di KBLI')
