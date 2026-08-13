@@ -1302,10 +1302,10 @@ nav[role="navigation"] span {
 }
 
 .fi-topbar {
-    background: rgba(255, 255, 255, 0.94) !important;
+    background: #ffffff !important;
     border-bottom: 1px solid #e2e8f0 !important;
-    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.035) !important;
-    backdrop-filter: blur(12px);
+    box-shadow: none !important;
+    backdrop-filter: none;
 }
 
 /* Make dashboard content closer to reference */
@@ -1766,8 +1766,8 @@ nav[role="navigation"] span {
     padding: 1.35rem 1.5rem;
     border: 1px solid var(--mr-border);
     border-radius: 14px;
-    background: linear-gradient(135deg, #ffffff 0%, #f4f9ff 100%);
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    background: #ffffff;
+    box-shadow: none;
 }
 
 .mr-calendar-eyebrow {

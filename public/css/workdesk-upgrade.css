@@ -378,7 +378,7 @@
 
 .ik-login-brand-mark {
     border-radius: var(--mn-radius) !important;
-    background: linear-gradient(135deg, var(--mn-primary), var(--mn-navy)) !important;
+    background: var(--mn-primary) !important;
     box-shadow: 0 4px 12px -3px rgba(0, 115, 234, 0.3) !important;
     width: 2.5rem !important;
     height: 2.5rem !important;
@@ -509,8 +509,8 @@
     border: 1px solid rgba(255, 255, 255, 0.48);
     border-radius: 999px;
     color: #fff;
-    background: rgba(15, 32, 43, 0.78);
-    box-shadow: 0 8px 22px rgba(5, 15, 23, 0.18);
+    background: #102530;
+    box-shadow: none;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.05em;
@@ -520,7 +520,7 @@
 
 .wd-login-websites a:hover {
     border-color: #fff;
-    background: rgba(15, 32, 43, 0.94);
+    background: #0b1b24;
     transform: translateY(-1px);
 }
 
@@ -562,8 +562,8 @@
     place-items: center;
     border: 1px solid rgba(255, 255, 255, 0.52);
     border-radius: 11px;
-    background: rgba(255, 255, 255, 0.13);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    background: #102530;
+    box-shadow: none;
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.06em;
@@ -602,18 +602,18 @@
     border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 999px;
     color: rgba(255, 255, 255, 0.88);
-    background: rgba(255, 255, 255, 0.08);
+    background: #102530;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
     text-decoration: none;
-    backdrop-filter: blur(12px);
+    backdrop-filter: none;
     transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
 }
 
 .wd-login-nav a:hover {
     border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.17);
+    background: #183846;
     transform: translateY(-1px);
 }
 
@@ -695,10 +695,10 @@
     border: 1px solid rgba(255, 255, 255, 0.35);
     border-radius: 26px;
     color: #fff;
-    background: linear-gradient(145deg, rgba(35, 54, 66, 0.78), rgba(14, 31, 42, 0.72));
-    box-shadow: 0 28px 60px rgba(4, 13, 20, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.24);
-    -webkit-backdrop-filter: blur(20px) saturate(1.05);
-    backdrop-filter: blur(20px) saturate(1.05);
+    background: #172f3d;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
 }
 
 .wd-login-card-kicker {
@@ -731,7 +731,7 @@
     border: 1px solid rgba(167, 243, 208, 0.45);
     border-radius: 9px;
     color: #d1fae5;
-    background: rgba(6, 95, 70, 0.28);
+    background: #065f46;
     font-size: 12px;
 }
 
@@ -799,8 +799,8 @@
     border-radius: 9px;
     outline: none;
     color: #16232c;
-    background: rgba(255, 255, 255, 0.91);
-    box-shadow: 0 5px 18px rgba(8, 20, 29, 0.1);
+    background: #ffffff;
+    box-shadow: none;
     font-size: 13px;
     transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
 }
@@ -861,8 +861,8 @@
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 9px;
     color: #fff;
-    background: linear-gradient(135deg, #1683ee, #3573e8);
-    box-shadow: 0 12px 26px rgba(17, 92, 189, 0.3);
+    background: #1683ee;
+    box-shadow: none;
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.08em;
@@ -872,7 +872,7 @@
 
 .wd-login-submit:hover {
     filter: brightness(1.08);
-    box-shadow: 0 15px 32px rgba(17, 92, 189, 0.38);
+    box-shadow: none;
     transform: translateY(-1px);
 }
 
@@ -907,7 +907,7 @@
 .wd-login-card-foot span {
     height: 1px;
     flex: 1;
-    background: rgba(255, 255, 255, 0.25);
+    background: #8d9aa4;
 }
 
 .wd-login-card-foot p {
@@ -1318,4 +1318,91 @@
     }
 
     .ik-compact-meeting-metrics > div:last-child { border-bottom: 0; }
+}
+
+/* ========================================================================
+   Solid interface surfaces — no translucent glass or washed-out loading
+   ======================================================================== */
+
+[class*="mn-stagger-"] {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+}
+
+.ik-workdesk-dashboard,
+.ik-app-shell,
+.ik-content-shell,
+.ik-main {
+    background: #f3f4f6 !important;
+    background-image: none !important;
+}
+
+.ik-sidebar,
+.ik-topbar,
+.ik-page-hero,
+.ik-stat-card,
+.ik-dashboard-content .shadow-sm.overflow-hidden,
+.ik-dashboard-content .bg-white.border,
+.ik-compact-panel,
+.ik-compact-summary,
+.ik-compact-reminders {
+    background-color: #ffffff !important;
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    box-shadow: none !important;
+}
+
+.ik-stat-card:hover,
+.ik-dashboard-content .shadow-sm.overflow-hidden:hover,
+.ik-dashboard-content .bg-white.border:hover {
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* The login remains legible over the photo using opaque components. */
+.wd-login-websites a,
+.wd-login-nav a {
+    border-color: #8d9aa4 !important;
+    background: #102530 !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    transform: none !important;
+}
+
+.wd-login-logo-mark {
+    border-color: #8d9aa4 !important;
+    background: #102530 !important;
+    box-shadow: none !important;
+}
+
+.wd-login-card {
+    border-color: #8d9aa4 !important;
+    background: #172f3d !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.wd-login-card-kicker,
+.wd-login-card-heading p,
+.wd-login-form label,
+.wd-login-label-row a,
+.wd-login-logo small,
+.wd-login-description {
+    color: #ffffff !important;
+}
+
+.wd-login-input-wrap input {
+    border-color: #aeb8c0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+}
+
+.wd-login-status:not(:empty) {
+    border-color: #34d399 !important;
+    background: #065f46 !important;
 }
