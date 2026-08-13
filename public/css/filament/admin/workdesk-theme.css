@@ -719,90 +719,29 @@ nav[role="navigation"] span {
 .fi-topbar-start .fi-logo,
 .fi-sidebar-header .fi-logo {
     display: block !important;
-    width: 240px !important;
-    height: 52px !important;
+    width: 220px !important;
+    height: 64px !important;
     margin-inline-start: 0 !important;
 }
 
-.ik-brand-carousel {
-    position: relative;
-    width: 240px;
-    height: 52px;
-    overflow: hidden;
-}
-
-.ik-brand-slide {
-    position: absolute;
-    inset: 0;
+.ik-brand-static {
     display: flex;
+    width: 220px;
+    height: 64px;
     align-items: center;
     justify-content: flex-start;
     overflow: hidden;
-    opacity: 0;
-    animation: ik-brand-cycle 16s ease-in-out infinite;
+    animation: none !important;
 }
 
-.ik-brand-slide:nth-child(1) {
-    animation-delay: 0s;
-}
-
-.ik-brand-slide:nth-child(2) {
-    animation-delay: 4s;
-}
-
-.ik-brand-slide:nth-child(3) {
-    animation-delay: 8s;
-}
-
-.ik-brand-slide:nth-child(4) {
-    animation-delay: 12s;
-}
-
-.ik-brand-slide img {
+.ik-brand-static img {
     display: block;
-    flex: none;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
-}
-
-.ik-brand-slide--apca img {
-    width: auto;
-    height: 48px;
-}
-
-.ik-brand-slide--ank img,
-.ik-brand-slide--atc img,
-.ik-brand-slide--kpmog img {
-    width: 136px;
-    height: 136px;
-    max-width: none;
-}
-
-.ik-brand-carousel:hover .ik-brand-slide {
-    animation-play-state: paused;
-}
-
-@keyframes ik-brand-cycle {
-    0%,
-    20% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    25%,
-    100% {
-        opacity: 0;
-        transform: translateY(3px);
-    }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .ik-brand-slide {
-        animation: none;
-    }
-
-    .ik-brand-slide:first-child {
-        opacity: 1;
-    }
+    object-position: left center;
+    animation: none !important;
+    transform: none !important;
 }
 
 /* Compact dashboard */
