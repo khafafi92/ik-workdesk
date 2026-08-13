@@ -1467,3 +1467,184 @@ body,
 [aria-disabled="true"] {
     opacity: 1 !important;
 }
+
+/* ========================================================================
+   IK WorkDesk — restrained enterprise application language
+   ======================================================================== */
+
+:root {
+    --ik-canvas: #f3f4f6;
+    --ik-surface: #ffffff;
+    --ik-surface-soft: #f8fafc;
+    --ik-border: #d5dae1;
+    --ik-border-strong: #b8c0cc;
+    --ik-radius-sm: 4px;
+    --ik-radius: 4px;
+    --ik-radius-lg: 4px;
+}
+
+body,
+.fi-body {
+    font-weight: 400;
+}
+
+.fi-page {
+    gap: 1rem !important;
+}
+
+.fi-main-ctn > main {
+    padding-top: 1.25rem !important;
+    padding-bottom: 2rem !important;
+}
+
+/* A page heading is navigation context, not a decorative hero banner. */
+.ik-page-title {
+    overflow: visible;
+    border: 0 !important;
+    border-bottom: 1px solid var(--ik-border) !important;
+    border-radius: 0 !important;
+    padding: 0 0 0.9rem !important;
+    background: transparent !important;
+}
+
+.ik-page-title h1,
+.fi-header-heading {
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.ik-page-title p,
+.fi-header-subheading {
+    margin-top: 0.2rem;
+    font-weight: 400 !important;
+}
+
+/* Consistent compact surfaces used throughout an internal work system. */
+.fi-section,
+.fi-ta-ctn,
+.fi-wi-stats-overview-stat,
+.fi-sc-tabs,
+.fi-in-entry-wrp,
+.fi-fo-repeater-item,
+.fi-fo-builder-item,
+.fi-modal-window,
+.fi-dropdown-panel,
+.ik-collab-room,
+.ik-collab-card,
+.ik-stat-card,
+.ik-panel,
+.ik-smart-panel,
+.ik-overview-card,
+.att-stat-card,
+.att-filter-card,
+.att-section,
+.mr-calendar-hero,
+.mr-calendar-scroll {
+    border-color: var(--ik-border) !important;
+    border-radius: 4px !important;
+}
+
+.fi-section-header,
+.fi-ta-header,
+.ik-panel-header {
+    background: #f8fafc !important;
+}
+
+.fi-section-header-heading,
+.fi-ta-header-heading,
+.fi-modal-heading,
+.ik-panel-title {
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+}
+
+.fi-section-header-description,
+.fi-fo-field-label-description,
+.fi-wi-stats-overview-stat-label,
+.fi-ta-empty-state-description,
+.fi-pagination-overview,
+.ik-collab-meta,
+.ik-collab-helper {
+    font-weight: 400 !important;
+}
+
+/* Navigation resembles a stable business application, not a showcase menu. */
+.fi-sidebar-nav {
+    padding: 0.75rem 0.5rem 1rem !important;
+}
+
+.fi-sidebar-group-label {
+    color: #4b5563 !important;
+    font-size: 0.7rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+}
+
+.fi-sidebar-item-btn {
+    min-height: 2.4rem !important;
+    border-radius: 3px !important;
+    font-weight: 500 !important;
+}
+
+.fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
+    border-left: 3px solid #0068d9 !important;
+    background: #e8f0fa !important;
+    color: #111827 !important;
+}
+
+/* Typography remains dark and clear without making every line a headline. */
+.fi-ta-text,
+.fi-ta-text-item,
+.fi-ta-cell,
+.fi-in-text,
+.fi-input,
+.fi-select-input,
+.fi-textarea,
+.fi-dropdown-list-item-label,
+.ik-table td {
+    font-weight: 400 !important;
+}
+
+.fi-ta-header-cell,
+.fi-ta-header-cell-label,
+.ik-table th,
+.fi-fo-field-label-content {
+    font-weight: 600 !important;
+}
+
+.fi-btn {
+    min-height: 2.25rem !important;
+    padding-block: 0.42rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+}
+
+.fi-badge,
+.ik-badge,
+.att-badge {
+    min-height: 1.45rem !important;
+    padding-inline: 0.5rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0 !important;
+}
+
+.fi-fo-checkbox-list-option-label,
+.fi-fo-checkbox-list-option-text,
+.fi-ta-checkbox + label,
+label:has(> input[type="checkbox"].fi-checkbox-input) {
+    font-weight: 500 !important;
+}
+
+/* No decorative movement: feedback comes from color and borders. */
+.fi-btn,
+.fi-icon-btn,
+.fi-sidebar-item-btn,
+.fi-section,
+.fi-ta-row,
+.ik-stat-card,
+.ik-panel,
+.ik-panel-header a,
+.ik-table tbody tr {
+    transition: background-color 80ms linear, border-color 80ms linear, color 80ms linear !important;
+    transform: none !important;
+}
