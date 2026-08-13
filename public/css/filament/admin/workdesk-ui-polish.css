@@ -1341,3 +1341,58 @@ textarea::placeholder {
 .fi-tabs-item[aria-selected="true"] {
     color: #ffffff !important;
 }
+
+/* Checkboxes / checklist controls: clear borders and unmistakable states. */
+input[type="checkbox"].fi-checkbox-input {
+    width: 1.125rem !important;
+    height: 1.125rem !important;
+    border: 2px solid #334155 !important;
+    border-radius: 3px !important;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+    color: #0068d9 !important;
+}
+
+input[type="checkbox"].fi-checkbox-input:hover:not(:disabled) {
+    border-color: #0057b8 !important;
+    background-color: #eef6ff !important;
+}
+
+input[type="checkbox"].fi-checkbox-input:checked,
+input[type="checkbox"].fi-checkbox-input:indeterminate {
+    border-color: #004f9e !important;
+    background-color: #0068d9 !important;
+    color: #ffffff !important;
+}
+
+input[type="checkbox"].fi-checkbox-input:focus-visible {
+    outline: 3px solid rgba(0, 104, 217, 0.3) !important;
+    outline-offset: 2px !important;
+    box-shadow: none !important;
+}
+
+input[type="checkbox"].fi-checkbox-input:disabled {
+    border-color: #64748b !important;
+    background-color: #e2e8f0 !important;
+    color: #475569 !important;
+    opacity: 1 !important;
+}
+
+input[type="checkbox"].fi-checkbox-input:disabled:checked,
+input[type="checkbox"].fi-checkbox-input:disabled:indeterminate {
+    border-color: #334155 !important;
+    background-color: #475569 !important;
+    color: #ffffff !important;
+}
+
+.fi-fo-checkbox-list-option-label,
+.fi-fo-checkbox-list-option-text,
+.fi-ta-checkbox + label,
+label:has(> input[type="checkbox"].fi-checkbox-input) {
+    color: #111827 !important;
+    font-weight: 700 !important;
+}
+
+input[type="checkbox"]:not(.fi-checkbox-input) {
+    accent-color: #0068d9;
+}
