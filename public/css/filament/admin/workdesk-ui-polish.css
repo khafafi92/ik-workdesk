@@ -1222,3 +1222,122 @@ body,
     box-shadow: none !important;
     transform: none !important;
 }
+
+/* ========================================================================
+   IK WorkDesk — firm, high-contrast typography
+   ======================================================================== */
+
+:root {
+    --ik-text: #111827;
+    --ik-muted: #475569;
+}
+
+body,
+.fi-body,
+.fi-main,
+.fi-main-ctn,
+.fi-page,
+.fi-section,
+.fi-modal-window,
+.fi-dropdown-panel {
+    color: var(--ik-text) !important;
+}
+
+/* Primary copy: headings, navigation, tables, forms, and dropdowns. */
+.fi-header-heading,
+.fi-section-header-heading,
+.fi-ta-header-heading,
+.fi-ta-text,
+.fi-ta-text-item,
+.fi-ta-cell,
+.fi-in-text,
+.fi-fo-field-label-content,
+.fi-input,
+.fi-select-input,
+.fi-textarea,
+.fi-sidebar-item-btn,
+.fi-sidebar-item-label,
+.fi-dropdown-list-item-label,
+.fi-modal-heading,
+.fi-wi-stats-overview-stat-value,
+.ik-panel-title,
+.ik-table tbody,
+.ik-table td {
+    color: #111827 !important;
+}
+
+.fi-header-heading,
+.fi-section-header-heading,
+.fi-ta-header-heading,
+.fi-fo-field-label-content,
+.fi-modal-heading,
+.ik-panel-title {
+    font-weight: 800 !important;
+}
+
+/* Supporting copy stays visually secondary, but no longer looks disabled. */
+.fi-header-subheading,
+.fi-section-header-description,
+.fi-fo-field-label-description,
+.fi-wi-stats-overview-stat-label,
+.fi-ta-empty-state-description,
+.fi-ta-summary,
+.fi-pagination-overview,
+.fi-sidebar-group-label,
+.fi-breadcrumbs-item-label,
+.fi-in-entry-wrp-label,
+.ik-collab-meta,
+.ik-collab-helper,
+.ik-page-title p {
+    color: #475569 !important;
+    font-weight: 600 !important;
+}
+
+.fi-ta-header-cell,
+.fi-ta-header-cell-label,
+.ik-table thead,
+.ik-table th {
+    color: #273449 !important;
+    font-weight: 800 !important;
+}
+
+.fi-input::placeholder,
+.fi-select-input:invalid,
+.fi-textarea::placeholder,
+input::placeholder,
+textarea::placeholder {
+    color: #64748b !important;
+    opacity: 1 !important;
+}
+
+/* Keep unavailable controls recognizable without washing their text out. */
+.fi-disabled,
+[disabled],
+[aria-disabled="true"] {
+    color: #526176 !important;
+    opacity: 0.72 !important;
+}
+
+/* Icons follow the stronger copy color unless a semantic color is assigned. */
+.fi-sidebar-item-btn:not(.fi-color-primary, .fi-color-success, .fi-color-danger, .fi-color-warning, .fi-color-info) > .fi-icon,
+.fi-topbar .fi-icon-btn:not(.fi-color-primary, .fi-color-success, .fi-color-danger, .fi-color-warning, .fi-color-info) .fi-icon,
+.fi-input-wrp .fi-icon {
+    color: #334155 !important;
+}
+
+/* Preserve readable white copy on solid semantic controls and statuses. */
+.fi-btn.fi-color-primary:not(.fi-outlined),
+.fi-btn.fi-color-success:not(.fi-outlined),
+.fi-btn.fi-color-danger:not(.fi-outlined),
+.fi-btn.fi-color-warning:not(.fi-outlined),
+.fi-btn.fi-color-info:not(.fi-outlined),
+.fi-badge.fi-color-primary,
+.fi-badge.fi-color-success,
+.fi-badge.fi-color-danger,
+.fi-badge.fi-color-warning,
+.fi-badge.fi-color-info,
+.fi-badge.fi-color-gray,
+.fi-tabs-item.fi-active,
+.fi-tabs-item[aria-selected="true"] {
+    color: #ffffff !important;
+}
