@@ -1,6 +1,6 @@
-<div class="ik-brand-static" role="img" aria-label="APCA Tirta Engineering dan KPMOG">
+<div class="ik-brand-static" role="img" aria-label="Internal9">
     <img
-        src="{{ asset('img/brands/apca-kpmog-static.png') }}"
-        alt="APCA Tirta Engineering dan KPMOG"
+        src="{{ asset('img/brands/internal9-header.png') }}"
+        alt="Internal9"
     >
 </div>

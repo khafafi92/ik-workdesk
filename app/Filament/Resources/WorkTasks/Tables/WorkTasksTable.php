@@ -56,6 +56,12 @@ class WorkTasksTable
                     ->sortable()
                     ->searchable(),
 
+                TextColumn::make('project.name')
+                    ->label('Project')
+                    ->placeholder('Non-project')
+                    ->searchable()
+                    ->toggleable(),
+
                 TextColumn::make('ticket.category.name')
                     ->label('Request Category')
                     ->searchable(),

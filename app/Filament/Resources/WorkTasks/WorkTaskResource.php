@@ -60,6 +60,7 @@ class WorkTaskResource extends Resource
                 'ticket.handlerDepartment',
                 'ticket.requesterDepartment',
                 'department',
+                'project',
             ]);
 
         $user = auth()->user();

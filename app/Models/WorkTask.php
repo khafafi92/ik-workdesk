@@ -16,6 +16,7 @@ class WorkTask extends Model
         'department_id',
         'employee_id',
         'task_category_id',
+        'work_project_id',
         'work_scope',
         'title',
         'description',
@@ -521,6 +522,11 @@ class WorkTask extends Model
     public function category()
     {
         return $this->belongsTo(TaskCategory::class, 'task_category_id');
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(WorkProject::class, 'work_project_id');
     }
 
     public function findings(): HasMany

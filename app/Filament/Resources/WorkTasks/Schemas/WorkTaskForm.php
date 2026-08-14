@@ -359,6 +359,23 @@ class WorkTaskForm
                             )
                             ->nullable(),
 
+                        Select::make('work_project_id')
+                            ->label('Related Project')
+                            ->relationship(
+                                name: 'project',
+                                titleAttribute: 'name',
+                                modifyQueryUsing: fn (Builder $query): Builder => $query
+                                    ->where('status', 'active')
+                                    ->orderBy('name')
+                            )
+                            ->searchable(['code', 'name'])
+                            ->preload()
+                            ->disabled(
+                                fn (?WorkTask $record): bool => $record !== null
+                                    && ! $record->canBeManagedBy(auth()->user())
+                            )
+                            ->helperText('Opsional. Aktivitas dari task ini akan otomatis terhubung ke project.'),
+
                         TextInput::make('title')
                             ->label('Task Title')
                             ->required()

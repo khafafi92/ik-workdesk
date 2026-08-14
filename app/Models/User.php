@@ -95,6 +95,11 @@ class User extends Authenticatable implements FilamentUser
         );
     }
 
+    public function dailyActivities(): HasMany
+    {
+        return $this->hasMany(DailyActivity::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Role Access
