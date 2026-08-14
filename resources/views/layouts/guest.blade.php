@@ -16,6 +16,10 @@
         <img src="{{ asset('img/office-login-background.png') }}" alt="">
     </div>
 
+    <div class="wd-login-brand" aria-label="Internal9">
+        <img src="{{ asset('img/brands/internal9-header.png') }}" alt="Internal9">
+    </div>
+
     <nav class="wd-login-websites" aria-label="Website perusahaan">
         <a href="https://www.kpmog.com" target="_blank" rel="noopener noreferrer">
             KPMOG

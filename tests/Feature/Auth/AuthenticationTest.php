@@ -20,6 +20,8 @@ class AuthenticationTest extends TestCase
             ->assertStatus(200)
             ->assertSee('type="password"', false)
             ->assertSee('x-bind:type="showPassword ? \'text\' : \'password\'"', false)
+            ->assertSee('img/brands/internal9-header.png', false)
+            ->assertSee('alt="Internal9"', false)
             ->assertSee('https://www.kpmog.com', false)
             ->assertSee('https://www.apcaengineering.com', false);
     }
