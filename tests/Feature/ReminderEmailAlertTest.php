@@ -77,6 +77,35 @@ class ReminderEmailAlertTest extends TestCase
         Mail::assertSent(ReminderAlertMail::class, 1);
     }
 
+    public function test_it_sends_selected_one_and_three_month_alerts(): void
+    {
+        Carbon::setTestNow('2026-08-03 08:00:00');
+        Mail::fake();
+
+        $oneMonthReminder = $this->createReminder([
+            'title' => 'Reminder satu bulan',
+            'reminder_at' => now()->addDays(30)->setTime(16, 0),
+            'email_alarm_days' => [30],
+        ]);
+        $threeMonthReminder = $this->createReminder([
+            'title' => 'Reminder tiga bulan',
+            'reminder_at' => now()->addDays(90)->setTime(16, 0),
+            'email_alarm_days' => [90],
+        ]);
+
+        $this->artisan('reminders:send-email-alerts')->assertSuccessful();
+
+        Mail::assertSent(ReminderAlertMail::class, function (ReminderAlertMail $mail) use ($oneMonthReminder) {
+            return $mail->reminder->is($oneMonthReminder)
+                && $mail->daysBefore === 30;
+        });
+        Mail::assertSent(ReminderAlertMail::class, function (ReminderAlertMail $mail) use ($threeMonthReminder) {
+            return $mail->reminder->is($threeMonthReminder)
+                && $mail->daysBefore === 90;
+        });
+        Mail::assertSent(ReminderAlertMail::class, 2);
+    }
+
     public function test_it_catches_up_h3_when_a_reminder_is_created_inside_the_h3_window(): void
     {
         Carbon::setTestNow('2026-08-05 10:00:00');

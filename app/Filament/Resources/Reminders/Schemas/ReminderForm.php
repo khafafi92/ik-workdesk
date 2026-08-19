@@ -125,6 +125,8 @@ class ReminderForm
                 CheckboxList::make('email_alarm_days')
                     ->label('Email Alarm')
                     ->options([
+                        90 => '3 Bulan',
+                        30 => '1 Bulan',
                         3 => '3 hari sebelum deadline (H-3)',
                         1 => '1 hari sebelum deadline (H-1)',
                     ])

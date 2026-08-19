@@ -11,6 +11,7 @@ use App\Models\Ticket;
 use App\Models\TicketAssignment;
 use App\Models\User;
 use App\Models\WorkTask;
+use App\Notifications\LegalTaskApprovalRequestedNotification;
 use App\Notifications\WorkTaskAssignedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -71,6 +72,10 @@ class LegalTaskApprovalTest extends TestCase
         ]);
 
         $this->assertSame('pending', $task->approval_status);
+        Notification::assertSentTo(
+            $cbo,
+            LegalTaskApprovalRequestedNotification::class
+        );
         Notification::assertNotSentTo($legalUser, WorkTaskAssignedNotification::class);
 
         $this->actingAs($legalUser);
@@ -95,6 +100,45 @@ class LegalTaskApprovalTest extends TestCase
         $this->actingAs($legalUser);
         $this->assertSame(1, WorkTaskResource::getEloquentQuery()->count());
         $this->assertTrue(WorkTaskResource::canView($task));
+    }
+
+    public function test_pending_legal_task_notifies_only_active_legal_approvers(): void
+    {
+        Notification::fake();
+
+        $legal = Department::query()->create([
+            'code' => 'LG-NOTIFY',
+            'name' => 'Legal',
+            'is_active' => true,
+        ]);
+        $activeCbo = User::factory()->create();
+        $activeCbo->roles()->attach(Role::query()->where('code', 'cbo')->value('id'));
+        $inactiveCbo = User::factory()->create();
+        $inactiveCbo->roles()->attach(Role::query()->where('code', 'cbo')->value('id'));
+        Employee::query()->create([
+            'user_id' => $inactiveCbo->id,
+            'department_id' => $legal->id,
+            'employee_no' => 'CBO-INACTIVE',
+            'name' => 'Inactive CBO',
+            'is_active' => false,
+        ]);
+        $regularUser = User::factory()->create();
+
+        WorkTask::query()->create([
+            'task_no' => 'T LEGAL-NOTIFY-0001',
+            'department_id' => $legal->id,
+            'title' => 'Legal work awaiting approval',
+            'status' => 'planned',
+        ]);
+
+        Notification::assertSentTo(
+            $activeCbo,
+            LegalTaskApprovalRequestedNotification::class
+        );
+        Notification::assertNotSentTo(
+            [$inactiveCbo, $regularUser],
+            LegalTaskApprovalRequestedNotification::class
+        );
     }
 
     public function test_non_legal_task_does_not_require_cbo_approval(): void

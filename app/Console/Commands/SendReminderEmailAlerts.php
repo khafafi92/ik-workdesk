@@ -12,7 +12,7 @@ class SendReminderEmailAlerts extends Command
 {
     protected $signature = 'reminders:send-email-alerts';
 
-    protected $description = 'Send due H-3/H-1 email alerts for pending reminders';
+    protected $description = 'Send selected email alerts for pending reminders';
 
     public function handle(): int
     {
@@ -21,7 +21,7 @@ class SendReminderEmailAlerts extends Command
 
         // Proses alarm terdekat lebih dulu. Dengan begitu reminder yang baru
         // dibuat saat sudah masuk H-1 tidak menerima email catch-up H-3 juga.
-        foreach ([1, 3] as $daysBefore) {
+        foreach ([1, 3, 30, 90] as $daysBefore) {
             Reminder::query()
                 ->with(['employee.user'])
                 ->where('status', 'pending')
