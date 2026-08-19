@@ -3,12 +3,14 @@
 namespace App\Filament\Resources\Tickets\Schemas;
 
 use App\Filament\Resources\Tickets\Tables\PermitKblisPickerTable;
+use App\Filament\Resources\Tickets\TicketResource;
 use App\Models\Department;
 use App\Models\PermitCompany;
 use App\Models\PermitKbli;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use Filament\Actions\Action;
+use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
@@ -91,6 +93,10 @@ class TicketForm
                         $set('ticket_category_id', null);
                         $set('reviewer_department_ids', []);
                     })
+                    ->disabled(
+                        fn (?Ticket $record): bool => $record !== null
+                            && TicketResource::canReviseRejectedLegalRequest($record)
+                    )
                     ->required(),
 
                 Select::make('ticket_category_id')
@@ -115,7 +121,9 @@ class TicketForm
                     ->searchable()
                     ->live()
                     ->disabled(
-                        fn (Get $get): bool => blank($get('handler_department_id'))
+                        fn (Get $get, ?Ticket $record): bool => blank($get('handler_department_id'))
+                            || ($record !== null
+                                && TicketResource::canReviseRejectedLegalRequest($record))
                     )
                     ->afterStateUpdated(
                         function (mixed $state, Set $set): void {
@@ -193,6 +201,10 @@ class TicketForm
                             ->toArray();
                     })
                     ->multiple()
+                    ->disabled(
+                        fn (?Ticket $record): bool => $record !== null
+                            && TicketResource::canReviseRejectedLegalRequest($record)
+                    )
                     ->searchable()
                     ->preload()
                     ->afterStateHydrated(function (Select $component, ?Ticket $record): void {
@@ -339,12 +351,65 @@ class TicketForm
                     ->columnSpanFull(),
 
                 Textarea::make('description')
-                    ->label('Description')
+                    ->label(
+                        fn (Get $get, ?Ticket $record): string => self::isLegalDestination($get, $record)
+                            ? 'Nama Proyek / Kegiatan / Transaksi'
+                            : 'Description'
+                    )
                     ->rows(4)
+                    ->required(
+                        fn (Get $get, ?Ticket $record): bool => self::isLegalDestination($get, $record)
+                    )
+                    ->columnSpanFull(),
+
+                Section::make('Detail Permintaan Legal')
+                    ->description('Informasi ini wajib dilengkapi untuk permintaan yang ditujukan ke Legal.')
+                    ->visible(
+                        fn (Get $get, ?Ticket $record): bool => self::isLegalDestination($get, $record)
+                    )
+                    ->schema([
+                        Textarea::make('legal_background')
+                            ->label('Latar Belakang')
+                            ->helperText('Uraikan kondisi, permasalahan, atau kebutuhan bisnis yang mendasari permintaan kepada Divisi Legal.')
+                            ->rows(4)
+                            ->required(),
+
+                        Textarea::make('legal_objective')
+                            ->label('Tujuan Permintaan')
+                            ->helperText('Jelaskan hasil atau output yang diharapkan dari Divisi Legal.')
+                            ->rows(4)
+                            ->required(),
+
+                        Textarea::make('legal_desired_scheme')
+                            ->label('Skema yang Diinginkan')
+                            ->helperText('Jelaskan skema kerja sama, transaksi, mekanisme pelaksanaan, struktur, dan pihak yang terlibat bila diperlukan.')
+                            ->rows(4)
+                            ->required(),
+
+                        CheckboxList::make('legal_document_types')
+                            ->label('Dokumen Pendukung')
+                            ->options([
+                                'draft_agreement' => 'Draft Perjanjian',
+                                'proposal' => 'Proposal',
+                                'term_sheet_loi' => 'Term Sheet / LOI',
+                                'correspondence' => 'Korespondensi',
+                                'company_profile' => 'Company Profile',
+                                'permit_document' => 'Dokumen Perizinan',
+                                'other' => 'Dokumen Lainnya',
+                            ])
+                            ->columns(2)
+                            ->helperText('Opsional. Centang jenis dokumen yang dilampirkan.')
+                            ->columnSpanFull(),
+                    ])
+                    ->columns(1)
                     ->columnSpanFull(),
 
                 FileUpload::make('attachments')
-                    ->label('Attachments')
+                    ->label(
+                        fn (Get $get, ?Ticket $record): string => self::isLegalDestination($get, $record)
+                            ? 'Upload Dokumen Pendukung (Opsional)'
+                            : 'Attachments'
+                    )
                     ->multiple()
                     ->maxFiles(10)
                     ->disk('local')
@@ -464,5 +529,17 @@ class TicketForm
                 DateTimePicker::make('due_at')
                     ->label('Due At'),
             ]);
+    }
+
+    private static function isLegalDestination(Get $get, ?Ticket $record): bool
+    {
+        $departmentId = $get('handler_department_id')
+            ?? $record?->handler_department_id;
+
+        if (blank($departmentId)) {
+            return false;
+        }
+
+        return Department::query()->find($departmentId)?->isLegal() === true;
     }
 }

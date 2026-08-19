@@ -310,7 +310,7 @@ class LegalTaskApprovalTest extends TestCase
 
         $task->refresh();
         $this->assertSame('rejected', $task->approval_status);
-        $this->assertSame('cancel', $task->status);
+        $this->assertSame('planned', $task->status);
         $this->assertSame('Dokumen dasar belum lengkap.', $task->rejection_reason);
         $this->assertSame($cbo->id, $task->rejected_by_user_id);
         $this->assertNotNull($task->rejected_at);
@@ -325,6 +325,62 @@ class LegalTaskApprovalTest extends TestCase
             'activity_type' => 'legal_approval_rejected',
             'user_id' => $cbo->id,
         ]);
+    }
+
+    public function test_requester_can_revise_and_resubmit_the_same_rejected_legal_task(): void
+    {
+        $legal = Department::query()->create([
+            'code' => 'LG-RESUBMIT',
+            'name' => 'Legal',
+            'is_active' => true,
+        ]);
+        $requester = User::factory()->create();
+        $requesterEmployee = Employee::query()->create([
+            'user_id' => $requester->id,
+            'department_id' => $legal->id,
+            'employee_no' => 'REQUESTER-LEGAL-REVISION',
+            'name' => 'Legal Requester',
+            'is_active' => true,
+        ]);
+        $cbo = User::factory()->create();
+        $cbo->roles()->attach(Role::query()->where('code', 'cbo')->value('id'));
+        $ticket = Ticket::query()->create([
+            'ticket_no' => 'R LEGAL-RESUBMIT-0001',
+            'employee_id' => $requesterEmployee->id,
+            'handler_department_id' => $legal->id,
+            'subject' => 'Legal request to revise',
+            'workflow_type' => 'single',
+        ]);
+        $task = WorkTask::query()->create([
+            'task_no' => 'T LEGAL-RESUBMIT-0001',
+            'ticket_id' => $ticket->id,
+            'department_id' => $legal->id,
+            'title' => 'Same Legal task',
+            'status' => 'planned',
+        ]);
+
+        $this->actingAs($cbo);
+        $task->rejectLegalTask($cbo, 'Mohon lengkapi latar belakang.');
+
+        Notification::fake();
+        $this->actingAs($requester);
+        $task->resubmitLegalTask($requester);
+
+        $task->refresh();
+        $this->assertSame('T LEGAL-RESUBMIT-0001', $task->task_no);
+        $this->assertSame('pending', $task->approval_status);
+        $this->assertSame('planned', $task->status);
+        $this->assertNull($task->rejection_reason);
+        $this->assertSame('open', $ticket->fresh()->status);
+        $this->assertDatabaseHas('ticket_comments', [
+            'work_task_id' => $task->id,
+            'activity_type' => 'legal_approval_resubmitted',
+            'user_id' => $requester->id,
+        ]);
+        Notification::assertSentTo(
+            $cbo,
+            LegalTaskApprovalRequestedNotification::class
+        );
     }
 
     public function test_cbo_cannot_reject_legal_task_without_reason(): void
@@ -444,9 +500,9 @@ class LegalTaskApprovalTest extends TestCase
         $legalTask->rejectLegalTask($cbo, 'Review Legal tidak diperlukan untuk scope ini.');
 
         $this->assertSame('rejected', $legalTask->fresh()->approval_status);
-        $this->assertSame('cancel', $legalTask->fresh()->status);
-        $this->assertFalse($legalAssignment->fresh()->is_required);
+        $this->assertSame('planned', $legalTask->fresh()->status);
+        $this->assertTrue($legalAssignment->fresh()->is_required);
         $this->assertSame('planned', $engineeringTask->fresh()->status);
-        $this->assertSame('open', $ticket->fresh()->status);
+        $this->assertSame('rejected', $ticket->fresh()->status);
     }
 }

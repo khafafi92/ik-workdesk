@@ -22,6 +22,10 @@ class Ticket extends Model
         'permit_kbli_unavailable',
         'subject',
         'description',
+        'legal_background',
+        'legal_objective',
+        'legal_desired_scheme',
+        'legal_document_types',
         'attachments',
         'priority',
         'status',
@@ -38,6 +42,7 @@ class Ticket extends Model
         'due_at' => 'datetime',
         'resolved_at' => 'datetime',
         'attachments' => 'array',
+        'legal_document_types' => 'array',
         'permit_kbli_unavailable' => 'boolean',
     ];
 

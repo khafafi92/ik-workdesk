@@ -87,6 +87,7 @@ class TicketCollaborationRoom extends Component
             'priority_change' => 'Priority Updated',
             'due_date_change' => 'Due Date Updated',
             'legal_approval_rejected' => 'Legal Approval Rejected',
+            'legal_approval_resubmitted' => 'Legal Approval Resubmitted',
             'notes_change' => 'Notes Updated',
             default => Str::of($type)->replace('_', ' ')->title()->toString(),
         };

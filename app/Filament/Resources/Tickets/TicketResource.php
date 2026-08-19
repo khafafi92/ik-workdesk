@@ -9,6 +9,7 @@ use App\Filament\Resources\Tickets\Pages\ViewTicket;
 use App\Filament\Resources\Tickets\Schemas\TicketForm;
 use App\Filament\Resources\Tickets\Tables\TicketsTable;
 use App\Models\Ticket;
+use App\Models\User;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -221,6 +222,13 @@ class TicketResource extends Resource
         $user = auth()->user();
 
         if (
+            $record instanceof Ticket
+            && static::canReviseRejectedLegalRequest($record, $user)
+        ) {
+            return true;
+        }
+
+        if (
             ! $user
             || ! $user->hasPermission('tickets.manage')
             || ! static::currentUserCanAccessTicket($record)
@@ -251,6 +259,29 @@ class TicketResource extends Resource
             ->where('approval_status', 'pending')
             ->whereIn('department_id', $user->accessibleDepartmentIds())
             ->exists();
+    }
+
+    public static function canReviseRejectedLegalRequest(
+        Ticket $ticket,
+        ?User $user = null
+    ): bool {
+        $user ??= auth()->user();
+
+        if (! $user || $ticket->status !== 'rejected') {
+            return false;
+        }
+
+        if ($user->is_admin || $user->hasRole('system-admin')) {
+            return $ticket->workTasks()
+                ->where('approval_status', 'rejected')
+                ->exists();
+        }
+
+        return $user->employee?->id !== null
+            && (int) $ticket->employee_id === (int) $user->employee->id
+            && $ticket->workTasks()
+                ->where('approval_status', 'rejected')
+                ->exists();
     }
 
     public static function canDelete(Model $record): bool

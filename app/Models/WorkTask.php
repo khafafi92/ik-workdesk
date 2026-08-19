@@ -466,10 +466,6 @@ class WorkTask extends Model
                 'rejection_reason' => $reason,
                 'rejected_by_user_id' => $rejector->id,
                 'rejected_at' => now(),
-                'status' => 'cancel',
-                'status_reason' => $reason,
-                'completed_at' => null,
-                'completed_by_user_id' => null,
             ]);
 
             $task->recordActivity(
@@ -483,36 +479,99 @@ class WorkTask extends Model
             );
 
             if ($task->ticket) {
-                $isPrimaryDestination = (int) $task->ticket->handler_department_id
-                    === (int) $task->department_id;
+                $task->ticket->updateQuietly([
+                    'status' => 'rejected',
+                    'resolved_at' => null,
+                    'resolution_notes' => "Legal approval rejected: {$reason}",
+                ]);
+            }
 
-                if ($task->ticket->workflow_type !== 'collaborative' || $isPrimaryDestination) {
-                    self::query()
-                        ->where('ticket_id', $task->ticket_id)
-                        ->whereKeyNot($task->id)
-                        ->whereNotIn('status', ['done', 'cancel'])
-                        ->update([
-                            'status' => 'cancel',
-                            'status_reason' => "Service Desk cancelled because Legal approval was rejected: {$reason}",
-                            'completed_at' => null,
-                            'completed_by_user_id' => null,
-                        ]);
+            $this->setRawAttributes($task->getAttributes(), true);
+        });
+    }
 
-                    $task->ticket->updateQuietly([
-                        'status' => 'rejected',
-                        'resolved_at' => null,
-                        'resolution_notes' => "Legal approval rejected: {$reason}",
+    public function canBeResubmittedBy(?User $user): bool
+    {
+        if (! $user || $this->approval_status !== 'rejected') {
+            return false;
+        }
+
+        if ($user->is_admin || $user->hasRole('system-admin')) {
+            return true;
+        }
+
+        $this->loadMissing('ticket');
+
+        return $user->employee?->id !== null
+            && (int) $this->ticket?->employee_id === (int) $user->employee->id;
+    }
+
+    public function resubmitLegalTask(User $requester): void
+    {
+        DB::transaction(function () use ($requester): void {
+            $task = self::query()
+                ->with('ticket')
+                ->lockForUpdate()
+                ->findOrFail($this->getKey());
+
+            if (! $task->canBeResubmittedBy($requester)) {
+                throw ValidationException::withMessages([
+                    'approval_status' => 'Task Legal ini tidak dapat diajukan ulang oleh Anda.',
+                ]);
+            }
+
+            $task->update([
+                'approval_status' => 'pending',
+                'approved_by_user_id' => null,
+                'approved_at' => null,
+                'rejection_reason' => null,
+                'rejected_by_user_id' => null,
+                'rejected_at' => null,
+                'status' => 'planned',
+                'status_reason' => null,
+                'completed_at' => null,
+                'completed_by_user_id' => null,
+                'title' => $task->ticket?->subject ?? $task->title,
+                'description' => $task->ticket?->description,
+                'priority' => $task->ticket?->priority ?? $task->priority,
+                'due_at' => $task->ticket?->due_at,
+            ]);
+
+            $task->recordActivity(
+                'legal_approval_resubmitted',
+                'Legal request revised and resubmitted for CBO approval.',
+                [
+                    'approval_status' => 'pending',
+                    'resubmitted_by_user_id' => $requester->id,
+                ]
+            );
+
+            if ($task->ticket) {
+                $task->ticket->assignments()
+                    ->where('work_task_id', $task->id)
+                    ->update(['is_required' => true]);
+
+                self::query()
+                    ->where('ticket_id', $task->ticket_id)
+                    ->whereKeyNot($task->id)
+                    ->where('status', 'cancel')
+                    ->where(
+                        'status_reason',
+                        'like',
+                        'Service Desk cancelled because Legal approval was rejected:%'
+                    )
+                    ->update([
+                        'status' => 'planned',
+                        'status_reason' => null,
+                        'completed_at' => null,
+                        'completed_by_user_id' => null,
                     ]);
-                } else {
-                    $task->ticket->assignments()
-                        ->where('work_task_id', $task->id)
-                        ->update([
-                            'is_required' => false,
-                            'notes' => "Legal review rejected by CBO: {$reason}",
-                        ]);
 
-                    $task->ticket->syncCollaborativeStatus();
-                }
+                $task->ticket->updateQuietly([
+                    'status' => 'open',
+                    'resolved_at' => null,
+                    'resolution_notes' => null,
+                ]);
             }
 
             $this->setRawAttributes($task->getAttributes(), true);
@@ -655,6 +714,29 @@ class WorkTask extends Model
             && $user->canAccessDepartment($this->department_id);
     }
 
+    public function canAssignPicBy(?User $user): bool
+    {
+        if (! $user || $this->isLegalApprovalLocked()) {
+            return false;
+        }
+
+        if ($user->is_admin || $user->hasRole('system-admin')) {
+            return true;
+        }
+
+        if (! $user->canAccessDepartment($this->department_id)) {
+            return false;
+        }
+
+        $this->loadMissing('department');
+
+        if ($this->department?->isLegal() === true) {
+            return $user->hasRole('department-manager');
+        }
+
+        return $user->hasRole('department-manager', 'supervisor');
+    }
+
     public function canBeCancelledBy(?User $user): bool
     {
         if (! $user || $this->isAwaitingLegalApproval()) {
@@ -691,8 +773,8 @@ class WorkTask extends Model
         return $user?->employee !== null
             && ! $this->isLegalApprovalLocked()
             && $user->employee->is_active === true
-            && $user->hasPermission('worklogs.view')
             && $user->belongsToDepartment($this->department_id)
+            && $this->canAssignPicBy($user)
             && $this->employee_id === null
             && ! in_array($this->status, ['done', 'cancel'], true);
     }

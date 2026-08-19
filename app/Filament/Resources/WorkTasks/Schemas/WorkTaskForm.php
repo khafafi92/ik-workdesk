@@ -73,8 +73,58 @@ class WorkTaskForm
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.description')
-                            ->label('Request Description')
+                            ->label(
+                                fn (WorkTask $record): string => $record->requiresLegalApproval()
+                                    ? 'Nama Proyek / Kegiatan / Transaksi'
+                                    : 'Request Description'
+                            )
                             ->placeholder('No description')
+                            ->columnSpanFull(),
+
+                        TextEntry::make('ticket.legal_background')
+                            ->label('Latar Belakang')
+                            ->placeholder('-')
+                            ->visible(
+                                fn (WorkTask $record): bool => $record->requiresLegalApproval()
+                            )
+                            ->columnSpanFull(),
+
+                        TextEntry::make('ticket.legal_objective')
+                            ->label('Tujuan Permintaan')
+                            ->placeholder('-')
+                            ->visible(
+                                fn (WorkTask $record): bool => $record->requiresLegalApproval()
+                            )
+                            ->columnSpanFull(),
+
+                        TextEntry::make('ticket.legal_desired_scheme')
+                            ->label('Skema yang Diinginkan')
+                            ->placeholder('-')
+                            ->visible(
+                                fn (WorkTask $record): bool => $record->requiresLegalApproval()
+                            )
+                            ->columnSpanFull(),
+
+                        TextEntry::make('ticket.legal_document_types')
+                            ->label('Dokumen Pendukung')
+                            ->placeholder('-')
+                            ->listWithLineBreaks()
+                            ->bulleted()
+                            ->formatStateUsing(
+                                fn (string $state): string => match ($state) {
+                                    'draft_agreement' => 'Draft Perjanjian',
+                                    'proposal' => 'Proposal',
+                                    'term_sheet_loi' => 'Term Sheet / LOI',
+                                    'correspondence' => 'Korespondensi',
+                                    'company_profile' => 'Company Profile',
+                                    'permit_document' => 'Dokumen Perizinan',
+                                    'other' => 'Dokumen Lainnya',
+                                    default => $state,
+                                }
+                            )
+                            ->visible(
+                                fn (WorkTask $record): bool => $record->requiresLegalApproval()
+                            )
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.attachments')
@@ -352,10 +402,10 @@ class WorkTaskForm
                             ->disabled(
                                 fn (Get $get, ?WorkTask $record): bool => blank($get('department_id'))
                                     || ($record !== null
-                                        && ! $record->canBeManagedBy(auth()->user()))
+                                        && ! $record->canAssignPicBy(auth()->user()))
                             )
                             ->helperText(
-                                'PIC dipilih oleh pengelola department tujuan dan wajib diisi sebelum pekerjaan diselesaikan.'
+                                'PIC Legal ditentukan Manager. Di department lain, PIC ditentukan Manager atau Supervisor.'
                             )
                             ->nullable(),
 

@@ -62,6 +62,21 @@ class WorkTaskMutationGuard
             ? ($data['employee_id'] ? (int) $data['employee_id'] : null)
             : $record?->employee_id;
 
+        $employeeChanged = $record
+            ? $record->isFillable('employee_id')
+                && array_key_exists('employee_id', $data)
+                && (int) ($record->employee_id ?? 0) !== (int) ($employeeId ?? 0)
+            : $employeeId !== null;
+
+        if (
+            $employeeChanged
+            && ! $this->canAssignPic($actor, $departmentId, $record)
+        ) {
+            throw ValidationException::withMessages([
+                'employee_id' => 'PIC Legal hanya dapat ditentukan Manager. Di department lain, PIC hanya dapat ditentukan Manager atau Supervisor.',
+            ]);
+        }
+
         if (
             $employeeId
             && ! Employee::query()
@@ -76,6 +91,30 @@ class WorkTaskMutationGuard
         }
 
         return $data;
+    }
+
+    private function canAssignPic(
+        User $actor,
+        int $departmentId,
+        ?WorkTask $record
+    ): bool {
+        if ($record) {
+            return $record->canAssignPicBy($actor);
+        }
+
+        if ($actor->is_admin || $actor->hasRole('system-admin')) {
+            return true;
+        }
+
+        if (! $actor->canAccessDepartment($departmentId)) {
+            return false;
+        }
+
+        $isLegal = Department::query()->find($departmentId)?->isLegal() === true;
+
+        return $isLegal
+            ? $actor->hasRole('department-manager')
+            : $actor->hasRole('department-manager', 'supervisor');
     }
 
     private function validateAssignedPicChanges(array $data, WorkTask $record): void

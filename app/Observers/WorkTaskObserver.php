@@ -90,6 +90,15 @@ class WorkTaskObserver
     {
         if (
             $workTask->wasChanged('approval_status')
+            && $workTask->approval_status === 'pending'
+        ) {
+            $this->notifyLegalApprovers($workTask);
+
+            return;
+        }
+
+        if (
+            $workTask->wasChanged('approval_status')
             && $workTask->approval_status === 'approved'
         ) {
             $this->notifyDepartment($workTask);
