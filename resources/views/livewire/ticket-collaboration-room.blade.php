@@ -58,9 +58,46 @@
         @error('messageFiles.*') <p class="ik-collab-error">{{ $message }}</p> @enderror
     </form>
     @else
-        <div class="ik-collab-composer">
-            <strong>Menunggu approval CBO</strong>
-            <p>Divisi Legal hanya dapat melihat request ini. Komentar dan aktivitas pengerjaan akan tersedia setelah task di-approve.</p>
+        @php
+            $currentDepartmentTask = $ticket->workTasks->firstWhere(
+                'department_id',
+                auth()->user()?->employee?->department_id
+            );
+            $isWaitingForApproval = $currentDepartmentTask
+                && in_array($currentDepartmentTask->approval_status, ['pending', 'rejected'], true);
+            $isWaitingForPic = $currentDepartmentTask
+                && ! $isWaitingForApproval
+                && $currentDepartmentTask->employee_id === null;
+        @endphp
+        <div class="ik-collab-composer is-disabled">
+            <label for="collaboration-message-disabled">Post to all participating departments</label>
+            <div class="ik-collab-post-restriction">
+                <strong>
+                    {{ $isWaitingForApproval
+                        ? 'Menunggu approval CBO'
+                        : ($isWaitingForPic ? 'Menunggu penugasan PIC' : 'Post to group tidak aktif') }}
+                </strong>
+                <p>
+                    {{ $isWaitingForApproval
+                        ? 'Divisi Legal hanya dapat melihat request ini sampai Work Log di-approve oleh CBO.'
+                        : ($isWaitingForPic
+                            ? 'Post to group akan aktif setelah Manager menetapkan Anda sebagai PIC Work Log department ini.'
+                            : 'Hanya requester, System Administrator, atau PIC Work Log yang ditugaskan yang dapat mengirim pesan.') }}
+                </p>
+            </div>
+            <textarea
+                id="collaboration-message-disabled"
+                rows="3"
+                placeholder="Share an update, clarification, question, or document."
+                disabled
+            ></textarea>
+            <div class="ik-collab-composer-actions">
+                <label class="ik-collab-file-picker">
+                    <span>Attach Documents</span>
+                    <input type="file" disabled>
+                </label>
+                <button type="button" disabled>Post to group</button>
+            </div>
         </div>
     @endif
 

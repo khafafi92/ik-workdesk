@@ -38,7 +38,7 @@ class TicketCollaborationRoom extends Component
         abort_unless(
             $this->canPostMessage($ticket),
             403,
-            'Divisi Legal hanya dapat melihat request sampai task di-approve oleh CBO.'
+            'Post to group hanya tersedia untuk requester, System Administrator, atau PIC Work Log yang sudah aktif.'
         );
 
         $this->validate([
@@ -114,16 +114,18 @@ class TicketCollaborationRoom extends Component
             return true;
         }
 
-        $departmentIds = $user->accessibleDepartmentIds();
-
-        if ($departmentIds === []) {
-            return true;
+        if (! $user->employee?->department_id) {
+            return false;
         }
 
-        return ! $ticket->workTasks()
-            ->whereIn('approval_status', ['pending', 'rejected'])
-            ->whereIn('department_id', $departmentIds)
-            ->exists();
+        $workTask = $ticket->workTasks()
+            ->where('department_id', $user->employee->department_id)
+            ->first(['id', 'employee_id', 'approval_status']);
+
+        return $workTask !== null
+            && ! in_array($workTask->approval_status, ['pending', 'rejected'], true)
+            && $workTask->employee_id !== null
+            && (int) $workTask->employee_id === (int) $user->employee->id;
     }
 
     public function render(): View

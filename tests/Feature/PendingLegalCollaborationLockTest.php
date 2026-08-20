@@ -87,7 +87,17 @@ class PendingLegalCollaborationLockTest extends TestCase
         Livewire::actingAs($legalUser)
             ->test(TicketCollaborationRoom::class, ['record' => $ticket])
             ->assertDontSee('Menunggu approval CBO')
+            ->assertSee('Menunggu penugasan PIC')
             ->set('message', 'Task sudah approved')
+            ->call('addMessage')
+            ->assertForbidden();
+
+        $task->update(['employee_id' => $legalUser->employee->id]);
+
+        Livewire::actingAs($legalUser)
+            ->test(TicketCollaborationRoom::class, ['record' => $ticket])
+            ->assertDontSee('Menunggu penugasan PIC')
+            ->set('message', 'Task sudah approved dan PIC sudah ditugaskan')
             ->call('addMessage')
             ->assertHasNoErrors();
 
@@ -95,7 +105,7 @@ class PendingLegalCollaborationLockTest extends TestCase
             'ticket_id' => $ticket->id,
             'user_id' => $legalUser->id,
             'activity_type' => 'message',
-            'message' => 'Task sudah approved',
+            'message' => 'Task sudah approved dan PIC sudah ditugaskan',
         ]);
     }
 }

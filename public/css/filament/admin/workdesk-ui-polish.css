@@ -129,6 +129,29 @@
     background: #f8fbff;
 }
 
+.ik-collab-composer.is-disabled {
+    background: #f5f6f8;
+    color: #8b8d97;
+}
+
+.ik-collab-composer.is-disabled textarea,
+.ik-collab-composer.is-disabled .ik-collab-file-picker {
+    background: #eef0f3;
+    border-color: #d8dbe2;
+    color: #8b8d97;
+    cursor: not-allowed;
+}
+
+.ik-collab-post-restriction {
+    margin-bottom: 0.75rem;
+}
+
+.ik-collab-post-restriction p {
+    margin: 0.25rem 0 0;
+    color: #676879;
+    font-size: 0.875rem;
+}
+
 .ik-collab-composer label,
 .ik-collab-response-form label {
     display: block;
