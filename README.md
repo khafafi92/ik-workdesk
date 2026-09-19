@@ -2,6 +2,10 @@
 
 IK WorkDesk adalah platform operasional internal berbasis Laravel dan Filament untuk Service Desk, Work Logs, Attendance, Reminder, Meeting Room, Vehicle Booking, serta workflow kolaboratif antar-department.
 
+## Panduan developer
+
+Mulai dari [Panduan Developer Pemula](docs/BEGINNER-DEVELOPER-GUIDE.md) untuk penjelasan langkah demi langkah. Gunakan [Dari Layar Menu ke File Kode](docs/UI-TO-CODE-BY-MENU.md) untuk menelusuri Page, Form, Table, function, dan style; [Peta Kode Menu](docs/DEVELOPER-MENU-MAP.md) untuk pencarian cepat; serta [Panduan Detail Per Menu](docs/menus/README.md) untuk field, permission, aturan, dan test setiap menu. Jika ingin membuat modul baru dengan pola yang sama, ikuti [Membuat Menu Baru dari Nol](docs/BUILD-A-MENU-FROM-ZERO.md).
+
 ## Requirements
 
 - PHP 8.3+

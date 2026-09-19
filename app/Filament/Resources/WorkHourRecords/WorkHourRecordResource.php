@@ -63,6 +63,11 @@ class WorkHourRecordResource extends Resource
         return 2;
     }
 
+    public static function canViewAny(): bool
+    {
+        return false;
+    }
+
     public static function getPages(): array
     {
         return [

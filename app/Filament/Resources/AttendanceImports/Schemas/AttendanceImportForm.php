@@ -4,7 +4,6 @@ namespace App\Filament\Resources\AttendanceImports\Schemas;
 
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -24,14 +23,16 @@ class AttendanceImportForm
                 TextInput::make('period_name')
                     ->label('Period Name')
                     ->placeholder('Contoh: 21 Mei - 20 Juni 2026')
+                    ->helperText('Nama periode akan dikoreksi otomatis berdasarkan tanggal 21–20 pada file Total Jam Kerja.')
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
 
                 FileUpload::make('attendance_file_path')
                     ->label('File Lokasi Absen')
-                    ->helperText('Opsional untuk rekap total jam kerja.')
-                    ->nullable()
+                    ->helperText('Wajib: file Activity dari Mekari Talenta untuk periode yang sama.')
+                    ->required()
+                    ->maxSize(10240)
                     ->disk('local')
                     ->directory('attendance-imports')
                     ->getUploadedFileNameForStorageUsing(
@@ -50,8 +51,9 @@ class AttendanceImportForm
 
                 FileUpload::make('work_hour_file_path')
                     ->label('File Total Jam Kerja')
-                    ->helperText('Opsional kalau hanya ingin proses lokasi absen.')
-                    ->nullable()
+                    ->helperText('Wajib: file Total Jam Kerja Mekari Talenta untuk periode tanggal 21–20.')
+                    ->required()
+                    ->maxSize(10240)
                     ->disk('local')
                     ->directory('attendance-imports')
                     ->getUploadedFileNameForStorageUsing(
@@ -68,16 +70,8 @@ class AttendanceImportForm
                     ->openable()
                     ->columnSpanFull(),
 
-                Select::make('status')
-                    ->label('Status')
-                    ->options([
-                        'draft' => 'Draft',
-                        'uploaded' => 'Uploaded',
-                        'processed' => 'Processed',
-                        'failed' => 'Failed',
-                    ])
-                    ->default('uploaded')
-                    ->required(),
+                Hidden::make('status')
+                    ->default('uploaded'),
 
                 Textarea::make('notes')
                     ->label('Notes')

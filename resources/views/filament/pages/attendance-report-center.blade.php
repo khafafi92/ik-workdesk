@@ -65,13 +65,15 @@
                 </div>
             </a>
 
-            <a href="{{ $this->getUploadUrl() }}" class="att-stat-card" style="text-decoration: none;">
-                <div class="att-stat-label">Upload</div>
-                <div class="att-stat-value">New Period</div>
-                <div class="att-section-desc">
-                    Upload activity.xlsx dan all time.xlsx.
-                </div>
-            </a>
+            @if (\App\Filament\Resources\AttendanceImports\AttendanceImportResource::canCreate())
+                <a href="{{ $this->getUploadUrl() }}" class="att-stat-card" style="text-decoration: none;">
+                    <div class="att-stat-label">Upload</div>
+                    <div class="att-stat-value">New Period</div>
+                    <div class="att-section-desc">
+                        Upload activity.xlsx dan all time.xlsx.
+                    </div>
+                </a>
+            @endif
         </div>
 
         @if ($selectedImport)

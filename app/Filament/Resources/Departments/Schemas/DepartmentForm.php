@@ -13,9 +13,12 @@ class DepartmentForm
         return $schema
             ->components([
                 TextInput::make('code')
-                    ->required(),
+                    ->required()
+                    ->maxLength(255)
+                    ->unique(ignoreRecord: true),
                 TextInput::make('name')
-                    ->required(),
+                    ->required()
+                    ->maxLength(255),
                 Toggle::make('is_active')
                     ->required(),
             ]);

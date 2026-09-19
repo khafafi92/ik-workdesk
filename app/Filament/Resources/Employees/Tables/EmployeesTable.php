@@ -15,8 +15,10 @@ class EmployeesTable
     {
         return $table
             ->columns([
-                TextColumn::make('department_id')
-                    ->numeric()
+                TextColumn::make('department.name')
+                    ->label('Department')
+                    ->placeholder('-')
+                    ->searchable()
                     ->sortable(),
                 TextColumn::make('employee_no')
                     ->searchable(),

@@ -18,9 +18,13 @@
                     </div>
                 </div>
 
-                <a href="{{ route('attendance-imports.download', $import) }}" class="att-download-btn">
-                    Download Excel
-                </a>
+                @if ($import->status === 'processed')
+                    <a href="{{ route('attendance-imports.download', $import) }}" class="att-download-btn">
+                        Download Excel
+                    </a>
+                @else
+                    <span class="att-badge att-badge-warning">Laporan belum selesai diproses</span>
+                @endif
             </div>
         </div>
 
@@ -39,6 +43,15 @@
                 <div class="att-stat-label">Tidak Sesuai</div>
                 <div class="att-stat-value att-stat-danger">{{ number_format($stats['location_not_ok']) }}</div>
             </div>
+
+            @if ($stats['location_unconfigured'] > 0)
+                <div class="att-stat-card">
+                    <div class="att-stat-label">Lokasi Belum Dikonfigurasi</div>
+                    <div class="att-stat-value att-stat-warning">
+                        {{ number_format($stats['location_unconfigured']) }}
+                    </div>
+                </div>
+            @endif
 
             <div class="att-stat-card">
                 <div class="att-stat-label">Pulang 19:00 UP</div>
@@ -78,6 +91,7 @@
                         <option value="">All</option>
                         <option value="Sesuai">Sesuai</option>
                         <option value="Tidak Sesuai">Tidak Sesuai</option>
+                        <option value="Lokasi Belum Dikonfigurasi">Lokasi Belum Dikonfigurasi</option>
                     </select>
                 </div>
 
@@ -98,6 +112,7 @@
                 <div class="att-section-title">Activity Check</div>
                 <div class="att-section-desc">
                     Hasil pengecekan lokasi, durasi kerja, dan pulang sebelum/di atas jam 19:00.
+                    Karyawan dari file Total Jam Kerja yang tidak memiliki activity tetap ditampilkan.
                 </div>
             </div>
 
@@ -148,6 +163,10 @@
                                 <td class="att-nowrap">
                                     @if ($row->location_check === 'Sesuai')
                                         <span class="att-badge att-badge-success">Sesuai</span>
+                                    @elseif ($row->location_check === 'Tidak Ada Activity')
+                                        <span class="att-badge att-badge-gray">Tidak Ada Activity</span>
+                                    @elseif ($row->location_check === 'Lokasi Belum Dikonfigurasi')
+                                        <span class="att-badge att-badge-warning">Lokasi Belum Dikonfigurasi</span>
                                     @else
                                         <span class="att-badge att-badge-danger">Tidak Sesuai</span>
                                     @endif
@@ -202,6 +221,7 @@
                             <th>Employee ID</th>
                             <th>Full Name</th>
                             <th class="att-check-head">{{ $import->period_name }}</th>
+                            <th>Status Data</th>
                         </tr>
                     </thead>
 
@@ -211,10 +231,17 @@
                                 <td class="att-nowrap">{{ $row->employee_code }}</td>
                                 <td>{{ $row->employee_name }}</td>
                                 <td class="att-nowrap"><strong>{{ $row->work_hours_text }}</strong></td>
+                                <td class="att-nowrap">
+                                    @if (data_get($row->raw_data, 'status') === 'Tidak Ada Total Jam Kerja')
+                                        <span class="att-badge att-badge-warning">Tidak Ada Total Jam Kerja</span>
+                                    @else
+                                        <span class="att-badge att-badge-success">Tersedia</span>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" style="text-align: center; padding: 28px;">
+                                <td colspan="4" style="text-align: center; padding: 28px;">
                                     Belum ada summary total jam kerja.
                                 </td>
                             </tr>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Audit\FollowUpAuditTest" file="D:\Internal\ik-workdesk\output\audit-2026-09-18\FollowUpAuditTest.php" tests="6" assertions="68" errors="0" failures="0" skipped="0" time="9.004141">
+    <testcase name="test_activity_report_period_and_user_filters_recalculate_total" file="D:\Internal\ik-workdesk\output\audit-2026-09-18\FollowUpAuditTest.php" line="46" class="Tests\Audit\FollowUpAuditTest" classname="Tests.Audit.FollowUpAuditTest" assertions="11" time="3.910806"/>
+    <testcase name="test_manager_filter_cannot_reveal_another_departments_activities" file="D:\Internal\ik-workdesk\output\audit-2026-09-18\FollowUpAuditTest.php" line="64" class="Tests\Audit\FollowUpAuditTest" classname="Tests.Audit.FollowUpAuditTest" assertions="9" time="0.392516"/>
+    <testcase name="test_kbli_relation_create_edit_delete" file="D:\Internal\ik-workdesk\output\audit-2026-09-18\FollowUpAuditTest.php" line="87" class="Tests\Audit\FollowUpAuditTest" classname="Tests.Audit.FollowUpAuditTest" assertions="16" time="0.863854"/>
+    <testcase name="test_kbli_exact_duplicate_is_rejected" file="D:\Internal\ik-workdesk\output\audit-2026-09-18\FollowUpAuditTest.php" line="100" class="Tests\Audit\FollowUpAuditTest" classname="Tests.Audit.FollowUpAuditTest" assertions="10" time="0.417649"/>
+    <testcase name="test_attendance_upload_requires_both_files" file="D:\Internal\ik-workdesk\output\audit-2026-09-18\FollowUpAuditTest.php" line="110" class="Tests\Audit\FollowUpAuditTest" classname="Tests.Audit.FollowUpAuditTest" assertions="10" time="0.429945"/>
+    <testcase name="test_two_real_xlsx_uploads_create_and_process" file="D:\Internal\ik-workdesk\output\audit-2026-09-18\FollowUpAuditTest.php" line="119" class="Tests\Audit\FollowUpAuditTest" classname="Tests.Audit.FollowUpAuditTest" assertions="12" time="2.989371"/>
+  </testsuite>
+</testsuites>

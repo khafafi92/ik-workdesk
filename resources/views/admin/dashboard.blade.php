@@ -14,7 +14,7 @@
     @endphp
     <div class="ik-hero-greeting">
         <span>{{ $greeting }}</span>
-        <span class="ik-hero-wave">ðŸ‘‹</span>
+        <span class="ik-hero-wave" aria-hidden="true">&#x1F44B;</span>
     </div>
     {{ $firstName }}, ini ringkasan hari ini
     <div class="ik-hero-date">{{ now()->translatedFormat('l, d F Y') }}</div>

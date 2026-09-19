@@ -18,6 +18,11 @@ class AttendanceReportDownloadController extends Controller
             $request->user()?->hasPermission('attendance.view') === true,
             403
         );
+        abort_unless(
+            $attendanceImport->status === 'processed',
+            409,
+            'Attendance report belum selesai diproses.'
+        );
 
         $periodName = str($attendanceImport->period_name)
             ->replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|', ' '], '-')

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AttendanceResults\Schemas;
 
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\TimePicker;
@@ -14,20 +15,30 @@ class AttendanceResultForm
     {
         return $schema
             ->components([
-                TextInput::make('attendance_import_id')
-                    ->numeric(),
+                Select::make('attendance_import_id')
+                    ->label('Period')
+                    ->relationship('import', 'period_name')
+                    ->searchable()
+                    ->preload()
+                    ->exists('attendance_imports', 'id'),
                 TextInput::make('employee_name')
-                    ->required(),
+                    ->required()
+                    ->maxLength(255),
                 DatePicker::make('attendance_date'),
                 TimePicker::make('clock_in'),
                 TimePicker::make('clock_out'),
                 TextInput::make('work_minutes')
                     ->required()
                     ->numeric()
+                    ->integer()
+                    ->minValue(0)
+                    ->maxValue(2147483647)
                     ->default(0),
                 TextInput::make('location_gps_name'),
                 TextInput::make('distance_meters')
-                    ->numeric(),
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(99999999.99),
                 TimePicker::make('expected_checkout'),
                 TextInput::make('clock_in_status'),
                 TextInput::make('location_status'),

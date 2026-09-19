@@ -1,0 +1,22 @@
+﻿{
+    "browser_audit_date":  "2026-09-18",
+    "followup_date":  "2026-09-20",
+    "baseline_tests":  145,
+    "baseline_passed":  145,
+    "baseline_assertions":  511,
+    "audit_tests":  56,
+    "audit_passed":  49,
+    "audit_failures":  4,
+    "audit_errors":  3,
+    "audit_assertions":  515,
+    "findings":  [
+                     "A01: attendance viewer gets 403 opening report detail",
+                     "A02: Report Results uses wrong employee ID field for display and search",
+                     "A03: duplicate department code raises database exception",
+                     "A04: duplicate employee user account raises database exception",
+                     "A05: negative attendance work minutes accepted",
+                     "A06: nonexistent attendance import raises database exception"
+                 ],
+    "application_source_changed_by_audit":  false,
+    "business_data_changed_by_audit":  false
+}

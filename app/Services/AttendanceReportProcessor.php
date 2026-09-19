@@ -35,6 +35,7 @@ class AttendanceReportProcessor
 
                 $this->processActivityFile($import);
                 $this->processAllTimeFile($import);
+                $this->reconcileEmployeeLists($import);
 
                 $import->update([
                     'status' => 'processed',
@@ -135,6 +136,10 @@ class AttendanceReportProcessor
         $locations = WorkLocation::query()
             ->where('is_active', true)
             ->get();
+        $hasConfiguredLocations = $locations->contains(
+            fn (WorkLocation $location): bool => $location->latitude !== null
+                && $location->longitude !== null
+        );
 
         $attendanceInsertRows = [];
         $now = now();
@@ -169,7 +174,9 @@ class AttendanceReportProcessor
                 $clockOutRow['location_gps_name'] ?? null
             );
 
-            $locationCheck = $this->locationCheck($clockInMatch, $clockOutMatch);
+            $locationCheck = $hasConfiguredLocations
+                ? $this->locationCheck($clockInMatch, $clockOutMatch)
+                : 'Lokasi Belum Dikonfigurasi';
 
             foreach ($rowsInDay as $row) {
                 $rowMatch = $this->matchLocation(
@@ -289,6 +296,7 @@ class AttendanceReportProcessor
         }
 
         $summaries = [];
+        $periodDates = [];
 
         foreach ($rows as $rowIndex => $row) {
             if ($rowIndex <= $headerRowIndex) {
@@ -299,17 +307,22 @@ class AttendanceReportProcessor
 
             $employeeCode = $this->cleanText($this->value($data, ['employee_id']));
             $employeeName = $this->cleanText($this->value($data, ['full_name']));
+            $workDate = $this->parseDate($this->value($data, ['date']));
 
-            if (! $employeeCode || ! $employeeName) {
+            if (! $employeeCode || ! $employeeName || ! $workDate) {
                 continue;
             }
+
+            $periodDates[] = $workDate;
 
             $workHoursText = $this->cleanText($this->value($data, [
                 'real_working_hour',
                 'actual_working_hour',
             ]));
 
-            $key = $employeeCode.'|'.$employeeName;
+            // File rekap yang menjadi acuan menjumlahkan per Employee ID.
+            // Nama tidak boleh membuat satu karyawan terpecah menjadi dua baris.
+            $key = $employeeCode;
 
             if (! isset($summaries[$key])) {
                 $summaries[$key] = [
@@ -321,6 +334,8 @@ class AttendanceReportProcessor
 
             $summaries[$key]['total_minutes'] += $this->parseDurationToMinutes($workHoursText);
         }
+
+        $this->validateAndSynchronizePeriod($import, $periodDates);
 
         $workHourInsertRows = [];
         $now = now();
@@ -370,6 +385,120 @@ class AttendanceReportProcessor
         if ($workHourInsertRows !== []) {
             WorkHourRecord::query()
                 ->insert($workHourInsertRows);
+        }
+    }
+
+    private function reconcileEmployeeLists(AttendanceImport $import): void
+    {
+        $workHourEmployees = WorkHourRecord::query()
+            ->where('attendance_import_id', $import->id)
+            ->whereNull('work_date')
+            ->whereNotNull('employee_code')
+            ->orderBy('id')
+            ->get(['employee_code', 'employee_name'])
+            ->keyBy(fn (WorkHourRecord $record): string => (string) $record->employee_code);
+
+        $activityEmployees = AttendanceResult::query()
+            ->where('attendance_import_id', $import->id)
+            ->whereNotNull('employee_code')
+            ->orderBy('id')
+            ->get(['employee_code', 'employee_name'])
+            ->keyBy(fn (AttendanceResult $result): string => (string) $result->employee_code);
+
+        /*
+         * Total Jam Kerja adalah roster utama untuk penulisan nama. Karyawan
+         * yang hanya ada di Activity tetap dipertahankan agar tidak ada nama
+         * yang hilang dari salah satu hasil laporan.
+         */
+        $canonicalNames = collect();
+
+        foreach ($activityEmployees as $employeeCode => $employee) {
+            $canonicalNames->put((string) $employeeCode, $employee->employee_name);
+        }
+
+        foreach ($workHourEmployees as $employeeCode => $employee) {
+            $canonicalNames->put((string) $employeeCode, $employee->employee_name);
+        }
+
+        foreach ($canonicalNames as $employeeCode => $employeeName) {
+            AttendanceResult::query()
+                ->where('attendance_import_id', $import->id)
+                ->where('employee_code', (string) $employeeCode)
+                ->update(['employee_name' => $employeeName]);
+
+            WorkHourRecord::query()
+                ->where('attendance_import_id', $import->id)
+                ->whereNull('work_date')
+                ->where('employee_code', (string) $employeeCode)
+                ->update(['employee_name' => $employeeName]);
+        }
+
+        $now = now();
+        $missingWorkHourRows = [];
+
+        foreach ($activityEmployees as $employeeCode => $employee) {
+            if ($workHourEmployees->has($employeeCode)) {
+                continue;
+            }
+
+            $employeeName = $canonicalNames->get($employeeCode, $employee->employee_name);
+
+            $missingWorkHourRows[] = [
+                'attendance_import_id' => $import->id,
+                'employee_code' => (string) $employeeCode,
+                'employee_name' => $employeeName,
+                'work_date' => null,
+                'work_minutes' => 0,
+                'work_hours_text' => '0:00:00',
+                'raw_data' => json_encode([
+                    'period_name' => $import->period_name,
+                    'source' => 'activity check reconciliation',
+                    'status' => 'Tidak Ada Total Jam Kerja',
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        if ($missingWorkHourRows !== []) {
+            WorkHourRecord::query()->insert($missingWorkHourRows);
+        }
+
+        $missingActivityRows = [];
+
+        foreach ($workHourEmployees as $employeeCode => $employee) {
+            if ($activityEmployees->has($employeeCode)) {
+                continue;
+            }
+
+            $employeeName = $canonicalNames->get($employeeCode, $employee->employee_name);
+
+            $missingActivityRows[] = [
+                'attendance_import_id' => $import->id,
+                'employee_code' => (string) $employeeCode,
+                'employee_name' => $employeeName,
+                'attendance_date' => null,
+                'check_time' => null,
+                'check_type' => 'Tidak Ada Activity',
+                'clock_in' => null,
+                'clock_out' => null,
+                'work_minutes' => 0,
+                'duration_minutes' => 0,
+                'duration_text' => '0:00:00',
+                'location_check' => 'Tidak Ada Activity',
+                'checkout_check' => 'Clock Out Tidak Ada',
+                'location_status' => 'Tidak Ada Activity',
+                'checkout_status' => 'Clock Out Tidak Ada',
+                'work_hour_status' => 'Tersedia',
+                'final_status' => 'need_review',
+                'notes' => 'Karyawan terdapat di file Total Jam Kerja, tetapi tidak memiliki Activity Check pada periode ini.',
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
+        if ($missingActivityRows !== []) {
+            AttendanceResult::query()->insert($missingActivityRows);
         }
     }
 
@@ -527,6 +656,7 @@ class AttendanceReportProcessor
                 $bestMatch = [
                     'location_id' => $location->id,
                     'location_name' => $location->gps_name,
+                    'location_key' => $this->locationGroupKey($location->gps_name),
                     'distance_meters' => round($distance, 2),
                     'radius_meters' => (int) $location->radius_meters,
                     'is_inside_radius' => $distance <= (int) $location->radius_meters,
@@ -540,33 +670,17 @@ class AttendanceReportProcessor
 
     private function filterLocationsByGpsName($locations, ?string $gpsName)
     {
-        $gpsName = strtolower((string) $gpsName);
+        $locationKey = $this->locationGroupKey($gpsName);
 
-        if ($gpsName === '') {
+        if ($locationKey === null) {
             return collect();
         }
 
-        if (str_contains($gpsName, 'kpm') || str_contains($gpsName, 'oil') || str_contains($gpsName, 'gas')) {
-            return $locations->filter(fn ($location) => str_contains(strtolower($location->gps_name), 'kpmog'));
-        }
-
-        if (str_contains($gpsName, 'apca')) {
-            return $locations->filter(fn ($location) => str_contains(strtolower($location->gps_name), 'apca'));
-        }
-
-        if (str_contains($gpsName, 'alamanda') || str_contains($gpsName, 'project')) {
-            return $locations->filter(fn ($location) => str_contains(strtolower($location->gps_name), 'alamanda'));
-        }
-
-        if (str_contains($gpsName, 'ltro')) {
-            return $locations->filter(fn ($location) => str_contains(strtolower($location->gps_name), 'ltro'));
-        }
-
-        if (str_contains($gpsName, 'zul')) {
-            return $locations->filter(fn ($location) => str_contains(strtolower($location->gps_name), 'zulfan'));
-        }
-
-        return collect();
+        return $locations->filter(
+            fn (WorkLocation $location): bool => $this->locationGroupKey(
+                $location->gps_name
+            ) === $locationKey
+        );
     }
 
     private function locationCheck(?array $clockInMatch, ?array $clockOutMatch): string
@@ -587,9 +701,109 @@ class AttendanceReportProcessor
             return 'Tidak Sesuai';
         }
 
-        return $clockInMatch['location_id'] === $clockOutMatch['location_id']
+        return $clockInMatch['location_key'] === $clockOutMatch['location_key']
             ? 'Sesuai'
             : 'Tidak Sesuai';
+    }
+
+    private function locationGroupKey(?string $gpsName): ?string
+    {
+        $gpsName = strtolower(trim((string) $gpsName));
+
+        if ($gpsName === '' || $gpsName === '-') {
+            return null;
+        }
+
+        if (str_contains($gpsName, 'kpm') || str_contains($gpsName, 'oil') || str_contains($gpsName, 'gas')) {
+            return 'kpmog';
+        }
+
+        if (str_contains($gpsName, 'apca')) {
+            return 'apca';
+        }
+
+        if (str_contains($gpsName, 'alamanda') || str_contains($gpsName, 'project')) {
+            return 'alamanda';
+        }
+
+        if (str_contains($gpsName, 'ltro')) {
+            return 'ltro';
+        }
+
+        if (str_contains($gpsName, 'zul')) {
+            return 'zulfan';
+        }
+
+        $normalized = preg_replace('/[^a-z0-9]+/', '_', $gpsName);
+        $normalized = trim((string) $normalized, '_');
+
+        return $normalized !== '' ? $normalized : null;
+    }
+
+    private function validateAndSynchronizePeriod(AttendanceImport $import, array $periodDates): void
+    {
+        if ($periodDates === []) {
+            throw new RuntimeException(
+                'File Total Jam Kerja tidak memiliki tanggal kerja yang valid.'
+            );
+        }
+
+        sort($periodDates);
+
+        $periodStart = Carbon::parse($periodDates[0])->startOfDay();
+        $periodEnd = Carbon::parse($periodDates[array_key_last($periodDates)])->startOfDay();
+        $expectedEnd = $periodStart->copy()->addMonthNoOverflow()->day(20);
+
+        if ($periodStart->day !== 21 || ! $periodEnd->isSameDay($expectedEnd)) {
+            throw new RuntimeException(sprintf(
+                'Periode file Total Jam Kerja harus tanggal 21 sampai 20 bulan berikutnya. Terdeteksi %s sampai %s.',
+                $periodStart->format('Y-m-d'),
+                $periodEnd->format('Y-m-d')
+            ));
+        }
+
+        $hasActivityOutsidePeriod = AttendanceResult::query()
+            ->where('attendance_import_id', $import->id)
+            ->whereNotNull('attendance_date')
+            ->where(function ($query) use ($periodStart, $periodEnd): void {
+                $query
+                    ->whereDate('attendance_date', '<', $periodStart->toDateString())
+                    ->orWhereDate('attendance_date', '>', $periodEnd->toDateString());
+            })
+            ->exists();
+
+        if ($hasActivityOutsidePeriod) {
+            throw new RuntimeException(
+                'File Activity memiliki tanggal di luar periode file Total Jam Kerja.'
+            );
+        }
+
+        $import->update([
+            'period_name' => sprintf(
+                '21 %s - 20 %s %s',
+                $this->indonesianMonth($periodStart),
+                $this->indonesianMonth($periodEnd),
+                $periodEnd->format('Y')
+            ),
+        ]);
+    }
+
+    private function indonesianMonth(Carbon $date): string
+    {
+        return [
+            1 => 'Januari',
+            2 => 'Februari',
+            3 => 'Maret',
+            4 => 'April',
+            5 => 'Mei',
+            6 => 'Juni',
+            7 => 'Juli',
+            8 => 'Agustus',
+            9 => 'September',
+            10 => 'Oktober',
+            11 => 'November',
+            12 => 'Desember',
+        ][$date->month];
     }
 
     private function durationMinutes(?string $clockIn, ?string $clockOut): int

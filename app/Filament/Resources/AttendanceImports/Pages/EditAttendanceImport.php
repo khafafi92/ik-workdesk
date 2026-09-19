@@ -15,12 +15,21 @@ class EditAttendanceImport extends EditRecord
         $data['attendance_file_path'] = $this->normalizeFilePath($data['attendance_file_path'] ?? null);
         $data['work_hour_file_path'] = $this->normalizeFilePath($data['work_hour_file_path'] ?? null);
 
+        $filesChanged = $data['attendance_file_path'] !== $this->record->attendance_file_path
+            || $data['work_hour_file_path'] !== $this->record->work_hour_file_path;
+
         if (! empty($data['attendance_file_path'])) {
             $data['attendance_file_name'] = basename($data['attendance_file_path']);
         }
 
         if (! empty($data['work_hour_file_path'])) {
             $data['work_hour_file_name'] = basename($data['work_hour_file_path']);
+        }
+
+        if ($filesChanged) {
+            $data['status'] = 'uploaded';
+            $data['processed_at'] = null;
+            $data['notes'] = 'File diperbarui. Jalankan Process Report untuk memperbarui hasil.';
         }
 
         return $data;

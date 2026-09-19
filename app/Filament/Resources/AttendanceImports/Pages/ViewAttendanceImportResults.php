@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AttendanceImports\Pages;
 
+use App\Filament\Pages\AttendanceReportCenter;
 use App\Filament\Resources\AttendanceImports\AttendanceImportResource;
 use App\Models\AttendanceImport;
 use App\Models\AttendanceResult;
@@ -31,6 +32,31 @@ class ViewAttendanceImportResults extends Page
     public int $resultsPerPage = 25;
 
     public int $workHourPerPage = 25;
+
+    public static function canAccess(array $parameters = []): bool
+    {
+        return auth()->user()?->hasPermission('attendance.view') === true
+            || AttendanceImportResource::canViewAny();
+    }
+
+    public static function authorizeResourceAccess(): void
+    {
+        // Results are also available to readers without access to the upload resource.
+        // Filament calls this guard on both mount and subsequent Livewire requests.
+        abort_unless(static::canAccess(), 403);
+    }
+
+    public function getBreadcrumbs(): array
+    {
+        if (auth()->user()?->hasPermission('attendance.view')) {
+            return [
+                AttendanceReportCenter::getUrl() => 'Report Center',
+                $this->getBreadcrumb(),
+            ];
+        }
+
+        return parent::getBreadcrumbs();
+    }
 
     public function mount(int|string $record): void
     {
@@ -99,6 +125,9 @@ class ViewAttendanceImportResults extends Page
     public function getResults(): LengthAwarePaginator
     {
         return $this->resultsQuery()
+            ->orderByRaw(
+                'CASE WHEN attendance_date IS NULL THEN 1 ELSE 0 END'
+            )
             ->orderBy('attendance_date')
             ->orderBy('employee_code')
             ->orderBy('check_time')
@@ -124,7 +153,11 @@ class ViewAttendanceImportResults extends Page
 
         $attendanceStats = AttendanceResult::query()
             ->where('attendance_import_id', $importId)
-            ->selectRaw('COUNT(*) AS results')
+            ->selectRaw(
+                'COUNT(*) FILTER (
+                WHERE attendance_date IS NOT NULL
+            ) AS results'
+            )
             ->selectRaw(
                 'COUNT(*) FILTER (
                 WHERE location_check = ?
@@ -136,6 +169,12 @@ class ViewAttendanceImportResults extends Page
                 WHERE location_check = ?
             ) AS location_not_ok',
                 ['Tidak Sesuai']
+            )
+            ->selectRaw(
+                'COUNT(*) FILTER (
+                WHERE location_check = ?
+            ) AS location_unconfigured',
+                ['Lokasi Belum Dikonfigurasi']
             )
             ->selectRaw(
                 'COUNT(*) FILTER (
@@ -165,6 +204,10 @@ class ViewAttendanceImportResults extends Page
 
             'location_not_ok' => (int) (
                 $attendanceStats?->location_not_ok ?? 0
+            ),
+
+            'location_unconfigured' => (int) (
+                $attendanceStats?->location_unconfigured ?? 0
             ),
 
             'checkout_late' => (int) (
@@ -213,34 +256,28 @@ class ViewAttendanceImportResults extends Page
                     $query->where(
                         function (Builder $query) use ($search): void {
                             $query
-                                ->where(
+                                ->whereLike(
                                     'employee_code',
-                                    'ilike',
                                     $search
                                 )
-                                ->orWhere(
+                                ->orWhereLike(
                                     'employee_name',
-                                    'ilike',
                                     $search
                                 )
-                                ->orWhere(
+                                ->orWhereLike(
                                     'job_position',
-                                    'ilike',
                                     $search
                                 )
-                                ->orWhere(
+                                ->orWhereLike(
                                     'location_gps_name',
-                                    'ilike',
                                     $search
                                 )
-                                ->orWhere(
+                                ->orWhereLike(
                                     'location_address',
-                                    'ilike',
                                     $search
                                 )
-                                ->orWhere(
+                                ->orWhereLike(
                                     'matched_location_name',
-                                    'ilike',
                                     $search
                                 );
                         }
@@ -273,6 +310,7 @@ class ViewAttendanceImportResults extends Page
                 'employee_name',
                 'work_date',
                 'work_hours_text',
+                'raw_data',
             ])
             ->where(
                 'attendance_import_id',
@@ -289,14 +327,12 @@ class ViewAttendanceImportResults extends Page
                     $query->where(
                         function (Builder $query) use ($search): void {
                             $query
-                                ->where(
+                                ->whereLike(
                                     'employee_code',
-                                    'ilike',
                                     $search
                                 )
-                                ->orWhere(
+                                ->orWhereLike(
                                     'employee_name',
-                                    'ilike',
                                     $search
                                 );
                         }

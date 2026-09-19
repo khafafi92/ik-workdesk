@@ -118,6 +118,37 @@ class SecurityHardeningTest extends TestCase
             ->assertOk();
     }
 
+    public function test_processed_status_is_required_to_download_attendance_report(): void
+    {
+        Excel::fake();
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $import = AttendanceImport::query()->create([
+            'uploaded_by_user_id' => $admin->id,
+            'period_name' => '21 Juli - 20 Agustus 2026',
+            'status' => 'uploaded',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('attendance-imports.download', $import))
+            ->assertStatus(409);
+    }
+
+    public function test_legacy_attendance_routes_cannot_be_opened_directly(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($admin)
+            ->get('/panel/location-reports')
+            ->assertForbidden();
+        $this->actingAs($admin)
+            ->get('/panel/work-hour-imports')
+            ->assertForbidden();
+        $this->actingAs($admin)
+            ->get('/panel/work-hour-records')
+            ->assertForbidden();
+    }
+
     public function test_non_admin_cannot_assign_a_role_with_extra_permissions(): void
     {
         $actor = User::factory()->create(['is_admin' => false]);

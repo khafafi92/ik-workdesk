@@ -27,6 +27,9 @@ class AttendanceActivitySheet implements FromCollection, ShouldAutoSize, WithCol
     {
         return AttendanceResult::query()
             ->where('attendance_import_id', $this->import->id)
+            ->orderByRaw(
+                'CASE WHEN attendance_date IS NULL THEN 1 ELSE 0 END'
+            )
             ->orderBy('attendance_date')
             ->orderBy('employee_code')
             ->orderBy('check_time')

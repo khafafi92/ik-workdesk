@@ -26,7 +26,7 @@ class AttendanceResultsTable
                 TextColumn::make('attendance_import_id')
                     ->numeric()
                     ->sortable(),
-                TextColumn::make('employee_id')
+                TextColumn::make('employee_code')
                     ->label('Employee ID')
                     ->searchable(),
                 TextColumn::make('employee_name')
@@ -65,7 +65,7 @@ class AttendanceResultsTable
                         default => 'warning',
                     })
                     ->searchable(),
-                TextColumn::make('time_check')
+                TextColumn::make('duration_text')
                     ->label('Cek Waktu')
                     ->searchable(),
                 TextColumn::make('checkout_check')
