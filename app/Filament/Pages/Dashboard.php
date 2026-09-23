@@ -5,6 +5,9 @@ namespace App\Filament\Pages;
 use App\Filament\Resources\Reminders\ReminderResource;
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
+use App\Models\Reminder;
+use App\Models\Ticket;
+use App\Models\WorkTask;
 use BackedEnum;
 use Carbon\CarbonInterface;
 use Filament\Pages\Dashboard as BaseDashboard;
@@ -45,6 +48,26 @@ class Dashboard extends BaseDashboard
                 'department',
             ]);
 
+        $reminderQueries = [
+            'today' => (clone $remindersQuery)->where('status', 'pending')
+                ->whereBetween('reminder_at', [$todayStart, $todayEnd]),
+            'upcoming' => (clone $remindersQuery)->where('status', 'pending')
+                ->where('reminder_at', '>', $todayEnd),
+            'overdue' => (clone $remindersQuery)->where('status', 'pending')
+                ->where('reminder_at', '<', $todayStart),
+        ];
+        $reminderCounts = [];
+        $reminderPreviews = [];
+        $reminderUrls = [];
+
+        foreach ($reminderQueries as $schedule => $query) {
+            $reminderCounts[$schedule] = (clone $query)->count();
+            $reminderPreviews[$schedule] = (clone $query)->orderBy('reminder_at')->orderBy('id')->limit(3)->get();
+            $reminderUrls[$schedule] = ReminderResource::getUrl('index', [
+                'filters' => ['schedule' => ['value' => $schedule]],
+            ]);
+        }
+
         $openTicketStatuses = [
             'open',
             'in_progress',
@@ -59,32 +82,32 @@ class Dashboard extends BaseDashboard
 
         $ticketStats = $canViewStatistics ? [
             [
-                'label' => 'Total Requests',
+                'label' => 'Total tiket',
                 'value' => (clone $ticketsQuery)->count(),
                 'tone' => 'default',
             ],
             [
-                'label' => 'Open',
+                'label' => 'Terbuka',
                 'value' => (clone $ticketsQuery)->where('status', 'open')->count(),
                 'tone' => 'danger',
             ],
             [
-                'label' => 'In Progress',
+                'label' => 'Dikerjakan',
                 'value' => (clone $ticketsQuery)->where('status', 'in_progress')->count(),
                 'tone' => 'warning',
             ],
             [
-                'label' => 'Waiting User',
+                'label' => 'Menunggu tanggapan',
                 'value' => (clone $ticketsQuery)->where('status', 'waiting_user')->count(),
                 'tone' => 'info',
             ],
             [
-                'label' => 'Resolved',
+                'label' => 'Selesai',
                 'value' => (clone $ticketsQuery)->where('status', 'resolved')->count(),
                 'tone' => 'success',
             ],
             [
-                'label' => 'Overdue',
+                'label' => 'Terlambat',
                 'value' => (clone $ticketsQuery)
                     ->whereNotNull('due_at')
                     ->where('due_at', '<', $now)
@@ -96,27 +119,27 @@ class Dashboard extends BaseDashboard
 
         $workStats = $canViewStatistics ? [
             [
-                'label' => 'Total Work Logs',
+                'label' => 'Total pekerjaan',
                 'value' => (clone $workTasksQuery)->count(),
                 'tone' => 'default',
             ],
             [
-                'label' => 'Planned',
+                'label' => 'Direncanakan',
                 'value' => (clone $workTasksQuery)->where('status', 'planned')->count(),
                 'tone' => 'default',
             ],
             [
-                'label' => 'In Progress',
+                'label' => 'Dikerjakan',
                 'value' => (clone $workTasksQuery)->where('status', 'in_progress')->count(),
                 'tone' => 'warning',
             ],
             [
-                'label' => 'Done',
+                'label' => 'Selesai',
                 'value' => (clone $workTasksQuery)->where('status', 'done')->count(),
                 'tone' => 'success',
             ],
             [
-                'label' => 'Overdue Work',
+                'label' => 'Terlambat',
                 'value' => (clone $workTasksQuery)
                     ->whereNotNull('due_at')
                     ->where('due_at', '<', $now)
@@ -134,18 +157,12 @@ class Dashboard extends BaseDashboard
             ],
             [
                 'label' => 'Today Reminders',
-                'value' => (clone $remindersQuery)
-                    ->where('status', 'pending')
-                    ->whereBetween('reminder_at', [$todayStart, $todayEnd])
-                    ->count(),
+                'value' => $reminderCounts['today'],
                 'tone' => 'info',
             ],
             [
                 'label' => 'Overdue Reminders',
-                'value' => (clone $remindersQuery)
-                    ->where('status', 'pending')
-                    ->where('reminder_at', '<', $todayStart)
-                    ->count(),
+                'value' => $reminderCounts['overdue'],
                 'tone' => 'danger',
             ],
         ] : [];
@@ -154,24 +171,11 @@ class Dashboard extends BaseDashboard
             'ticketStats' => $ticketStats,
             'workStats' => $workStats,
             'reminderStats' => $reminderStats,
-            'todayReminders' => (clone $remindersQuery)
-                ->where('status', 'pending')
-                ->whereBetween('reminder_at', [$todayStart, $todayEnd])
-                ->orderBy('reminder_at')
-                ->limit(5)
-                ->get(),
-            'upcomingReminders' => (clone $remindersQuery)
-                ->where('status', 'pending')
-                ->where('reminder_at', '>', $todayEnd)
-                ->orderBy('reminder_at')
-                ->limit(5)
-                ->get(),
-            'overdueReminders' => (clone $remindersQuery)
-                ->where('status', 'pending')
-                ->where('reminder_at', '<', $todayStart)
-                ->orderBy('reminder_at')
-                ->limit(5)
-                ->get(),
+            'reminderCounts' => $reminderCounts,
+            'reminderUrls' => $reminderUrls,
+            'todayReminders' => $reminderPreviews['today'],
+            'upcomingReminders' => $reminderPreviews['upcoming'],
+            'overdueReminders' => $reminderPreviews['overdue'],
             'latestTickets' => (clone $ticketsQuery)
                 ->with([
                     'handlerDepartment',
@@ -186,24 +190,51 @@ class Dashboard extends BaseDashboard
                 ->latest()
                 ->limit(5)
                 ->get(),
-            'ticketsUrl' => TicketResource::getUrl('index'),
-            'workTasksUrl' => WorkTaskResource::getUrl('index'),
+            'ticketsUrl' => TicketResource::shouldRegisterNavigation() && TicketResource::canViewAny()
+                ? TicketResource::getUrl('index')
+                : null,
+            'workTasksUrl' => WorkTaskResource::canViewAny() ? WorkTaskResource::getUrl('index') : null,
             'remindersUrl' => ReminderResource::getUrl('index'),
         ];
     }
 
     public function formatStatus(?string $status): string
     {
-        return str($status ?? '-')
-            ->replace('_', ' ')
-            ->title()
-            ->toString();
+        return match ($status) {
+            'open' => 'Terbuka',
+            'in_progress' => 'Dikerjakan',
+            'waiting_user' => 'Menunggu tanggapan',
+            'resolved', 'done' => 'Selesai',
+            'planned' => 'Direncanakan',
+            'hold' => 'Ditunda',
+            'cancel' => 'Dibatalkan',
+            default => str($status ?? '-')->replace('_', ' ')->title()->toString(),
+        };
+    }
+
+    public function getTicketUrl(Ticket $ticket): ?string
+    {
+        return TicketResource::canView($ticket) ? TicketResource::getUrl('view', ['record' => $ticket]) : null;
+    }
+
+    public function getWorkTaskUrl(WorkTask $task): ?string
+    {
+        return WorkTaskResource::canView($task) ? WorkTaskResource::getUrl('view', ['record' => $task]) : null;
+    }
+
+    public function getReminderUrl(Reminder $reminder): ?string
+    {
+        return ReminderResource::canView($reminder) ? ReminderResource::getUrl('view', ['record' => $reminder]) : null;
     }
 
     public function formatReminderType(?string $type): string
     {
         return match ($type) {
             'service_request' => 'Service Desk',
+            'meeting' => 'Rapat',
+            'task' => 'Tugas',
+            'report' => 'Laporan',
+            'general' => 'Umum',
             default => str($type ?? 'general')
                 ->replace('_', ' ')
                 ->title()

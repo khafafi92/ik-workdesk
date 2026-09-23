@@ -311,7 +311,7 @@
 
 .ik-topbar {
     background: var(--mn-surface) !important;
-    border-bottom: 1px solid var(--mn-border) !important;
+    border-bottom: 1px solid var(--ik-border) !important;
     box-shadow: none !important;
 }
 
@@ -1067,7 +1067,7 @@
 .ik-compact-summary-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 1rem;
 }
 
 .ik-compact-card {
@@ -1304,8 +1304,13 @@
     text-align: center;
 }
 
+@media (max-width: 1279px) {
+    .ik-compact-summary-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 900px) {
-    .ik-compact-summary-grid,
     .ik-compact-reminder-grid {
         grid-template-columns: 1fr;
     }
@@ -1367,7 +1372,6 @@
 
 .ik-sidebar,
 .ik-topbar,
-.ik-page-hero,
 .ik-stat-card,
 .ik-dashboard-content .shadow-sm.overflow-hidden,
 .ik-dashboard-content .bg-white.border,

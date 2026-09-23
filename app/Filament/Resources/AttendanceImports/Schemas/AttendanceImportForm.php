@@ -21,7 +21,8 @@ class AttendanceImportForm
                     ->dehydrated(),
 
                 TextInput::make('period_name')
-                    ->label('Period Name')
+                    ->label('Nama periode')
+                    ->visibleOn('edit')
                     ->placeholder('Contoh: 21 Mei - 20 Juni 2026')
                     ->helperText('Nama periode akan dikoreksi otomatis berdasarkan tanggal 21–20 pada file Total Jam Kerja.')
                     ->required()
@@ -30,7 +31,9 @@ class AttendanceImportForm
 
                 FileUpload::make('attendance_file_path')
                     ->label('File Lokasi Absen')
-                    ->helperText('Wajib: file Activity dari Mekari Talenta untuk periode yang sama.')
+                    ->placeholder('Seret file ke sini atau <span class="filepond--label-action">pilih file</span>')
+                    ->validationMessages(['required' => 'Pilih file lokasi absen terlebih dahulu.'])
+                    ->helperText('Upload Excel Activity Attendance dari Talenta. Letakkan data periode yang akan diproses pada sheet pertama.')
                     ->required()
                     ->maxSize(10240)
                     ->disk('local')
@@ -51,7 +54,9 @@ class AttendanceImportForm
 
                 FileUpload::make('work_hour_file_path')
                     ->label('File Total Jam Kerja')
-                    ->helperText('Wajib: file Total Jam Kerja Mekari Talenta untuk periode tanggal 21–20.')
+                    ->placeholder('Seret file ke sini atau <span class="filepond--label-action">pilih file</span>')
+                    ->validationMessages(['required' => 'Pilih file total jam kerja terlebih dahulu.'])
+                    ->helperText('Upload Excel harian yang memuat Real Working Hour, tanggal 21 sampai 20 bulan berikutnya. Gunakan periode yang sama dan sheet pertama.')
                     ->required()
                     ->maxSize(10240)
                     ->disk('local')
@@ -74,7 +79,8 @@ class AttendanceImportForm
                     ->default('uploaded'),
 
                 Textarea::make('notes')
-                    ->label('Notes')
+                    ->label('Catatan')
+                    ->visibleOn('edit')
                     ->rows(3)
                     ->columnSpanFull(),
             ]);

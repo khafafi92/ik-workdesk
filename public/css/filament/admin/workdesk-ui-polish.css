@@ -1678,3 +1678,218 @@ label:has(> input[type="checkbox"].fi-checkbox-input) {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
 }
+
+body[data-attendance-flow] main .fi-btn {
+    min-height: 44px !important;
+}
+
+body[data-attendance-flow] main :is(a, button, input):focus-visible {
+    outline: 3px solid #0057b8;
+    outline-offset: 2px;
+}
+
+.att-report-center .att-section {
+    padding: 20px;
+    overflow: visible;
+}
+
+.att-report-center .att-section-header {
+    padding: 0 0 16px;
+    margin-bottom: 16px;
+    background: transparent;
+}
+
+.att-report-center .att-section-desc {
+    color: #475569;
+}
+
+.att-report-center .att-select {
+    min-height: 44px;
+}
+
+.att-report-center .att-report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.att-report-center .fi-btn,
+.att-report-center summary {
+    min-height: 44px;
+    align-content: center;
+}
+
+.att-report-center .att-report-files {
+    margin-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    overflow-wrap: anywhere;
+}
+
+.att-report-center summary {
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.att-report-center :is(a, button, select, summary):focus-visible {
+    outline: 3px solid #0057b8;
+    outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+    .att-report-center .att-section {
+        padding: 16px;
+    }
+
+    .att-report-center .att-report-actions > * {
+        width: 100%;
+    }
+}
+
+/* Dashboard links stay readable and reachable without changing other pages. */
+.ik-dashboard--minimal a {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+    color: #0057b8;
+    font-size: 13px;
+    line-height: 1.4;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ik-dashboard--minimal a:focus-visible {
+    outline: 3px solid #0057b8;
+    outline-offset: 2px;
+}
+
+.ik-dashboard--minimal .ik-overview-heading,
+.ik-dashboard--minimal .ik-panel-header {
+    flex-wrap: wrap;
+    gap: 8px 16px;
+}
+
+.ik-dashboard--minimal .ik-overview-heading h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.ik-dashboard--minimal .ik-overview-heading p,
+.ik-dashboard--minimal .ik-mini-item span,
+.ik-dashboard--minimal .ik-mini-empty,
+.ik-dashboard--minimal .ik-reminder-footer p {
+    margin: 0;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 400;
+    line-height: 1.5;
+}
+
+.ik-dashboard--minimal .ik-smart-actions a {
+    justify-content: center;
+    color: #0057b8;
+}
+
+.ik-dashboard--minimal .ik-reminder-lane-head {
+    gap: 8px;
+    font-size: 13px;
+}
+
+.ik-dashboard--minimal .ik-reminder-lane-head h3 {
+    margin: 0;
+    font-size: inherit;
+    font-weight: 600;
+}
+
+.ik-dashboard--minimal .ik-reminder-lane-head strong {
+    min-width: 24px;
+    height: auto;
+    min-height: 24px;
+    color: #0057b8;
+    font-size: 12px;
+}
+
+.ik-dashboard--minimal .ik-reminder-lane--danger .ik-reminder-lane-head strong {
+    color: #b4233b;
+}
+
+.ik-dashboard--minimal .ik-reminder-footer {
+    padding: 8px 14px 12px;
+    border-top: 1px solid var(--ik-border);
+}
+
+.ik-dashboard--minimal .ik-record-link,
+.ik-dashboard--minimal .ik-reminder-footer a {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.ik-dashboard--minimal .ik-mini-item strong {
+    overflow: visible;
+    font-size: 13px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ik-dashboard--minimal .ik-overview-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr));
+    overflow: visible;
+}
+
+.ik-dashboard--minimal .ik-overview-metrics > div {
+    min-width: 0;
+}
+
+.ik-dashboard--minimal .ik-overview-metrics span {
+    color: #475569;
+    font-size: 12px;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ik-dashboard--minimal .ik-table {
+    table-layout: fixed;
+}
+
+.ik-dashboard--minimal .ik-table th,
+.ik-dashboard--minimal .ik-table td {
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ik-dashboard--minimal .ik-table th:first-child {
+    width: 26%;
+}
+
+.ik-dashboard--minimal .ik-table th:last-child {
+    width: 24%;
+}
+
+.ik-dashboard--minimal .ik-badge {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.ik-dashboard--minimal .ik-badge--success {
+    background: #006b46 !important;
+}
+
+.ik-dashboard--minimal .ik-badge--warning {
+    background: #8a5200 !important;
+}
+
+@media (max-width: 760px) {
+    .ik-dashboard--minimal .ik-panel-header > a {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ik-dashboard--minimal .ik-panel-grid--minimal .ik-table th,
+    .ik-dashboard--minimal .ik-panel-grid--minimal .ik-table td {
+        padding-inline: 8px;
+    }
+}

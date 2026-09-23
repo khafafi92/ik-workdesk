@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AttendanceImports\Pages;
 
+use App\Filament\Pages\AttendanceReportCenter;
 use App\Filament\Resources\AttendanceImports\AttendanceImportResource;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -9,6 +10,11 @@ use Filament\Resources\Pages\EditRecord;
 class EditAttendanceImport extends EditRecord
 {
     protected static string $resource = AttendanceImportResource::class;
+
+    protected function getRedirectUrl(): string
+    {
+        return AttendanceReportCenter::getUrl(['periode' => $this->record->id]);
+    }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {

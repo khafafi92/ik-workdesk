@@ -1,0 +1,75 @@
+{
+  "method": "Upstream contrast checker and final CSS declarations; browser computed styles not available",
+  "pairs": [
+    {
+      "element": "Metadata dan pesan kosong",
+      "foreground": "#475569",
+      "background": "#ffffff",
+      "ratio": 7.58,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Total reminder terlambat",
+      "foreground": "#b4233b",
+      "background": "#fdebee",
+      "ratio": 5.64,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Badge selesai",
+      "foreground": "#ffffff",
+      "background": "#006b46",
+      "ratio": 6.58,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Badge dikerjakan",
+      "foreground": "#ffffff",
+      "background": "#8a5200",
+      "ratio": 6.39,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Tautan reminder dan total reminder",
+      "foreground": "#0057b8",
+      "background": "#e5f1fd",
+      "ratio": 6.0,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Tautan rincian",
+      "foreground": "#0057b8",
+      "background": "#ffffff",
+      "ratio": 6.87,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Tautan header tabel",
+      "foreground": "#0065c8",
+      "background": "#eaf4ff",
+      "ratio": 5.11,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Badge terbuka",
+      "foreground": "#ffffff",
+      "background": "#c92d46",
+      "ratio": 5.32,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Badge menunggu",
+      "foreground": "#ffffff",
+      "background": "#0068d9",
+      "ratio": 5.27,
+      "normal_text_pass": true
+    },
+    {
+      "element": "Badge status lain",
+      "foreground": "#ffffff",
+      "background": "#64748b",
+      "ratio": 4.76,
+      "normal_text_pass": true
+    }
+  ]
+}

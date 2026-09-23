@@ -12,7 +12,9 @@ use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Notifications\Notification;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 
 class RemindersTable
 {
@@ -82,6 +84,26 @@ class RemindersTable
                         default => 'gray',
                     }),
 
+            ])
+            ->filters([
+                SelectFilter::make('schedule')
+                    ->label('Jadwal reminder aktif')
+                    ->options([
+                        'today' => 'Hari Ini',
+                        'upcoming' => 'Akan Datang',
+                        'overdue' => 'Terlambat',
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        $todayStart = now()->startOfDay();
+                        $todayEnd = $todayStart->copy()->endOfDay();
+
+                        return match ($data['value'] ?? null) {
+                            'today' => $query->where('status', 'pending')->whereBetween('reminder_at', [$todayStart, $todayEnd]),
+                            'upcoming' => $query->where('status', 'pending')->where('reminder_at', '>', $todayEnd),
+                            'overdue' => $query->where('status', 'pending')->where('reminder_at', '<', $todayStart),
+                            default => $query,
+                        };
+                    }),
             ])
             ->defaultSort('reminder_at', 'asc')
             ->recordActions([

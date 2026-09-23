@@ -17,7 +17,7 @@ class MinimalDashboardTest extends TestCase
         $this->actingAs($admin)
             ->get('/panel')
             ->assertOk()
-            ->assertSeeText('Ringkasan kerja hari ini')
+            ->assertSeeText('Ringkasan pekerjaan')
             ->assertSeeText('Reminder')
             ->assertSeeText('Hari Ini')
             ->assertSeeText('Akan Datang')

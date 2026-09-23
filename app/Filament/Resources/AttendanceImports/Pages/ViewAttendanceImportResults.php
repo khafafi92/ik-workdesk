@@ -48,9 +48,9 @@ class ViewAttendanceImportResults extends Page
 
     public function getBreadcrumbs(): array
     {
-        if (auth()->user()?->hasPermission('attendance.view')) {
+        if (AttendanceReportCenter::canAccess()) {
             return [
-                AttendanceReportCenter::getUrl() => 'Report Center',
+                AttendanceReportCenter::getUrl(['periode' => $this->getRecord()->id]) => 'Attendance Report',
                 $this->getBreadcrumb(),
             ];
         }

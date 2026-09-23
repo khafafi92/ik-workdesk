@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="CLI Arguments" tests="6" assertions="50" errors="0" failures="0" skipped="0" time="33.619107">
+    <testsuite name="Tests\Audit\DashboardAuditTest" file="D:\Internal\ik-workdesk\anti-slop\evidence\DashboardAuditTest.php" tests="3" assertions="26" errors="0" failures="0" skipped="0" time="32.896479">
+      <testcase name="test_reminder_counts_are_capped_at_five_and_only_three_items_render" file="D:\Internal\ik-workdesk\anti-slop\evidence\DashboardAuditTest.php" line="38" class="Tests\Audit\DashboardAuditTest" classname="Tests.Audit.DashboardAuditTest" assertions="11" time="23.614104"/>
+      <testcase name="test_today_heading_includes_historical_tickets_without_detail_links" file="D:\Internal\ik-workdesk\anti-slop\evidence\DashboardAuditTest.php" line="63" class="Tests\Audit\DashboardAuditTest" classname="Tests.Audit.DashboardAuditTest" assertions="6" time="0.147438"/>
+      <testcase name="test_empty_dashboard_and_its_three_destinations_render" file="D:\Internal\ik-workdesk\anti-slop\evidence\DashboardAuditTest.php" line="82" class="Tests\Audit\DashboardAuditTest" classname="Tests.Audit.DashboardAuditTest" assertions="9" time="9.134937"/>
+    </testsuite>
+    <testsuite name="Tests\Feature\MinimalDashboardTest" file="D:\Internal\ik-workdesk\tests\Feature\MinimalDashboardTest.php" tests="2" assertions="20" errors="0" failures="0" skipped="0" time="0.661233">
+      <testcase name="test_the_dashboard_uses_the_compact_reminder_layout_without_meeting_summary" file="D:\Internal\ik-workdesk\tests\Feature\MinimalDashboardTest.php" line="13" class="Tests\Feature\MinimalDashboardTest" classname="Tests.Feature.MinimalDashboardTest" assertions="10" time="0.064517"/>
+      <testcase name="test_the_superadmin_dashboard_matches_the_compact_overview_layout" file="D:\Internal\ik-workdesk\tests\Feature\MinimalDashboardTest.php" line="31" class="Tests\Feature\MinimalDashboardTest" classname="Tests.Feature.MinimalDashboardTest" assertions="10" time="0.596716"/>
+    </testsuite>
+    <testsuite name="Tests\Feature\DashboardMeetingSummaryRemovalTest" file="D:\Internal\ik-workdesk\tests\Feature\DashboardMeetingSummaryRemovalTest.php" tests="1" assertions="4" errors="0" failures="0" skipped="0" time="0.061396">
+      <testcase name="test_dashboard_does_not_render_meeting_summary_card" file="D:\Internal\ik-workdesk\tests\Feature\DashboardMeetingSummaryRemovalTest.php" line="13" class="Tests\Feature\DashboardMeetingSummaryRemovalTest" classname="Tests.Feature.DashboardMeetingSummaryRemovalTest" assertions="4" time="0.061396"/>
+    </testsuite>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,53 @@
+{
+  "method": "Upstream contrast-check.py; CSS declarations, not browser computed styles",
+  "pairs": [
+    {
+      "element": "Reminder metadata and empty state",
+      "foreground": "#9699a6",
+      "background": "#ffffff",
+      "font_px_from_css": 10,
+      "ratio": 2.84,
+      "normal_text_required": 4.5
+    },
+    {
+      "element": "Overdue reminder count",
+      "foreground": "#e2445c",
+      "background": "#fdebee",
+      "font_px_from_css": 10,
+      "ratio": 3.51,
+      "normal_text_required": 4.5
+    },
+    {
+      "element": "Resolved badge",
+      "foreground": "#ffffff",
+      "background": "#008f5d",
+      "font_px_from_css": 11,
+      "ratio": 4.13,
+      "normal_text_required": 4.5
+    },
+    {
+      "element": "In progress badge",
+      "foreground": "#ffffff",
+      "background": "#bd7600",
+      "font_px_from_css": 11,
+      "ratio": 3.65,
+      "normal_text_required": 4.5
+    },
+    {
+      "element": "Open reminder action",
+      "foreground": "#0073ea",
+      "background": "#e5f1fd",
+      "font_px_from_css": 11,
+      "ratio": 3.95,
+      "normal_text_required": 4.5
+    },
+    {
+      "element": "Greeting",
+      "foreground": "#676879",
+      "background": "#f3f4f6",
+      "font_px_from_css": 11,
+      "ratio": 4.98,
+      "normal_text_required": 4.5
+    }
+  ]
+}

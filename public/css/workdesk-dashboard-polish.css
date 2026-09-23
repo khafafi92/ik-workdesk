@@ -1,6 +1,8 @@
 /* IK WorkDesk polish for the custom Blade dashboard (outside Filament). */
 
 :root {
+    --ik-shell-header-height: 5rem;
+    --ik-content-gutter: 2.25rem;
     --ik-canvas: #f5f7fb;
     --ik-surface: #ffffff;
     --ik-border: #e2e6ef;
@@ -51,7 +53,10 @@ body.ik-workdesk-dashboard {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    min-height: 5rem;
+    height: var(--ik-shell-header-height);
+    min-height: var(--ik-shell-header-height);
+    padding-block: 0;
+    flex-shrink: 0;
     border-color: var(--ik-border) !important;
 }
 
@@ -116,8 +121,9 @@ body.ik-workdesk-dashboard {
 .ik-topbar {
     position: sticky;
     top: 0;
-    min-height: 5rem;
-    height: 5rem !important;
+    min-height: var(--ik-shell-header-height);
+    height: var(--ik-shell-header-height) !important;
+    padding-inline: var(--ik-content-gutter) !important;
     background: #ffffff !important;
     border-color: var(--ik-border) !important;
     box-shadow: none;
@@ -142,7 +148,7 @@ body.ik-workdesk-dashboard {
 }
 
 .ik-main {
-    padding: 1.75rem 2.25rem 2.5rem !important;
+    padding: 1.75rem var(--ik-content-gutter) 2.5rem !important;
 }
 
 .ik-page-hero {
@@ -239,18 +245,22 @@ body.ik-workdesk-dashboard {
 }
 
 @media (max-width: 1023px) {
+    :root {
+        --ik-content-gutter: 1.25rem;
+    }
+
     .ik-sidebar {
         width: 15.5rem !important;
     }
 
     .ik-main {
-        padding: 1.25rem !important;
+        padding-block: 1.25rem !important;
     }
 }
 
 @media (max-width: 767px) {
-    .ik-topbar {
-        padding-inline: 1rem !important;
+    :root {
+        --ik-content-gutter: 1rem;
     }
 
     .ik-page-hero {

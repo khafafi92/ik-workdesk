@@ -1,0 +1,6 @@
+{
+    "fixture_only": true,
+    "actual_per_group": 8,
+    "badge_per_group": 5,
+    "rendered_items_per_group": 3
+}

@@ -16,6 +16,11 @@
         'resolved', 'done' => 'ik-badge--success',
         default => 'ik-badge--gray',
     };
+    $reminderGroups = [
+        'today' => ['label' => 'Hari Ini', 'items' => $data['todayReminders'], 'empty' => 'Tidak ada reminder hari ini.', 'action' => 'Lihat reminder hari ini'],
+        'upcoming' => ['label' => 'Akan Datang', 'items' => $data['upcomingReminders'], 'empty' => 'Belum ada jadwal berikutnya.', 'action' => 'Lihat reminder mendatang'],
+        'overdue' => ['label' => 'Terlambat', 'items' => $data['overdueReminders'], 'empty' => 'Tidak ada reminder terlambat.', 'action' => 'Lihat reminder terlambat'],
+    ];
 @endphp
 
 <x-filament-panels::page>
@@ -23,7 +28,7 @@
         <header class="ik-minimal-hero">
             <div>
                 <span>{{ $greeting }}, {{ $firstName }}</span>
-                <h1>Ringkasan kerja hari ini</h1>
+                <h1>Ringkasan pekerjaan</h1>
             </div>
             <time>{{ now()->translatedFormat('l, d F Y') }}</time>
         </header>
@@ -32,8 +37,10 @@
             <div class="ik-overview-grid">
                 <section class="ik-overview-card">
                     <div class="ik-overview-heading">
-                        <span>Service Desk</span>
-                        <a href="{{ $data['ticketsUrl'] }}">Lihat semua</a>
+                        <div><h2>Service Desk</h2><p>Seluruh periode</p></div>
+                        @if ($data['ticketsUrl'])
+                            <a href="{{ $data['ticketsUrl'] }}">Lihat semua tiket</a>
+                        @endif
                     </div>
                     <div class="ik-overview-metrics">
                         @foreach ($data['ticketStats'] as $stat)
@@ -47,8 +54,10 @@
 
                 <section class="ik-overview-card">
                     <div class="ik-overview-heading">
-                        <span>Work Logs</span>
-                        <a href="{{ $data['workTasksUrl'] }}">Lihat semua</a>
+                        <div><h2>Work Logs</h2><p>Seluruh periode</p></div>
+                        @if ($data['workTasksUrl'])
+                            <a href="{{ $data['workTasksUrl'] }}">Lihat semua pekerjaan</a>
+                        @endif
                     </div>
                     <div class="ik-overview-metrics">
                         @foreach ($data['workStats'] as $stat)
@@ -82,56 +91,37 @@
             </div>
 
             <div class="ik-reminder-grid">
-                <div class="ik-reminder-lane">
-                    <div class="ik-reminder-lane-head">
-                        <span>Hari Ini</span>
-                        <strong>{{ $data['todayReminders']->count() }}</strong>
-                    </div>
-                    <div class="ik-mini-list">
-                        @forelse ($data['todayReminders']->take(3) as $reminder)
-                            <div class="ik-mini-item">
-                                <strong>{{ $reminder->title }}</strong>
-                                <span>{{ $reminder->reminder_at->format('H:i') }} · {{ $this->formatReminderType($reminder->reminder_type) }}</span>
+                @foreach ($reminderGroups as $schedule => $group)
+                    <section class="ik-reminder-lane {{ $schedule === 'overdue' ? 'ik-reminder-lane--danger' : '' }}" aria-labelledby="reminders-{{ $schedule }}">
+                        <div class="ik-reminder-lane-head">
+                            <h3 id="reminders-{{ $schedule }}">{{ $group['label'] }}</h3>
+                            <strong>{{ $data['reminderCounts'][$schedule] }}</strong>
+                        </div>
+                        <div class="ik-mini-list">
+                            @forelse ($group['items'] as $reminder)
+                                <div class="ik-mini-item">
+                                    @if ($url = $this->getReminderUrl($reminder))
+                                        <a href="{{ $url }}" class="ik-record-link">{{ $reminder->title }}</a>
+                                    @else
+                                        <strong>{{ $reminder->title }}</strong>
+                                    @endif
+                                    <span>
+                                        {{ $schedule === 'today' ? $reminder->reminder_at->format('H:i') : $this->formatDateTime($reminder->reminder_at) }}
+                                        &middot; {{ $this->formatReminderType($reminder->reminder_type) }}
+                                    </span>
+                                </div>
+                            @empty
+                                <div class="ik-mini-empty">{{ $group['empty'] }}</div>
+                            @endforelse
+                        </div>
+                        @if ($data['reminderCounts'][$schedule] > 0)
+                            <div class="ik-reminder-footer">
+                                <p>Menampilkan {{ $group['items']->count() }} dari {{ $data['reminderCounts'][$schedule] }} reminder</p>
+                                <a href="{{ $data['reminderUrls'][$schedule] }}">{{ $group['action'] }}</a>
                             </div>
-                        @empty
-                            <div class="ik-mini-empty">Tidak ada reminder hari ini.</div>
-                        @endforelse
-                    </div>
-                </div>
-
-                <div class="ik-reminder-lane">
-                    <div class="ik-reminder-lane-head">
-                        <span>Akan Datang</span>
-                        <strong>{{ $data['upcomingReminders']->count() }}</strong>
-                    </div>
-                    <div class="ik-mini-list">
-                        @forelse ($data['upcomingReminders']->take(3) as $reminder)
-                            <div class="ik-mini-item">
-                                <strong>{{ $reminder->title }}</strong>
-                                <span>{{ $this->formatDateTime($reminder->reminder_at) }}</span>
-                            </div>
-                        @empty
-                            <div class="ik-mini-empty">Belum ada jadwal berikutnya.</div>
-                        @endforelse
-                    </div>
-                </div>
-
-                <div class="ik-reminder-lane ik-reminder-lane--danger">
-                    <div class="ik-reminder-lane-head">
-                        <span>Terlambat</span>
-                        <strong>{{ $data['overdueReminders']->count() }}</strong>
-                    </div>
-                    <div class="ik-mini-list">
-                        @forelse ($data['overdueReminders']->take(3) as $reminder)
-                            <div class="ik-mini-item">
-                                <strong>{{ $reminder->title }}</strong>
-                                <span>{{ $this->formatDateTime($reminder->reminder_at) }}</span>
-                            </div>
-                        @empty
-                            <div class="ik-mini-empty">Tidak ada reminder terlambat.</div>
-                        @endforelse
-                    </div>
-                </div>
+                        @endif
+                    </section>
+                @endforeach
             </div>
         </section>
 
@@ -144,16 +134,24 @@
                         </span>
                         <div><h2>Service Desk Terbaru</h2><p>Permintaan terbaru yang dapat Anda akses.</p></div>
                     </div>
-                    <a href="{{ $data['ticketsUrl'] }}">Lihat Semua</a>
+                    @if ($data['ticketsUrl'])
+                        <a href="{{ $data['ticketsUrl'] }}">Lihat semua tiket</a>
+                    @endif
                 </div>
                 <div class="ik-table-wrap">
                     <table class="ik-table">
-                        <thead><tr><th>Request</th><th>Subject</th><th>Status</th></tr></thead>
+                        <thead><tr><th scope="col">Nomor tiket</th><th scope="col">Judul</th><th scope="col">Status</th></tr></thead>
                         <tbody>
                             @forelse ($data['latestTickets'] as $ticket)
                                 <tr>
                                     <td>{{ $ticket->ticket_no }}</td>
-                                    <td>{{ str($ticket->subject)->limit(34) }}</td>
+                                    <td>
+                                        @if ($url = $this->getTicketUrl($ticket))
+                                            <a href="{{ $url }}" class="ik-record-link">{{ $ticket->subject }}</a>
+                                        @else
+                                            {{ $ticket->subject }}
+                                        @endif
+                                    </td>
                                     <td><span class="ik-badge {{ $statusBadgeClass($ticket->status) }}">{{ $this->formatStatus($ticket->status) }}</span></td>
                                 </tr>
                             @empty
@@ -172,16 +170,24 @@
                         </span>
                         <div><h2>Work Logs Terbaru</h2><p>Aktivitas pekerjaan terbaru.</p></div>
                     </div>
-                    <a href="{{ $data['workTasksUrl'] }}">Lihat Semua</a>
+                    @if ($data['workTasksUrl'])
+                        <a href="{{ $data['workTasksUrl'] }}">Lihat semua pekerjaan</a>
+                    @endif
                 </div>
                 <div class="ik-table-wrap">
                     <table class="ik-table">
-                        <thead><tr><th>Task</th><th>Judul</th><th>Progress</th></tr></thead>
+                        <thead><tr><th scope="col">Nomor tugas</th><th scope="col">Judul</th><th scope="col">Progres</th></tr></thead>
                         <tbody>
                             @forelse ($data['latestWorkTasks'] as $task)
                                 <tr>
                                     <td>{{ $task->task_no }}</td>
-                                    <td>{{ str($task->title)->limit(34) }}</td>
+                                    <td>
+                                        @if ($url = $this->getWorkTaskUrl($task))
+                                            <a href="{{ $url }}" class="ik-record-link">{{ $task->title }}</a>
+                                        @else
+                                            {{ $task->title }}
+                                        @endif
+                                    </td>
                                     <td>{{ (int) $task->progress_percent }}%</td>
                                 </tr>
                             @empty
