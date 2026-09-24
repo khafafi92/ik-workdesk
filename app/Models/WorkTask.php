@@ -348,6 +348,11 @@ class WorkTask extends Model
         return $this->belongsTo(Ticket::class);
     }
 
+    public function dailyActivities(): HasMany
+    {
+        return $this->hasMany(DailyActivity::class);
+    }
+
     public function department()
     {
         return $this->belongsTo(Department::class);
@@ -356,6 +361,11 @@ class WorkTask extends Model
     public function employee()
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function taskCategory()
+    {
+        return $this->belongsTo(TaskCategory::class);
     }
 
     public function completedBy()

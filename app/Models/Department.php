@@ -23,4 +23,9 @@ class Department extends Model
 
         return $code === 'legal' || str_contains($name, 'legal');
     }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class);
+    }
 }

@@ -26,11 +26,11 @@ class DailyActivityResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'title';
 
-    protected static ?string $navigationLabel = 'Aktivitas Harian';
+    protected static ?string $navigationLabel = 'Daily Activities';
 
-    protected static ?string $modelLabel = 'Aktivitas Harian';
+    protected static ?string $modelLabel = 'Daily Activity';
 
-    protected static ?string $pluralModelLabel = 'Aktivitas Harian';
+    protected static ?string $pluralModelLabel = 'Daily Activities';
 
     protected static string|UnitEnum|null $navigationGroup = 'Tasks';
 

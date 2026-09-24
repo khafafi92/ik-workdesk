@@ -30,4 +30,14 @@ class Employee extends Model
     {
         return $this->belongsTo(Department::class);
     }
+
+    public function workTasks()
+    {
+        return $this->hasMany(WorkTask::class);
+    }
+
+    public function requestedTickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

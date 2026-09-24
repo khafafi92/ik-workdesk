@@ -37,6 +37,18 @@ class AccessControlSeeder extends Seeder
                     'module' => 'Master Data',
                     'description' => 'Manage departments, employees, categories, and locations.',
                 ],
+                [
+                    'name' => 'View Reports',
+                    'code' => 'report.view',
+                    'module' => 'Reports',
+                    'description' => 'View operational reports within permitted department scope.',
+                ],
+                [
+                    'name' => 'Export Reports',
+                    'code' => 'report.export',
+                    'module' => 'Reports',
+                    'description' => 'Export operational reports within permitted department scope.',
+                ],
 
                 [
                     'name' => 'View Attendance',

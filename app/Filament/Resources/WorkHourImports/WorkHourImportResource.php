@@ -43,17 +43,17 @@ class WorkHourImportResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Total Jam Kerja';
+        return 'Work Hours';
     }
 
     public static function getModelLabel(): string
     {
-        return 'Total Jam Kerja';
+        return 'Work Hours';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Total Jam Kerja';
+        return 'Work Hours';
     }
 
     public static function getNavigationGroup(): ?string

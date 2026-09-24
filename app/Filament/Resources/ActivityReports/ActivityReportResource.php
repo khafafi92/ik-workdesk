@@ -2,34 +2,35 @@
 
 namespace App\Filament\Resources\ActivityReports;
 
+use App\Exports\ReportExport;
+use App\Filament\Resources\Reports\ReportResource;
 use App\Filament\Resources\ActivityReports\Pages\ListActivityReports;
 use App\Filament\Resources\ActivityReports\Tables\ActivityReportsTable;
 use App\Models\DailyActivity;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
-class ActivityReportResource extends Resource
+class ActivityReportResource extends ReportResource
 {
     protected static ?string $model = DailyActivity::class;
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
-
     protected static ?string $slug = 'activity-reports';
 
-    protected static ?string $navigationLabel = 'Laporan Aktivitas';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static ?string $modelLabel = 'Laporan Aktivitas';
+    protected static ?string $navigationLabel = 'Daily Activities';
 
-    protected static ?string $pluralModelLabel = 'Laporan Aktivitas';
+    protected static ?string $modelLabel = 'Daily Activity Report';
+
+    protected static ?string $pluralModelLabel = 'Daily Activity Reports';
 
     protected static ?int $navigationSort = 3;
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Tasks';
+        return 'Reports';
     }
 
     public static function getEloquentQuery(): Builder
@@ -62,6 +63,12 @@ class ActivityReportResource extends Resource
 
     public static function canViewAny(): bool
     {
+        // Keep personal activity-report access; the query scopes ordinary users to their own rows.
+        return auth()->check();
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
         return auth()->check();
     }
 
@@ -83,6 +90,27 @@ class ActivityReportResource extends Resource
     public static function canDelete(Model $record): bool
     {
         return false;
+    }
+
+    public static function export(Builder $query): ReportExport
+    {
+        return new ReportExport($query, [
+            'Date', 'Employee', 'Department', 'Start Time', 'End Time',
+            'Duration (Minutes)', 'Activity Type', 'Activity Description',
+            'Related Ticket', 'Source', 'Notes',
+        ], fn (DailyActivity $activity): array => [
+            $activity->work_date,
+            $activity->user?->name,
+            $activity->user?->employee?->department?->name,
+            $activity->start_time,
+            $activity->end_time,
+            $activity->duration_minutes,
+            $activity->work_context,
+            $activity->title,
+            $activity->workTask?->ticket?->ticket_no,
+            $activity->source_type === 'task' ? 'Service Desk' : 'Internal Activity',
+            $activity->description ?? $activity->result,
+        ], ['A']);
     }
 
     public static function table(Table $table): Table

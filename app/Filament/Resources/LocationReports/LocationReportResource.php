@@ -43,17 +43,17 @@ class LocationReportResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Lokasi Absen';
+        return 'Attendance Locations';
     }
 
     public static function getModelLabel(): string
     {
-        return 'Lokasi Absen';
+        return 'Attendance Location';
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Lokasi Absen';
+        return 'Attendance Locations';
     }
 
     public static function getNavigationGroup(): ?string

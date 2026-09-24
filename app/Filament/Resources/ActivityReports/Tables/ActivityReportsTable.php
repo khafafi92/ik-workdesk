@@ -84,10 +84,12 @@ class ActivityReportsTable
                     ->schema([
                         DatePicker::make('from')
                             ->label('Dari')
-                            ->native(false),
+                            ->native(false)
+                            ->default(now()->startOfMonth()),
                         DatePicker::make('until')
                             ->label('Sampai')
-                            ->native(false),
+                            ->native(false)
+                            ->default(now()->endOfMonth()),
                     ])
                     ->query(fn (Builder $query, array $data): Builder => $query
                         ->when(
@@ -99,10 +101,21 @@ class ActivityReportsTable
                             fn (Builder $query, $date) => $query->whereDate('work_date', '<=', $date)
                         )),
                 SelectFilter::make('user_id')
-                    ->label('User')
+                    ->label('Employee / PIC')
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
+                    ->visible(fn (): bool => static::canViewTeam()),
+                SelectFilter::make('department')
+                    ->label('Department')
+                    ->query(fn (Builder $query, array $data): Builder => $query->when(
+                        $data['value'] ?? null,
+                        fn (Builder $query, $departmentId): Builder => $query->whereHas(
+                            'user.employee',
+                            fn (Builder $employee): Builder => $employee->where('department_id', $departmentId)
+                        )
+                    ))
+                    ->options(fn (): array => \App\Models\Department::query()->orderBy('name')->pluck('name', 'id')->all())
                     ->visible(fn (): bool => static::canViewTeam()),
                 SelectFilter::make('work_context')
                     ->label('Konteks')

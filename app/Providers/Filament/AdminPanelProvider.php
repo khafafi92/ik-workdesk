@@ -8,6 +8,7 @@ use App\Http\Middleware\AuthenticateFilament;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+use Filament\Navigation\NavigationGroup;
 use Filament\Navigation\NavigationItem;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -53,6 +54,16 @@ class AdminPanelProvider extends PanelProvider
                 'info' => Color::hex('#579bfc'),
                 'gray' => Color::Slate,
             ])
+            ->navigationGroups([
+                NavigationGroup::make()->label('Master Data')->collapsed(),
+                NavigationGroup::make()->label('Attendance Report')->collapsed(),
+                NavigationGroup::make()->label('Reports'),
+                NavigationGroup::make()->label('Meeting Room')->collapsed(),
+                NavigationGroup::make()->label('Vehicle Booking')->collapsed(),
+                NavigationGroup::make()->label('Notifications')->collapsed(),
+                NavigationGroup::make()->label('Service Desk'),
+                NavigationGroup::make()->label('Tasks'),
+            ])
             ->navigationItems([
                 NavigationItem::make('Internal 9')
                     ->url('/dashboard')
@@ -81,6 +92,35 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 PanelsRenderHook::SIDEBAR_FOOTER,
                 fn (): string => view('filament.components.sidebar-collapse-footer')->render(),
+            )
+            ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_END,
+                fn (): string => <<<'HTML'
+                    <script>
+                        (() => {
+                            const navigationVersion = 'reports-navigation-v1'
+
+                            if (localStorage.getItem('workdesk-navigation-version') === navigationVersion) {
+                                return
+                            }
+
+                            localStorage.setItem(
+                                'collapsedGroups',
+                                JSON.stringify([
+                                    'Master Data',
+                                    'Attendance Report',
+                                    'Reports',
+                                    'Meeting Room',
+                                    'Vehicle Booking',
+                                    'Notifications',
+                                    'Service Desk',
+                                    'Tasks',
+                                ]),
+                            )
+                            localStorage.setItem('workdesk-navigation-version', navigationVersion)
+                        })()
+                    </script>
+                    HTML,
             )
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')

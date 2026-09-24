@@ -144,7 +144,7 @@ class DailyActivityTest extends TestCase
 
         $this->actingAs($user);
         $this->assertSame(1, ActivityReportResource::getEloquentQuery()->count());
-        $this->get('/panel/activity-reports')->assertOk()->assertSeeText('Laporan Aktivitas');
+        $this->get('/panel/activity-reports')->assertOk()->assertSeeText('Daily Activity Reports');
 
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin);
