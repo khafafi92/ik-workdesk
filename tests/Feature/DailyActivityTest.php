@@ -26,10 +26,28 @@ class DailyActivityTest extends TestCase
         $this->actingAs($user)
             ->get('/panel/daily-activities/create')
             ->assertOk()
-            ->assertSeeText('Tanggal Pekerjaan')
-            ->assertSeeText('Sumber Pekerjaan')
-            ->assertSeeText('Konteks Pekerjaan')
-            ->assertSeeText('Pekerjaan Diminta Oleh');
+            ->assertSeeText('Work Date')
+            ->assertSeeText('Work Source')
+            ->assertSeeText('Work Context')
+            ->assertSeeText('Requested By');
+    }
+
+    public function test_daily_activity_list_uses_english_interface_labels(): void
+    {
+        $user = User::factory()->create();
+        $this->createActivity($user, 'Routine work');
+
+        $this->actingAs($user)
+            ->get('/panel/daily-activities')
+            ->assertOk()
+            ->assertSeeText('Record Work')
+            ->assertSeeText('Date')
+            ->assertSeeText('Time')
+            ->assertSeeText('Work')
+            ->assertSeeText('Context')
+            ->assertSeeText('Source')
+            ->assertSeeText('Requested By')
+            ->assertSeeText('Duration');
     }
 
     public function test_regular_user_only_sees_and_manages_their_own_activity(): void
@@ -85,7 +103,7 @@ class DailyActivityTest extends TestCase
         $this->assertSame('PT Contoh', $companyActivity->requester_label);
         $this->assertSame('Finance', $divisionActivity->requester_label);
         $this->assertSame('Employee Test', $individualActivity->requester_label);
-        $this->assertSame('1 jam 30 menit', $companyActivity->formatted_duration);
+        $this->assertSame('1 hour 30 minutes', $companyActivity->formatted_duration);
     }
 
     public function test_project_and_operational_work_are_kept_as_separate_contexts(): void
@@ -144,7 +162,15 @@ class DailyActivityTest extends TestCase
 
         $this->actingAs($user);
         $this->assertSame(1, ActivityReportResource::getEloquentQuery()->count());
-        $this->get('/panel/activity-reports')->assertOk()->assertSeeText('Daily Activity Reports');
+        $this->get('/panel/activity-reports')
+            ->assertOk()
+            ->assertSeeText('Daily Activity Reports')
+            ->assertSeeText('Date')
+            ->assertSeeText('Work')
+            ->assertSeeText('Context')
+            ->assertSeeText('Source')
+            ->assertSeeText('Requested By')
+            ->assertSeeText('Duration');
 
         $admin = User::factory()->create(['is_admin' => true]);
         $this->actingAs($admin);

@@ -71,22 +71,22 @@ class DailyActivity extends Model
         $minutes = $this->duration_minutes % 60;
 
         if ($hours === 0) {
-            return "{$minutes} menit";
+            return "{$minutes} minutes";
         }
 
         if ($minutes === 0) {
-            return "{$hours} jam";
+            return "{$hours} hour".($hours === 1 ? '' : 's');
         }
 
-        return "{$hours} jam {$minutes} menit";
+        return "{$hours} hour".($hours === 1 ? '' : 's')." {$minutes} minutes";
     }
 
     public function getRequesterLabelAttribute(): string
     {
         return match ($this->requester_type) {
-            'company' => $this->requester_company_name ?: 'Perusahaan',
-            'division' => $this->requesterDepartment?->name ?: 'Divisi',
-            'individual' => $this->requesterEmployee?->name ?: 'Individu',
+            'company' => $this->requester_company_name ?: 'Company',
+            'division' => $this->requesterDepartment?->name ?: 'Department',
+            'individual' => $this->requesterEmployee?->name ?: 'Individual',
             default => '-',
         };
     }

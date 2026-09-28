@@ -84,7 +84,7 @@ class DashboardAccessibilityTest extends TestCase
             $response->assertSeeText("{$group}-reminder-3")->assertDontSeeText("{$group}-reminder-4")
                 ->assertDontSeeText("{$group}-completed");
         }
-        $this->assertSame(3, substr_count($response->getContent(), 'Menampilkan 3 dari 8 reminder'));
+        $this->assertSame(3, substr_count($response->getContent(), 'Showing 3 of 8 reminders'));
     }
 
     public function test_schedule_links_match_counts_and_preserve_day_boundaries(): void
@@ -123,7 +123,7 @@ class DashboardAccessibilityTest extends TestCase
         $this->assertSame(1, $data['reminderCounts']['today']);
         $this->assertSame([$own->id], $data['todayReminders']->modelKeys());
         $this->get('/panel')->assertOk()->assertSeeText('Own reminder')->assertDontSeeText('Private reminder')
-            ->assertSeeText('Menampilkan 1 dari 1 reminder')->assertDontSeeText('Seluruh periode');
+            ->assertSeeText('Showing 1 of 1 reminders')->assertDontSeeText('All time');
         parse_str(parse_url($data['reminderUrls']['today'], PHP_URL_QUERY), $query);
         Livewire::withQueryParams($query)->test(ListReminders::class)->assertCanSeeTableRecords([$own])->assertCountTableRecords(1);
     }
@@ -140,9 +140,9 @@ class DashboardAccessibilityTest extends TestCase
         $ticket->forceFill(['created_at' => now()->subMonth()])->saveQuietly();
         $task = WorkTask::create(['task_no' => 'DASH-TASK-001', 'title' => 'Pekerjaan dengan judul panjang yang harus bisa dibaca secara lengkap', 'status' => 'planned']);
         $reminder = $this->reminder('Reminder panjang untuk pemeriksaan akses rincian pekerjaan', now());
-        $response = $this->get('/panel')->assertOk()->assertSeeText('Ringkasan pekerjaan')
-            ->assertSeeText('Seluruh periode')->assertDontSeeText('Ringkasan kerja hari ini')
-            ->assertSeeText('Lihat semua tiket')->assertSeeText('Lihat semua pekerjaan');
+        $response = $this->get('/panel')->assertOk()->assertSeeText('Work Summary')
+            ->assertSeeText('All time')->assertDontSeeText('Today\'s work summary')
+            ->assertSeeText('View all tickets')->assertSeeText('View all work logs');
         $dom = new \DOMDocument;
         @$dom->loadHTML('<?xml encoding="UTF-8">'.$response->getContent());
         $xpath = new \DOMXPath($dom);
@@ -190,12 +190,12 @@ class DashboardAccessibilityTest extends TestCase
     {
         $this->actingAs(User::factory()->create(['is_admin' => false]));
         $this->get('/panel')->assertOk()
-            ->assertSeeText('Tidak ada reminder hari ini.')
-            ->assertSeeText('Belum ada jadwal berikutnya.')
-            ->assertSeeText('Tidak ada reminder terlambat.')
-            ->assertSeeText('Belum ada Service Desk.')
-            ->assertSeeText('Belum ada Work Log.')
-            ->assertDontSeeText('Lihat semua tiket')->assertDontSeeText('Lihat semua pekerjaan')
-            ->assertDontSeeText('Menampilkan 0 dari 0');
+            ->assertSeeText('No reminders today.')
+            ->assertSeeText('No upcoming reminders.')
+            ->assertSeeText('No overdue reminders.')
+            ->assertSeeText('No Service Desk records yet.')
+            ->assertSeeText('No work logs yet.')
+            ->assertDontSeeText('View all tickets')->assertDontSeeText('View all work logs')
+            ->assertDontSeeText('Showing 0 of 0');
     }
 }

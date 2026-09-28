@@ -23,33 +23,33 @@ class DailyActivityForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Waktu & Pekerjaan')
-                ->description('Catat pekerjaan aktual. Durasi dihitung otomatis dari jam mulai dan selesai.')
+            Section::make('Work Details')
+                ->description('Record the work performed. Duration is calculated automatically from the start and end times.')
                 ->schema([
-                    DatePicker::make('work_date')->label('Tanggal Pekerjaan')
+                    DatePicker::make('work_date')->label('Work Date')
                         ->default(today()->toDateString())->minDate(today()->subDays(3))->maxDate(today())
-                        ->native(false)->displayFormat('d/m/Y')
-                        ->helperText('Dapat diisi ulang maksimal 3 hari ke belakang.')->required(),
-                    TimePicker::make('start_time')->label('Jam Mulai')->seconds(false)->native(false)->live()
+                        ->native(false)->displayFormat('d/m/Y')->live()->closeOnDateSelection()
+                        ->helperText('You can record work from up to 3 days ago.')->required(),
+                    TimePicker::make('start_time')->label('Start Time')->seconds(false)->native(false)->live()
                         ->afterStateUpdated(fn (Get $get, Set $set) => self::updateDuration($get, $set))->required(),
-                    TimePicker::make('end_time')->label('Jam Selesai')->seconds(false)->native(false)->live()
+                    TimePicker::make('end_time')->label('End Time')->seconds(false)->native(false)->live()
                         ->afterStateUpdated(fn (Get $get, Set $set) => self::updateDuration($get, $set))->required(),
-                    TextInput::make('duration_minutes')->label('Durasi')->suffix('menit')
+                    TextInput::make('duration_minutes')->label('Duration')->suffix('minutes')
                         ->disabled()->dehydrated()->required(),
-                    TextInput::make('title')->label('Pekerjaan yang Dilakukan')
-                        ->placeholder('Contoh: Menyiapkan laporan bulanan')->required()->maxLength(255)->columnSpanFull(),
-                    Textarea::make('description')->label('Detail Aktivitas')->rows(3)->columnSpanFull(),
-                    Textarea::make('result')->label('Hasil / Output')
-                        ->placeholder('Jelaskan hasil yang selesai atau progres yang dicapai.')->rows(3)->columnSpanFull(),
+                    TextInput::make('title')->label('Work Performed')
+                        ->placeholder('Example: Prepare the monthly report')->required()->maxLength(255)->columnSpanFull(),
+                    Textarea::make('description')->label('Activity Details')->rows(3)->columnSpanFull(),
+                    Textarea::make('result')->label('Result / Output')
+                        ->placeholder('Describe the completed result or current progress.')->rows(3)->columnSpanFull(),
                 ])->columns(4),
 
-            Section::make('Klasifikasi Pekerjaan')
-                ->description('Project/operasional dan task/manual adalah dua informasi yang berbeda.')
+            Section::make('Work Classification')
+                ->description('Project or operational context and task or manual source are separate details.')
                 ->schema([
-                    Select::make('source_type')->label('Sumber Pekerjaan')->options([
-                        'task' => 'Dari Task yang Masuk', 'manual' => 'Manual / Inisiatif',
+                    Select::make('source_type')->label('Work Source')->options([
+                        'task' => 'Assigned Task', 'manual' => 'Manual / Initiative',
                     ])->default('manual')->selectablePlaceholder(false)->live()->required(),
-                    Select::make('work_task_id')->label('Source Task')
+                    Select::make('work_task_id')->label('Related Task')
                         ->relationship(
                             name: 'workTask', titleAttribute: 'title',
                             modifyQueryUsing: fn (Builder $query): Builder => $query
@@ -79,8 +79,8 @@ class DailyActivityForm
                                 $set('requester_department_id', $task->ticket->requester_department_id);
                             }
                         })->columnSpanFull(),
-                    Select::make('work_context')->label('Konteks Pekerjaan')->options([
-                        'project' => 'Project', 'operational' => 'Operasional / Non-project',
+                    Select::make('work_context')->label('Work Context')->options([
+                        'project' => 'Project', 'operational' => 'Operational / Non-project',
                     ])->default('operational')->selectablePlaceholder(false)->live()->required(),
                     Select::make('work_project_id')->label('Project')
                         ->relationship(
@@ -92,7 +92,7 @@ class DailyActivityForm
                         ->visible(fn (Get $get): bool => $get('work_context') === 'project')
                         ->required(fn (Get $get): bool => $get('work_context') === 'project')
                         ->dehydrated(fn (Get $get): bool => $get('work_context') === 'project'),
-                    Select::make('activity_category_id')->label('Kategori Operasional')
+                    Select::make('activity_category_id')->label('Operational Category')
                         ->relationship(
                             name: 'activityCategory', titleAttribute: 'name',
                             modifyQueryUsing: fn (Builder $query): Builder => $query->where('is_active', true)->orderBy('name')
@@ -104,22 +104,22 @@ class DailyActivityForm
                         ->dehydrated(fn (Get $get): bool => $get('work_context') === 'operational'),
                 ])->columns(2),
 
-            Section::make('Pemberi Pekerjaan')
-                ->description('Jika berasal dari task, informasi ini dapat terisi otomatis.')
+            Section::make('Work Requester')
+                ->description('This can be filled automatically when the work comes from a task.')
                 ->schema([
-                    Select::make('requester_type')->label('Pekerjaan Diminta Oleh')->options([
-                        'company' => 'Perusahaan / Client', 'division' => 'Divisi', 'individual' => 'Individu',
+                    Select::make('requester_type')->label('Requested By')->options([
+                        'company' => 'Company / Client', 'division' => 'Department', 'individual' => 'Individual',
                     ])->selectablePlaceholder(false)->live()->required(),
-                    TextInput::make('requester_company_name')->label('Nama Perusahaan / Client')->maxLength(255)
+                    TextInput::make('requester_company_name')->label('Company / Client Name')->maxLength(255)
                         ->visible(fn (Get $get): bool => $get('requester_type') === 'company')
                         ->required(fn (Get $get): bool => $get('requester_type') === 'company')
                         ->dehydrated(fn (Get $get): bool => $get('requester_type') === 'company'),
-                    Select::make('requester_department_id')->label('Divisi')
+                    Select::make('requester_department_id')->label('Department')
                         ->relationship('requesterDepartment', 'name', fn (Builder $query) => $query->where('is_active', true))
                         ->searchable()->preload()->visible(fn (Get $get): bool => $get('requester_type') === 'division')
                         ->required(fn (Get $get): bool => $get('requester_type') === 'division')
                         ->dehydrated(fn (Get $get): bool => $get('requester_type') === 'division'),
-                    Select::make('requester_employee_id')->label('Individu')
+                    Select::make('requester_employee_id')->label('Individual')
                         ->relationship('requesterEmployee', 'name', fn (Builder $query) => $query->where('is_active', true))
                         ->searchable()->preload()->visible(fn (Get $get): bool => $get('requester_type') === 'individual')
                         ->required(fn (Get $get): bool => $get('requester_type') === 'individual')

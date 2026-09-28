@@ -116,7 +116,7 @@ class DailyActivityResource extends Resource
         }
 
         throw ValidationException::withMessages([
-            'work_task_id' => 'Task yang dipilih tidak tersedia atau tidak dapat Anda akses.',
+            'work_task_id' => 'The selected task is unavailable or you do not have access to it.',
         ]);
     }
 

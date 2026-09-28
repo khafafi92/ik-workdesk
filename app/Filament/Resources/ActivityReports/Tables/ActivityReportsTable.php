@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\ActivityReports\Tables;
 
 use App\Models\DailyActivity;
+use App\Models\Department;
 use Filament\Forms\Components\DatePicker;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Filament\Tables\Columns\TextColumn;
@@ -18,7 +19,7 @@ class ActivityReportsTable
         return $table
             ->columns([
                 TextColumn::make('work_date')
-                    ->label('Tanggal')
+                    ->label('Date')
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('user.name')
@@ -29,17 +30,17 @@ class ActivityReportsTable
                         fn (DailyActivity $record): string => $record->user?->employee?->department?->name ?? '-'
                     ),
                 TextColumn::make('title')
-                    ->label('Pekerjaan')
+                    ->label('Work')
                     ->searchable()
                     ->wrap()
                     ->description(fn (DailyActivity $record): ?string => $record->result),
                 TextColumn::make('work_context')
-                    ->label('Konteks')
+                    ->label('Context')
                     ->badge()
                     ->formatStateUsing(
                         fn (string $state): string => $state === 'project'
                             ? 'Project'
-                            : 'Operasional'
+                            : 'Operational'
                     )
                     ->description(
                         fn (DailyActivity $record): string => $record->project?->name
@@ -47,7 +48,7 @@ class ActivityReportsTable
                             ?? '-'
                     ),
                 TextColumn::make('source_type')
-                    ->label('Sumber')
+                    ->label('Source')
                     ->badge()
                     ->formatStateUsing(
                         fn (string $state): string => $state === 'task'
@@ -56,38 +57,48 @@ class ActivityReportsTable
                     )
                     ->description(fn (DailyActivity $record): ?string => $record->workTask?->task_no),
                 TextColumn::make('requester_type')
-                    ->label('Diminta Oleh')
+                    ->label('Requested By')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
-                        'company' => 'Perusahaan',
-                        'division' => 'Divisi',
-                        'individual' => 'Individu',
+                        'company' => 'Company',
+                        'division' => 'Department',
+                        'individual' => 'Individual',
                         default => $state,
                     })
                     ->description(fn (DailyActivity $record): string => $record->requester_label),
                 TextColumn::make('duration_minutes')
-                    ->label('Durasi')
+                    ->label('Duration')
                     ->sortable()
                     ->formatStateUsing(fn (DailyActivity $record): string => $record->formatted_duration)
                     ->summarize(
                         Sum::make()
-                            ->label('Total Durasi')
+                            ->label('Total Duration')
                             ->formatStateUsing(function (mixed $state): string {
                                 $minutes = (int) $state;
+                                $hours = intdiv($minutes, 60);
+                                $remainingMinutes = $minutes % 60;
 
-                                return intdiv($minutes, 60).' jam '.($minutes % 60).' menit';
+                                if ($hours === 0) {
+                                    return "{$remainingMinutes} minutes";
+                                }
+
+                                if ($remainingMinutes === 0) {
+                                    return "{$hours} hour".($hours === 1 ? '' : 's');
+                                }
+
+                                return "{$hours} hour".($hours === 1 ? '' : 's')." {$remainingMinutes} minutes";
                             })
                     ),
             ])
             ->filters([
                 Filter::make('period')
-                    ->label('Periode')
+                    ->label('Period')
                     ->schema([
                         DatePicker::make('from')
-                            ->label('Dari')
+                            ->label('From')
                             ->native(false)
                             ->default(now()->startOfMonth()),
                         DatePicker::make('until')
-                            ->label('Sampai')
+                            ->label('Until')
                             ->native(false)
                             ->default(now()->endOfMonth()),
                     ])
@@ -115,16 +126,16 @@ class ActivityReportsTable
                             fn (Builder $employee): Builder => $employee->where('department_id', $departmentId)
                         )
                     ))
-                    ->options(fn (): array => \App\Models\Department::query()->orderBy('name')->pluck('name', 'id')->all())
+                    ->options(fn (): array => Department::query()->orderBy('name')->pluck('name', 'id')->all())
                     ->visible(fn (): bool => static::canViewTeam()),
                 SelectFilter::make('work_context')
-                    ->label('Konteks')
+                    ->label('Context')
                     ->options([
                         'project' => 'Project',
-                        'operational' => 'Operasional / Non-project',
+                        'operational' => 'Operational / Non-project',
                     ]),
                 SelectFilter::make('source_type')
-                    ->label('Sumber')
+                    ->label('Source')
                     ->options([
                         'task' => 'Task',
                         'manual' => 'Manual',
@@ -135,7 +146,7 @@ class ActivityReportsTable
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('activity_category_id')
-                    ->label('Kategori')
+                    ->label('Category')
                     ->relationship('activityCategory', 'name')
                     ->searchable()
                     ->preload(),

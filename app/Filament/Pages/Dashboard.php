@@ -82,32 +82,32 @@ class Dashboard extends BaseDashboard
 
         $ticketStats = $canViewStatistics ? [
             [
-                'label' => 'Total tiket',
+                'label' => 'Total Tickets',
                 'value' => (clone $ticketsQuery)->count(),
                 'tone' => 'default',
             ],
             [
-                'label' => 'Terbuka',
+                'label' => 'Open',
                 'value' => (clone $ticketsQuery)->where('status', 'open')->count(),
                 'tone' => 'danger',
             ],
             [
-                'label' => 'Dikerjakan',
+                'label' => 'In Progress',
                 'value' => (clone $ticketsQuery)->where('status', 'in_progress')->count(),
                 'tone' => 'warning',
             ],
             [
-                'label' => 'Menunggu tanggapan',
+                'label' => 'Awaiting Response',
                 'value' => (clone $ticketsQuery)->where('status', 'waiting_user')->count(),
                 'tone' => 'info',
             ],
             [
-                'label' => 'Selesai',
+                'label' => 'Completed',
                 'value' => (clone $ticketsQuery)->where('status', 'resolved')->count(),
                 'tone' => 'success',
             ],
             [
-                'label' => 'Terlambat',
+                'label' => 'Overdue',
                 'value' => (clone $ticketsQuery)
                     ->whereNotNull('due_at')
                     ->where('due_at', '<', $now)
@@ -119,27 +119,27 @@ class Dashboard extends BaseDashboard
 
         $workStats = $canViewStatistics ? [
             [
-                'label' => 'Total pekerjaan',
+                'label' => 'Total Work Logs',
                 'value' => (clone $workTasksQuery)->count(),
                 'tone' => 'default',
             ],
             [
-                'label' => 'Direncanakan',
+                'label' => 'Planned',
                 'value' => (clone $workTasksQuery)->where('status', 'planned')->count(),
                 'tone' => 'default',
             ],
             [
-                'label' => 'Dikerjakan',
+                'label' => 'In Progress',
                 'value' => (clone $workTasksQuery)->where('status', 'in_progress')->count(),
                 'tone' => 'warning',
             ],
             [
-                'label' => 'Selesai',
+                'label' => 'Completed',
                 'value' => (clone $workTasksQuery)->where('status', 'done')->count(),
                 'tone' => 'success',
             ],
             [
-                'label' => 'Terlambat',
+                'label' => 'Overdue',
                 'value' => (clone $workTasksQuery)
                     ->whereNotNull('due_at')
                     ->where('due_at', '<', $now)
@@ -201,13 +201,13 @@ class Dashboard extends BaseDashboard
     public function formatStatus(?string $status): string
     {
         return match ($status) {
-            'open' => 'Terbuka',
-            'in_progress' => 'Dikerjakan',
-            'waiting_user' => 'Menunggu tanggapan',
-            'resolved', 'done' => 'Selesai',
-            'planned' => 'Direncanakan',
-            'hold' => 'Ditunda',
-            'cancel' => 'Dibatalkan',
+            'open' => 'Open',
+            'in_progress' => 'In Progress',
+            'waiting_user' => 'Awaiting Response',
+            'resolved', 'done' => 'Completed',
+            'planned' => 'Planned',
+            'hold' => 'On Hold',
+            'cancel' => 'Cancelled',
             default => str($status ?? '-')->replace('_', ' ')->title()->toString(),
         };
     }
@@ -231,10 +231,10 @@ class Dashboard extends BaseDashboard
     {
         return match ($type) {
             'service_request' => 'Service Desk',
-            'meeting' => 'Rapat',
-            'task' => 'Tugas',
-            'report' => 'Laporan',
-            'general' => 'Umum',
+            'meeting' => 'Meeting',
+            'task' => 'Task',
+            'report' => 'Report',
+            'general' => 'General',
             default => str($type ?? 'general')
                 ->replace('_', ' ')
                 ->title()
