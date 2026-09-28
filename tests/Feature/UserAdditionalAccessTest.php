@@ -22,6 +22,7 @@ class UserAdditionalAccessTest extends TestCase
             'vehicle-bookings.create',
             'vehicle-bookings.cancel-own',
             'attendance.view',
+            'report.view',
         ] as $code) {
             Permission::query()->updateOrCreate([
                 'code' => $code,
@@ -34,14 +35,16 @@ class UserAdditionalAccessTest extends TestCase
         $user = User::factory()->create(['is_admin' => false]);
         $service = app(UserAdditionalAccessService::class);
 
-        $service->sync($user, ['meeting-room', 'attendance-report']);
+        $service->sync($user, ['meeting-room', 'attendance-report', 'reports']);
 
         $this->assertTrue($user->hasPermission('meeting-bookings.view'));
         $this->assertTrue($user->hasPermission('meeting-bookings.create'));
         $this->assertTrue($user->hasPermission('attendance.view'));
+        $this->assertTrue($user->hasPermission('report.view'));
+        $this->assertFalse($user->hasPermission('report.export'));
         $this->assertFalse($user->hasPermission('vehicle-bookings.view'));
         $this->assertEqualsCanonicalizing(
-            ['meeting-room', 'attendance-report'],
+            ['meeting-room', 'attendance-report', 'reports'],
             $service->stateFor($user)
         );
 
@@ -49,6 +52,7 @@ class UserAdditionalAccessTest extends TestCase
 
         $this->assertFalse($user->hasPermission('meeting-bookings.view'));
         $this->assertFalse($user->hasPermission('attendance.view'));
+        $this->assertFalse($user->hasPermission('report.view'));
     }
 
     public function test_system_administrator_has_optional_access_without_checkboxes(): void
@@ -58,5 +62,6 @@ class UserAdditionalAccessTest extends TestCase
         $this->assertTrue($admin->hasPermission('meeting-bookings.view'));
         $this->assertTrue($admin->hasPermission('vehicle-bookings.view'));
         $this->assertTrue($admin->hasPermission('attendance.view'));
+        $this->assertTrue($admin->hasPermission('report.view'));
     }
 }

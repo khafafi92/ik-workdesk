@@ -21,6 +21,9 @@ class UserAdditionalAccessService
         'attendance-report' => [
             'attendance.view',
         ],
+        'reports' => [
+            'report.view',
+        ],
     ];
 
     public function options(): array
@@ -29,6 +32,7 @@ class UserAdditionalAccessService
             'meeting-room' => 'Meeting Room',
             'vehicle-booking' => 'Vehicle Booking',
             'attendance-report' => 'Attendance Report',
+            'reports' => 'Reports',
         ];
     }
 
