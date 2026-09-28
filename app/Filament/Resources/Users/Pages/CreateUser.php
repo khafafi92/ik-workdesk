@@ -77,6 +77,15 @@ class CreateUser extends CreateRecord
                 (bool) ($data['is_admin'] ?? false);
         }
 
+        if (
+            $data['is_admin'] === true
+            && ! UserResource::canBeSuperAdministrator()
+        ) {
+            throw ValidationException::withMessages([
+                'is_admin' => 'Only one Super Administrator is allowed.',
+            ]);
+        }
+
         return $data;
     }
 

@@ -108,6 +108,15 @@ class EditUser extends EditRecord
             $data['is_admin'] = true;
         }
 
+        if (
+            $data['is_admin'] ?? false
+            && ! UserResource::canBeSuperAdministrator($this->record)
+        ) {
+            throw ValidationException::withMessages([
+                'is_admin' => 'Only one Super Administrator is allowed.',
+            ]);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Super Admin terakhir tidak boleh diturunkan

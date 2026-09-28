@@ -129,7 +129,7 @@ class UserForm
                                 fn (): bool => auth()->user()?->is_admin === true
                             )
                             ->helperText(
-                                'Hanya Super Administrator yang dapat mengubah status ini.'
+                                'Only one Super Administrator is allowed. Only that user can change this status.'
                             ),
                     ])
                     ->columns(2)

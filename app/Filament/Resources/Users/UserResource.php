@@ -51,6 +51,17 @@ class UserResource extends Resource
             ->exists();
     }
 
+    public static function canBeSuperAdministrator(?User $user = null): bool
+    {
+        return ! User::query()
+            ->where('is_admin', true)
+            ->when(
+                $user,
+                fn (Builder $query): Builder => $query->whereKeyNot($user)
+            )
+            ->exists();
+    }
+
     public static function shouldRegisterNavigation(): bool
     {
         return static::currentUserCanManageUsers();
