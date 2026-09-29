@@ -3,9 +3,6 @@
 namespace App\Filament\Resources\Reports;
 
 use App\Exports\ReportExport;
-use App\Filament\Resources\Reports\Pages\ListReportRecords;
-use App\Models\Department;
-use App\Models\Employee;
 use App\Models\Ticket;
 use App\Services\Reports\ReportQueryService;
 use Filament\Forms\Components\DatePicker;
@@ -18,13 +15,24 @@ use Illuminate\Database\Eloquent\Builder;
 class ServiceDeskReportResource extends ReportResource
 {
     protected static ?string $model = Ticket::class;
+
     protected static ?string $slug = 'reports/service-desk';
+
     protected static ?string $navigationLabel = 'Service Desk';
+
     protected static ?string $modelLabel = 'Service Desk Report';
+
     protected static ?string $pluralModelLabel = 'Service Desk Report';
 
-    public static function getNavigationGroup(): ?string { return 'Reports'; }
-    public static function getNavigationSort(): ?int { return 2; }
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Reports';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
+    }
 
     public static function getEloquentQuery(): Builder
     {
@@ -71,6 +79,7 @@ class ServiceDeskReportResource extends ReportResource
         ], function (Ticket $ticket): array {
             $service = app(ReportQueryService::class);
             $sla = $service->sla($ticket);
+
             return [$ticket->ticket_no, $ticket->created_at, $ticket->employee?->name, $ticket->requesterDepartment?->name, $ticket->subject, $ticket->category?->name, $ticket->priority, $ticket->workTasks->pluck('employee.name')->filter()->join(', '), $ticket->status, $ticket->first_response_at, $ticket->resolved_at, $ticket->resolved_at ? $ticket->created_at->diffInMinutes($ticket->resolved_at) : null, $ticket->work_tasks_count, (int) $ticket->work_duration_minutes, str($sla['status'])->replace('_', ' ')->title()];
         }, ['B', 'J', 'K']);
     }
@@ -94,9 +103,4 @@ class ServiceDeskReportResource extends ReportResource
     {
         return ['index' => ListServiceDeskReports::route('/')];
     }
-}
-
-class ListServiceDeskReports extends ListReportRecords
-{
-    protected static string $resource = ServiceDeskReportResource::class;
 }

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Tickets\Schemas;
 use App\Filament\Resources\Tickets\Tables\PermitKblisPickerTable;
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Models\Department;
+use App\Models\LegalSubjectCategory;
 use App\Models\PermitCompany;
 use App\Models\PermitKbli;
 use App\Models\Ticket;
@@ -91,6 +92,8 @@ class TicketForm
                     ->live()
                     ->afterStateUpdated(function (Set $set): void {
                         $set('ticket_category_id', null);
+                        $set('legal_subject_category_id', null);
+                        $set('subject', null);
                         $set('reviewer_department_ids', []);
                     })
                     ->disabled(
@@ -346,8 +349,36 @@ class TicketForm
 
                 TextInput::make('subject')
                     ->label('Subject')
-                    ->required()
+                    ->required(
+                        fn (Get $get, ?Ticket $record): bool => ! self::isLegalDestination($get, $record)
+                            || ($record !== null && blank($record->legal_subject_category_id))
+                    )
                     ->maxLength(255)
+                    ->visible(
+                        fn (Get $get, ?Ticket $record): bool => ! self::isLegalDestination($get, $record)
+                            || ($record !== null && blank($record->legal_subject_category_id))
+                    )
+                    ->columnSpanFull(),
+
+                Select::make('legal_subject_category_id')
+                    ->label('Subject Category')
+                    ->options(fn (): array => LegalSubjectCategory::query()
+                        ->where('is_active', true)
+                        ->orderBy('name')
+                        ->pluck('name', 'id')
+                        ->all())
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->afterStateUpdated(function (mixed $state, Set $set): void {
+                        $set('subject', LegalSubjectCategory::query()->find($state)?->name);
+                    })
+                    ->required(
+                        fn (Get $get, ?Ticket $record): bool => self::isLegalDestination($get, $record)
+                            && ($record === null || filled($get('legal_subject_category_id')))
+                    )
+                    ->visible(fn (Get $get, ?Ticket $record): bool => self::isLegalDestination($get, $record))
+                    ->helperText('Pilih subject dari master Subject Categories.')
                     ->columnSpanFull(),
 
                 Textarea::make('description')
@@ -395,6 +426,7 @@ class TicketForm
                                 'correspondence' => 'Korespondensi',
                                 'company_profile' => 'Company Profile',
                                 'permit_document' => 'Dokumen Perizinan',
+                                'articles_of_association_related_party' => 'AD ART Pihak Terkait',
                                 'other' => 'Dokumen Lainnya',
                             ])
                             ->columns(2)
