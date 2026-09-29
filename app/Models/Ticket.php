@@ -17,6 +17,7 @@ class Ticket extends Model
         'requester_department_id',
         'handler_department_id',
         'ticket_category_id',
+        'legal_subject_category_id',
         'permit_company_id',
         'permit_kbli_id',
         'permit_kbli_unavailable',
@@ -49,6 +50,22 @@ class Ticket extends Model
     protected static function booted(): void
     {
         static::saving(function (Ticket $ticket): void {
+            $isLegalDestination = $ticket->handler_department_id
+                && Department::query()->find($ticket->handler_department_id)?->isLegal();
+
+            if ($isLegalDestination) {
+                $subjectCategory = LegalSubjectCategory::query()
+                    ->whereKey($ticket->legal_subject_category_id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if ($subjectCategory) {
+                    $ticket->subject = $subjectCategory->name;
+                }
+            } else {
+                $ticket->legal_subject_category_id = null;
+            }
+
             $requiresPermit = $ticket->ticket_category_id
                 && TicketCategory::query()
                     ->whereKey($ticket->ticket_category_id)
@@ -128,6 +145,11 @@ class Ticket extends Model
     public function category()
     {
         return $this->belongsTo(TicketCategory::class, 'ticket_category_id');
+    }
+
+    public function legalSubjectCategory()
+    {
+        return $this->belongsTo(LegalSubjectCategory::class);
     }
 
     public function permitCompany()

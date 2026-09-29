@@ -4,16 +4,23 @@ namespace App\Services\Reports;
 
 use App\Models\DailyActivity;
 use App\Models\Ticket;
-use App\Models\WorkTask;
 use App\Models\User;
+use App\Models\WorkTask;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class ReportQueryService
 {
     public function tickets(?User $user = null): Builder
     {
         $user ??= auth()->user();
+
+        $workDurationExpression = match (DB::connection()->getDriverName()) {
+            'pgsql' => 'EXTRACT(EPOCH FROM (work_tasks.completed_at - work_tasks.start_at)) / 60',
+            'sqlite' => '(julianday(work_tasks.completed_at) - julianday(work_tasks.start_at)) * 1440',
+            'mysql', 'mariadb' => 'TIMESTAMPDIFF(MINUTE, work_tasks.start_at, work_tasks.completed_at)',
+        };
 
         $query = Ticket::query()->with([
             'employee.department',
@@ -25,9 +32,8 @@ class ReportQueryService
         ])->withCount('workTasks')
             ->withMin('comments as first_response_at', 'created_at')
             ->selectSub(
-                DailyActivity::query()
-                    ->selectRaw('COALESCE(SUM(daily_activities.duration_minutes), 0)')
-                    ->join('work_tasks', 'work_tasks.id', '=', 'daily_activities.work_task_id')
+                WorkTask::query()
+                    ->selectRaw("COALESCE(SUM(CASE WHEN work_tasks.start_at IS NOT NULL AND work_tasks.completed_at IS NOT NULL THEN {$workDurationExpression} ELSE 0 END), 0)")
                     ->whereColumn('work_tasks.ticket_id', 'tickets.id'),
                 'work_duration_minutes'
             );

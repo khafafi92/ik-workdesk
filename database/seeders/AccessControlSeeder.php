@@ -49,6 +49,18 @@ class AccessControlSeeder extends Seeder
                     'module' => 'Reports',
                     'description' => 'Export operational reports within permitted department scope.',
                 ],
+                [
+                    'name' => 'View LTRO Management',
+                    'code' => 'ltro.view',
+                    'module' => 'LTRO Management',
+                    'description' => 'View LTRO monitoring and reports.',
+                ],
+                [
+                    'name' => 'Manage LTRO Management',
+                    'code' => 'ltro.manage',
+                    'module' => 'LTRO Management',
+                    'description' => 'Create, edit, import, and delete LTRO data.',
+                ],
 
                 [
                     'name' => 'View Attendance',

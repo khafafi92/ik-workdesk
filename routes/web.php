@@ -4,16 +4,39 @@ use App\Http\Controllers\Admin\AttendanceReportDownloadController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\FindingAttachmentDownloadController;
+use App\Http\Controllers\LtroMttrImportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketAttachmentDownloadController;
 use App\Http\Controllers\TicketCommentAttachmentDownloadController;
 use App\Http\Controllers\WorkTaskPermitResultDownloadController;
+use App\Http\Middleware\RequireLtroAccess;
 use App\Http\Middleware\RequireSuperadmin;
+use App\Livewire\AvailabilityLtro1b;
+use App\Livewire\DailyInput;
+use App\Livewire\MttrForm;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::redirect('/ltro', '/ltro/monitoring')->name('home');
+Route::redirect('/ltro/monitoring-legacy', '/ltro/monitoring')->name('monitoring');
+Route::redirect('/ltro/daily-reports', '/panel/ltro-daily-reports')->name('daily.reports.index');
+Route::get('/ltro/daily-input', DailyInput::class)
+    ->middleware(['auth', RequireLtroAccess::class])
+    ->name('daily.input');
+Route::get('/ltro/availability', AvailabilityLtro1b::class)
+    ->middleware(['auth', RequireLtroAccess::class])
+    ->name('availability.ltro-1b');
+Route::redirect('/ltro/records', '/panel/ltro-mttr-records')->name('mttr-records.index');
+Route::post('/ltro/import', LtroMttrImportController::class)
+    ->middleware(['auth', RequireLtroAccess::class])
+    ->name('mttr-records.import');
+
+Route::get('/ltro/monitoring', MttrForm::class)
+    ->middleware(['auth', RequireLtroAccess::class])
+    ->name('ltro.monitoring');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', RequireSuperadmin::class])
