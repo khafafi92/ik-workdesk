@@ -4,9 +4,11 @@ namespace App\Filament\Resources\Tickets\Pages;
 
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Models\WorkTask;
+use App\Services\LegalRequestSchedule;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class EditTicket extends EditRecord
@@ -17,6 +19,17 @@ class EditTicket extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        if (
+            $this->record->handlerDepartment?->isLegal()
+            && filled($data['due_at'] ?? null)
+            && ! Carbon::parse($data['due_at'])->equalTo($this->record->due_at)
+        ) {
+            LegalRequestSchedule::assertMinimumDueAt(
+                $data['due_at'],
+                $this->record->reported_at
+            );
+        }
+
         $this->isLegalResubmission = TicketResource::canReviseRejectedLegalRequest(
             $this->record
         );

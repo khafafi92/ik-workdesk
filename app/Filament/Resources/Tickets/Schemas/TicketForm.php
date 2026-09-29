@@ -10,6 +10,7 @@ use App\Models\PermitCompany;
 use App\Models\PermitKbli;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use App\Services\LegalRequestSchedule;
 use Filament\Actions\Action;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\DateTimePicker;
@@ -26,6 +27,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -90,11 +92,20 @@ class TicketForm
                     ->searchable()
                     ->preload()
                     ->live()
-                    ->afterStateUpdated(function (Set $set): void {
+                    ->afterStateUpdated(function (mixed $state, Get $get, Set $set): void {
                         $set('ticket_category_id', null);
                         $set('legal_subject_category_id', null);
                         $set('subject', null);
                         $set('reviewer_department_ids', []);
+
+                        if (Department::query()->find($state)?->isLegal()) {
+                            $set(
+                                'due_at',
+                                LegalRequestSchedule::minimumDueAt(
+                                    $get('reported_at')
+                                )
+                            );
+                        }
                     })
                     ->disabled(
                         fn (?Ticket $record): bool => $record !== null
@@ -556,10 +567,29 @@ class TicketForm
 
                 DateTimePicker::make('reported_at')
                     ->label('Reported At')
-                    ->default(now()),
+                    ->default(now('Asia/Jakarta'))
+                    ->live()
+                    ->afterStateUpdated(function (mixed $state, Get $get, Set $set, ?Ticket $record): void {
+                        if (! self::isLegalDestination($get, $record)) {
+                            return;
+                        }
+
+                        $minimumDueAt = LegalRequestSchedule::minimumDueAt($state);
+                        $dueAt = $get('due_at');
+
+                        if (blank($dueAt) || Carbon::parse($dueAt)->lt($minimumDueAt)) {
+                            $set('due_at', $minimumDueAt);
+                        }
+                    }),
 
                 DateTimePicker::make('due_at')
-                    ->label('Due At'),
+                    ->label('Due At')
+                    ->minDate(fn (Get $get, ?Ticket $record): ?Carbon => self::isLegalDestination($get, $record)
+                        ? LegalRequestSchedule::minimumDueAt($get('reported_at'))
+                        : null)
+                    ->helperText(fn (Get $get, ?Ticket $record): ?string => self::isLegalDestination($get, $record)
+                        ? 'Permintaan Legal tersedia sebelum 15:00 WIB dan Due At minimal 3 hari setelah Reported At.'
+                        : null),
             ]);
     }
 

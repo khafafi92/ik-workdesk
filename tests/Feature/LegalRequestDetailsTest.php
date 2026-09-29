@@ -7,19 +7,111 @@ use App\Filament\Resources\Tickets\Pages\EditTicket;
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\LegalSubjectCategory;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
 use App\Models\User;
 use App\Models\WorkTask;
+use App\Services\LegalRequestSchedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 class LegalRequestDetailsTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_legal_request_must_be_created_before_3_pm_wib(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-29 15:00:00', 'Asia/Jakarta'));
+
+        try {
+            LegalRequestSchedule::assertCanBeCreated();
+            $this->fail('Permintaan Legal setelah pukul 15:00 harus ditolak.');
+        } catch (ValidationException $exception) {
+            $this->assertSame(
+                'Permintaan ke Legal hanya dapat dibuat sebelum pukul 15:00 WIB.',
+                $exception->errors()['handler_department_id'][0]
+            );
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
+
+    public function test_legal_request_due_at_must_be_at_least_three_days_after_reported_at(): void
+    {
+        $reportedAt = Carbon::parse('2026-09-29 10:30:00', 'Asia/Jakarta');
+
+        $this->assertSame(
+            '2026-10-02 10:30:00',
+            LegalRequestSchedule::minimumDueAt($reportedAt)->format('Y-m-d H:i:s')
+        );
+
+        $this->expectException(ValidationException::class);
+
+        LegalRequestSchedule::assertMinimumDueAt(
+            $reportedAt->copy()->addDays(2),
+            $reportedAt
+        );
+    }
+
+    public function test_legal_request_automatically_uses_a_due_date_three_days_later(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-09-29 10:30:00', 'Asia/Jakarta'));
+
+        try {
+            $legal = Department::query()->create([
+                'code' => 'LEGAL-SCHEDULE',
+                'name' => 'Legal',
+                'is_active' => true,
+            ]);
+            $category = TicketCategory::query()->create([
+                'handler_department_id' => $legal->id,
+                'name' => 'Review Jadwal Legal',
+                'code' => 'LEGAL-SCHEDULE',
+                'workflow_type' => 'single',
+                'is_active' => true,
+            ]);
+            $subjectCategory = LegalSubjectCategory::query()->create([
+                'name' => 'Review Jadwal',
+                'is_active' => true,
+            ]);
+            $requester = User::factory()->create(['is_admin' => true]);
+            Employee::query()->create([
+                'user_id' => $requester->id,
+                'department_id' => $legal->id,
+                'name' => 'Requester Jadwal',
+                'is_active' => true,
+            ]);
+
+            Livewire::actingAs($requester)
+                ->test(CreateTicket::class)
+                ->fillForm([
+                    'handler_department_id' => $legal->id,
+                    'ticket_category_id' => $category->id,
+                    'legal_subject_category_id' => $subjectCategory->id,
+                    'description' => 'Review jadwal kerja sama.',
+                    'legal_background' => 'Latar belakang.',
+                    'legal_objective' => 'Tujuan.',
+                    'legal_desired_scheme' => 'Skema.',
+                ])
+                ->call('create')
+                ->assertHasNoFormErrors();
+
+            $ticket = Ticket::query()->latest('id')->firstOrFail();
+
+            $this->assertSame(
+                '2026-10-02 10:30:00',
+                $ticket->due_at?->format('Y-m-d H:i:s')
+            );
+        } finally {
+            Carbon::setTestNow();
+        }
+    }
 
     public function test_legal_request_details_and_document_types_are_stored(): void
     {

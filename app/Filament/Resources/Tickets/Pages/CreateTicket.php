@@ -3,11 +3,13 @@
 namespace App\Filament\Resources\Tickets\Pages;
 
 use App\Filament\Resources\Tickets\TicketResource;
+use App\Models\Department;
 use App\Models\TaskCategory;
 use App\Models\Ticket;
 use App\Models\TicketAssignment;
 use App\Models\TicketCategory;
 use App\Models\WorkTask;
+use App\Services\LegalRequestSchedule;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -60,7 +62,26 @@ class CreateTicket extends CreateRecord
         $data['ticket_no'] = Ticket::generateRequestNo();
 
         if (empty($data['reported_at'])) {
-            $data['reported_at'] = now();
+            $data['reported_at'] = now('Asia/Jakarta');
+        }
+
+        $handlerDepartment = Department::query()->find(
+            $data['handler_department_id'] ?? null
+        );
+
+        if ($handlerDepartment?->isLegal()) {
+            LegalRequestSchedule::assertCanBeCreated();
+
+            if (blank($data['due_at'])) {
+                $data['due_at'] = LegalRequestSchedule::minimumDueAt(
+                    $data['reported_at']
+                );
+            }
+
+            LegalRequestSchedule::assertMinimumDueAt(
+                $data['due_at'],
+                $data['reported_at']
+            );
         }
 
         /*
