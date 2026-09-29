@@ -11,6 +11,7 @@ use App\Models\WorkTask;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CreateTicket extends CreateRecord
 {
@@ -70,11 +71,20 @@ class CreateTicket extends CreateRecord
 
         $currentEmployee = auth()->user()?->employee;
 
-        if ($currentEmployee) {
-            $data['employee_id'] = $currentEmployee->id;
-            $data['requester_department_id'] =
-                $currentEmployee->department_id;
+        if (! $currentEmployee) {
+            throw ValidationException::withMessages([
+                'employee_id' => 'Akun login harus ditautkan ke master Employee sebelum membuat Service Desk.',
+            ]);
         }
+
+        if (! $currentEmployee->department_id) {
+            throw ValidationException::withMessages([
+                'requester_department_id' => 'Employee requester harus memiliki Department sebelum membuat Service Desk.',
+            ]);
+        }
+
+        $data['employee_id'] = $currentEmployee->id;
+        $data['requester_department_id'] = $currentEmployee->department_id;
 
         return $data;
     }
