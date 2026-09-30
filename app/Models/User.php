@@ -100,6 +100,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->hasMany(DailyActivity::class);
     }
 
+    public function atkRequests(): HasMany
+    {
+        return $this->hasMany(AtkRequest::class, 'requester_id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Role Access

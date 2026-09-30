@@ -28,4 +28,14 @@ class Department extends Model
     {
         return $this->hasMany(Employee::class);
     }
+
+    public function atkBalances()
+    {
+        return $this->hasMany(AtkDepartmentBalance::class);
+    }
+
+    public function atkUsageTransactions()
+    {
+        return $this->hasMany(AtkUsageTransaction::class);
+    }
 }

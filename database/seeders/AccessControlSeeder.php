@@ -61,6 +61,24 @@ class AccessControlSeeder extends Seeder
                     'module' => 'LTRO Management',
                     'description' => 'Create, edit, import, and delete LTRO data.',
                 ],
+                [
+                    'name' => 'Request ATK',
+                    'code' => 'atk.request',
+                    'module' => 'ATK',
+                    'description' => 'Create ATK requests, confirm received items, and record usage.',
+                ],
+                [
+                    'name' => 'Manage ATK',
+                    'code' => 'atk.manage',
+                    'module' => 'ATK',
+                    'description' => 'Manage ATK warehouse stock, requests, and department stock.',
+                ],
+                [
+                    'name' => 'View ATK Reports',
+                    'code' => 'atk.report',
+                    'module' => 'ATK',
+                    'description' => 'View ATK requirement and usage reports.',
+                ],
 
                 [
                     'name' => 'View Attendance',
@@ -295,6 +313,17 @@ class AccessControlSeeder extends Seeder
                         'findings.respond',
                         'comments.create',
                         'reminders.view',
+                        'atk.request',
+                    ],
+                ],
+                [
+                    'name' => 'General Affairs',
+                    'code' => 'general-affairs',
+                    'description' => 'Manage ATK requests, warehouse stock, and usage monitoring.',
+                    'permissions' => [
+                        'atk.request',
+                        'atk.manage',
+                        'atk.report',
                     ],
                 ],
                 [

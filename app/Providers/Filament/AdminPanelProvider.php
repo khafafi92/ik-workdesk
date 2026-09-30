@@ -59,6 +59,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Attendance Report')->collapsed(),
                 NavigationGroup::make()->label('Reports'),
                 NavigationGroup::make()->label('LTRO Management'),
+                NavigationGroup::make()->label('ATK'),
                 NavigationGroup::make()->label('Meeting Room')->collapsed(),
                 NavigationGroup::make()->label('Vehicle Booking')->collapsed(),
                 NavigationGroup::make()->label('Notifications')->collapsed(),
@@ -99,7 +100,7 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => <<<'HTML'
                     <script>
                         (() => {
-                            const navigationVersion = 'reports-navigation-v1'
+                            const navigationVersion = 'atk-navigation-v1'
 
                             if (localStorage.getItem('workdesk-navigation-version') === navigationVersion) {
                                 return
@@ -112,6 +113,7 @@ class AdminPanelProvider extends PanelProvider
                                     'Attendance Report',
                                     'Reports',
                                     'LTRO Management',
+                                    'ATK',
                                     'Meeting Room',
                                     'Vehicle Booking',
                                     'Notifications',
