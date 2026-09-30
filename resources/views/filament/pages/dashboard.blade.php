@@ -71,6 +71,40 @@
             </div>
         @endif
 
+        @if ($data['moduleSummaries'] !== [])
+            <section class="ik-module-summary" aria-labelledby="module-summary-heading">
+                <div class="ik-module-summary-heading">
+                    <div>
+                        <h2 id="module-summary-heading">Ringkasan Modul</h2>
+                        <p>Data operasional sesuai akses Anda.</p>
+                    </div>
+                </div>
+
+                <div class="ik-module-summary-grid">
+                    @foreach ($data['moduleSummaries'] as $module)
+                        <section class="ik-module-summary-card">
+                            <div class="ik-module-summary-card-heading">
+                                <div>
+                                    <h3>{{ $module['title'] }}</h3>
+                                    <p>{{ $module['description'] }}</p>
+                                </div>
+                                <a href="{{ $module['url'] }}" aria-label="Buka {{ $module['title'] }}">Buka modul</a>
+                            </div>
+
+                            <dl class="ik-module-summary-metrics">
+                                @foreach ($module['metrics'] as $metric)
+                                    <div class="ik-module-summary-metric ik-module-summary-metric--{{ $metric['tone'] }}">
+                                        <dt>{{ $metric['label'] }}</dt>
+                                        <dd>{{ $metric['value'] }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        </section>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
         <section class="ik-smart-panel ik-reminder-hub">
             <div class="ik-smart-header">
                 <div class="ik-smart-heading">

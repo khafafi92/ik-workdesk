@@ -2,9 +2,16 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\LtroDailyReports\LtroDailyReportResource;
 use App\Filament\Resources\Reminders\ReminderResource;
 use App\Filament\Resources\Tickets\TicketResource;
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
+use App\Models\AtkItem;
+use App\Models\AtkRequest;
+use App\Models\AttendanceResult;
+use App\Models\LtroAvailabilityRecord;
+use App\Models\LtroDailyReport;
+use App\Models\LtroMttrRecord;
 use App\Models\Reminder;
 use App\Models\Ticket;
 use App\Models\WorkTask;
@@ -39,6 +46,8 @@ class Dashboard extends BaseDashboard
         $now = now();
         $todayStart = $now->copy()->startOfDay();
         $todayEnd = $now->copy()->endOfDay();
+        $monthStart = $now->copy()->startOfMonth();
+        $monthEnd = $now->copy()->endOfMonth();
 
         $ticketsQuery = TicketResource::getEloquentQuery();
         $workTasksQuery = WorkTaskResource::getEloquentQuery();
@@ -171,6 +180,7 @@ class Dashboard extends BaseDashboard
             'ticketStats' => $ticketStats,
             'workStats' => $workStats,
             'reminderStats' => $reminderStats,
+            'moduleSummaries' => $this->getModuleSummaries($todayStart, $todayEnd, $monthStart, $monthEnd),
             'reminderCounts' => $reminderCounts,
             'reminderUrls' => $reminderUrls,
             'todayReminders' => $reminderPreviews['today'],
@@ -196,6 +206,118 @@ class Dashboard extends BaseDashboard
             'workTasksUrl' => WorkTaskResource::canViewAny() ? WorkTaskResource::getUrl('index') : null,
             'remindersUrl' => ReminderResource::getUrl('index'),
         ];
+    }
+
+    /**
+     * @return array<int, array{title: string, description: string, url: string, metrics: array<int, array{label: string, value: int|string, tone: string}>}>
+     */
+    private function getModuleSummaries(
+        CarbonInterface $todayStart,
+        CarbonInterface $todayEnd,
+        CarbonInterface $monthStart,
+        CarbonInterface $monthEnd,
+    ): array {
+        $user = auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        $summaries = [];
+
+        if ($user->hasPermission('atk.manage') || $user->hasPermission('atk.report')) {
+            $summaries[] = [
+                'title' => 'ATK',
+                'description' => 'Permintaan dan ketersediaan stok.',
+                'url' => AtkDashboard::getUrl(),
+                'metrics' => [
+                    [
+                        'label' => 'Perlu diproses',
+                        'value' => AtkRequest::query()->whereIn('status', ['submitted', 'processing'])->count(),
+                        'tone' => 'warning',
+                    ],
+                    [
+                        'label' => 'Stok minimum',
+                        'value' => AtkItem::query()
+                            ->whereNotNull('minimum_stock')
+                            ->whereColumn('current_stock', '<=', 'minimum_stock')
+                            ->count(),
+                        'tone' => 'danger',
+                    ],
+                    [
+                        'label' => 'Selesai bulan ini',
+                        'value' => AtkRequest::query()
+                            ->where('status', 'completed')
+                            ->whereBetween('completed_at', [$monthStart, $monthEnd])
+                            ->count(),
+                        'tone' => 'success',
+                    ],
+                ],
+            ];
+        }
+
+        if ($user->hasPermission('ltro.view')) {
+            $availability = LtroAvailabilityRecord::query()
+                ->whereNotNull('availability_percent')
+                ->latest('report_date')
+                ->value('availability_percent');
+            $downtimeHours = (float) LtroMttrRecord::query()
+                ->where('shutdown_datetime', '>=', now()->subDays(30))
+                ->sum('downtime_minutes') / 60;
+
+            $summaries[] = [
+                'title' => 'LTRO',
+                'description' => 'Laporan operasi dan indikator keandalan.',
+                'url' => LtroDailyReportResource::getUrl('index'),
+                'metrics' => [
+                    [
+                        'label' => 'Laporan bulan ini',
+                        'value' => LtroDailyReport::query()
+                            ->whereBetween('report_date', [$monthStart, $monthEnd])
+                            ->count(),
+                        'tone' => 'default',
+                    ],
+                    [
+                        'label' => 'Downtime 30 hari',
+                        'value' => number_format($downtimeHours, 1, ',', '.').' jam',
+                        'tone' => $downtimeHours > 0 ? 'danger' : 'success',
+                    ],
+                    [
+                        'label' => 'Availability terbaru',
+                        'value' => $availability === null
+                            ? '-'
+                            : number_format((float) $availability, 2, ',', '.').'%',
+                        'tone' => 'info',
+                    ],
+                ],
+            ];
+        }
+
+        if ($user->hasPermission('attendance.view')) {
+            $summaries[] = [
+                'title' => 'Attendance Report',
+                'description' => 'Data absensi yang sudah diimpor.',
+                'url' => AttendanceReportCenter::getUrl(),
+                'metrics' => [
+                    [
+                        'label' => 'Data hari ini',
+                        'value' => AttendanceResult::query()
+                            ->whereBetween('attendance_date', [$todayStart, $todayEnd])
+                            ->count(),
+                        'tone' => 'default',
+                    ],
+                    [
+                        'label' => 'Data bulan ini',
+                        'value' => AttendanceResult::query()
+                            ->whereBetween('attendance_date', [$monthStart, $monthEnd])
+                            ->count(),
+                        'tone' => 'info',
+                    ],
+                ],
+            ];
+        }
+
+        return $summaries;
     }
 
     public function formatStatus(?string $status): string

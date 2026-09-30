@@ -1882,7 +1882,140 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     background: #8a5200 !important;
 }
 
+.ik-dashboard--minimal .ik-module-summary {
+    display: grid;
+    gap: 12px;
+}
+
+.ik-dashboard--minimal .ik-module-summary-heading h2,
+.ik-dashboard--minimal .ik-module-summary-card-heading h3 {
+    margin: 0;
+    color: #172b4d;
+    font-weight: 700;
+}
+
+.ik-dashboard--minimal .ik-module-summary-heading h2 {
+    font-size: 18px;
+}
+
+.ik-dashboard--minimal .ik-module-summary-heading p,
+.ik-dashboard--minimal .ik-module-summary-card-heading p {
+    margin: 4px 0 0;
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.ik-dashboard--minimal .ik-module-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+    gap: 14px;
+}
+
+.ik-dashboard--minimal .ik-module-summary-card {
+    min-width: 0;
+    border: 1px solid var(--ik-border);
+    border-radius: 6px;
+    background: #fff;
+}
+
+.ik-dashboard--minimal .ik-module-summary-card-heading {
+    display: flex;
+    min-width: 0;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--ik-border);
+}
+
+.ik-dashboard--minimal .ik-module-summary-card-heading > div {
+    min-width: 0;
+}
+
+.ik-dashboard--minimal .ik-module-summary-card-heading h3 {
+    font-size: 15px;
+}
+
+.ik-dashboard--minimal .ik-module-summary-card-heading a {
+    flex: 0 0 auto;
+    justify-content: flex-end;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.ik-dashboard--minimal .ik-module-summary-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.75rem), 1fr));
+    margin: 0;
+}
+
+.ik-dashboard--minimal .ik-module-summary-metric {
+    min-width: 0;
+    padding: 14px 16px 16px;
+    border-right: 1px solid var(--ik-border);
+}
+
+.ik-dashboard--minimal .ik-module-summary-metric:last-child {
+    border-right: 0;
+}
+
+.ik-dashboard--minimal .ik-module-summary-metric dt {
+    color: #475569;
+    font-size: 12px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.ik-dashboard--minimal .ik-module-summary-metric dd {
+    margin: 5px 0 0;
+    color: #172b4d;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+}
+
+.ik-dashboard--minimal .ik-module-summary-metric--danger dd {
+    color: #b4233b;
+}
+
+.ik-dashboard--minimal .ik-module-summary-metric--warning dd {
+    color: #8a5200;
+}
+
+.ik-dashboard--minimal .ik-module-summary-metric--success dd {
+    color: #006b46;
+}
+
+.ik-dashboard--minimal .ik-module-summary-metric--info dd {
+    color: #0057b8;
+}
+
 @media (max-width: 760px) {
+    .ik-dashboard--minimal .ik-module-summary-card-heading {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .ik-dashboard--minimal .ik-module-summary-card-heading a {
+        justify-content: flex-start;
+    }
+
+    .ik-dashboard--minimal .ik-module-summary-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .ik-dashboard--minimal .ik-module-summary-metric {
+        border-right: 0;
+        border-bottom: 1px solid var(--ik-border);
+    }
+
+    .ik-dashboard--minimal .ik-module-summary-metric:last-child {
+        border-bottom: 0;
+    }
+
     .ik-dashboard--minimal .ik-panel-header > a {
         width: 100%;
         justify-content: center;
