@@ -184,9 +184,9 @@ class AtkRequestResource extends Resource
                     ->alignCenter(),
                 TextColumn::make('requested_items')
                     ->label('Barang diminta')
-                    ->state(fn (AtkRequest $record): string => static::requestedItemsSummary($record))
+                    ->state(fn (AtkRequest $record): array => static::requestedItemsList($record))
+                    ->listWithLineBreaks()
                     ->wrap()
-                    ->limit(100)
                     ->tooltip(fn (AtkRequest $record): string => static::requestedItemsSummary($record)),
                 TextColumn::make('status')
                     ->label('Status')
@@ -405,7 +405,7 @@ class AtkRequestResource extends Resource
         ];
     }
 
-    private static function requestedItemsSummary(AtkRequest $request): string
+    private static function requestedItemsList(AtkRequest $request): array
     {
         return $request->items
             ->map(fn (AtkRequestItem $item): string => trim(implode(' ', [
@@ -413,7 +413,13 @@ class AtkRequestResource extends Resource
                 number_format((float) $item->qty_requested, 2, ',', '.'),
                 $item->unit,
             ])))
-            ->implode('; ');
+            ->values()
+            ->all();
+    }
+
+    private static function requestedItemsSummary(AtkRequest $request): string
+    {
+        return implode('; ', static::requestedItemsList($request));
     }
 
     private static function statusLabel(string $status): string
