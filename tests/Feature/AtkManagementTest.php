@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Exports\AtkItemImportTemplateExport;
 use App\Exports\AtkReportExport;
+use App\Filament\Resources\AtkRequests\Pages\CreateAtkRequest;
 use App\Models\AtkCategory;
 use App\Models\AtkDepartmentBalance;
 use App\Models\AtkItem;
@@ -21,12 +22,92 @@ use App\Services\AtkWarehouseStockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Maatwebsite\Excel\Facades\Excel;
 use Tests\TestCase;
 
 class AtkManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_authorized_requester_can_submit_a_complete_atk_request_from_the_form(): void
+    {
+        [$requester, $department] = $this->requester();
+        $permission = Permission::query()->where('code', 'atk.request')->firstOrFail();
+        $requester->directPermissions()->attach($permission);
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-CREATE-001',
+            'name' => 'Pulpen Hitam',
+            'unit' => 'PCS',
+            'is_active' => true,
+        ]);
+        $company = PermitCompany::query()->where('code', 'KPMOG')->firstOrFail();
+
+        Livewire::actingAs($requester)
+            ->test(CreateAtkRequest::class)
+            ->fillForm([
+                'purpose' => 'Kebutuhan operasional IT',
+                'permit_company_id' => $company->id,
+                'items' => [[
+                    'atk_item_id' => $item->id,
+                    'qty_requested' => 5,
+                    'unit' => 'PCS',
+                    'requester_note' => 'Untuk IT',
+                ]],
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('atk_requests', [
+            'department_id' => $department->id,
+            'permit_company_id' => $company->id,
+            'purpose' => 'Kebutuhan operasional IT',
+            'status' => 'submitted',
+        ]);
+        $this->assertDatabaseHas('atk_request_items', [
+            'atk_item_id' => $item->id,
+            'qty_requested' => 5,
+            'unit' => 'PCS',
+        ]);
+    }
+
+    public function test_system_administrator_without_employee_can_select_the_requesting_department(): void
+    {
+        $administrator = User::factory()->create(['is_admin' => true]);
+        $department = Department::query()->create([
+            'code' => 'IT',
+            'name' => 'Information Technology',
+            'is_active' => true,
+        ]);
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-ADMIN-001',
+            'name' => 'Kertas',
+            'unit' => 'RIM',
+            'is_active' => true,
+        ]);
+        $company = PermitCompany::query()->where('code', 'KPMOG')->firstOrFail();
+
+        Livewire::actingAs($administrator)
+            ->test(CreateAtkRequest::class)
+            ->fillForm([
+                'purpose' => 'Kebutuhan administrasi',
+                'requester_department_id' => $department->id,
+                'permit_company_id' => $company->id,
+                'items' => [[
+                    'atk_item_id' => $item->id,
+                    'qty_requested' => 2,
+                    'unit' => 'RIM',
+                ]],
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('atk_requests', [
+            'requester_id' => $administrator->id,
+            'department_id' => $department->id,
+            'status' => 'submitted',
+        ]);
+    }
 
     public function test_partial_issue_receive_and_usage_keep_each_stock_ledger_correct(): void
     {

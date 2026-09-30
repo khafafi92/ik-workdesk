@@ -7,12 +7,14 @@ use App\Filament\Resources\AtkRequests\Pages\ListAtkRequests;
 use App\Models\AtkItem;
 use App\Models\AtkRequest;
 use App\Models\AtkRequestItem;
+use App\Models\Department;
 use App\Models\PermitCompany;
 use App\Services\AtkDepartmentStockService;
 use App\Services\AtkWarehouseStockService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
+use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -60,6 +62,22 @@ class AtkRequestResource extends Resource
                         ->default(now()->toDateString())
                         ->disabled()
                         ->dehydrated(false),
+                    Select::make('requester_department_id')
+                        ->label('Departemen peminta')
+                        ->options(fn (): array => Department::query()
+                            ->where('is_active', true)
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->all())
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->visible(fn (): bool => static::canChooseRequesterDepartment())
+                        ->helperText('Akun Anda belum terhubung ke employee. Pilih department asal permintaan ini.'),
+                    Placeholder::make('employee_department_notice')
+                        ->label('Departemen peminta')
+                        ->content('Akun belum terhubung ke employee dan tidak dapat memilih department. Hubungkan akun melalui User Management sebelum membuat permintaan ATK.')
+                        ->visible(fn (): bool => static::hasMissingEmployeeDepartment()),
                     Textarea::make('purpose')
                         ->label('Keperluan')
                         ->required()
@@ -295,6 +313,24 @@ class AtkRequestResource extends Resource
     public static function canManage(): bool
     {
         return auth()->user()?->hasPermission('atk.manage') === true;
+    }
+
+    public static function canChooseRequesterDepartment(): bool
+    {
+        $user = auth()->user();
+        $user?->loadMissing('employee');
+
+        return $user?->employee?->department_id === null
+            && ($user?->is_admin === true || $user?->hasRole('system-admin') === true);
+    }
+
+    public static function hasMissingEmployeeDepartment(): bool
+    {
+        $user = auth()->user();
+        $user?->loadMissing('employee');
+
+        return $user?->employee?->department_id === null
+            && ! static::canChooseRequesterDepartment();
     }
 
     public static function getNavigationGroup(): ?string

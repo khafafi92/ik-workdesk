@@ -16,7 +16,11 @@ class CreateAtkRequest extends CreateRecord
     {
         $user = auth()->user();
         $user?->loadMissing('employee');
-        $departmentId = $user?->employee?->department_id;
+        $departmentId = $user?->employee?->department_id
+            ?? (AtkRequestResource::canChooseRequesterDepartment()
+                ? ($data['requester_department_id'] ?? null)
+                : null);
+        unset($data['requester_department_id']);
 
         if (! $user || ! $departmentId) {
             throw ValidationException::withMessages([
