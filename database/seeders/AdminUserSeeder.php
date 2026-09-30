@@ -38,6 +38,7 @@ class AdminUserSeeder extends Seeder
                 'name' => $credentials['name'],
                 'password' => Hash::make($credentials['password']),
                 'is_admin' => true,
+                'access_level' => 'system-admin',
             ]
         );
     }

@@ -6,7 +6,7 @@ use App\Filament\Resources\Users\UserResource;
 use App\Models\Employee;
 use App\Models\Role;
 use App\Models\User;
-use App\Services\RoleAssignmentService;
+use App\Services\UserAccessHierarchyService;
 use App\Services\UserAdditionalAccessService;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
@@ -18,7 +18,7 @@ class EditUser extends EditRecord
 
     protected ?int $selectedEmployeeId = null;
 
-    protected array $selectedRoleIds = [];
+    protected string $selectedAccessLevel = UserAccessHierarchyService::REQUESTER;
 
     protected array $selectedAdditionalAccess = [];
 
@@ -29,12 +29,8 @@ class EditUser extends EditRecord
             ->employee()
             ->value('id');
 
-        $data['role_ids'] = $this->record
-            ->roles()
-            ->orderBy('roles.id')
-            ->pluck('roles.id')
-            ->map(fn ($id): int => (int) $id)
-            ->all();
+        $data['access_level'] = app(UserAccessHierarchyService::class)
+            ->levelFor($this->record);
         $data['additional_access'] = app(UserAdditionalAccessService::class)
             ->stateFor($this->record);
 
@@ -60,33 +56,21 @@ class EditUser extends EditRecord
 
         unset($data['employee_id']);
 
-        $roleIds = app(RoleAssignmentService::class)
-            ->filterAssignableRoleIds(
-                $actor,
-                (array) ($data['role_ids'] ?? [])
-            );
+        $this->selectedAccessLevel = (string) (
+            $data['access_level'] ?? UserAccessHierarchyService::REQUESTER
+        );
 
-        $requestedRoleIds = collect((array) ($data['role_ids'] ?? []))
-            ->map(fn ($id): int => (int) $id)
-            ->filter()
-            ->unique()
-            ->values()
-            ->all();
-
-        if ($requestedRoleIds === []) {
-            $roleIds = [Role::query()->where('code', 'requester')->value('id')];
-        }
-
-        if ($roleIds === [] || in_array(null, $roleIds, true) || count($roleIds) !== max(1, count($requestedRoleIds))) {
+        if (! app(UserAccessHierarchyService::class)->canAssign($actor, $this->selectedAccessLevel)) {
             throw ValidationException::withMessages([
-                'role_ids' => 'Pilih role yang tersedia dan dapat Anda berikan.',
+                'access_level' => 'Level akses tidak tersedia atau tidak dapat Anda berikan.',
             ]);
         }
 
-        $this->selectedRoleIds = $roleIds;
-        unset($data['role_ids']);
-
-        $this->selectedAdditionalAccess = (array) ($data['additional_access'] ?? []);
+        $this->selectedAdditionalAccess = app(UserAdditionalAccessService::class)
+            ->validateForLevel(
+                $this->selectedAccessLevel,
+                (array) ($data['additional_access'] ?? [])
+            );
         unset($data['additional_access']);
 
         /*
@@ -110,6 +94,11 @@ class EditUser extends EditRecord
             && (int) $actor->id === (int) $this->record->id
         ) {
             $data['is_admin'] = true;
+        }
+
+        if (($data['is_admin'] ?? false) === true) {
+            $this->selectedAccessLevel = 'system-admin';
+            $data['access_level'] = 'system-admin';
         }
 
         if (
@@ -155,7 +144,10 @@ class EditUser extends EditRecord
     {
         $actor = auth()->user();
 
-        $this->record->roles()->sync($this->selectedRoleIds);
+        app(UserAccessHierarchyService::class)->syncPrimaryRole(
+            $this->record,
+            $this->selectedAccessLevel
+        );
         app(UserAdditionalAccessService::class)->sync(
             $this->record,
             $this->selectedAdditionalAccess

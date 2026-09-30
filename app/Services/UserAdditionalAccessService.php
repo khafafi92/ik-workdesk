@@ -65,6 +65,49 @@ class UserAdditionalAccessService
         ],
     ];
 
+    private const ACCESS_BY_LEVEL = [
+        'system-admin' => [
+            'atk-request', 'atk-management', 'daily-report', 'ltro',
+            'meeting-room', 'meeting-room-management', 'vehicle-booking',
+            'vehicle-booking-management', 'attendance-report',
+            'attendance-management', 'reports', 'master-data',
+        ],
+        'administrator' => [
+            'atk-request', 'atk-management', 'daily-report', 'ltro',
+            'meeting-room', 'meeting-room-management', 'vehicle-booking',
+            'vehicle-booking-management', 'attendance-report',
+            'attendance-management', 'reports', 'master-data',
+        ],
+        'admin' => [
+            'atk-request', 'atk-management', 'daily-report', 'ltro',
+            'meeting-room', 'meeting-room-management', 'vehicle-booking',
+            'vehicle-booking-management', 'attendance-report',
+            'attendance-management', 'reports', 'master-data',
+        ],
+        'department-manager' => [
+            'atk-request', 'daily-report', 'ltro', 'meeting-room',
+            'vehicle-booking', 'attendance-report', 'reports', 'master-data',
+        ],
+        'supervisor' => [
+            'atk-request', 'daily-report', 'meeting-room', 'vehicle-booking',
+            'attendance-report', 'master-data',
+        ],
+        'general-affairs' => [
+            'atk-request', 'atk-management', 'meeting-room', 'vehicle-booking',
+            'attendance-report', 'reports', 'master-data',
+        ],
+        'attendance-operator' => [
+            'meeting-room', 'vehicle-booking', 'attendance-management', 'reports',
+        ],
+        'cbo' => [
+            'daily-report', 'reports',
+        ],
+        'requester' => [
+            'atk-request', 'meeting-room', 'vehicle-booking',
+            'attendance-report', 'master-data',
+        ],
+    ];
+
     public function options(): array
     {
         return [
@@ -81,6 +124,29 @@ class UserAdditionalAccessService
             'attendance-management' => 'Attendance Reports — Upload dan Kelola',
             'master-data' => 'Master Data dan turunannya',
         ];
+    }
+
+    public function optionsForLevel(string $level): array
+    {
+        $allowedGroups = self::ACCESS_BY_LEVEL[$level] ?? [];
+
+        return array_intersect_key($this->options(), array_flip($allowedGroups));
+    }
+
+    public function validateForLevel(string $level, array $accessGroups): array
+    {
+        $selectedGroups = collect($accessGroups)
+            ->filter(fn ($group): bool => is_string($group))
+            ->unique()
+            ->values()
+            ->all();
+        $allowedGroups = array_keys($this->optionsForLevel($level));
+
+        if (array_diff($selectedGroups, $allowedGroups) !== []) {
+            abort(422, 'Akses tambahan tidak sesuai dengan level user yang dipilih.');
+        }
+
+        return $selectedGroups;
     }
 
     public function stateFor(User $user): array

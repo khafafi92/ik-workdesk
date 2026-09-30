@@ -3,15 +3,15 @@
 namespace App\Filament\Resources\Users\Schemas;
 
 use App\Models\Employee;
-use App\Models\Role;
 use App\Models\User;
-use App\Services\RoleAssignmentService;
+use App\Services\UserAccessHierarchyService;
 use App\Services\UserAdditionalAccessService;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
@@ -135,26 +135,37 @@ class UserForm
                     ->columns(2)
                     ->columnSpanFull(),
 
-                Section::make('Pilih Role')
+                Section::make('Level Akses')
                     ->description(
-                        'Pilih level dasar. Jika tidak dipilih, user menjadi Requester dengan akses Service Desk saja.'
+                        'Pilih satu level utama. Level menentukan batas menu yang dapat diberikan kepada user.'
                     )
                     ->schema([
-                        CheckboxList::make('role_ids')
-                            ->label('Role')
-                            ->hiddenLabel()
+                        Select::make('access_level')
+                            ->label('Level Utama')
                             ->options(function (): array {
-                                return app(RoleAssignmentService::class)
-                                    ->constrainAssignableRoles(
-                                        Role::query(),
-                                        auth()->user()
-                                    )
-                                    ->orderBy('name')
-                                    ->pluck('name', 'id')
-                                    ->all();
+                                return app(UserAccessHierarchyService::class)
+                                    ->optionsFor(auth()->user());
                             })
-                            ->columns(2)
-                            ->bulkToggleable()
+                            ->default(UserAccessHierarchyService::REQUESTER)
+                            ->required()
+                            ->native(false)
+                            ->live()
+                            ->afterStateUpdated(function (mixed $state, Get $get, Set $set): void {
+                                $allowedGroups = array_keys(
+                                    app(UserAdditionalAccessService::class)->optionsForLevel(
+                                        $state ?: UserAccessHierarchyService::REQUESTER
+                                    )
+                                );
+
+                                $set(
+                                    'additional_access',
+                                    array_values(array_intersect(
+                                        (array) $get('additional_access'),
+                                        $allowedGroups
+                                    ))
+                                );
+                            })
+                            ->helperText('Sys Administrator adalah satu-satunya level dengan akses penuh.')
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -185,15 +196,19 @@ class UserForm
 
                 Section::make('Akses Tambahan')
                     ->description(
-                        'Pilih menu yang boleh dibuka user ini. Pilihan ini dapat diberikan juga kepada Requester tanpa mengubah level dasarnya. Sys Administrator selalu memiliki seluruh akses.'
+                        'Pilih hanya menu yang diperlukan. Bila Level Utama diubah, pilihan yang tidak sesuai akan dihapus otomatis.'
                     )
                     ->schema([
                         CheckboxList::make('additional_access')
                             ->label('Akses Tambahan')
                             ->hiddenLabel()
-                            ->options(
-                                fn (): array => app(UserAdditionalAccessService::class)->options()
-                            )
+                            ->options(function (Get $get): array {
+                                return app(UserAdditionalAccessService::class)
+                                    ->optionsForLevel(
+                                        $get('access_level')
+                                        ?: UserAccessHierarchyService::REQUESTER
+                                    );
+                            })
                             ->columns(2)
                             ->columnSpanFull(),
                     ])

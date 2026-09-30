@@ -19,6 +19,7 @@ use Illuminate\Notifications\Notifiable;
     'email',
     'password',
     'is_admin',
+    'access_level',
 ])]
 #[Hidden([
     'password',
