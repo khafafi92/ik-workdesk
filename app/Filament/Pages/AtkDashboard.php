@@ -2,8 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\AtkItems\AtkItemResource;
+use App\Filament\Resources\AtkRequests\AtkRequestResource;
 use App\Models\AtkItem;
 use App\Models\AtkRequest;
+use App\Models\AtkRequestItem;
 use BackedEnum;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
@@ -32,16 +35,58 @@ class AtkDashboard extends Page
     protected function getViewData(): array
     {
         return [
-            'submitted' => AtkRequest::query()->whereIn('status', ['submitted', 'processing'])->count(),
-            'partial' => AtkRequest::query()->where('status', 'partially_fulfilled')->count(),
+            'newRequests' => AtkRequest::query()->where('status', 'submitted')->count(),
+            'waitingProcurement' => AtkRequestItem::query()->where('status', 'waiting_procurement')->count(),
+            'readyToIssue' => AtkRequestItem::query()->where('status', 'ready')->count(),
+            'awaitingReceipt' => AtkRequestItem::query()->where('status', 'issued')
+                ->whereColumn('qty_received', '<', 'qty_issued')
+                ->count(),
             'lowStock' => AtkItem::query()
                 ->whereNotNull('minimum_stock')
                 ->whereColumn('current_stock', '<=', 'minimum_stock')
                 ->count(),
-            'completedThisMonth' => AtkRequest::query()
-                ->where('status', 'completed')
-                ->whereBetween('completed_at', [now()->startOfMonth(), now()->endOfMonth()])
-                ->count(),
+            'pendingRequests' => AtkRequest::query()
+                ->with(['requester', 'department', 'company', 'items.item'])
+                ->whereIn('status', ['submitted', 'processing', 'partially_fulfilled'])
+                ->latest('submitted_at')
+                ->limit(5)
+                ->get(),
+            'lowStockItems' => AtkItem::query()
+                ->whereNotNull('minimum_stock')
+                ->whereColumn('current_stock', '<=', 'minimum_stock')
+                ->orderBy('current_stock')
+                ->orderBy('name')
+                ->limit(5)
+                ->get(),
+            'requestsUrl' => AtkRequestResource::canViewAny()
+                ? AtkRequestResource::getUrl('index')
+                : null,
+            'itemsUrl' => AtkItemResource::canViewAny()
+                ? AtkItemResource::getUrl('index')
+                : null,
         ];
+    }
+
+    public function requestItemSummary(AtkRequest $request): string
+    {
+        return $request->items
+            ->map(fn (AtkRequestItem $item): string => trim(implode(' ', [
+                $item->item?->name,
+                number_format((float) $item->qty_requested, 2, ',', '.'),
+                $item->unit,
+            ])))
+            ->implode('; ');
+    }
+
+    public function requestStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'submitted' => 'Baru, perlu ditinjau GA',
+            'processing' => 'Sedang diproses',
+            'partially_fulfilled' => 'Sebagian dipenuhi',
+            'completed' => 'Selesai',
+            'cancelled' => 'Dibatalkan',
+            default => str($status)->replace('_', ' ')->title()->toString(),
+        };
     }
 }

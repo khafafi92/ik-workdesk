@@ -182,10 +182,16 @@ class AtkRequestResource extends Resource
                     ->label('Item')
                     ->counts('items')
                     ->alignCenter(),
+                TextColumn::make('requested_items')
+                    ->label('Barang diminta')
+                    ->state(fn (AtkRequest $record): string => static::requestedItemsSummary($record))
+                    ->wrap()
+                    ->limit(100)
+                    ->tooltip(fn (AtkRequest $record): string => static::requestedItemsSummary($record)),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString())
+                    ->formatStateUsing(fn (string $state): string => static::statusLabel($state))
                     ->color(fn (string $state): string => match ($state) {
                         'completed' => 'success',
                         'partially_fulfilled', 'processing' => 'warning',
@@ -289,7 +295,7 @@ class AtkRequestResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        $query = parent::getEloquentQuery()->with(['requester', 'department', 'company']);
+        $query = parent::getEloquentQuery()->with(['requester', 'department', 'company', 'items.item']);
         $user = auth()->user();
 
         if (! $user) {
@@ -397,6 +403,29 @@ class AtkRequestResource extends Resource
             'completed' => 'Completed',
             'cancelled' => 'Cancelled',
         ];
+    }
+
+    private static function requestedItemsSummary(AtkRequest $request): string
+    {
+        return $request->items
+            ->map(fn (AtkRequestItem $item): string => trim(implode(' ', [
+                $item->item?->name,
+                number_format((float) $item->qty_requested, 2, ',', '.'),
+                $item->unit,
+            ])))
+            ->implode('; ');
+    }
+
+    private static function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'submitted' => 'Baru',
+            'processing' => 'Diproses',
+            'partially_fulfilled' => 'Sebagian dipenuhi',
+            'completed' => 'Selesai',
+            'cancelled' => 'Dibatalkan',
+            default => str($status)->replace('_', ' ')->title()->toString(),
+        };
     }
 
     private static function success(string $title): void

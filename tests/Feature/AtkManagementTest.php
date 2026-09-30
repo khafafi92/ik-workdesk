@@ -109,6 +109,39 @@ class AtkManagementTest extends TestCase
         ]);
     }
 
+    public function test_atk_dashboard_and_request_list_show_who_requested_each_item(): void
+    {
+        [$requester, $department] = $this->requester();
+        $manager = User::factory()->create(['is_admin' => true]);
+        $request = $this->request($requester, $department);
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-VISIBLE-001',
+            'name' => 'Pulpen Hitam',
+            'unit' => 'PCS',
+            'is_active' => true,
+        ]);
+        AtkRequestItem::query()->create([
+            'atk_request_id' => $request->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 5,
+            'unit' => 'PCS',
+        ]);
+
+        $this->actingAs($manager)
+            ->get('/panel/atk-dashboard')
+            ->assertOk()
+            ->assertSeeText('Permintaan yang perlu ditindak')
+            ->assertSeeText($requester->name)
+            ->assertSeeText('Pulpen Hitam')
+            ->assertSeeText('Belum ditinjau oleh GA.');
+
+        $this->actingAs($manager)
+            ->get('/panel/atk-requests')
+            ->assertOk()
+            ->assertSeeText('Barang diminta')
+            ->assertSeeText('Pulpen Hitam');
+    }
+
     public function test_partial_issue_receive_and_usage_keep_each_stock_ledger_correct(): void
     {
         [$requester, $department] = $this->requester();
