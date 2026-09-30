@@ -133,7 +133,7 @@ class AtkManagementTest extends TestCase
             ->assertSeeText('Permintaan yang perlu ditindak')
             ->assertSeeText($requester->name)
             ->assertSeeText('Pulpen Hitam')
-            ->assertSeeText('Belum ditinjau oleh GA.');
+            ->assertSeeText('Perlu ditinjau GA');
 
         $this->actingAs($manager)
             ->get('/panel/atk-requests')

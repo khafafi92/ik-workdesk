@@ -2,7 +2,6 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Resources\AtkItems\AtkItemResource;
 use App\Filament\Resources\AtkRequests\AtkRequestResource;
 use App\Models\AtkItem;
 use App\Models\AtkRequest;
@@ -49,20 +48,13 @@ class AtkDashboard extends Page
                 ->with(['requester', 'department', 'company', 'items.item'])
                 ->whereIn('status', ['submitted', 'processing', 'partially_fulfilled'])
                 ->latest('submitted_at')
-                ->limit(5)
+                ->limit(10)
                 ->get(),
-            'lowStockItems' => AtkItem::query()
-                ->whereNotNull('minimum_stock')
-                ->whereColumn('current_stock', '<=', 'minimum_stock')
-                ->orderBy('current_stock')
-                ->orderBy('name')
-                ->limit(5)
-                ->get(),
+            'pendingRequestCount' => AtkRequest::query()
+                ->whereIn('status', ['submitted', 'processing', 'partially_fulfilled'])
+                ->count(),
             'requestsUrl' => AtkRequestResource::canViewAny()
                 ? AtkRequestResource::getUrl('index')
-                : null,
-            'itemsUrl' => AtkItemResource::canViewAny()
-                ? AtkItemResource::getUrl('index')
                 : null,
         ];
     }
