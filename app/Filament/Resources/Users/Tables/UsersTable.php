@@ -59,7 +59,7 @@ class UsersTable
                     ->copyable(),
 
                 IconColumn::make('is_admin')
-                    ->label('Administrator')
+                    ->label('Sys Administrator')
                     ->boolean(),
 
                 TextColumn::make('created_at')

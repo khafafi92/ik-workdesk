@@ -64,7 +64,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Vehicle Booking')->collapsed(),
                 NavigationGroup::make()->label('Notifications')->collapsed(),
                 NavigationGroup::make()->label('Service Desk'),
-                NavigationGroup::make()->label('Tasks'),
+                NavigationGroup::make()->label('Daily Report'),
             ])
             ->navigationItems([
                 NavigationItem::make('Internal 9')
@@ -100,7 +100,7 @@ class AdminPanelProvider extends PanelProvider
                 fn (): string => <<<'HTML'
                     <script>
                         (() => {
-                            const navigationVersion = 'atk-navigation-v1'
+                            const navigationVersion = 'menu-access-navigation-v1'
 
                             if (localStorage.getItem('workdesk-navigation-version') === navigationVersion) {
                                 return
@@ -118,7 +118,7 @@ class AdminPanelProvider extends PanelProvider
                                     'Vehicle Booking',
                                     'Notifications',
                                     'Service Desk',
-                                    'Tasks',
+                                    'Daily Report',
                                 ]),
                             )
                             localStorage.setItem('workdesk-navigation-version', navigationVersion)

@@ -120,7 +120,7 @@ class UserForm
                             ),
 
                         Toggle::make('is_admin')
-                            ->label('Super Administrator')
+                            ->label('Sys Administrator')
                             ->default(false)
                             ->visible(
                                 fn (): bool => auth()->user()?->is_admin === true
@@ -129,7 +129,7 @@ class UserForm
                                 fn (): bool => auth()->user()?->is_admin === true
                             )
                             ->helperText(
-                                'Only one Super Administrator is allowed. Only that user can change this status.'
+                                'Hanya satu Sys Administrator yang diperbolehkan. Hanya akun tersebut yang dapat mengubah status ini.'
                             ),
                     ])
                     ->columns(2)
@@ -137,7 +137,7 @@ class UserForm
 
                 Section::make('Pilih Role')
                     ->description(
-                        'Pilih satu atau beberapa role. Akses user merupakan gabungan dari seluruh role yang dipilih.'
+                        'Pilih level dasar. Jika tidak dipilih, user menjadi Requester dengan akses Service Desk saja.'
                     )
                     ->schema([
                         CheckboxList::make('role_ids')
@@ -155,7 +155,6 @@ class UserForm
                             })
                             ->columns(2)
                             ->bulkToggleable()
-                            ->required()
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -186,7 +185,7 @@ class UserForm
 
                 Section::make('Akses Tambahan')
                     ->description(
-                        'Aktifkan hanya menu tambahan yang dibutuhkan user. System Administrator selalu memiliki seluruh akses.'
+                        'Pilih menu yang boleh dibuka user ini. Pilihan ini dapat diberikan juga kepada Requester tanpa mengubah level dasarnya. Sys Administrator selalu memiliki seluruh akses.'
                     )
                     ->schema([
                         CheckboxList::make('additional_access')
@@ -195,7 +194,7 @@ class UserForm
                             ->options(
                                 fn (): array => app(UserAdditionalAccessService::class)->options()
                             )
-                            ->columns(3)
+                            ->columns(2)
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),

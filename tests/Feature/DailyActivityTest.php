@@ -8,6 +8,7 @@ use App\Models\ActivityCategory;
 use App\Models\DailyActivity;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\Permission;
 use App\Models\User;
 use App\Models\WorkProject;
 use App\Services\DailyActivityDataService;
@@ -22,6 +23,7 @@ class DailyActivityTest extends TestCase
     public function test_user_can_open_the_daily_activity_form(): void
     {
         $user = User::factory()->create();
+        $this->grantDailyAccess($user);
 
         $this->actingAs($user)
             ->get('/panel/daily-activities/create')
@@ -35,6 +37,7 @@ class DailyActivityTest extends TestCase
     public function test_daily_activity_list_uses_english_interface_labels(): void
     {
         $user = User::factory()->create();
+        $this->grantDailyAccess($user);
         $this->createActivity($user, 'Routine work');
 
         $this->actingAs($user)
@@ -54,6 +57,7 @@ class DailyActivityTest extends TestCase
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
+        $this->grantDailyAccess($user);
 
         $ownActivity = $this->createActivity($user, 'Pekerjaan saya');
         $otherActivity = $this->createActivity($otherUser, 'Pekerjaan orang lain');
@@ -157,6 +161,7 @@ class DailyActivityTest extends TestCase
     {
         $user = User::factory()->create();
         $otherUser = User::factory()->create();
+        $this->grantDailyAccess($user);
         $this->createActivity($user, 'Own');
         $this->createActivity($otherUser, 'Other');
 
@@ -196,5 +201,15 @@ class DailyActivityTest extends TestCase
             'requester_type' => 'company',
             'requester_company_name' => 'Internal',
         ], $attributes));
+    }
+
+    private function grantDailyAccess(User $user): void
+    {
+        $permission = Permission::query()->updateOrCreate(
+            ['code' => 'worklogs.view'],
+            ['name' => 'View Work Logs', 'is_active' => true],
+        );
+
+        $user->directPermissions()->syncWithoutDetaching([$permission->id]);
     }
 }

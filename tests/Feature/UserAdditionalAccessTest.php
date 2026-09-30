@@ -3,8 +3,10 @@
 namespace Tests\Feature;
 
 use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use App\Services\UserAdditionalAccessService;
+use Database\Seeders\AccessControlSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -23,6 +25,7 @@ class UserAdditionalAccessTest extends TestCase
             'vehicle-bookings.cancel-own',
             'attendance.view',
             'report.view',
+            'report.export',
         ] as $code) {
             Permission::query()->updateOrCreate([
                 'code' => $code,
@@ -41,7 +44,7 @@ class UserAdditionalAccessTest extends TestCase
         $this->assertTrue($user->hasPermission('meeting-bookings.create'));
         $this->assertTrue($user->hasPermission('attendance.view'));
         $this->assertTrue($user->hasPermission('report.view'));
-        $this->assertFalse($user->hasPermission('report.export'));
+        $this->assertTrue($user->hasPermission('report.export'));
         $this->assertFalse($user->hasPermission('vehicle-bookings.view'));
         $this->assertEqualsCanonicalizing(
             ['meeting-room', 'attendance-report', 'reports'],
@@ -53,6 +56,23 @@ class UserAdditionalAccessTest extends TestCase
         $this->assertFalse($user->hasPermission('meeting-bookings.view'));
         $this->assertFalse($user->hasPermission('attendance.view'));
         $this->assertFalse($user->hasPermission('report.view'));
+    }
+
+    public function test_requester_can_receive_selected_master_and_atk_menu_access_without_changing_role(): void
+    {
+        app(AccessControlSeeder::class)->run();
+        $user = User::factory()->create(['is_admin' => false]);
+        $user->roles()->attach(Role::query()->where('code', 'requester')->value('id'));
+
+        $this->assertTrue($user->hasPermission('tickets.create'));
+        $this->assertFalse($user->hasPermission('worklogs.view'));
+        $this->assertFalse($user->hasPermission('master-data.manage'));
+
+        app(UserAdditionalAccessService::class)->sync($user, ['master-data', 'atk-request']);
+
+        $this->assertTrue($user->hasPermission('master-data.manage'));
+        $this->assertTrue($user->hasPermission('atk.request'));
+        $this->assertFalse($user->hasPermission('atk.manage'));
     }
 
     public function test_system_administrator_has_optional_access_without_checkboxes(): void

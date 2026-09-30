@@ -257,10 +257,25 @@ class AccessControlSeeder extends Seeder
 
             $roles = [
                 [
-                    'name' => 'System Administrator',
+                    'name' => 'Sys Administrator',
                     'code' => 'system-admin',
                     'description' => 'Full access to every module.',
                     'permissions' => ['*'],
+                ],
+                [
+                    'name' => 'Administrator',
+                    'code' => 'administrator',
+                    'description' => 'Manage user accounts and assign menu access, without Sys Administrator authority.',
+                    'permissions' => [
+                        'users.manage',
+                        'roles.manage',
+                    ],
+                ],
+                [
+                    'name' => 'Admin',
+                    'code' => 'admin',
+                    'description' => 'Operational admin. Module access is granted from the user menu checklist.',
+                    'permissions' => [],
                 ],
                 [
                     'name' => 'Attendance Operator',
@@ -305,15 +320,10 @@ class AccessControlSeeder extends Seeder
                 [
                     'name' => 'Requester',
                     'code' => 'requester',
-                    'description' => 'Create requests and respond to findings.',
+                    'description' => 'Create and view own Service Desk requests. Extra menus are assigned directly per user.',
                     'permissions' => [
                         'tickets.create',
                         'tickets.view',
-                        'worklogs.view',
-                        'findings.respond',
-                        'comments.create',
-                        'reminders.view',
-                        'atk.request',
                     ],
                 ],
                 [

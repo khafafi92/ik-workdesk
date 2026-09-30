@@ -32,7 +32,7 @@ class DailyActivityResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Daily Activities';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Tasks';
+    protected static string|UnitEnum|null $navigationGroup = 'Daily Report';
 
     protected static ?int $navigationSort = 2;
 
@@ -71,12 +71,13 @@ class DailyActivityResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->check();
+        return auth()->user()?->hasPermission('worklogs.view') === true
+            || auth()->user()?->hasPermission('worklogs.manage') === true;
     }
 
     public static function canCreate(): bool
     {
-        return auth()->check();
+        return static::canViewAny();
     }
 
     public static function canEdit(Model $record): bool

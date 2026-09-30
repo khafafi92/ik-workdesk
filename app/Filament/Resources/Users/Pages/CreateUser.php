@@ -52,9 +52,13 @@ class CreateUser extends CreateRecord
             ->values()
             ->all();
 
-        if ($roleIds === [] || count($roleIds) !== count($requestedRoleIds)) {
+        if ($requestedRoleIds === []) {
+            $roleIds = [Role::query()->where('code', 'requester')->value('id')];
+        }
+
+        if ($roleIds === [] || in_array(null, $roleIds, true) || count($roleIds) !== max(1, count($requestedRoleIds))) {
             throw ValidationException::withMessages([
-                'role_ids' => 'Pilih minimal satu role yang tersedia dan dapat Anda berikan.',
+                'role_ids' => 'Pilih role yang tersedia dan dapat Anda berikan.',
             ]);
         }
 

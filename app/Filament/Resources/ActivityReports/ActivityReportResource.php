@@ -3,9 +3,9 @@
 namespace App\Filament\Resources\ActivityReports;
 
 use App\Exports\ReportExport;
-use App\Filament\Resources\Reports\ReportResource;
 use App\Filament\Resources\ActivityReports\Pages\ListActivityReports;
 use App\Filament\Resources\ActivityReports\Tables\ActivityReportsTable;
+use App\Filament\Resources\Reports\ReportResource;
 use App\Models\DailyActivity;
 use BackedEnum;
 use Filament\Tables\Table;
@@ -63,13 +63,13 @@ class ActivityReportResource extends ReportResource
 
     public static function canViewAny(): bool
     {
-        // Keep personal activity-report access; the query scopes ordinary users to their own rows.
-        return auth()->check();
+        return auth()->user()?->hasPermission('worklogs.view') === true
+            || auth()->user()?->hasPermission('worklogs.manage') === true;
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->check();
+        return static::canViewAny();
     }
 
     public static function canView(Model $record): bool
