@@ -51,4 +51,43 @@ class DashboardModuleSummaryTest extends TestCase
         $this->assertSame([], app(Dashboard::class)->getDashboardData()['moduleSummaries']);
         $this->get('/panel')->assertOk()->assertDontSeeText('Ringkasan Modul');
     }
+
+    public function test_dashboard_preferences_keep_only_sections_allowed_by_permission(): void
+    {
+        $user = User::factory()->create(['is_admin' => false]);
+        $permission = Permission::query()->firstOrCreate(
+            ['code' => 'atk.manage'],
+            ['name' => 'atk.manage', 'is_active' => true],
+        );
+        $user->directPermissions()->attach($permission);
+        $user->unsetRelation('directPermissions');
+
+        $this->actingAs($user);
+
+        $dashboard = app(Dashboard::class);
+
+        $this->assertSame([
+            'atk' => 'ATK',
+            'reminders' => 'Reminder',
+            'recent_activity' => 'Service Desk dan Work Logs terbaru',
+        ], $dashboard->getDashboardSectionOptions());
+
+        $dashboard->updateDashboardSections([
+            'atk',
+            'ltro',
+            'work_overview',
+            'not-a-dashboard-section',
+        ]);
+
+        $this->assertSame(['atk'], $user->fresh()->dashboard_sections);
+        $this->assertSame(['atk'], $dashboard->getVisibleDashboardSections());
+        $this->assertSame(['ATK'], array_column(
+            $dashboard->getDashboardData()['moduleSummaries'],
+            'title',
+        ));
+        $this->get('/panel')->assertOk()
+            ->assertSeeText('Edit Dashboard')
+            ->assertSeeText('Ringkasan Modul')
+            ->assertDontSee('ik-reminder-hub', false);
+    }
 }

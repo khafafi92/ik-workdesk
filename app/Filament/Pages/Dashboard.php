@@ -17,6 +17,9 @@ use App\Models\Ticket;
 use App\Models\WorkTask;
 use BackedEnum;
 use Carbon\CarbonInterface;
+use Filament\Actions\Action;
+use Filament\Forms\Components\CheckboxList;
+use Filament\Notifications\Notification;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Contracts\Support\Htmlable;
 
@@ -35,6 +38,37 @@ class Dashboard extends BaseDashboard
         return null;
     }
 
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('editDashboard')
+                ->label('Edit Dashboard')
+                ->icon('heroicon-o-adjustments-horizontal')
+                ->color('gray')
+                ->modalHeading('Atur tampilan dashboard')
+                ->modalDescription('Centang ringkasan yang ingin ditampilkan. Pilihan tidak menambah hak akses ke menu atau data.')
+                ->modalSubmitActionLabel('Simpan tampilan')
+                ->fillForm(fn (): array => [
+                    'sections' => $this->getVisibleDashboardSections(),
+                ])
+                ->form([
+                    CheckboxList::make('sections')
+                        ->label('Ringkasan yang ditampilkan')
+                        ->options(fn (): array => $this->getDashboardSectionOptions())
+                        ->columns(1)
+                        ->helperText('Yang tidak sesuai permission atau hierarki akun tidak tersedia untuk dipilih.'),
+                ])
+                ->action(function (array $data): void {
+                    $this->updateDashboardSections($data['sections'] ?? []);
+
+                    Notification::make()
+                        ->success()
+                        ->title('Tampilan dashboard disimpan')
+                        ->send();
+                }),
+        ];
+    }
+
     public function canViewStatistics(): bool
     {
         return auth()->user()?->hasRole('system-admin') === true;
@@ -43,6 +77,7 @@ class Dashboard extends BaseDashboard
     public function getDashboardData(): array
     {
         $canViewStatistics = $this->canViewStatistics();
+        $visibleSections = $this->getVisibleDashboardSections();
         $now = now();
         $todayStart = $now->copy()->startOfDay();
         $todayEnd = $now->copy()->endOfDay();
@@ -180,7 +215,11 @@ class Dashboard extends BaseDashboard
             'ticketStats' => $ticketStats,
             'workStats' => $workStats,
             'reminderStats' => $reminderStats,
-            'moduleSummaries' => $this->getModuleSummaries($todayStart, $todayEnd, $monthStart, $monthEnd),
+            'visibleSections' => $visibleSections,
+            'moduleSummaries' => array_values(array_filter(
+                $this->getModuleSummaries($todayStart, $todayEnd, $monthStart, $monthEnd),
+                fn (array $summary): bool => in_array($summary['key'], $visibleSections, true),
+            )),
             'reminderCounts' => $reminderCounts,
             'reminderUrls' => $reminderUrls,
             'todayReminders' => $reminderPreviews['today'],
@@ -208,8 +247,70 @@ class Dashboard extends BaseDashboard
         ];
     }
 
+    public function getDashboardSectionOptions(): array
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return [];
+        }
+
+        $options = [];
+
+        if ($this->canViewStatistics()) {
+            $options['work_overview'] = 'Ringkasan Service Desk dan Work Logs';
+        }
+
+        if ($user->hasPermission('atk.manage') || $user->hasPermission('atk.report')) {
+            $options['atk'] = 'ATK';
+        }
+
+        if ($user->hasPermission('ltro.view')) {
+            $options['ltro'] = 'LTRO';
+        }
+
+        if ($user->hasPermission('attendance.view')) {
+            $options['attendance'] = 'Attendance Report';
+        }
+
+        return [
+            ...$options,
+            'reminders' => 'Reminder',
+            'recent_activity' => 'Service Desk dan Work Logs terbaru',
+        ];
+    }
+
+    public function getVisibleDashboardSections(): array
+    {
+        $user = auth()->user();
+        $availableSections = array_keys($this->getDashboardSectionOptions());
+
+        if (! $user || $user->dashboard_sections === null) {
+            return $availableSections;
+        }
+
+        return array_values(array_intersect(
+            $user->dashboard_sections,
+            $availableSections,
+        ));
+    }
+
+    public function updateDashboardSections(array $sections): void
+    {
+        $user = auth()->user();
+
+        abort_unless($user, 403);
+
+        $user->forceFill([
+            'dashboard_sections' => array_values(array_intersect(
+                $sections,
+                array_keys($this->getDashboardSectionOptions()),
+            )),
+        ])->save();
+    }
+
     /**
-     * @return array<int, array{title: string, description: string, url: string, metrics: array<int, array{label: string, value: int|string, tone: string}>}>
+     * @return array<int, array{key: string, title: string, description: string, url: string, metrics: array<int, array{label: string, value: int|string, tone: string}>}>
      */
     private function getModuleSummaries(
         CarbonInterface $todayStart,
@@ -227,6 +328,7 @@ class Dashboard extends BaseDashboard
 
         if ($user->hasPermission('atk.manage') || $user->hasPermission('atk.report')) {
             $summaries[] = [
+                'key' => 'atk',
                 'title' => 'ATK',
                 'description' => 'Permintaan dan ketersediaan stok.',
                 'url' => AtkDashboard::getUrl(),
@@ -266,6 +368,7 @@ class Dashboard extends BaseDashboard
                 ->sum('downtime_minutes') / 60;
 
             $summaries[] = [
+                'key' => 'ltro',
                 'title' => 'LTRO',
                 'description' => 'Laporan operasi dan indikator keandalan.',
                 'url' => LtroDailyReportResource::getUrl('index'),
@@ -295,6 +398,7 @@ class Dashboard extends BaseDashboard
 
         if ($user->hasPermission('attendance.view')) {
             $summaries[] = [
+                'key' => 'attendance',
                 'title' => 'Attendance Report',
                 'description' => 'Data absensi yang sudah diimpor.',
                 'url' => AttendanceReportCenter::getUrl(),

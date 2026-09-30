@@ -20,6 +20,7 @@ use Illuminate\Notifications\Notifiable;
     'password',
     'is_admin',
     'access_level',
+    'dashboard_sections',
 ])]
 #[Hidden([
     'password',
@@ -36,6 +37,7 @@ class User extends Authenticatable implements FilamentUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_admin' => 'boolean',
+            'dashboard_sections' => 'array',
         ];
     }
 

@@ -33,7 +33,7 @@
             <time>{{ now()->format('l, d F Y') }}</time>
         </header>
 
-        @if ($canViewStatistics)
+        @if ($canViewStatistics && in_array('work_overview', $data['visibleSections'], true))
             <div class="ik-overview-grid">
                 <section class="ik-overview-card">
                     <div class="ik-overview-heading">
@@ -105,7 +105,8 @@
             </section>
         @endif
 
-        <section class="ik-smart-panel ik-reminder-hub">
+        @if (in_array('reminders', $data['visibleSections'], true))
+            <section class="ik-smart-panel ik-reminder-hub">
             <div class="ik-smart-header">
                 <div class="ik-smart-heading">
                     <span class="ik-smart-icon">
@@ -157,9 +158,11 @@
                     </section>
                 @endforeach
             </div>
-        </section>
+            </section>
+        @endif
 
-        <div class="ik-panel-grid ik-panel-grid--minimal">
+        @if (in_array('recent_activity', $data['visibleSections'], true))
+            <div class="ik-panel-grid ik-panel-grid--minimal">
             <section class="ik-panel">
                 <div class="ik-panel-header">
                     <div class="ik-smart-heading">
@@ -231,6 +234,7 @@
                     </table>
                 </div>
             </section>
-        </div>
+            </div>
+        @endif
     </div>
 </x-filament-panels::page>
