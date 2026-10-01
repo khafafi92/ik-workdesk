@@ -75,7 +75,7 @@ class MeetingBookingResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canViewAny();
+        return auth()->user()?->hasPermission('meeting.bookings') === true;
     }
 
     public static function canViewAny(): bool

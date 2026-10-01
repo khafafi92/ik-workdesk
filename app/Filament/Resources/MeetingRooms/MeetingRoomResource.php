@@ -47,7 +47,7 @@ class MeetingRoomResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canViewAny();
+        return auth()->user()?->hasPermission('meeting.rooms') === true;
     }
 
     public static function canViewAny(): bool

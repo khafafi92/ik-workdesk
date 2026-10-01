@@ -63,7 +63,7 @@ class VehicleBookingResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canViewAny();
+        return auth()->user()?->hasPermission('vehicle.bookings') === true;
     }
 
     public static function canViewAny(): bool

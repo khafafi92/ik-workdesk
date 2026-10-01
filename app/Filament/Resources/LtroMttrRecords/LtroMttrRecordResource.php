@@ -46,7 +46,7 @@ class LtroMttrRecordResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('ltro.view') ?? false;
+        return auth()->user()?->hasPermission('ltro.mttr-records') ?? false;
     }
 
     public static function canCreate(): bool

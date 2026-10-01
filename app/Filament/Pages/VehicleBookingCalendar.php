@@ -40,8 +40,13 @@ class VehicleBookingCalendar extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()
-            ?->can('viewAny', VehicleBooking::class) === true;
+        return auth()->user()?->hasPermission('vehicle.calendar') === true
+            || auth()->user()?->can('viewAny', VehicleBooking::class) === true;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->hasPermission('vehicle.calendar') === true;
     }
 
     public function getHeading(): string|Htmlable|null

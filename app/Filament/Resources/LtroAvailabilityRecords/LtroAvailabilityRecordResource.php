@@ -31,7 +31,7 @@ class LtroAvailabilityRecordResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('ltro.view') ?? false;
+        return auth()->user()?->hasPermission('ltro.availability') ?? false;
     }
 
     public static function table(Table $table): Table

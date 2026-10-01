@@ -42,8 +42,13 @@ class MeetingRoomCalendar extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()
-            ?->can('viewAny', MeetingBooking::class) === true;
+        return auth()->user()?->hasPermission('meeting.calendar') === true
+            || auth()->user()?->can('viewAny', MeetingBooking::class) === true;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->hasPermission('meeting.calendar') === true;
     }
 
     public function getHeading(): string|Htmlable|null

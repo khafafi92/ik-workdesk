@@ -27,8 +27,8 @@ class AttendanceResultResource extends Resource
 
     protected static function currentUserCanViewAttendance(): bool
     {
-        return auth()->user()
-            ?->hasPermission('attendance.view') === true;
+        return auth()->user()?->hasPermission('attendance.report-results') === true
+            || auth()->user()?->hasPermission('attendance.view') === true;
     }
 
     public static function form(Schema $schema): Schema
@@ -87,7 +87,7 @@ class AttendanceResultResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::currentUserCanViewAttendance();
+        return auth()->user()?->hasPermission('attendance.report-results') === true;
     }
 
     public static function canViewAny(): bool

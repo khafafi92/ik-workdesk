@@ -42,13 +42,13 @@ class AttendanceReportCenter extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        return auth()->user()?->hasPermission('attendance.report-center') === true;
     }
 
     public static function canAccess(): bool
     {
-        return auth()->user()
-            ?->hasPermission('attendance.view') === true
+        return auth()->user()?->hasPermission('attendance.report-center') === true
+            || auth()->user()?->hasPermission('attendance.view') === true
             || AttendanceImportResource::canViewAny();
     }
 
