@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Reports;
 
 use App\Exports\ReportExport;
-use App\Filament\Resources\Reports\Pages\ListReportRecords;
+use App\Filament\Resources\Reports\Pages\ListSlaTicketAgingReports;
 use App\Models\Ticket;
 use App\Services\Reports\ReportQueryService;
 use Filament\Forms\Components\DatePicker;
@@ -79,9 +79,4 @@ class SlaTicketAgingReportResource extends ServiceDeskReportResource
     }
 
     public static function getPages(): array { return ['index' => ListSlaTicketAgingReports::route('/')]; }
-}
-
-class ListSlaTicketAgingReports extends ListReportRecords
-{
-    protected static string $resource = SlaTicketAgingReportResource::class;
 }

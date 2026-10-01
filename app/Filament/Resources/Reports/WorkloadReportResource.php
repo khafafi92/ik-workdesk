@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Reports;
 
 use App\Exports\ReportExport;
-use App\Filament\Resources\Reports\Pages\ListReportRecords;
+use App\Filament\Resources\Reports\Pages\ListWorkloadReports;
 use App\Models\Employee;
 use App\Models\WorkTask;
 use Filament\Tables\Columns\TextColumn;
@@ -64,9 +64,4 @@ class WorkloadReportResource extends ReportResource
     }
 
     public static function getPages(): array { return ['index' => ListWorkloadReports::route('/')]; }
-}
-
-class ListWorkloadReports extends ListReportRecords
-{
-    protected static string $resource = WorkloadReportResource::class;
 }

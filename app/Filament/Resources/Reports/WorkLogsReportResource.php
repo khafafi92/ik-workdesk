@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Reports;
 
 use App\Exports\ReportExport;
-use App\Filament\Resources\Reports\Pages\ListReportRecords;
+use App\Filament\Resources\Reports\Pages\ListWorkLogsReports;
 use App\Models\WorkTask;
 use App\Services\Reports\ReportQueryService;
 use Filament\Forms\Components\DatePicker;
@@ -63,9 +63,4 @@ class WorkLogsReportResource extends ReportResource
     public static function duration(int $minutes): string { return intdiv($minutes, 60).' h '.($minutes % 60).' m'; }
 
     public static function getPages(): array { return ['index' => ListWorkLogsReports::route('/')]; }
-}
-
-class ListWorkLogsReports extends ListReportRecords
-{
-    protected static string $resource = WorkLogsReportResource::class;
 }
