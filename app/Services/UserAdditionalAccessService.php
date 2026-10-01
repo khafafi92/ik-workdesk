@@ -23,6 +23,7 @@ class UserAdditionalAccessService
         'report-workload' => ['label' => 'Workload', 'access' => 'report-workload'],
         'report-department-activity' => ['label' => 'Department Activity', 'access' => 'report-department-activity'],
         'outgoing-letters' => ['label' => 'Surat Keluar', 'access' => 'letters-outgoing'],
+        'letter-profiles' => ['label' => 'Profil Surat', 'access' => 'letters-profiles'],
         'document-types' => ['label' => 'Jenis Surat', 'access' => 'letters-document-types'],
         'document-numbering-templates' => ['label' => 'Template Nomor Surat', 'access' => 'letters-numbering-templates'],
         'ltro-mttr-records' => ['label' => 'MTTR Records', 'access' => 'ltro-mttr-records'],
@@ -159,6 +160,7 @@ class UserAdditionalAccessService
         'report-department-activity' => ['report.view', 'report.department-activity'],
         'reports' => ['report.view', 'report.export'],
         'letters-outgoing' => ['letters.outgoing', 'letters.view', 'letters.create', 'letters.issue', 'letters.legacy-import'],
+        'letters-profiles' => ['letters.profiles', 'letters.manage'],
         'letters-document-types' => ['letters.document-types', 'letters.manage'],
         'letters-numbering-templates' => ['letters.numbering-templates', 'letters.manage'],
         'master-data' => [
@@ -182,6 +184,7 @@ class UserAdditionalAccessService
             'attendance-report' => 'Lihat Attendance Report dan Report Results',
             'attendance-management' => 'Attendance Reports — Upload dan Kelola',
             'reports' => 'Akses seluruh Reports dan Export',
+            'letters-profiles' => 'Surat - Kelola profil surat',
             'letters-outgoing' => 'Surat Keluar â€” Buat dan kelola draft',
             'letters-document-types' => 'Surat â€” Kelola jenis surat',
             'letters-numbering-templates' => 'Surat â€” Kelola template nomor surat',
@@ -212,6 +215,7 @@ class UserAdditionalAccessService
             'reports' => 'Overview, Service Desk, Daily Activities, Work Logs, SLA & Ticket Aging, Workload, Department Activity.',
             'letters-outgoing' => 'Daftar surat keluar dan draft surat baru.',
             'letters-document-types' => 'Jenis surat yang tersedia untuk surat keluar.',
+            'letters-profiles' => 'Kelompok surat untuk setiap entitas, departemen, dan alur pengisian.',
             'letters-numbering-templates' => 'Template nomor surat berdasarkan company, department, dan jenis surat.',
             'ltro' => 'MTTR Records, Daily Reports, Availability LTRO 1B.',
             'atk-request' => 'Permintaan ATK, Stok Departemen sesuai department, dan Pemakaian ATK.',
@@ -248,7 +252,7 @@ class UserAdditionalAccessService
             'letters' => [
                 'label' => 'Surat',
                 'description' => 'Surat keluar dan pengaturan nomor surat.',
-                'items' => ['outgoing-letters', 'document-types', 'document-numbering-templates'],
+                'items' => ['outgoing-letters', 'letter-profiles', 'document-types', 'document-numbering-templates'],
             ],
             'ltro' => [
                 'label' => 'LTRO Management',

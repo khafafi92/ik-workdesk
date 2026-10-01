@@ -50,6 +50,7 @@ class AtkRequestResource extends Resource
     {
         return $schema->components([
             Section::make('Informasi permintaan')
+                ->description('Isi keperluan dan entitas yang akan memakai barang. Setelah dikirim, permintaan langsung masuk ke daftar tindak lanjut GA.')
                 ->columns(2)
                 ->schema([
                     TextInput::make('request_number')
@@ -80,11 +81,13 @@ class AtkRequestResource extends Resource
                         ->visible(fn (): bool => static::hasMissingEmployeeDepartment()),
                     Textarea::make('purpose')
                         ->label('Keperluan')
+                        ->helperText('Jelaskan barang ini akan digunakan untuk apa.')
                         ->required()
                         ->columnSpanFull()
                         ->maxLength(1000),
                     Select::make('permit_company_id')
                         ->label('Entitas peminta')
+                        ->helperText('Pilih entitas yang akan menggunakan barang.')
                         ->relationship(
                             'company',
                             'name',
@@ -101,7 +104,7 @@ class AtkRequestResource extends Resource
                         ->columnSpanFull(),
                 ]),
             Section::make('Daftar barang')
-                ->description('Jumlah yang diminta tidak dapat diubah setelah permintaan dikirim.')
+                ->description('Pilih barang dan jumlah yang dibutuhkan. Setelah dikirim, penyerahan dapat dilakukan bertahap dan progresnya terlihat di daftar permintaan.')
                 ->schema([
                     Repeater::make('items')
                         ->relationship()
@@ -132,20 +135,20 @@ class AtkRequestResource extends Resource
                                 ->required()
                                 ->columnSpan(6),
                             TextInput::make('qty_requested')
-                                ->label('Jumlah')
+                                ->label('Jumlah yang diminta')
                                 ->numeric()
                                 ->minValue(0.01)
                                 ->step(0.01)
                                 ->required()
                                 ->columnSpan(2),
                             TextInput::make('unit')
-                                ->label('Satuan')
+                                ->label('Satuan barang')
                                 ->default('pcs')
                                 ->required()
                                 ->maxLength(30)
                                 ->columnSpan(2),
                             TextInput::make('requester_note')
-                                ->label('Catatan')
+                                ->label('Catatan untuk GA')
                                 ->maxLength(500)
                                 ->columnSpan(12),
                         ]),
@@ -188,6 +191,16 @@ class AtkRequestResource extends Resource
                     ->listWithLineBreaks()
                     ->wrap()
                     ->tooltip(fn (AtkRequest $record): string => static::requestedItemsSummary($record)),
+                TextColumn::make('item_progress')
+                    ->label('Progres barang')
+                    ->state(fn (AtkRequest $record): array => static::itemProgressList($record))
+                    ->listWithLineBreaks()
+                    ->wrap()
+                    ->tooltip('Diminta adalah total kebutuhan. Diserahkan adalah jumlah dari Gudang Utama. Diterima adalah jumlah yang sudah dikonfirmasi peminta.'),
+                TextColumn::make('next_step')
+                    ->label('Langkah berikutnya')
+                    ->state(fn (AtkRequest $record): string => static::nextStep($record))
+                    ->wrap(),
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
@@ -231,6 +244,7 @@ class AtkRequestResource extends Resource
                         ...static::itemActionForm('Barang yang diserahkan'),
                         TextInput::make('quantity')
                             ->label('Jumlah diserahkan')
+                            ->helperText('Masukkan jumlah yang benar-benar diserahkan pada tahap ini.')
                             ->numeric()
                             ->minValue(0.01)
                             ->step(0.01)
@@ -245,13 +259,14 @@ class AtkRequestResource extends Resource
                         static::success('Penyerahan barang tercatat.');
                     }),
                 Action::make('confirm_received')
-                    ->label('Konfirmasi terima')
+                    ->label('Konfirmasi barang diterima')
                     ->icon(Heroicon::OutlinedHandThumbUp)
                     ->color('success')
                     ->visible(fn (AtkRequest $record): bool => static::canConfirmReceipt($record))
                     ->form([
                         Select::make('request_item_id')
-                            ->label('Item diterima')
+                            ->label('Barang yang diterima')
+                            ->helperText('Pilih barang yang sudah Anda terima. Sistem mencatat seluruh jumlah yang sudah diserahkan dan belum dikonfirmasi.')
                             ->options(fn (AtkRequest $record): array => static::receivableItems($record))
                             ->required(),
                     ])
@@ -375,11 +390,11 @@ class AtkRequestResource extends Resource
     private static function statusOptions(): array
     {
         return [
-            'submitted' => 'Submitted',
-            'processing' => 'Processing',
-            'partially_fulfilled' => 'Partially fulfilled',
-            'completed' => 'Completed',
-            'cancelled' => 'Cancelled',
+            'submitted' => 'Baru',
+            'processing' => 'Diproses',
+            'partially_fulfilled' => 'Sebagian dipenuhi',
+            'completed' => 'Selesai',
+            'cancelled' => 'Dibatalkan',
         ];
     }
 
@@ -398,6 +413,52 @@ class AtkRequestResource extends Resource
     private static function requestedItemsSummary(AtkRequest $request): string
     {
         return implode('; ', static::requestedItemsList($request));
+    }
+
+    private static function itemProgressList(AtkRequest $request): array
+    {
+        return $request->items
+            ->map(function (AtkRequestItem $item): string {
+                $requested = (float) $item->qty_requested;
+                $issued = (float) $item->qty_issued;
+                $received = (float) $item->qty_received;
+                $format = fn (float $quantity): string => number_format($quantity, 0, ',', '.');
+
+                return sprintf(
+                    '%s: diminta %s, diserahkan %s, belum diserahkan %s, diterima %s',
+                    $item->item?->name ?? 'Barang',
+                    $format($requested),
+                    $format($issued),
+                    $format($item->outstandingRequested()),
+                    $format($received),
+                );
+            })
+            ->values()
+            ->all();
+    }
+
+    private static function nextStep(AtkRequest $record): string
+    {
+        if ($record->status === 'completed') {
+            return 'Permintaan selesai.';
+        }
+
+        $awaitingReceipt = $record->items->sum(fn (AtkRequestItem $item): float => $item->awaitingReceipt());
+        $outstanding = $record->items->sum(fn (AtkRequestItem $item): float => $item->outstandingRequested());
+
+        if (static::canConfirmReceipt($record) && $awaitingReceipt > 0) {
+            return 'Konfirmasi penerimaan barang yang sudah diserahkan.';
+        }
+
+        if (static::canManage() && $outstanding > 0) {
+            return 'Serahkan sisa barang dari Gudang Utama jika stok tersedia.';
+        }
+
+        if ($awaitingReceipt > 0) {
+            return 'Menunggu peminta mengonfirmasi penerimaan.';
+        }
+
+        return 'Menunggu GA memproses atau menyerahkan barang.';
     }
 
     private static function statusLabel(string $status): string

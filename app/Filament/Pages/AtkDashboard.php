@@ -56,14 +56,21 @@ class AtkDashboard extends Page
         ];
     }
 
-    public function requestItemSummary(AtkRequest $request): string
+    public function requestItemProgressSummary(AtkRequest $request): string
     {
         return $request->items
-            ->map(fn (AtkRequestItem $item): string => trim(implode(' ', [
-                $item->item?->name,
-                number_format((float) $item->qty_requested, 0, ',', '.'),
-                $item->unit,
-            ])))
+            ->map(function (AtkRequestItem $item): string {
+                $format = fn (float $quantity): string => number_format($quantity, 0, ',', '.');
+
+                return sprintf(
+                    '%s: diminta %s, diserahkan %s, belum diserahkan %s, diterima %s',
+                    $item->item?->name ?? 'Barang',
+                    $format((float) $item->qty_requested),
+                    $format((float) $item->qty_issued),
+                    $format($item->outstandingRequested()),
+                    $format((float) $item->qty_received),
+                );
+            })
             ->implode('; ');
     }
 

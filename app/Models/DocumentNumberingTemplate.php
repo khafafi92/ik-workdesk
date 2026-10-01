@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class DocumentNumberingTemplate extends Model
 {
     protected $fillable = [
-        'permit_company_id', 'department_id', 'document_type_id', 'name', 'template',
+        'letter_profile_id', 'permit_company_id', 'department_id', 'document_type_id', 'name', 'template',
         'running_digits', 'reset_period', 'priority', 'is_active',
     ];
 
@@ -21,6 +21,11 @@ class DocumentNumberingTemplate extends Model
     public function company(): BelongsTo
     {
         return $this->belongsTo(PermitCompany::class, 'permit_company_id');
+    }
+
+    public function profile(): BelongsTo
+    {
+        return $this->belongsTo(LetterProfile::class, 'letter_profile_id');
     }
 
     public function department(): BelongsTo

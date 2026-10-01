@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Department;
 use App\Models\DocumentNumberingTemplate;
 use App\Models\DocumentType;
+use App\Models\LetterProfile;
 use App\Models\OutgoingLetter;
 use App\Models\PermitCompany;
 use App\Models\User;
@@ -168,6 +169,44 @@ class DocumentNumberServiceTest extends TestCase
         $letter->update(['subject' => 'Perihal yang tidak boleh berubah']);
     }
 
+    public function test_profile_specific_template_is_used_for_the_selected_profile(): void
+    {
+        $company = $this->company('ATE');
+        $hrProfile = LetterProfile::create([
+            'code' => 'HR-APCA',
+            'name' => 'HR APCA',
+            'permit_company_id' => $company->id,
+            'form_variant' => 'hr',
+        ]);
+        $generalProfile = LetterProfile::create([
+            'code' => 'APCA-UMUM',
+            'name' => 'Surat Umum APCA',
+            'permit_company_id' => $company->id,
+        ]);
+        DocumentNumberingTemplate::create([
+            'letter_profile_id' => $hrProfile->id,
+            'permit_company_id' => $company->id,
+            'name' => 'HR APCA',
+            'template' => 'HR/{running:3}',
+            'is_active' => true,
+        ]);
+        DocumentNumberingTemplate::create([
+            'letter_profile_id' => $generalProfile->id,
+            'permit_company_id' => $company->id,
+            'name' => 'Surat umum APCA',
+            'template' => 'UMUM/{running:3}',
+            'is_active' => true,
+        ]);
+
+        $letter = OutgoingLetter::make([
+            'letter_profile_id' => $hrProfile->id,
+            'permit_company_id' => $company->id,
+            'document_date' => '2026-10-01',
+        ]);
+
+        $this->assertSame('HR/001', app(DocumentNumberService::class)->preview($letter));
+    }
+
     public function test_administrator_can_render_all_surat_pages(): void
     {
         $administrator = User::factory()->create(['is_admin' => true]);
@@ -175,6 +214,8 @@ class DocumentNumberServiceTest extends TestCase
         foreach ([
             '/panel/outgoing-letters',
             '/panel/outgoing-letters/create',
+            '/panel/letter-profiles',
+            '/panel/letter-profiles/create',
             '/panel/document-types',
             '/panel/document-types/create',
             '/panel/document-numbering-templates',

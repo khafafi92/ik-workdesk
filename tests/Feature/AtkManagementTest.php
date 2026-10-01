@@ -133,13 +133,59 @@ class AtkManagementTest extends TestCase
             ->assertSeeText('Permintaan yang perlu ditindak')
             ->assertSeeText($requester->name)
             ->assertSeeText('Pulpen Hitam')
+            ->assertSeeText('Barang dan progres')
             ->assertSeeText('Perlu ditinjau GA');
 
         $this->actingAs($manager)
             ->get('/panel/atk-requests')
             ->assertOk()
-            ->assertSeeText('Barang diminta')
-            ->assertSeeText('Pulpen Hitam');
+            ->assertSeeText('Progres barang')
+            ->assertSeeText('Pulpen Hitam')
+            ->assertSeeText('Serahkan sisa barang dari Gudang Utama jika stok tersedia.');
+    }
+
+    public function test_outgoing_letter_form_explains_the_draft_and_issuance_flow(): void
+    {
+        $manager = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($manager)
+            ->get('/panel/outgoing-letters/create')
+            ->assertOk()
+            ->assertSeeText('Tentukan profil dan identitas surat')
+            ->assertSeeText('Lengkapi tujuan dan isi')
+            ->assertSeeText('Tinjau nomor dan simpan draft')
+            ->assertSeeText('Nomor menjadi final dan dicadangkan hanya saat surat diterbitkan.');
+    }
+
+    public function test_requester_can_see_the_receipt_action_after_ga_issues_an_item(): void
+    {
+        [$requester, $department] = $this->requester();
+        $permission = Permission::query()->where('code', 'atk.request')->firstOrFail();
+        $requester->directPermissions()->attach($permission);
+        $ga = User::factory()->create(['is_admin' => true]);
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-RECEIPT-001',
+            'name' => 'Map Dokumen',
+            'unit' => 'PCS',
+            'current_stock' => 2,
+            'is_active' => true,
+        ]);
+        $request = $this->request($requester, $department);
+        $requestItem = AtkRequestItem::query()->create([
+            'atk_request_id' => $request->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 2,
+            'unit' => 'PCS',
+        ]);
+
+        app(AtkWarehouseStockService::class)->issue($requestItem, 2, $ga);
+
+        $this->actingAs($requester)
+            ->get('/panel/atk-requests')
+            ->assertOk()
+            ->assertSeeText('Konfirmasi barang diterima')
+            ->assertSeeText('Konfirmasi penerimaan barang yang sudah diserahkan.')
+            ->assertSeeText('Map Dokumen: diminta 2, diserahkan 2, belum diserahkan 0, diterima 0');
     }
 
     public function test_partial_issue_receive_and_usage_keep_each_stock_ledger_correct(): void

@@ -28,16 +28,23 @@ use Throwable;
 class DocumentNumberingTemplateResource extends Resource
 {
     protected static ?string $model = DocumentNumberingTemplate::class;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHashtag;
+
     protected static ?string $navigationLabel = 'Template Nomor Surat';
+
     protected static ?string $modelLabel = 'Template Nomor Surat';
+
     protected static ?string $pluralModelLabel = 'Template Nomor Surat';
+
     protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
             Section::make('Cakupan template')->columns(3)->schema([
+                Select::make('letter_profile_id')->label('Profil surat')->relationship('profile', 'name')->searchable()->preload()->live()
+                    ->helperText('Pilih profil agar template hanya dipakai untuk kelompok surat tersebut. Kosongkan hanya untuk template umum.'),
                 Select::make('permit_company_id')->label('Company')->relationship('company', 'name')->searchable()->preload()->required()->live(),
                 Select::make('department_id')->label('Department')->relationship('department', 'name')->searchable()->preload()->live(),
                 Select::make('document_type_id')->label('Jenis surat')->relationship('documentType', 'name')->searchable()->preload()->live(),
@@ -59,6 +66,7 @@ class DocumentNumberingTemplateResource extends Resource
     {
         return $table->columns([
             TextColumn::make('name')->label('Nama')->searchable()->sortable(),
+            TextColumn::make('profile.name')->label('Profil')->placeholder('Umum')->toggleable(),
             TextColumn::make('company.code')->label('Company')->sortable(),
             TextColumn::make('department.code')->label('Department')->placeholder('Semua'),
             TextColumn::make('documentType.code')->label('Jenis')->placeholder('Semua'),
@@ -67,15 +75,27 @@ class DocumentNumberingTemplateResource extends Resource
             TextColumn::make('priority')->label('Prioritas')->sortable(),
             IconColumn::make('is_active')->label('Aktif')->boolean(),
         ])->filters([
+            SelectFilter::make('letter_profile_id')->label('Profil surat')->relationship('profile', 'name'),
             SelectFilter::make('permit_company_id')->label('Company')->relationship('company', 'name'),
             SelectFilter::make('department_id')->label('Department')->relationship('department', 'name'),
             SelectFilter::make('document_type_id')->label('Jenis surat')->relationship('documentType', 'name'),
         ])->defaultSort('priority', 'desc')->recordActions([EditAction::make()]);
     }
 
-    public static function canViewAny(): bool { return auth()->user()?->hasPermission('letters.numbering-templates') === true && auth()->user()?->hasPermission('letters.manage') === true; }
-    public static function canCreate(): bool { return static::canViewAny(); }
-    public static function getNavigationGroup(): ?string { return 'Surat'; }
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasPermission('letters.numbering-templates') === true && auth()->user()?->hasPermission('letters.manage') === true;
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Surat';
+    }
 
     public static function getPages(): array
     {
@@ -98,6 +118,7 @@ class DocumentNumberingTemplateResource extends Resource
                 'running_digits' => $get('running_digits') ?: 3,
             ]);
             $letter = new OutgoingLetter([
+                'letter_profile_id' => $get('letter_profile_id'),
                 'permit_company_id' => $get('permit_company_id'),
                 'department_id' => $get('department_id'),
                 'document_type_id' => $get('document_type_id'),

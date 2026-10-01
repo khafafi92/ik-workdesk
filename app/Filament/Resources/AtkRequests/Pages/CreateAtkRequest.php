@@ -12,6 +12,16 @@ class CreateAtkRequest extends CreateRecord
 {
     protected static string $resource = AtkRequestResource::class;
 
+    public function getSubheading(): ?string
+    {
+        return 'Kirim kebutuhan ATK ke GA. Setelah barang diserahkan, konfirmasikan penerimaannya dari daftar Permintaan ATK.';
+    }
+
+    protected function getCreatedNotificationTitle(): ?string
+    {
+        return 'Permintaan ATK terkirim ke GA.';
+    }
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $user = auth()->user();

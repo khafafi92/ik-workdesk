@@ -9,7 +9,7 @@ use Illuminate\Validation\ValidationException;
 class OutgoingLetter extends Model
 {
     protected $fillable = [
-        'permit_company_id', 'department_id', 'document_type_id', 'work_project_id',
+        'letter_profile_id', 'permit_company_id', 'department_id', 'document_type_id', 'work_project_id',
         'document_numbering_template_id', 'running_number', 'document_number', 'document_date',
         'subject', 'recipient', 'pin', 'pic_user_id', 'pic_name', 'location_code', 'description',
         'status', 'is_legacy_number', 'issued_at', 'issued_by',
@@ -45,12 +45,48 @@ class OutgoingLetter extends Model
         });
     }
 
-    public function company(): BelongsTo { return $this->belongsTo(PermitCompany::class, 'permit_company_id'); }
-    public function department(): BelongsTo { return $this->belongsTo(Department::class); }
-    public function documentType(): BelongsTo { return $this->belongsTo(DocumentType::class); }
-    public function project(): BelongsTo { return $this->belongsTo(WorkProject::class, 'work_project_id'); }
-    public function numberingTemplate(): BelongsTo { return $this->belongsTo(DocumentNumberingTemplate::class, 'document_numbering_template_id'); }
-    public function picUser(): BelongsTo { return $this->belongsTo(User::class, 'pic_user_id'); }
-    public function issuer(): BelongsTo { return $this->belongsTo(User::class, 'issued_by'); }
-    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(PermitCompany::class, 'permit_company_id');
+    }
+
+    public function profile(): BelongsTo
+    {
+        return $this->belongsTo(LetterProfile::class, 'letter_profile_id');
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function documentType(): BelongsTo
+    {
+        return $this->belongsTo(DocumentType::class);
+    }
+
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(WorkProject::class, 'work_project_id');
+    }
+
+    public function numberingTemplate(): BelongsTo
+    {
+        return $this->belongsTo(DocumentNumberingTemplate::class, 'document_numbering_template_id');
+    }
+
+    public function picUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'pic_user_id');
+    }
+
+    public function issuer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'issued_by');
+    }
+
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 }

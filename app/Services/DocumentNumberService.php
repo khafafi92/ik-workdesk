@@ -17,12 +17,15 @@ class DocumentNumberService
             ->where('is_active', true)
             ->where('permit_company_id', $letter->permit_company_id)
             ->where(fn ($query) => $query
+                ->whereNull('letter_profile_id')
+                ->orWhere('letter_profile_id', $letter->letter_profile_id))
+            ->where(fn ($query) => $query
                 ->whereNull('department_id')
                 ->orWhere('department_id', $letter->department_id))
             ->where(fn ($query) => $query
                 ->whereNull('document_type_id')
                 ->orWhere('document_type_id', $letter->document_type_id))
-            ->orderByRaw('CASE WHEN department_id IS NULL THEN 0 ELSE 1 END + CASE WHEN document_type_id IS NULL THEN 0 ELSE 1 END DESC')
+            ->orderByRaw('CASE WHEN letter_profile_id IS NULL THEN 0 ELSE 1 END + CASE WHEN department_id IS NULL THEN 0 ELSE 1 END + CASE WHEN document_type_id IS NULL THEN 0 ELSE 1 END DESC')
             ->orderByDesc('priority')
             ->orderBy('id')
             ->first();

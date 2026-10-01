@@ -116,6 +116,12 @@ class AccessControlSeeder extends Seeder
                     'description' => 'Open the outgoing-letter menu.',
                 ],
                 [
+                    'name' => 'Access Letter Profiles Menu',
+                    'code' => 'letters.profiles',
+                    'module' => 'Surat',
+                    'description' => 'Open the letter-profiles menu.',
+                ],
+                [
                     'name' => 'Access Document Types Menu',
                     'code' => 'letters.document-types',
                     'module' => 'Surat',
@@ -444,7 +450,7 @@ class AccessControlSeeder extends Seeder
                     'atk.request', 'atk.manage', 'atk.report', 'attendance.view', 'attendance.upload', 'attendance.manage',
                     'tickets.create', 'tickets.view', 'tickets.manage', 'worklogs.view', 'worklogs.manage',
                     'letters.view', 'letters.create', 'letters.issue', 'letters.manage', 'letters.legacy-import',
-                    'letters.outgoing', 'letters.document-types', 'letters.numbering-templates',
+                    'letters.outgoing', 'letters.profiles', 'letters.document-types', 'letters.numbering-templates',
                     'reminders.view', 'reminders.manage', 'meeting-bookings.view', 'meeting-bookings.create',
                     'meeting-bookings.cancel-own', 'meeting-bookings.manage', 'meeting-rooms.manage',
                     'vehicle-bookings.view', 'vehicle-bookings.create', 'vehicle-bookings.cancel-own',
