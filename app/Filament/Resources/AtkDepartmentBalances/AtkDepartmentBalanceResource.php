@@ -69,9 +69,13 @@ class AtkDepartmentBalanceResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('atk.request') === true
-            || auth()->user()?->hasPermission('atk.manage') === true
-            || auth()->user()?->hasPermission('atk.report') === true;
+        return auth()->user()?->hasPermission('atk.department-balance') === true
+            || auth()->user()?->hasPermission('atk.request') === true;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->hasPermission('atk.department-balance') === true;
     }
 
     public static function getNavigationGroup(): ?string

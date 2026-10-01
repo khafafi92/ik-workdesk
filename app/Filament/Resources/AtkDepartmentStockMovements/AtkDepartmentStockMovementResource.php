@@ -71,9 +71,7 @@ class AtkDepartmentStockMovementResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('atk.request') === true
-            || auth()->user()?->hasPermission('atk.manage') === true
-            || auth()->user()?->hasPermission('atk.report') === true;
+        return auth()->user()?->hasPermission('atk.department-movement') === true;
     }
 
     public static function getNavigationGroup(): ?string

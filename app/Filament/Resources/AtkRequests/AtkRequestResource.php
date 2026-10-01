@@ -279,13 +279,19 @@ class AtkRequestResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('atk.request') === true
-            || static::canManage();
+        return auth()->user()?->hasPermission('atk.requests') === true
+            || auth()->user()?->hasPermission('atk.request') === true;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return auth()->user()?->hasPermission('atk.requests') === true;
     }
 
     public static function canCreate(): bool
     {
-        return auth()->user()?->hasPermission('atk.request') === true;
+        return static::canViewAny()
+            && auth()->user()?->hasPermission('atk.request') === true;
     }
 
     public static function canManage(): bool

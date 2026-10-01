@@ -50,7 +50,7 @@ class AtkUnitResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('atk.manage') === true;
+        return auth()->user()?->hasPermission('atk.units') === true;
     }
 
     public static function canCreate(): bool

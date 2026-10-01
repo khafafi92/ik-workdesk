@@ -179,7 +179,7 @@ class AtkItemResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('atk.manage') === true;
+        return auth()->user()?->hasPermission('atk.items') === true;
     }
 
     public static function canCreate(): bool

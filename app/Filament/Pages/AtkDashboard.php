@@ -27,8 +27,7 @@ class AtkDashboard extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasPermission('atk.manage') === true
-            || auth()->user()?->hasPermission('atk.report') === true;
+        return auth()->user()?->hasPermission('atk.dashboard') === true;
     }
 
     protected function getViewData(): array

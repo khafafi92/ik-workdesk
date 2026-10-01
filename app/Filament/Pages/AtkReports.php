@@ -28,8 +28,7 @@ class AtkReports extends Page
 
     public static function canAccess(): bool
     {
-        return auth()->user()?->hasPermission('atk.manage') === true
-            || auth()->user()?->hasPermission('atk.report') === true;
+        return auth()->user()?->hasPermission('atk.reports') === true;
     }
 
     protected function getHeaderActions(): array
