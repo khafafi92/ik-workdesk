@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class DepartmentActivityReportResource extends ReportResource
 {
+    protected static ?string $menuPermissionCode = 'report.department-activity';
     protected static ?string $model = Department::class;
     protected static ?string $slug = 'reports/department-activity';
     protected static ?string $navigationLabel = 'Department Activity';

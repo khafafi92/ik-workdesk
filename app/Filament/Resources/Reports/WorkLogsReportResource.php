@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class WorkLogsReportResource extends ReportResource
 {
+    protected static ?string $menuPermissionCode = 'report.work-logs';
     protected static ?string $model = WorkTask::class;
     protected static ?string $slug = 'reports/work-logs';
     protected static ?string $navigationLabel = 'Work Logs';

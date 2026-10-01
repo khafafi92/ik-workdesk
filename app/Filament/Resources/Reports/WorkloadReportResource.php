@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class WorkloadReportResource extends ReportResource
 {
+    protected static ?string $menuPermissionCode = 'report.workload';
     protected static ?string $model = Employee::class;
     protected static ?string $slug = 'reports/workload';
     protected static ?string $navigationLabel = 'Workload';

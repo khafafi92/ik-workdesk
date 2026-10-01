@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class ServiceDeskReportResource extends ReportResource
 {
+    protected static ?string $menuPermissionCode = 'report.service-desk';
     protected static ?string $model = Ticket::class;
 
     protected static ?string $slug = 'reports/service-desk';

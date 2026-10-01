@@ -12,9 +12,13 @@ abstract class ReportResource extends Resource
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
+    protected static ?string $menuPermissionCode = null;
+
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('report.view') === true;
+        $permission = static::$menuPermissionCode;
+
+        return $permission !== null && auth()->user()?->hasPermission($permission) === true;
     }
 
     public static function shouldRegisterNavigation(): bool

@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class ActivityReportResource extends ReportResource
 {
+    protected static ?string $menuPermissionCode = 'report.daily-activities';
     protected static ?string $model = DailyActivity::class;
 
     protected static ?string $slug = 'activity-reports';
@@ -59,17 +60,6 @@ class ActivityReportResource extends ReportResource
         }
 
         return $query->where('user_id', $user->id);
-    }
-
-    public static function canViewAny(): bool
-    {
-        return auth()->user()?->hasPermission('worklogs.view') === true
-            || auth()->user()?->hasPermission('worklogs.manage') === true;
-    }
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return static::canViewAny();
     }
 
     public static function canView(Model $record): bool

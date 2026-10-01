@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class SlaTicketAgingReportResource extends ServiceDeskReportResource
 {
+    protected static ?string $menuPermissionCode = 'report.sla-ticket-aging';
     protected static ?string $slug = 'reports/sla-ticket-aging';
     protected static ?string $navigationLabel = 'SLA & Ticket Aging';
     protected static ?string $modelLabel = 'SLA & Ticket Aging Report';

@@ -41,7 +41,7 @@ class ManagementSummary extends Page
         $this->assigneeId = null;
     }
 
-    public static function canAccess(): bool { return auth()->user()?->hasPermission('report.view') === true; }
+    public static function canAccess(): bool { return auth()->user()?->hasPermission('report.overview') === true; }
     public static function shouldRegisterNavigation(): bool { return static::canAccess(); }
     public static function getNavigationGroup(): ?string { return 'Reports'; }
     public static function getNavigationSort(): ?int { return 1; }
