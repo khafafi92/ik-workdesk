@@ -3,7 +3,7 @@
 namespace App\Filament\Resources\Reports;
 
 use App\Exports\ReportExport;
-use App\Filament\Resources\Reports\Pages\ListReportRecords;
+use App\Filament\Resources\Reports\Pages\ListDepartmentActivityReports;
 use App\Models\DailyActivity;
 use App\Models\Department;
 use App\Models\Ticket;
@@ -63,9 +63,4 @@ class DepartmentActivityReportResource extends ReportResource
     }
 
     public static function getPages(): array { return ['index' => ListDepartmentActivityReports::route('/')]; }
-}
-
-class ListDepartmentActivityReports extends ListReportRecords
-{
-    protected static string $resource = DepartmentActivityReportResource::class;
 }
