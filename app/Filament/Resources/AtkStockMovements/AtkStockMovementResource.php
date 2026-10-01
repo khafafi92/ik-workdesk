@@ -19,11 +19,11 @@ class AtkStockMovementResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
-    protected static ?string $navigationLabel = 'Mutasi Gudang';
+    protected static ?string $navigationLabel = 'Mutasi Gudang Utama';
 
-    protected static ?string $modelLabel = 'Mutasi Gudang ATK';
+    protected static ?string $modelLabel = 'Mutasi Gudang Utama ATK';
 
-    protected static ?string $pluralModelLabel = 'Mutasi Gudang ATK';
+    protected static ?string $pluralModelLabel = 'Mutasi Gudang Utama ATK';
 
     protected static ?int $navigationSort = 10;
 
@@ -40,8 +40,8 @@ class AtkStockMovementResource extends Resource
                 TextColumn::make('item.code')->label('Kode')->searchable(),
                 TextColumn::make('item.name')->label('Barang ATK')->searchable()->sortable(),
                 TextColumn::make('movement_type')->label('Jenis')->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
-                TextColumn::make('qty')->label('Jumlah')->numeric(decimalPlaces: 2),
-                TextColumn::make('balance_after')->label('Saldo akhir')->numeric(decimalPlaces: 2),
+                TextColumn::make('qty')->label('Jumlah')->numeric(decimalPlaces: 0),
+                TextColumn::make('balance_after')->label('Saldo akhir')->numeric(decimalPlaces: 0),
                 TextColumn::make('creator.name')->label('Oleh')->toggleable(),
                 TextColumn::make('note')->label('Catatan')->limit(45)->toggleable(),
             ])

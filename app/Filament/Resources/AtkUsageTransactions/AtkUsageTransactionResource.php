@@ -50,7 +50,7 @@ class AtkUsageTransactionResource extends Resource
                             ->with('item')
                             ->get()
                             ->mapWithKeys(fn (AtkDepartmentBalance $balance): array => [
-                                $balance->atk_item_id => "{$balance->item->name} (tersedia: ".number_format((float) $balance->qty_available, 2, ',', '.').')',
+                                $balance->atk_item_id => "{$balance->item->name} (tersedia: ".number_format((float) $balance->qty_available, 0, ',', '.').')',
                             ])->all())
                         ->searchable()
                         ->required(),

@@ -7,16 +7,6 @@
                 <small>Perlu ditinjau GA</small>
             </div>
             <div>
-                <span>Menunggu pengadaan</span>
-                <strong>{{ $waitingProcurement }}</strong>
-                <small>Item belum tersedia</small>
-            </div>
-            <div>
-                <span>Siap diserahkan</span>
-                <strong>{{ $readyToIssue }}</strong>
-                <small>Siap diproses GA</small>
-            </div>
-            <div>
                 <span>Menunggu konfirmasi</span>
                 <strong>{{ $awaitingReceipt }}</strong>
                 <small>Barang belum diterima</small>
@@ -32,7 +22,7 @@
             <div class="ik-atk-dashboard-list-toolbar">
                 <div>
                     <h2 id="atk-request-queue-heading">Permintaan yang perlu ditindak</h2>
-                    <p>Peminta, department, entitas, dan barang ditampilkan dalam satu daftar kerja.</p>
+                    <p>GA cukup menyerahkan barang dari Gudang Utama; peminta kemudian mengonfirmasi penerimaan.</p>
                 </div>
                 @if ($requestsUrl)
                     <a class="ik-atk-dashboard-action" href="{{ $requestsUrl }}">Buka semua permintaan</a>

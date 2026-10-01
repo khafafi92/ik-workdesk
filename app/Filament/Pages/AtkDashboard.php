@@ -35,8 +35,6 @@ class AtkDashboard extends Page
     {
         return [
             'newRequests' => AtkRequest::query()->where('status', 'submitted')->count(),
-            'waitingProcurement' => AtkRequestItem::query()->where('status', 'waiting_procurement')->count(),
-            'readyToIssue' => AtkRequestItem::query()->where('status', 'ready')->count(),
             'awaitingReceipt' => AtkRequestItem::query()->where('status', 'issued')
                 ->whereColumn('qty_received', '<', 'qty_issued')
                 ->count(),
@@ -64,7 +62,7 @@ class AtkDashboard extends Page
         return $request->items
             ->map(fn (AtkRequestItem $item): string => trim(implode(' ', [
                 $item->item?->name,
-                number_format((float) $item->qty_requested, 2, ',', '.'),
+                number_format((float) $item->qty_requested, 0, ',', '.'),
                 $item->unit,
             ])))
             ->implode('; ');

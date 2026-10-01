@@ -20,11 +20,14 @@ class AtkReportExport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
+            new AtkCollectionSheet('Rekap Department', [
+                'Departemen', 'Barang ATK', 'Jumlah Diminta', 'Satuan',
+            ], $this->departmentRequestSummaryRows()),
             new AtkCollectionSheet('Permintaan', [
                 'Nomor Permintaan', 'Tanggal', 'Entitas', 'Peminta', 'Departemen', 'Keperluan', 'Status', 'Item', 'Jumlah Diminta', 'Jumlah Diserahkan', 'Jumlah Diterima', 'Satuan',
             ], $this->requestRows()),
-            new AtkCollectionSheet('Stok Gudang', [
-                'Kode', 'Barang ATK', 'Kategori', 'Stok Gudang', 'Stok Minimum', 'Satuan', 'Status',
+            new AtkCollectionSheet('Stok Gudang Utama', [
+                'Kode', 'Barang ATK', 'Kategori', 'Stok Gudang Utama', 'Stok Minimum', 'Satuan', 'Status',
             ], $this->warehouseRows()),
             new AtkCollectionSheet('Stok Departemen', [
                 'Departemen', 'Kode', 'Barang ATK', 'Saldo', 'Satuan', 'Penerimaan Terakhir', 'Pemakaian Terakhir',
@@ -57,6 +60,32 @@ class AtkReportExport implements WithMultipleSheets
                 (float) $item->qty_received,
                 $item->unit,
             ]))->all();
+    }
+
+    private function departmentRequestSummaryRows(): array
+    {
+        return AtkRequest::query()
+            ->with(['department', 'items.item'])
+            ->when($this->from, fn ($query) => $query->whereDate('request_date', '>=', $this->from))
+            ->when($this->until, fn ($query) => $query->whereDate('request_date', '<=', $this->until))
+            ->whereNotIn('status', ['cancelled'])
+            ->get()
+            ->flatMap(fn (AtkRequest $request) => $request->items->map(fn ($item): array => [
+                'department' => $request->department?->name ?? 'Tanpa departemen',
+                'item' => $item->item?->name ?? 'Barang tidak ditemukan',
+                'unit' => $item->unit,
+                'quantity' => (float) $item->qty_requested,
+            ]))
+            ->groupBy(fn (array $row): string => "{$row['department']}|{$row['item']}|{$row['unit']}")
+            ->map(fn ($rows): array => [
+                $rows->first()['department'],
+                $rows->first()['item'],
+                $rows->sum('quantity'),
+                $rows->first()['unit'],
+            ])
+            ->sortBy(fn (array $row): string => "{$row[0]}|{$row[1]}")
+            ->values()
+            ->all();
     }
 
     private function warehouseRows(): array

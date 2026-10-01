@@ -19,11 +19,11 @@ class AtkDepartmentBalanceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
-    protected static ?string $navigationLabel = 'Stok Departemen';
+    protected static ?string $navigationLabel = 'Saldo Department';
 
-    protected static ?string $modelLabel = 'Stok Departemen';
+    protected static ?string $modelLabel = 'Saldo Department';
 
-    protected static ?string $pluralModelLabel = 'Stok Departemen';
+    protected static ?string $pluralModelLabel = 'Saldo Department';
 
     protected static ?int $navigationSort = 6;
 
@@ -39,7 +39,7 @@ class AtkDepartmentBalanceResource extends Resource
                 TextColumn::make('department.name')->label('Departemen')->searchable()->sortable(),
                 TextColumn::make('item.code')->label('Kode')->searchable(),
                 TextColumn::make('item.name')->label('Barang ATK')->searchable()->sortable(),
-                TextColumn::make('qty_available')->label('Saldo')->numeric(decimalPlaces: 2)->sortable(),
+                TextColumn::make('qty_available')->label('Saldo')->numeric(decimalPlaces: 0)->sortable(),
                 TextColumn::make('item.unit')->label('Satuan'),
                 TextColumn::make('updated_at')->label('Diperbarui')->since()->sortable(),
             ])

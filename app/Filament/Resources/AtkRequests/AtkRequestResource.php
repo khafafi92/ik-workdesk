@@ -222,41 +222,13 @@ class AtkRequestResource extends Resource
                     ->visible(fn (): bool => static::canCreate()),
             ])
             ->recordActions([
-                Action::make('waiting_procurement')
-                    ->label('Tunggu pengadaan')
-                    ->icon(Heroicon::OutlinedClock)
-                    ->color('warning')
-                    ->visible(fn (AtkRequest $record): bool => static::canManage() && $record->status !== 'completed')
-                    ->form(static::itemActionForm('Item yang menunggu pengadaan'))
-                    ->action(function (AtkRequest $record, array $data): void {
-                        app(AtkWarehouseStockService::class)->markWaitingProcurement(
-                            static::requestItem($record, $data['request_item_id']),
-                            auth()->user(),
-                            $data['ga_note'] ?? null,
-                        );
-                        static::success('Item ditandai menunggu pengadaan.');
-                    }),
-                Action::make('mark_ready')
-                    ->label('Siap diserahkan')
-                    ->icon(Heroicon::OutlinedCheckCircle)
-                    ->color('info')
-                    ->visible(fn (AtkRequest $record): bool => static::canManage() && $record->status !== 'completed')
-                    ->form(static::itemActionForm('Item yang sudah tersedia'))
-                    ->action(function (AtkRequest $record, array $data): void {
-                        app(AtkWarehouseStockService::class)->markReady(
-                            static::requestItem($record, $data['request_item_id']),
-                            auth()->user(),
-                            $data['ga_note'] ?? null,
-                        );
-                        static::success('Item ditandai siap diserahkan.');
-                    }),
                 Action::make('issue')
-                    ->label('Serahkan barang')
+                    ->label('Serahkan dari Gudang Utama')
                     ->icon(Heroicon::OutlinedArrowRightCircle)
                     ->color('primary')
                     ->visible(fn (AtkRequest $record): bool => static::canManage() && $record->status !== 'completed')
                     ->form([
-                        ...static::itemActionForm('Item yang diserahkan'),
+                        ...static::itemActionForm('Barang yang diserahkan'),
                         TextInput::make('quantity')
                             ->label('Jumlah diserahkan')
                             ->numeric()
@@ -368,7 +340,7 @@ class AtkRequestResource extends Resource
         return $record->items()->with('item')->get()
             ->filter(fn (AtkRequestItem $item): bool => $item->outstandingRequested() > 0)
             ->mapWithKeys(fn (AtkRequestItem $item): array => [
-                $item->id => "{$item->item->name} (sisa: ".number_format($item->outstandingRequested(), 2, ',', '.').')',
+                $item->id => "{$item->item->name} (sisa: ".number_format($item->outstandingRequested(), 0, ',', '.').')',
             ])->all();
     }
 
@@ -377,7 +349,7 @@ class AtkRequestResource extends Resource
         return $record->items()->with('item')->get()
             ->filter(fn (AtkRequestItem $item): bool => $item->awaitingReceipt() > 0)
             ->mapWithKeys(fn (AtkRequestItem $item): array => [
-                $item->id => "{$item->item->name} (menunggu: ".number_format($item->awaitingReceipt(), 2, ',', '.').')',
+                $item->id => "{$item->item->name} (menunggu: ".number_format($item->awaitingReceipt(), 0, ',', '.').')',
             ])->all();
     }
 
@@ -410,7 +382,7 @@ class AtkRequestResource extends Resource
         return $request->items
             ->map(fn (AtkRequestItem $item): string => trim(implode(' ', [
                 $item->item?->name,
-                number_format((float) $item->qty_requested, 2, ',', '.'),
+                number_format((float) $item->qty_requested, 0, ',', '.'),
                 $item->unit,
             ])))
             ->values()

@@ -13,6 +13,7 @@ use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
@@ -35,7 +36,7 @@ class AtkItemResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static ?string $navigationLabel = 'Master Barang dan Gudang';
+    protected static ?string $navigationLabel = 'Master Barang ATK';
 
     protected static ?string $modelLabel = 'Barang ATK';
 
@@ -65,8 +66,8 @@ class AtkItemResource extends Resource
                     TextInput::make('minimum_stock')->label('Stok minimum')->numeric()->minValue(0)->step(0.01),
                     Toggle::make('is_active')->label('Aktif')->default(true),
                     TextInput::make('current_stock')
-                        ->label('Stok awal gudang')
-                        ->helperText('Stok berjalan hanya diubah melalui transaksi masuk atau penyesuaian.')
+                        ->label('Stok awal Gudang Utama')
+                        ->helperText('Stok berjalan Gudang Utama hanya diubah melalui transaksi masuk atau penyesuaian.')
                         ->numeric()
                         ->minValue(0)
                         ->step(0.01)
@@ -84,8 +85,8 @@ class AtkItemResource extends Resource
                 TextColumn::make('name')->label('Nama barang')->searchable()->sortable(),
                 TextColumn::make('category')->label('Kategori')->toggleable(),
                 TextColumn::make('current_stock')
-                    ->label('Stok gudang')
-                    ->numeric(decimalPlaces: 2)
+                    ->label('Stok Gudang Utama')
+                    ->numeric(decimalPlaces: 0)
                     ->sortable()
                     ->color(fn (AtkItem $record): string => $record->minimum_stock !== null && $record->current_stock <= $record->minimum_stock ? 'danger' : 'success'),
                 TextColumn::make('minimum_stock')->label('Min. stok')->numeric(decimalPlaces: 2)->toggleable(),
@@ -109,7 +110,7 @@ class AtkItemResource extends Resource
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('primary')
                     ->modalHeading('Import master dan stok ATK')
-                    ->modalDescription('Gunakan template Excel. Untuk item lama, kolom current_stock menjadi saldo target dan selisihnya dicatat sebagai mutasi gudang.')
+                    ->modalDescription('Gunakan template Excel. Untuk item lama, kolom current_stock menjadi saldo target Gudang Utama dan selisihnya dicatat sebagai mutasi.')
                     ->form([
                         FileUpload::make('file')
                             ->label('File Excel')
