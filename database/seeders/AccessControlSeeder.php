@@ -176,6 +176,48 @@ class AccessControlSeeder extends Seeder
                     'description' => 'Create, edit, and delete reminders.',
                 ],
                 [
+                    'name' => 'Manage Request Categories',
+                    'code' => 'ticket-categories.manage',
+                    'module' => 'Service Desk',
+                    'description' => 'Manage request categories.',
+                ],
+                [
+                    'name' => 'Manage Daily Activities',
+                    'code' => 'daily-activities.manage',
+                    'module' => 'Daily Reports',
+                    'description' => 'Access daily activities.',
+                ],
+                [
+                    'name' => 'Manage Task Categories',
+                    'code' => 'task-categories.manage',
+                    'module' => 'Daily Reports',
+                    'description' => 'Manage task categories.',
+                ],
+                [
+                    'name' => 'Manage Subject Categories',
+                    'code' => 'master.subject-categories.manage',
+                    'module' => 'Master Data',
+                    'description' => 'Manage Subject Categories.',
+                ],
+                [
+                    'name' => 'Manage Permit & KBLI',
+                    'code' => 'master.permit-kbli.manage',
+                    'module' => 'Master Data',
+                    'description' => 'Manage Permit & KBLI.',
+                ],
+                [
+                    'name' => 'Manage Projects',
+                    'code' => 'master.projects.manage',
+                    'module' => 'Master Data',
+                    'description' => 'Manage Projects.',
+                ],
+                [
+                    'name' => 'Manage Activity Categories',
+                    'code' => 'master.activity-categories.manage',
+                    'module' => 'Master Data',
+                    'description' => 'Manage Activity Categories.',
+                ],
+                [
                     'name' => 'View Meeting Bookings',
                     'code' => 'meeting-bookings.view',
                     'module' => 'Meeting Room',
@@ -280,7 +322,7 @@ class AccessControlSeeder extends Seeder
                 [
                     'name' => 'Attendance Operator',
                     'code' => 'attendance-operator',
-                    'description' => 'View, upload, and manage attendance.',
+                    'description' => 'Attendance workflow scope. Menu access is assigned per user.',
                     'permissions' => [
                         'attendance.view',
                         'attendance.upload',
@@ -290,7 +332,7 @@ class AccessControlSeeder extends Seeder
                 [
                     'name' => 'Supervisor',
                     'code' => 'supervisor',
-                    'description' => 'Supervise work logs and findings for selected departments.',
+                    'description' => 'Department supervision and workflow scope. Menu access is assigned per user.',
                     'permissions' => [
                         'tickets.view',
                         'worklogs.view',
@@ -304,7 +346,7 @@ class AccessControlSeeder extends Seeder
                 [
                     'name' => 'Manager',
                     'code' => 'department-manager',
-                    'description' => 'Monitor service desk, work logs, and findings for selected departments.',
+                    'description' => 'Department management and workflow scope. Menu access is assigned per user.',
                     'permissions' => [
                         'tickets.create',
                         'tickets.view',
@@ -320,7 +362,7 @@ class AccessControlSeeder extends Seeder
                 [
                     'name' => 'Requester',
                     'code' => 'requester',
-                    'description' => 'Create and view own Service Desk requests. Extra menus are assigned directly per user.',
+                    'description' => 'Own-request workflow scope. Menu access is assigned per user.',
                     'permissions' => [
                         'tickets.create',
                         'tickets.view',
@@ -329,7 +371,7 @@ class AccessControlSeeder extends Seeder
                 [
                     'name' => 'General Affairs',
                     'code' => 'general-affairs',
-                    'description' => 'Manage ATK requests, warehouse stock, and usage monitoring.',
+                    'description' => 'Operational workflow scope. Menu access is assigned per user.',
                     'permissions' => [
                         'atk.request',
                         'atk.manage',
@@ -349,7 +391,19 @@ class AccessControlSeeder extends Seeder
             ];
 
             foreach ($roles as $roleData) {
-                $permissionCodes = $roleData['permissions'];
+                $menuPermissionCodes = [
+                    'master-data.manage', 'report.view', 'report.export', 'ltro.view', 'ltro.manage',
+                    'atk.request', 'atk.manage', 'atk.report', 'attendance.view', 'attendance.upload', 'attendance.manage',
+                    'tickets.create', 'tickets.view', 'tickets.manage', 'worklogs.view', 'worklogs.manage',
+                    'reminders.view', 'reminders.manage', 'meeting-bookings.view', 'meeting-bookings.create',
+                    'meeting-bookings.cancel-own', 'meeting-bookings.manage', 'meeting-rooms.manage',
+                    'vehicle-bookings.view', 'vehicle-bookings.create', 'vehicle-bookings.cancel-own',
+                    'vehicle-bookings.manage', 'vehicles.manage', 'ticket-categories.manage',
+                    'daily-activities.manage', 'task-categories.manage',
+                ];
+                $permissionCodes = $roleData['permissions'] === ['*']
+                    ? ['*']
+                    : array_values(array_diff($roleData['permissions'], $menuPermissionCodes));
 
                 unset($roleData['permissions']);
 

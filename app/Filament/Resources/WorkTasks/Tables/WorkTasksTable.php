@@ -95,7 +95,7 @@ class WorkTasksTable
                     }),
 
                 TextColumn::make('approval_status')
-                    ->label('Legal Approval')
+                    ->label('CBO Approval')
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'pending' => 'Menunggu CBO',
                         'approved' => 'Approved',
@@ -143,12 +143,12 @@ class WorkTasksTable
             ->defaultSort('created_at', 'desc')
             ->recordActions([
                 Action::make('approveLegalTask')
-                    ->label('Approve Legal')
+                    ->label('Approve CBO')
                     ->icon('heroicon-o-shield-check')
                     ->color('success')
                     ->requiresConfirmation()
-                    ->modalHeading('Approve task Legal?')
-                    ->modalDescription('Setelah di-approve, task akan muncul dan dapat dikerjakan oleh divisi Legal.')
+                    ->modalHeading('Approve task?')
+                    ->modalDescription('Setelah di-approve, task dapat dikerjakan oleh department tujuan.')
                     ->visible(
                         fn ($record): bool => $record->canBeApprovedBy(auth()->user())
                     )
@@ -156,8 +156,8 @@ class WorkTasksTable
                         $record->approveLegalTask(auth()->user());
 
                         Notification::make()
-                            ->title('Task Legal berhasil di-approve')
-                            ->body('Task sekarang sudah muncul di divisi Legal.')
+                            ->title('Task berhasil di-approve')
+                            ->body('Task sekarang dapat dikerjakan oleh department tujuan.')
                             ->success()
                             ->send();
                     }),
@@ -167,8 +167,8 @@ class WorkTasksTable
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->modalHeading('Reject task Legal?')
-                    ->modalDescription('Alasan penolakan wajib diisi dan akan terlihat oleh requester serta Legal.')
+                    ->modalHeading('Reject task?')
+                    ->modalDescription('Alasan penolakan wajib diisi dan akan terlihat oleh requester serta department tujuan.')
                     ->schema([
                         Textarea::make('rejection_reason')
                             ->label('Alasan Penolakan')
@@ -186,7 +186,7 @@ class WorkTasksTable
                         );
 
                         Notification::make()
-                            ->title('Task Legal telah ditolak')
+                            ->title('Task telah ditolak')
                             ->body('Keputusan dan alasan penolakan sudah dicatat.')
                             ->danger()
                             ->send();

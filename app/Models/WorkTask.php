@@ -53,10 +53,10 @@ class WorkTask extends Model
     protected static function booted(): void
     {
         static::creating(function (WorkTask $task): void {
-            $isLegalTask = $task->department_id
-                && Department::query()->find($task->department_id)?->isLegal();
+            $requiresCboApproval = $task->department_id
+                && Department::query()->find($task->department_id)?->requiresCboApproval();
 
-            if ($isLegalTask) {
+            if ($requiresCboApproval) {
                 $task->approval_status = 'pending';
                 $task->approved_by_user_id = null;
                 $task->approved_at = null;
@@ -387,7 +387,7 @@ class WorkTask extends Model
     {
         $this->loadMissing('department');
 
-        return $this->department?->isLegal() === true;
+        return $this->department?->requiresCboApproval() === true;
     }
 
     public function isAwaitingLegalApproval(): bool
@@ -430,7 +430,7 @@ class WorkTask extends Model
 
             if (! $task->canBeApprovedBy($approver)) {
                 throw ValidationException::withMessages([
-                    'approval_status' => 'Task Legal ini tidak dapat Anda approve.',
+                    'approval_status' => 'Task ini tidak dapat Anda approve.',
                 ]);
             }
 
@@ -465,7 +465,7 @@ class WorkTask extends Model
 
             if (! $task->canBeApprovedBy($rejector)) {
                 throw ValidationException::withMessages([
-                    'approval_status' => 'Task Legal ini tidak dapat Anda reject.',
+                    'approval_status' => 'Task ini tidak dapat Anda reject.',
                 ]);
             }
 
@@ -526,7 +526,7 @@ class WorkTask extends Model
 
             if (! $task->canBeResubmittedBy($requester)) {
                 throw ValidationException::withMessages([
-                    'approval_status' => 'Task Legal ini tidak dapat diajukan ulang oleh Anda.',
+                    'approval_status' => 'Task ini tidak dapat diajukan ulang oleh Anda.',
                 ]);
             }
 

@@ -24,7 +24,7 @@ class AtkRequestHistoryResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Audit Permintaan ATK';
 
-    protected static ?int $navigationSort = 6;
+    protected static ?int $navigationSort = 11;
 
     public static function form(Schema $schema): Schema
     {

@@ -14,12 +14,12 @@ class UserAccessHierarchyService
         'system-admin' => 'Sys Administrator — seluruh akses sistem',
         'administrator' => 'Administrator — kelola user dan penetapan akses',
         'admin' => 'Admin — operasional sesuai menu yang ditugaskan',
-        'department-manager' => 'Manager — kelola pekerjaan dan monitoring department',
-        'supervisor' => 'SPV — supervisi pekerjaan team',
-        'general-affairs' => 'General Affairs — pengelolaan ATK',
-        'attendance-operator' => 'Attendance Operator — pengelolaan attendance',
+        'department-manager' => 'Manager — batas department dan proses kerja',
+        'supervisor' => 'SPV — batas department dan supervisi pekerjaan',
+        'general-affairs' => 'General Affairs — proses kerja operasional',
+        'attendance-operator' => 'Attendance Operator — proses attendance',
         'cbo' => 'Chief Business Officer — persetujuan Legal',
-        'requester' => 'Requester — Service Desk milik sendiri',
+        'requester' => 'Requester — proses permintaan milik sendiri',
     ];
 
     public function optionsFor(?User $actor): array

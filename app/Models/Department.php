@@ -10,11 +10,22 @@ class Department extends Model
         'code',
         'name',
         'is_active',
+        'requires_cbo_approval',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'requires_cbo_approval' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $department): void {
+            if ($department->requires_cbo_approval === null && $department->isLegal()) {
+                $department->requires_cbo_approval = true;
+            }
+        });
+    }
 
     public function isLegal(): bool
     {
@@ -22,6 +33,11 @@ class Department extends Model
         $name = strtolower(trim((string) $this->name));
 
         return $code === 'legal' || str_contains($name, 'legal');
+    }
+
+    public function requiresCboApproval(): bool
+    {
+        return $this->requires_cbo_approval === true;
     }
 
     public function employees()

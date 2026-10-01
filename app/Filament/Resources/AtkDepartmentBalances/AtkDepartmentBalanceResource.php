@@ -25,7 +25,7 @@ class AtkDepartmentBalanceResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Stok Departemen';
 
-    protected static ?int $navigationSort = 3;
+    protected static ?int $navigationSort = 6;
 
     public static function form(Schema $schema): Schema
     {

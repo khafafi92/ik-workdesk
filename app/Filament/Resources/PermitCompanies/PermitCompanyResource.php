@@ -22,6 +22,8 @@ class PermitCompanyResource extends Resource
 
     protected static ?string $model = PermitCompany::class;
 
+    protected static ?string $menuPermissionCode = 'master.permit-kbli.manage';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
     protected static ?string $recordTitleAttribute = 'name';
@@ -49,6 +51,11 @@ class PermitCompanyResource extends Resource
     public static function getNavigationGroup(): ?string
     {
         return 'Master Data';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 2;
     }
 
     public static function getPages(): array

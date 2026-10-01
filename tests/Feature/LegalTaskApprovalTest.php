@@ -160,6 +160,27 @@ class LegalTaskApprovalTest extends TestCase
         $this->assertFalse($task->isAwaitingLegalApproval());
     }
 
+    public function test_any_department_can_be_configured_to_require_cbo_approval(): void
+    {
+        $finance = Department::query()->create([
+            'code' => 'FIN-CBO',
+            'name' => 'Finance',
+            'is_active' => true,
+            'requires_cbo_approval' => true,
+        ]);
+
+        $task = WorkTask::query()->create([
+            'task_no' => 'TSK-FIN-CBO-001',
+            'department_id' => $finance->id,
+            'title' => 'Finance task awaiting approval',
+            'status' => 'planned',
+        ]);
+
+        $this->assertTrue($finance->requiresCboApproval());
+        $this->assertSame('pending', $task->approval_status);
+        $this->assertTrue($task->isAwaitingLegalApproval());
+    }
+
     public function test_system_administrator_role_can_approve_legal_tasks(): void
     {
         $legal = Department::query()->create([

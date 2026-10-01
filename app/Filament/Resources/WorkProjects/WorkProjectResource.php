@@ -21,6 +21,8 @@ class WorkProjectResource extends Resource
 
     protected static ?string $model = WorkProject::class;
 
+    protected static ?string $menuPermissionCode = 'master.projects.manage';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-briefcase';
 
     protected static ?string $recordTitleAttribute = 'name';

@@ -2,7 +2,6 @@
 
 namespace App\Filament\Resources\TaskCategories;
 
-use App\Filament\Resources\Concerns\AdminOnlyResource;
 use App\Filament\Resources\TaskCategories\Pages\CreateTaskCategory;
 use App\Filament\Resources\TaskCategories\Pages\EditTaskCategory;
 use App\Filament\Resources\TaskCategories\Pages\ListTaskCategories;
@@ -17,8 +16,6 @@ use Filament\Tables\Table;
 
 class TaskCategoryResource extends Resource
 {
-    use AdminOnlyResource;
-
     protected static ?string $model = TaskCategory::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
@@ -54,13 +51,26 @@ class TaskCategoryResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Daily Report';
+        return 'Daily Reports';
     }
 
     public static function getNavigationSort(): ?int
     {
-        return 2;
+        return 3;
     }
+
+    protected static function currentUserCanManageTaskCategories(): bool
+    {
+        return auth()->user()?->hasPermission('task-categories.manage') === true
+            || auth()->user()?->hasPermission('master-data.manage') === true;
+    }
+
+    public static function shouldRegisterNavigation(): bool { return static::currentUserCanManageTaskCategories(); }
+    public static function canViewAny(): bool { return static::currentUserCanManageTaskCategories(); }
+    public static function canCreate(): bool { return static::currentUserCanManageTaskCategories(); }
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool { return static::currentUserCanManageTaskCategories(); }
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool { return static::currentUserCanManageTaskCategories(); }
+    public static function canDeleteAny(): bool { return static::currentUserCanManageTaskCategories(); }
 
     public static function getPages(): array
     {

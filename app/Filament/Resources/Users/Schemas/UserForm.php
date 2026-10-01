@@ -11,7 +11,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
-use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Builder;
@@ -137,7 +136,7 @@ class UserForm
 
                 Section::make('Level Akses')
                     ->description(
-                        'Pilih satu level utama. Level menentukan batas menu yang dapat diberikan kepada user.'
+                        'Pilih satu level utama untuk peran user. Menu diberikan melalui checklist di bawah.'
                     )
                     ->schema([
                         Select::make('access_level')
@@ -149,23 +148,7 @@ class UserForm
                             ->default(UserAccessHierarchyService::REQUESTER)
                             ->required()
                             ->native(false)
-                            ->live()
-                            ->afterStateUpdated(function (mixed $state, Get $get, Set $set): void {
-                                $allowedGroups = array_keys(
-                                    app(UserAdditionalAccessService::class)->optionsForLevel(
-                                        $state ?: UserAccessHierarchyService::REQUESTER
-                                    )
-                                );
-
-                                $set(
-                                    'additional_access',
-                                    array_values(array_intersect(
-                                        (array) $get('additional_access'),
-                                        $allowedGroups
-                                    ))
-                                );
-                            })
-                            ->helperText('Sys Administrator adalah satu-satunya level dengan akses penuh.')
+                            ->helperText('Level menentukan peran utama. Pilih menu yang diperlukan pada daftar di bawah.')
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -194,24 +177,29 @@ class UserForm
                     ])
                     ->columnSpanFull(),
 
-                Section::make('Akses Tambahan')
+                Section::make('Akses Menu')
                     ->description(
-                        'Pilih hanya menu yang diperlukan. Bila Level Utama diubah, pilihan yang tidak sesuai akan dihapus otomatis.'
+                        'Pilih submenu yang boleh dibuka oleh user ini. Gunakan Pilih semua pada setiap modul bila seluruh submenu perlu diberikan.'
                     )
-                    ->schema([
-                        CheckboxList::make('additional_access')
-                            ->label('Akses Tambahan')
-                            ->hiddenLabel()
-                            ->options(function (Get $get): array {
-                                return app(UserAdditionalAccessService::class)
-                                    ->optionsForLevel(
-                                        $get('access_level')
-                                        ?: UserAccessHierarchyService::REQUESTER
-                                    );
+                    ->schema(
+                        collect(app(UserAdditionalAccessService::class)->menuGroups())
+                            ->map(function (array $module, string $key): Section {
+                                return Section::make($module['label'])
+                                    ->description($module['description'])
+                                    ->schema([
+                                        CheckboxList::make("menu_access.{$key}")
+                                            ->label('Submenu')
+                                            ->options(fn (): array => app(UserAdditionalAccessService::class)
+                                                ->menuOptionsForModule($module))
+                                            ->bulkToggleable()
+                                            ->columns(1)
+                                            ->columnSpanFull(),
+                                    ])
+                                    ->compact()
+                                    ->columnSpanFull();
                             })
-                            ->columns(2)
-                            ->columnSpanFull(),
-                    ])
+                            ->all()
+                    )
                     ->columnSpanFull(),
             ]);
     }

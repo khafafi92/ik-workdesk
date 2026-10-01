@@ -310,7 +310,7 @@ class WorkTaskResource extends Resource
 
     public static function getNavigationGroup(): ?string
     {
-        return 'Daily Report';
+        return 'Daily Reports';
     }
 
     public static function getNavigationSort(): ?int

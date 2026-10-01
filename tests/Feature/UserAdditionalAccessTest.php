@@ -64,7 +64,7 @@ class UserAdditionalAccessTest extends TestCase
         $user = User::factory()->create(['is_admin' => false]);
         $user->roles()->attach(Role::query()->where('code', 'requester')->value('id'));
 
-        $this->assertTrue($user->hasPermission('tickets.create'));
+        $this->assertFalse($user->hasPermission('tickets.create'));
         $this->assertFalse($user->hasPermission('worklogs.view'));
         $this->assertFalse($user->hasPermission('master-data.manage'));
 

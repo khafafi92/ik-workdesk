@@ -31,8 +31,8 @@ class EditUser extends EditRecord
 
         $data['access_level'] = app(UserAccessHierarchyService::class)
             ->levelFor($this->record);
-        $data['additional_access'] = app(UserAdditionalAccessService::class)
-            ->stateFor($this->record);
+        $data['menu_access'] = app(UserAdditionalAccessService::class)
+            ->menuStateFor($this->record);
 
         return $data;
     }
@@ -66,12 +66,14 @@ class EditUser extends EditRecord
             ]);
         }
 
-        $this->selectedAdditionalAccess = app(UserAdditionalAccessService::class)
-            ->validateForLevel(
-                $this->selectedAccessLevel,
-                (array) ($data['additional_access'] ?? [])
-            );
-        unset($data['additional_access']);
+        $accessService = app(UserAdditionalAccessService::class);
+        $this->selectedAdditionalAccess = $accessService->validateForLevel(
+            $this->selectedAccessLevel,
+            $accessService->accessGroupsFromMenuState(
+                (array) ($data['menu_access'] ?? [])
+            )
+        );
+        unset($data['menu_access']);
 
         /*
         |--------------------------------------------------------------------------

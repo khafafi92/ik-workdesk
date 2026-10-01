@@ -64,7 +64,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Vehicle Booking')->collapsed(),
                 NavigationGroup::make()->label('Notifications')->collapsed(),
                 NavigationGroup::make()->label('Service Desk'),
-                NavigationGroup::make()->label('Daily Report'),
+                NavigationGroup::make()->label('Daily Reports'),
             ])
             ->navigationItems([
                 NavigationItem::make('Internal 9')
@@ -118,7 +118,7 @@ class AdminPanelProvider extends PanelProvider
                                     'Vehicle Booking',
                                     'Notifications',
                                     'Service Desk',
-                                    'Daily Report',
+                                    'Daily Reports',
                                 ]),
                             )
                             localStorage.setItem('workdesk-navigation-version', navigationVersion)

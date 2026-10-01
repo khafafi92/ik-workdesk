@@ -49,12 +49,14 @@ class CreateUser extends CreateRecord
             ]);
         }
 
-        $this->selectedAdditionalAccess = app(UserAdditionalAccessService::class)
-            ->validateForLevel(
-                $this->selectedAccessLevel,
-                (array) ($data['additional_access'] ?? [])
-            );
-        unset($data['additional_access']);
+        $accessService = app(UserAdditionalAccessService::class);
+        $this->selectedAdditionalAccess = $accessService->validateForLevel(
+            $this->selectedAccessLevel,
+            $accessService->accessGroupsFromMenuState(
+                (array) ($data['menu_access'] ?? [])
+            )
+        );
+        unset($data['menu_access']);
 
         /*
         |--------------------------------------------------------------------------

@@ -21,7 +21,7 @@ class AtkDashboard extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'ATK';
 
-    protected static ?int $navigationSort = 0;
+    protected static ?int $navigationSort = 1;
 
     protected string $view = 'filament.pages.atk-dashboard';
 

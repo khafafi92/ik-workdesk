@@ -82,6 +82,17 @@ class ReminderResource extends Resource
     {
         return 1;
     }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasPermission('reminders.view') === true
+            || auth()->user()?->hasPermission('reminders.manage') === true;
+    }
     // bloking reminder sesuai user
 
     public static function getEloquentQuery(): Builder

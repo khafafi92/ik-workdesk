@@ -7,7 +7,62 @@ use App\Models\User;
 
 class UserAdditionalAccessService
 {
+    private const MENU_ITEMS = [
+        'subject-categories' => ['label' => 'Subject Categories', 'access' => 'master-subject-categories'],
+        'permit-kbli' => ['label' => 'Permit & KBLI', 'access' => 'master-permit-kbli'],
+        'projects' => ['label' => 'Projects', 'access' => 'master-projects'],
+        'activity-categories' => ['label' => 'Activity Categories', 'access' => 'master-activity-categories'],
+        'attendance-report-center' => ['label' => 'Attendance Report', 'access' => 'attendance-report'],
+        'attendance-upload-period' => ['label' => 'Upload Period', 'access' => 'attendance-management'],
+        'attendance-report-results' => ['label' => 'Report Results', 'access' => 'attendance-report'],
+        'report-overview' => ['label' => 'Overview', 'access' => 'reports'],
+        'report-service-desk' => ['label' => 'Service Desk', 'access' => 'reports'],
+        'report-daily-activities' => ['label' => 'Daily Activities', 'access' => 'reports'],
+        'report-work-logs' => ['label' => 'Work Logs', 'access' => 'reports'],
+        'report-sla-ticket-aging' => ['label' => 'SLA & Ticket Aging', 'access' => 'reports'],
+        'report-workload' => ['label' => 'Workload', 'access' => 'reports'],
+        'report-department-activity' => ['label' => 'Department Activity', 'access' => 'reports'],
+        'ltro-mttr-records' => ['label' => 'MTTR Records', 'access' => 'ltro'],
+        'ltro-daily-reports' => ['label' => 'Daily Reports', 'access' => 'ltro'],
+        'ltro-availability' => ['label' => 'Availability LTRO 1B', 'access' => 'ltro'],
+        'atk-dashboard' => ['label' => 'Dashboard ATK', 'access' => 'atk-management'],
+        'atk-requests' => ['label' => 'Permintaan ATK', 'access' => 'atk-request'],
+        'atk-summary' => ['label' => 'Rekap Kebutuhan', 'access' => 'atk-management'],
+        'atk-items' => ['label' => 'Master Barang dan Gudang', 'access' => 'atk-management'],
+        'atk-categories' => ['label' => 'Kategori Barang', 'access' => 'atk-management'],
+        'atk-department-balance' => ['label' => 'Stok Departemen', 'access' => 'atk-request'],
+        'atk-units' => ['label' => 'Satuan Barang', 'access' => 'atk-management'],
+        'atk-usage' => ['label' => 'Pemakaian ATK', 'access' => 'atk-request'],
+        'atk-department-movement' => ['label' => 'Mutasi Departemen', 'access' => 'atk-management'],
+        'atk-stock-movement' => ['label' => 'Mutasi Gudang', 'access' => 'atk-management'],
+        'atk-request-history' => ['label' => 'Audit Permintaan', 'access' => 'atk-management'],
+        'atk-reports' => ['label' => 'Laporan & Export', 'access' => 'atk-management'],
+        'meeting-calendar' => ['label' => 'Calendar', 'access' => 'meeting-room'],
+        'meeting-bookings' => ['label' => 'Bookings', 'access' => 'meeting-room'],
+        'meeting-rooms' => ['label' => 'Meeting Rooms', 'access' => 'meeting-room-management'],
+        'vehicle-calendar' => ['label' => 'Calendar', 'access' => 'vehicle-booking'],
+        'vehicle-bookings' => ['label' => 'Bookings', 'access' => 'vehicle-booking'],
+        'vehicles' => ['label' => 'Vehicles', 'access' => 'vehicle-booking-management'],
+        'reminders' => ['label' => 'Reminders', 'access' => 'notifications'],
+        'service-desk' => ['label' => 'Service Desk', 'access' => 'service-desk'],
+        'request-categories' => ['label' => 'Request Categories', 'access' => 'request-categories'],
+        'work-logs' => ['label' => 'Work Logs', 'access' => 'daily-report'],
+        'daily-activities' => ['label' => 'Daily Activities', 'access' => 'daily-activities'],
+        'task-categories' => ['label' => 'Task Categories', 'access' => 'task-categories'],
+    ];
+
     private const ACCESS_GROUPS = [
+        'master-subject-categories' => ['master.subject-categories.manage'],
+        'master-permit-kbli' => ['master.permit-kbli.manage'],
+        'master-projects' => ['master.projects.manage'],
+        'master-activity-categories' => ['master.activity-categories.manage'],
+        'notifications' => [
+            'reminders.view',
+        ],
+        'service-desk' => [
+            'tickets.create',
+            'tickets.view',
+        ],
         'atk-request' => [
             'atk.request',
         ],
@@ -63,74 +118,134 @@ class UserAdditionalAccessService
         'master-data' => [
             'master-data.manage',
         ],
-    ];
-
-    private const ACCESS_BY_LEVEL = [
-        'system-admin' => [
-            'atk-request', 'atk-management', 'daily-report', 'ltro',
-            'meeting-room', 'meeting-room-management', 'vehicle-booking',
-            'vehicle-booking-management', 'attendance-report',
-            'attendance-management', 'reports', 'master-data',
+        'request-categories' => [
+            'ticket-categories.manage',
         ],
-        'administrator' => [
-            'atk-request', 'atk-management', 'daily-report', 'ltro',
-            'meeting-room', 'meeting-room-management', 'vehicle-booking',
-            'vehicle-booking-management', 'attendance-report',
-            'attendance-management', 'reports', 'master-data',
+        'daily-activities' => [
+            'daily-activities.manage',
         ],
-        'admin' => [
-            'atk-request', 'atk-management', 'daily-report', 'ltro',
-            'meeting-room', 'meeting-room-management', 'vehicle-booking',
-            'vehicle-booking-management', 'attendance-report',
-            'attendance-management', 'reports', 'master-data',
-        ],
-        'department-manager' => [
-            'atk-request', 'daily-report', 'ltro', 'meeting-room',
-            'vehicle-booking', 'attendance-report', 'reports', 'master-data',
-        ],
-        'supervisor' => [
-            'atk-request', 'daily-report', 'meeting-room', 'vehicle-booking',
-            'attendance-report', 'master-data',
-        ],
-        'general-affairs' => [
-            'atk-request', 'atk-management', 'meeting-room', 'vehicle-booking',
-            'attendance-report', 'reports', 'master-data',
-        ],
-        'attendance-operator' => [
-            'meeting-room', 'vehicle-booking', 'attendance-management', 'reports',
-        ],
-        'cbo' => [
-            'daily-report', 'reports',
-        ],
-        'requester' => [
-            'atk-request', 'meeting-room', 'vehicle-booking',
-            'attendance-report', 'master-data',
+        'task-categories' => [
+            'task-categories.manage',
         ],
     ];
 
     public function options(): array
     {
         return [
+            'master-data' => 'Kelola seluruh Master Data',
+            'attendance-report' => 'Lihat Attendance Report dan Report Results',
+            'attendance-management' => 'Attendance Reports — Upload dan Kelola',
+            'reports' => 'Akses seluruh Reports dan Export',
+            'ltro' => 'Akses seluruh menu LTRO',
             'atk-request' => 'ATK — Permintaan dan Stok Departemen',
             'atk-management' => 'ATK — Kelola Gudang, Master, dan Laporan',
-            'daily-report' => 'Daily Report dan Tasks',
-            'ltro' => 'LTRO dan turunannya',
+            'daily-report' => 'Work Logs',
             'meeting-room' => 'Meeting Room — Booking Saya',
             'meeting-room-management' => 'Meeting Room — Kelola Booking dan Ruangan',
             'vehicle-booking' => 'Vehicle Booking — Booking Saya',
             'vehicle-booking-management' => 'Vehicle Booking — Kelola Booking dan Kendaraan',
-            'reports' => 'Reports dan Export',
-            'attendance-report' => 'Attendance Reports',
-            'attendance-management' => 'Attendance Reports — Upload dan Kelola',
-            'master-data' => 'Master Data dan turunannya',
+            'notifications' => 'Reminders',
+            'service-desk' => 'Buat dan lihat permintaan',
+            'request-categories' => 'Request Categories',
+            'daily-activities' => 'Daily Activities',
+            'task-categories' => 'Task Categories',
         ];
+    }
+
+    public function menuDescriptions(): array
+    {
+        return [
+            'notifications' => 'Reminders.',
+            'service-desk' => 'Service Desk.',
+            'master-data' => 'Subject Categories, Permit & KBLI, Projects, Activity Categories.',
+            'attendance-report' => 'Attendance Report dan Report Results.',
+            'attendance-management' => 'Upload Period dan pengelolaan data attendance.',
+            'reports' => 'Overview, Service Desk, Daily Activities, Work Logs, SLA & Ticket Aging, Workload, Department Activity.',
+            'ltro' => 'MTTR Records, Daily Reports, Availability LTRO 1B.',
+            'atk-request' => 'Permintaan ATK, Stok Departemen sesuai department, dan Pemakaian ATK.',
+            'atk-management' => 'Dashboard, Rekap, Master Barang dan Gudang, Kategori, Satuan, Mutasi, Audit, dan Laporan.',
+            'meeting-room' => 'Calendar dan Bookings.',
+            'meeting-room-management' => 'Meeting Rooms serta pengelolaan seluruh booking.',
+            'vehicle-booking' => 'Calendar dan Bookings.',
+            'vehicle-booking-management' => 'Vehicles serta pengelolaan seluruh booking.',
+            'daily-report' => 'Kemampuan mengelola Work Logs.',
+            'request-categories' => 'Request Categories pada Service Desk.',
+            'daily-activities' => 'Daily Activities pada Daily Reports.',
+            'task-categories' => 'Task Categories pada Daily Reports.',
+        ];
+    }
+
+    public function menuGroups(): array
+    {
+        return [
+            'master_data' => [
+                'label' => 'Master Data',
+                'description' => 'Pilih menu Master Data yang diperlukan.',
+                'items' => ['subject-categories', 'permit-kbli', 'projects', 'activity-categories'],
+            ],
+            'attendance_report' => [
+                'label' => 'Attendance Report',
+                'description' => 'Pilih akses melihat laporan atau mengelola data attendance.',
+                'items' => ['attendance-report-center', 'attendance-upload-period', 'attendance-report-results'],
+            ],
+            'reports' => [
+                'label' => 'Reports',
+                'description' => 'Laporan operasional dan ekspor data.',
+                'items' => ['report-overview', 'report-service-desk', 'report-daily-activities', 'report-work-logs', 'report-sla-ticket-aging', 'report-workload', 'report-department-activity'],
+            ],
+            'ltro' => [
+                'label' => 'LTRO Management',
+                'description' => 'MTTR Records, Daily Reports, dan Availability LTRO 1B.',
+                'items' => ['ltro-mttr-records', 'ltro-daily-reports', 'ltro-availability'],
+            ],
+            'atk' => [
+                'label' => 'ATK',
+                'description' => 'Pilih akses permintaan atau pengelolaan stok ATK.',
+                'items' => ['atk-dashboard', 'atk-requests', 'atk-summary', 'atk-items', 'atk-categories', 'atk-department-balance', 'atk-units', 'atk-usage', 'atk-department-movement', 'atk-stock-movement', 'atk-request-history', 'atk-reports'],
+            ],
+            'meeting_room' => [
+                'label' => 'Meeting Room',
+                'description' => 'Pilih booking pribadi atau akses pengelolaan ruangan.',
+                'items' => ['meeting-calendar', 'meeting-bookings', 'meeting-rooms'],
+            ],
+            'vehicle_booking' => [
+                'label' => 'Vehicle Booking',
+                'description' => 'Pilih booking pribadi atau akses pengelolaan kendaraan.',
+                'items' => ['vehicle-calendar', 'vehicle-bookings', 'vehicles'],
+            ],
+            'notifications' => [
+                'label' => 'Notifications',
+                'description' => 'Notifikasi dan reminders.',
+                'items' => ['reminders'],
+            ],
+            'service_desk' => [
+                'label' => 'Service Desk',
+                'description' => 'Permintaan Service Desk dan kategori permintaan.',
+                'items' => ['service-desk', 'request-categories'],
+            ],
+            'daily_reports' => [
+                'label' => 'Daily Reports',
+                'description' => 'Work Logs, Daily Activities, dan Task Categories.',
+                'items' => ['work-logs', 'daily-activities', 'task-categories'],
+            ],
+        ];
+    }
+
+    public function optionsForGroups(array $groups): array
+    {
+        return array_intersect_key($this->options(), array_flip($groups));
+    }
+
+    public function menuOptionsForModule(array $module): array
+    {
+        return collect($module['items'])
+            ->mapWithKeys(fn (string $item): array => [$item => self::MENU_ITEMS[$item]['label']])
+            ->all();
     }
 
     public function optionsForLevel(string $level): array
     {
-        $allowedGroups = self::ACCESS_BY_LEVEL[$level] ?? [];
-
-        return array_intersect_key($this->options(), array_flip($allowedGroups));
+        return $this->options();
     }
 
     public function validateForLevel(string $level, array $accessGroups): array
@@ -140,10 +255,10 @@ class UserAdditionalAccessService
             ->unique()
             ->values()
             ->all();
-        $allowedGroups = array_keys($this->optionsForLevel($level));
+        $allowedGroups = array_keys($this->options());
 
         if (array_diff($selectedGroups, $allowedGroups) !== []) {
-            abort(422, 'Akses tambahan tidak sesuai dengan level user yang dipilih.');
+            abort(422, 'Pilihan akses menu tidak valid.');
         }
 
         return $selectedGroups;
@@ -161,6 +276,41 @@ class UserAdditionalAccessService
                     ->every(fn (string $code): bool => in_array($code, $directCodes, true))
             )
             ->keys()
+            ->all();
+    }
+
+    public function menuStateFor(User $user): array
+    {
+        $selectedGroups = $this->stateFor($user);
+
+        if (in_array('master-data', $selectedGroups, true)) {
+            $selectedGroups = [
+                ...$selectedGroups,
+                'master-subject-categories',
+                'master-permit-kbli',
+                'master-projects',
+                'master-activity-categories',
+            ];
+        }
+
+        return collect($this->menuGroups())
+            ->mapWithKeys(fn (array $module, string $key): array => [
+                $key => collect($module['items'])
+                    ->filter(fn (string $item): bool => in_array(self::MENU_ITEMS[$item]['access'], $selectedGroups, true))
+                    ->values()
+                    ->all(),
+            ])
+            ->all();
+    }
+
+    public function accessGroupsFromMenuState(array $menuAccess): array
+    {
+        return collect($menuAccess)
+            ->flatten()
+            ->filter(fn ($item): bool => is_string($item) && array_key_exists($item, self::MENU_ITEMS))
+            ->map(fn (string $item): string => self::MENU_ITEMS[$item]['access'])
+            ->unique()
+            ->values()
             ->all();
     }
 

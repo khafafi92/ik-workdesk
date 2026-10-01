@@ -21,6 +21,8 @@ class ActivityCategoryResource extends Resource
 
     protected static ?string $model = ActivityCategory::class;
 
+    protected static ?string $menuPermissionCode = 'master.activity-categories.manage';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';
 
     protected static ?string $navigationLabel = 'Activity Categories';

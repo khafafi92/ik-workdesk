@@ -21,6 +21,9 @@ class DepartmentsTable
                     ->searchable(),
                 IconColumn::make('is_active')
                     ->boolean(),
+                IconColumn::make('requires_cbo_approval')
+                    ->label('Perlu CBO')
+                    ->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()

@@ -35,13 +35,13 @@ class AtkItemResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static ?string $navigationLabel = 'Master Barang & Gudang';
+    protected static ?string $navigationLabel = 'Master Barang dan Gudang';
 
     protected static ?string $modelLabel = 'Barang ATK';
 
     protected static ?string $pluralModelLabel = 'Master Barang ATK';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {

@@ -25,7 +25,7 @@ class AtkDepartmentStockMovementResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Mutasi Stok Departemen';
 
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 9;
 
     public static function form(Schema $schema): Schema
     {

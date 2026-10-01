@@ -32,7 +32,7 @@ class AtkUsageTransactionResource extends Resource
 
     protected static ?string $pluralModelLabel = 'Riwayat Pemakaian ATK';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 8;
 
     public static function form(Schema $schema): Schema
     {

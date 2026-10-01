@@ -40,15 +40,15 @@ class ViewWorkTask extends ViewRecord
                 ->icon('heroicon-o-shield-check')
                 ->color('success')
                 ->requiresConfirmation()
-                ->modalHeading('Approve task Legal?')
-                ->modalDescription('Setelah di-approve, task akan muncul dan dapat dikerjakan oleh divisi Legal.')
+                ->modalHeading('Approve task?')
+                ->modalDescription('Setelah di-approve, task dapat dikerjakan oleh department tujuan.')
                 ->visible(fn (): bool => $this->record->canBeApprovedBy(auth()->user()))
                 ->action(function (): void {
                     $this->record->approveLegalTask(auth()->user());
 
                     Notification::make()
-                        ->title('Task Legal berhasil di-approve')
-                        ->body('Task sekarang sudah muncul di divisi Legal.')
+                        ->title('Task berhasil di-approve')
+                        ->body('Task sekarang dapat dikerjakan oleh department tujuan.')
                         ->success()
                         ->send();
 
@@ -60,8 +60,8 @@ class ViewWorkTask extends ViewRecord
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->requiresConfirmation()
-                ->modalHeading('Reject task Legal?')
-                ->modalDescription('Task Legal tidak dapat dikerjakan. Alasan penolakan akan terlihat oleh requester dan Legal.')
+                ->modalHeading('Reject task?')
+                ->modalDescription('Task tidak dapat dikerjakan. Alasan penolakan akan terlihat oleh requester dan department tujuan.')
                 ->schema([
                     Textarea::make('rejection_reason')
                         ->label('Alasan Penolakan')
@@ -77,7 +77,7 @@ class ViewWorkTask extends ViewRecord
                     );
 
                     Notification::make()
-                        ->title('Task Legal telah ditolak')
+                        ->title('Task telah ditolak')
                         ->body('Keputusan dan alasan penolakan sudah dicatat.')
                         ->danger()
                         ->send();

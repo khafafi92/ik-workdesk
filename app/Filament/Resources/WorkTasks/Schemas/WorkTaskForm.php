@@ -548,7 +548,7 @@ class WorkTaskForm
                             ),
 
                         TextEntry::make('approval_status')
-                            ->label('Legal Approval')
+                            ->label('CBO Approval')
                             ->badge()
                             ->formatStateUsing(fn (?string $state): string => match ($state) {
                                 'pending' => 'Menunggu CBO',

@@ -21,6 +21,9 @@ class DepartmentForm
                     ->maxLength(255),
                 Toggle::make('is_active')
                     ->required(),
+                Toggle::make('requires_cbo_approval')
+                    ->label('Wajib persetujuan CBO')
+                    ->helperText('Task yang ditujukan ke department ini menunggu persetujuan CBO sebelum dapat dikerjakan.'),
             ]);
     }
 }

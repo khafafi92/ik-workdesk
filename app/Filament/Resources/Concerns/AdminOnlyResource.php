@@ -8,8 +8,10 @@ trait AdminOnlyResource
 {
     protected static function currentUserCanManageMasterData(): bool
     {
+        $permissionCode = static::$menuPermissionCode ?? 'master-data.manage';
+
         return auth()->user()
-            ?->hasPermission('master-data.manage') === true;
+            ?->hasPermission($permissionCode) === true;
     }
 
     public static function shouldRegisterNavigation(): bool

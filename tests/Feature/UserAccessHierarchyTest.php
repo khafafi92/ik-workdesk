@@ -14,16 +14,16 @@ class UserAccessHierarchyTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_requester_can_receive_master_data_without_reports_or_management_menus(): void
+    public function test_every_primary_level_can_be_given_any_menu_through_the_checklist(): void
     {
         $options = app(UserAdditionalAccessService::class)
             ->optionsForLevel('requester');
 
         $this->assertArrayHasKey('master-data', $options);
         $this->assertArrayHasKey('atk-request', $options);
-        $this->assertArrayNotHasKey('reports', $options);
-        $this->assertArrayNotHasKey('atk-management', $options);
-        $this->assertArrayNotHasKey('daily-report', $options);
+        $this->assertArrayHasKey('reports', $options);
+        $this->assertArrayHasKey('atk-management', $options);
+        $this->assertArrayHasKey('daily-report', $options);
     }
 
     public function test_administrator_can_assign_lower_levels_but_not_sys_administrator(): void

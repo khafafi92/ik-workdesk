@@ -18,7 +18,7 @@ class AtkRequirementSummary extends Page
 
     protected static string|UnitEnum|null $navigationGroup = 'ATK';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 3;
 
     protected string $view = 'filament.pages.atk-requirement-summary';
 
@@ -30,18 +30,23 @@ class AtkRequirementSummary extends Page
 
     protected function getViewData(): array
     {
+        $requirements = AtkRequestItem::query()
+            ->selectRaw('permit_companies.code as company_code, atk_items.code, atk_items.name, atk_items.unit, SUM(atk_request_items.qty_requested - atk_request_items.qty_received) as outstanding_quantity')
+            ->join('atk_items', 'atk_items.id', '=', 'atk_request_items.atk_item_id')
+            ->join('atk_requests', 'atk_requests.id', '=', 'atk_request_items.atk_request_id')
+            ->leftJoin('permit_companies', 'permit_companies.id', '=', 'atk_requests.permit_company_id')
+            ->whereNotIn('atk_requests.status', ['completed', 'cancelled'])
+            ->groupBy('permit_companies.code', 'atk_items.code', 'atk_items.name', 'atk_items.unit')
+            ->havingRaw('SUM(atk_request_items.qty_requested - atk_request_items.qty_received) > 0')
+            ->orderBy('permit_companies.code')
+            ->orderBy('atk_items.name')
+            ->get();
+
         return [
-            'requirements' => AtkRequestItem::query()
-                ->selectRaw('permit_companies.code as company_code, atk_items.code, atk_items.name, atk_items.unit, SUM(atk_request_items.qty_requested - atk_request_items.qty_received) as outstanding_quantity')
-                ->join('atk_items', 'atk_items.id', '=', 'atk_request_items.atk_item_id')
-                ->join('atk_requests', 'atk_requests.id', '=', 'atk_request_items.atk_request_id')
-                ->leftJoin('permit_companies', 'permit_companies.id', '=', 'atk_requests.permit_company_id')
-                ->whereNotIn('atk_requests.status', ['completed', 'cancelled'])
-                ->groupBy('permit_companies.code', 'atk_items.code', 'atk_items.name', 'atk_items.unit')
-                ->havingRaw('SUM(atk_request_items.qty_requested - atk_request_items.qty_received) > 0')
-                ->orderBy('permit_companies.code')
-                ->orderBy('atk_items.name')
-                ->get(),
+            'requirements' => $requirements,
+            'requirementCount' => $requirements->count(),
+            'entityCount' => $requirements->pluck('company_code')->filter()->unique()->count(),
+            'totalOutstanding' => $requirements->sum('outstanding_quantity'),
         ];
     }
 }

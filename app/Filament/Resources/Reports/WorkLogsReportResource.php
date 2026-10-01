@@ -22,7 +22,7 @@ class WorkLogsReportResource extends ReportResource
     protected static ?string $pluralModelLabel = 'Work Logs Report';
 
     public static function getNavigationGroup(): ?string { return 'Reports'; }
-    public static function getNavigationSort(): ?int { return 3; }
+    public static function getNavigationSort(): ?int { return 4; }
 
     public static function getEloquentQuery(): Builder { return app(ReportQueryService::class)->workLogs(); }
 

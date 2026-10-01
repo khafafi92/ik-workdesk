@@ -23,6 +23,8 @@ class LegalSubjectCategoryResource extends Resource
 
     protected static ?string $model = LegalSubjectCategory::class;
 
+    protected static ?string $menuPermissionCode = 'master.subject-categories.manage';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
     protected static ?string $recordTitleAttribute = 'name';
@@ -55,6 +57,11 @@ class LegalSubjectCategoryResource extends Resource
     public static function getNavigationGroup(): ?string
     {
         return 'Master Data';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
     }
 
     public static function getPages(): array

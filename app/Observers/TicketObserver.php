@@ -28,7 +28,7 @@ class TicketObserver
 
         $ticket->loadMissing('handlerDepartment');
 
-        if ($ticket->handlerDepartment?->isLegal()) {
+        if ($ticket->handlerDepartment?->requiresCboApproval()) {
             return;
         }
 
