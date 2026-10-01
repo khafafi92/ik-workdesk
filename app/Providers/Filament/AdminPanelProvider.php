@@ -57,6 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ->navigationGroups([
                 NavigationGroup::make()->label('Master Data')->collapsed(),
                 NavigationGroup::make()->label('Attendance Report')->collapsed(),
+                NavigationGroup::make()->label('Surat')->collapsed(),
                 NavigationGroup::make()->label('Reports'),
                 NavigationGroup::make()->label('LTRO Management'),
                 NavigationGroup::make()->label('ATK'),
@@ -111,6 +112,7 @@ class AdminPanelProvider extends PanelProvider
                                 JSON.stringify([
                                     'Master Data',
                                     'Attendance Report',
+                                    'Surat',
                                     'Reports',
                                     'LTRO Management',
                                     'ATK',

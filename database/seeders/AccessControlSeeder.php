@@ -79,6 +79,54 @@ class AccessControlSeeder extends Seeder
                     'module' => 'ATK',
                     'description' => 'View ATK requirement and usage reports.',
                 ],
+                [
+                    'name' => 'View Outgoing Letters',
+                    'code' => 'letters.view',
+                    'module' => 'Surat',
+                    'description' => 'View outgoing-letter register.',
+                ],
+                [
+                    'name' => 'Create Outgoing Letters',
+                    'code' => 'letters.create',
+                    'module' => 'Surat',
+                    'description' => 'Create and edit own draft outgoing letters.',
+                ],
+                [
+                    'name' => 'Issue Outgoing Letters',
+                    'code' => 'letters.issue',
+                    'module' => 'Surat',
+                    'description' => 'Issue outgoing letters and reserve document numbers.',
+                ],
+                [
+                    'name' => 'Manage Letter Masters',
+                    'code' => 'letters.manage',
+                    'module' => 'Surat',
+                    'description' => 'Manage document types and numbering templates.',
+                ],
+                [
+                    'name' => 'Input Legacy Letter Numbers',
+                    'code' => 'letters.legacy-import',
+                    'module' => 'Surat',
+                    'description' => 'Record existing issued document numbers without regeneration.',
+                ],
+                [
+                    'name' => 'Access Outgoing Letters Menu',
+                    'code' => 'letters.outgoing',
+                    'module' => 'Surat',
+                    'description' => 'Open the outgoing-letter menu.',
+                ],
+                [
+                    'name' => 'Access Document Types Menu',
+                    'code' => 'letters.document-types',
+                    'module' => 'Surat',
+                    'description' => 'Open the document-types menu.',
+                ],
+                [
+                    'name' => 'Access Numbering Templates Menu',
+                    'code' => 'letters.numbering-templates',
+                    'module' => 'Surat',
+                    'description' => 'Open the numbering-templates menu.',
+                ],
 
                 [
                     'name' => 'View Attendance',
@@ -395,6 +443,8 @@ class AccessControlSeeder extends Seeder
                     'master-data.manage', 'report.view', 'report.export', 'ltro.view', 'ltro.manage',
                     'atk.request', 'atk.manage', 'atk.report', 'attendance.view', 'attendance.upload', 'attendance.manage',
                     'tickets.create', 'tickets.view', 'tickets.manage', 'worklogs.view', 'worklogs.manage',
+                    'letters.view', 'letters.create', 'letters.issue', 'letters.manage', 'letters.legacy-import',
+                    'letters.outgoing', 'letters.document-types', 'letters.numbering-templates',
                     'reminders.view', 'reminders.manage', 'meeting-bookings.view', 'meeting-bookings.create',
                     'meeting-bookings.cancel-own', 'meeting-bookings.manage', 'meeting-rooms.manage',
                     'vehicle-bookings.view', 'vehicle-bookings.create', 'vehicle-bookings.cancel-own',

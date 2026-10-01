@@ -84,4 +84,22 @@ class UserAdditionalAccessTest extends TestCase
         $this->assertTrue($admin->hasPermission('attendance.view'));
         $this->assertTrue($admin->hasPermission('report.view'));
     }
+
+    public function test_surat_checklist_keeps_each_submenu_independent(): void
+    {
+        $user = User::factory()->create(['is_admin' => false]);
+        $service = app(UserAdditionalAccessService::class);
+
+        $service->sync($user, $service->accessGroupsFromMenuState([
+            'letters' => ['outgoing-letters'],
+        ]));
+
+        $this->assertTrue($user->hasPermission('letters.outgoing'));
+        $this->assertTrue($user->hasPermission('letters.create'));
+        $this->assertFalse($user->hasPermission('letters.document-types'));
+        $this->assertFalse($user->hasPermission('letters.numbering-templates'));
+        $this->assertSame(['outgoing-letters'], $service->menuStateFor($user)['letters']);
+        $this->actingAs($user)->get('/panel/outgoing-letters')->assertOk();
+        $this->actingAs($user)->get('/panel/document-types')->assertForbidden();
+    }
 }
