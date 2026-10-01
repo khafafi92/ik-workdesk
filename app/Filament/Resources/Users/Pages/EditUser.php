@@ -49,10 +49,9 @@ class EditUser extends EditRecord
             'Anda tidak memiliki izin mengubah user ini.'
         );
 
-        $this->selectedEmployeeId =
-            isset($data['employee_id'])
-                ? (int) $data['employee_id']
-                : null;
+        $this->selectedEmployeeId = filled($data['employee_id'] ?? null)
+            ? (int) $data['employee_id']
+            : $this->record->employee()->value('id');
 
         unset($data['employee_id']);
 

@@ -86,7 +86,7 @@ class UserForm
                                     }
                                 }
                             )
-                            ->required()
+                            ->required(fn (string $operation): bool => $operation === 'create')
                             ->helperText(
                                 'Hanya employee yang belum memiliki akun login yang ditampilkan.'
                             ),
