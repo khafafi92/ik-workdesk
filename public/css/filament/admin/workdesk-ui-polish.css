@@ -2027,6 +2027,121 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     }
 }
 
+.ik-report-overview {
+    display: grid;
+    gap: 1.25rem;
+    color: #172b4d;
+}
+
+.ik-report-overview-filter,
+.ik-report-overview-breakdowns > article {
+    overflow: hidden;
+    border: 1px solid #dbe3ef;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.ik-report-overview-filter { padding: 1.25rem; }
+
+.ik-report-overview-section-heading { margin-bottom: 1rem; }
+
+.ik-report-overview-section-heading h2,
+.ik-report-overview-breakdowns h2 {
+    margin: 0;
+    color: #172b4d;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+.ik-report-overview-section-heading p {
+    margin: 0.25rem 0 0;
+    color: #52637b;
+    font-size: 0.8125rem;
+    line-height: 1.45;
+}
+
+.ik-report-overview-filter-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+    gap: 0.875rem;
+}
+
+.ik-report-overview-filter-form label { min-width: 0; }
+.ik-report-overview-filter-form label > span {
+    display: block;
+    margin-bottom: 0.35rem;
+    color: #3d506e;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.ik-report-overview-filter-form :is(input, select) {
+    width: 100%;
+    min-height: 2.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    background: #fff;
+    color: #172b4d;
+    font-size: 0.875rem;
+}
+
+.ik-report-overview-filter-form input { padding-inline: 0.75rem; }
+.ik-report-overview-filter-form select { padding-inline: 0.65rem; }
+.ik-report-overview-filter-form :is(input, select):focus-visible {
+    outline: 3px solid #0057b8;
+    outline-offset: 1px;
+}
+
+.ik-report-overview-filter-actions {
+    display: flex;
+    align-items: end;
+    gap: 0.5rem;
+}
+
+.ik-report-overview-filter-actions .fi-btn { min-height: 2.75rem !important; white-space: nowrap; }
+
+.ik-report-overview-metrics {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+    overflow: hidden;
+    margin: 0;
+    border: 1px solid #dbe3ef;
+    border-radius: 6px;
+    background: #fff;
+}
+
+.ik-report-overview-metric {
+    min-width: 0;
+    padding: 1rem;
+    border-right: 1px solid #e3e9f1;
+    border-bottom: 1px solid #e3e9f1;
+}
+
+.ik-report-overview-metric dt { color: #52637b; font-size: 0.75rem; font-weight: 600; line-height: 1.4; }
+.ik-report-overview-metric dd { margin: 0.35rem 0 0; color: #172b4d; font-size: 1.35rem; font-weight: 750; line-height: 1.2; overflow-wrap: anywhere; }
+.ik-report-overview-metric--danger dd { color: #b4233b; }
+.ik-report-overview-metric--warning dd { color: #8a5200; }
+.ik-report-overview-metric--success dd { color: #006b46; }
+
+.ik-report-overview-breakdowns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.ik-report-overview-breakdowns > article header { padding: 1rem 1rem 0.75rem; }
+.ik-report-overview-breakdowns dl { margin: 0; }
+.ik-report-overview-breakdowns dl > div { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0.75rem 1rem; border-top: 1px solid #e3e9f1; }
+.ik-report-overview-breakdowns dt { min-width: 0; color: #3d506e; font-size: 0.8125rem; line-height: 1.45; overflow-wrap: anywhere; }
+.ik-report-overview-breakdowns dd { flex: 0 0 auto; margin: 0; color: #172b4d; font-size: 0.875rem; font-weight: 700; }
+.ik-report-overview-breakdowns article p { margin: 0; padding: 1rem; border-top: 1px solid #e3e9f1; color: #52637b; font-size: 0.8125rem; line-height: 1.45; }
+
+@media (max-width: 900px) { .ik-report-overview-breakdowns { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+    .ik-report-overview-filter { padding: 1rem; }
+    .ik-report-overview-filter-form { grid-template-columns: 1fr; }
+    .ik-report-overview-filter-actions { align-items: stretch; }
+    .ik-report-overview-filter-actions .fi-btn { flex: 1 1 0; }
+    .ik-report-overview-metrics { grid-template-columns: 1fr; }
+    .ik-report-overview-metric { border-right: 0; }
+}
+
 .ik-atk-dashboard {
     display: grid;
     gap: 16px;
