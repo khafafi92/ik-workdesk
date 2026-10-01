@@ -255,7 +255,7 @@ class UserAdditionalAccessService
             ->unique()
             ->values()
             ->all();
-        $allowedGroups = array_keys($this->options());
+        $allowedGroups = array_keys(self::ACCESS_GROUPS);
 
         if (array_diff($selectedGroups, $allowedGroups) !== []) {
             abort(422, 'Pilihan akses menu tidak valid.');
