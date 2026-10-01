@@ -51,12 +51,12 @@ class ReportQueryService
 
         return $query->where(function (Builder $scope) use ($departmentIds, $employeeId): void {
             if ($employeeId) {
-                $scope->where('employee_id', $employeeId);
+                $scope->where('tickets.employee_id', $employeeId);
             }
 
             if ($departmentIds !== []) {
-                $scope->orWhereIn('requester_department_id', $departmentIds)
-                    ->orWhereIn('handler_department_id', $departmentIds)
+                $scope->orWhereIn('tickets.requester_department_id', $departmentIds)
+                    ->orWhereIn('tickets.handler_department_id', $departmentIds)
                     ->orWhereHas('assignments', fn (Builder $assignments) => $assignments
                         ->whereIn('department_id', $departmentIds));
             }
