@@ -97,7 +97,7 @@
     <header class="header">
         <div class="header-left">
             <div class="logo-box">
-                <img src="{{ asset('images/logo-kpmog-daily.png') }}" alt="KPMOG">
+                <img src="{{ asset('img/brands/kpmog.png') }}" alt="KPMOG">
             </div>
             <div>
                 <div class="header-title">AVAILABILITY LTRO-<span class="accent">1B</span></div>
@@ -109,8 +109,8 @@
             <a href="{{ route('monitoring') }}" class="btn btn-dark">
                 <i class="ti ti-arrow-left" aria-hidden="true"></i> Monitoring
             </a>
-            <a href="{{ route('home') }}" class="btn btn-dark">
-                <i class="ti ti-home" aria-hidden="true"></i> Home
+            <a href="{{ url('/panel') }}" class="btn btn-dark">
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Kembali ke Dashboard
             </a>
         </div>
     </header>

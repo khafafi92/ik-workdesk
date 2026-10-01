@@ -215,7 +215,7 @@
                     <tr>
                         <th colspan="2" rowspan="4"
                             class="border-l border-t border-black bg-white px-4 py-3 text-left align-middle">
-                            <img src="{{ asset('images/logo-kpmog-daily.png') }}" alt="KPMOG"
+                            <img src="{{ asset('img/brands/kpmog.png') }}" alt="KPMOG"
                                 class="h-14 w-auto object-contain">
                         </th>
 
@@ -554,8 +554,8 @@
         </section>
 
         <div class="daily-actions no-print daily-action-bar">
-            <a href="{{ route('home') }}" class="btn btn-dark">
-                <i class="ti ti-home" aria-hidden="true"></i> Home
+            <a href="{{ url('/panel') }}" class="btn btn-dark">
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Kembali ke Dashboard
             </a>
 
             <a href="{{ route('monitoring') }}" class="btn btn-dark">
@@ -681,4 +681,3 @@
     }
 </script>
 </div>
-

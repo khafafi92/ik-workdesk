@@ -963,7 +963,7 @@
     <header class="header">
         <div class="header-left">
             <div class="logo-box">
-                <img src="{{ asset('images/logo-kpmog-daily.png') }}" alt="KPMOG" style="height:38px; width:auto;">
+                <img src="{{ asset('img/brands/kpmog.png') }}" alt="KPMOG" style="height:38px; width:auto;">
             </div>
             <div>
                 <div class="header-title">
@@ -973,8 +973,8 @@
             </div>
         </div>
         <div class="header-right">
-            <a href="{{ route('home') }}" class="btn-input">
-                <i class="ti ti-home" aria-hidden="true"></i> Home
+            <a href="{{ url('/panel') }}" class="btn-input">
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Kembali ke Dashboard
             </a>
             <a href="{{ route('daily.input') }}" class="btn-input">
                 <i class="ti ti-plus" aria-hidden="true"></i> Input Harian
