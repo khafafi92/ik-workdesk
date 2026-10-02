@@ -21,10 +21,20 @@ use Filament\Tables\Table;
 class DocumentTypeResource extends Resource
 {
     protected static ?string $model = DocumentType::class;
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
+
     protected static ?string $navigationLabel = 'Jenis Surat';
+
     protected static ?string $modelLabel = 'Jenis Surat';
+
     protected static ?string $pluralModelLabel = 'Jenis Surat';
+
     protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
@@ -47,9 +57,20 @@ class DocumentTypeResource extends Resource
         ])->defaultSort('name')->recordActions([EditAction::make()]);
     }
 
-    public static function canViewAny(): bool { return auth()->user()?->hasPermission('letters.document-types') === true && auth()->user()?->hasPermission('letters.manage') === true; }
-    public static function canCreate(): bool { return static::canViewAny(); }
-    public static function getNavigationGroup(): ?string { return 'Surat'; }
+    public static function canViewAny(): bool
+    {
+        return auth()->user()?->hasPermission('letters.document-types') === true && auth()->user()?->hasPermission('letters.manage') === true;
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Surat';
+    }
 
     public static function getPages(): array
     {

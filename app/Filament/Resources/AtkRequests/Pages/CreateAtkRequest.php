@@ -5,6 +5,7 @@ namespace App\Filament\Resources\AtkRequests\Pages;
 use App\Filament\Resources\AtkRequests\AtkRequestResource;
 use App\Models\AtkRequest;
 use App\Models\Department;
+use App\Services\AtkRequestNotificationService;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Validation\ValidationException;
 
@@ -20,6 +21,17 @@ class CreateAtkRequest extends CreateRecord
     protected function getCreatedNotificationTitle(): ?string
     {
         return 'Permintaan ATK terkirim ke GA.';
+    }
+
+    protected function afterCreate(): void
+    {
+        app(AtkRequestNotificationService::class)->notifyGaOfSubmittedRequest(
+            $this->record->fresh([
+                'department',
+                'requester',
+                'items.item',
+            ])
+        );
     }
 
     protected function mutateFormDataBeforeCreate(array $data): array

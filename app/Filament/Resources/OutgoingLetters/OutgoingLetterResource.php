@@ -38,6 +38,11 @@ class OutgoingLetterResource extends Resource
 {
     protected static ?string $model = OutgoingLetter::class;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
     protected static ?string $navigationLabel = 'Surat Keluar';

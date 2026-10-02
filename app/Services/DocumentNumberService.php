@@ -66,24 +66,39 @@ class DocumentNumberService
                 return $lockedLetter->refresh();
             }
 
-            $template = $this->resolveFor($lockedLetter);
-
-            if (! $template) {
-                throw ValidationException::withMessages(['document_numbering_template_id' => 'Template nomor surat tidak ditemukan untuk kombinasi data ini.']);
+            if (blank($lockedLetter->document_number)) {
+                $this->reserveLocked($lockedLetter);
             }
 
-            $runningNumber = $this->nextRunningNumber($template, $lockedLetter);
-            $documentNumber = $this->format($template, $lockedLetter, $runningNumber);
-
             $lockedLetter->update([
-                'document_numbering_template_id' => $template->id,
-                'running_number' => $runningNumber,
-                'document_number' => $documentNumber,
                 'status' => 'issued',
                 'issued_at' => now(),
                 'issued_by' => $issuer->id,
                 'updated_by' => $issuer->id,
             ]);
+
+            return $lockedLetter->refresh();
+        });
+    }
+
+    public function reserve(OutgoingLetter $letter, ?callable $numberFormatter = null): OutgoingLetter
+    {
+        return DB::transaction(function () use ($letter, $numberFormatter): OutgoingLetter {
+            $lockedLetter = OutgoingLetter::query()->lockForUpdate()->findOrFail($letter->getKey());
+
+            if ($lockedLetter->status !== 'draft') {
+                throw ValidationException::withMessages(['status' => 'Hanya surat draft yang dapat menggunakan nomor.']);
+            }
+
+            if (filled($lockedLetter->document_number)) {
+                return $lockedLetter->refresh();
+            }
+
+            if ($lockedLetter->is_legacy_number) {
+                throw ValidationException::withMessages(['document_number' => 'Nomor existing harus diisi secara manual.']);
+            }
+
+            $this->reserveLocked($lockedLetter, $numberFormatter);
 
             return $lockedLetter->refresh();
         });
@@ -173,6 +188,26 @@ class DocumentNumberService
             ->update(['last_number' => $nextNumber, 'updated_at' => now()]);
 
         return $nextNumber;
+    }
+
+    private function reserveLocked(OutgoingLetter $letter, ?callable $numberFormatter = null): void
+    {
+        $template = $this->resolveFor($letter);
+
+        if (! $template) {
+            throw ValidationException::withMessages(['document_numbering_template_id' => 'Template nomor surat tidak ditemukan untuk kombinasi data ini.']);
+        }
+
+        $runningNumber = $this->nextRunningNumber($template, $letter);
+
+        $letter->update([
+            'document_numbering_template_id' => $template->id,
+            'running_number' => $runningNumber,
+            'document_number' => $numberFormatter
+                ? $numberFormatter($template, $letter, $runningNumber)
+                : $this->format($template, $letter, $runningNumber),
+            'updated_by' => auth()->id(),
+        ]);
     }
 
     private function romanMonth(int $month): string

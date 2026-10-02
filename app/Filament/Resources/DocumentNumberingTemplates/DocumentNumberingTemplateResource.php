@@ -29,6 +29,11 @@ class DocumentNumberingTemplateResource extends Resource
 {
     protected static ?string $model = DocumentNumberingTemplate::class;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHashtag;
 
     protected static ?string $navigationLabel = 'Template Nomor Surat';

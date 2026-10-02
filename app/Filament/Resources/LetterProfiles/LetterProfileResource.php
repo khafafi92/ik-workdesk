@@ -26,6 +26,11 @@ class LetterProfileResource extends Resource
 {
     protected static ?string $model = LetterProfile::class;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
     protected static ?string $navigationLabel = 'Profil Surat';

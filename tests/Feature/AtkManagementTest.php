@@ -71,6 +71,56 @@ class AtkManagementTest extends TestCase
         ]);
     }
 
+    public function test_ga_receives_a_database_notification_when_a_department_submits_an_atk_request(): void
+    {
+        [$requester] = $this->requester();
+        $requester->directPermissions()->attach(
+            Permission::query()->where('code', 'atk.request')->firstOrFail()
+        );
+        $gaDepartment = Department::query()->create([
+            'code' => 'GA',
+            'name' => 'General Affairs',
+            'is_active' => true,
+        ]);
+        $ga = User::factory()->create();
+        Employee::query()->create([
+            'user_id' => $ga->id,
+            'department_id' => $gaDepartment->id,
+            'name' => 'Petugas GA',
+            'is_active' => true,
+        ]);
+        $ga->directPermissions()->attach(
+            Permission::query()->where('code', 'atk.manage')->firstOrFail()
+        );
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-NOTIFICATION-001',
+            'name' => 'Pulpen Biru',
+            'unit' => 'PCS',
+            'is_active' => true,
+        ]);
+        $company = PermitCompany::query()->where('code', 'KPMOG')->firstOrFail();
+
+        Livewire::actingAs($requester)
+            ->test(CreateAtkRequest::class)
+            ->fillForm([
+                'purpose' => 'Kebutuhan operasional',
+                'permit_company_id' => $company->id,
+                'items' => [[
+                    'atk_item_id' => $item->id,
+                    'qty_requested' => 5,
+                    'unit' => 'PCS',
+                ]],
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $notification = $ga->notifications()->latest()->first();
+
+        $this->assertNotNull($notification);
+        $this->assertSame('Permintaan ATK baru', $notification->data['title']);
+        $this->assertStringContainsString('Pulpen Biru 5 PCS', $notification->data['body']);
+    }
+
     public function test_system_administrator_without_employee_can_select_the_requesting_department(): void
     {
         $administrator = User::factory()->create(['is_admin' => true]);
