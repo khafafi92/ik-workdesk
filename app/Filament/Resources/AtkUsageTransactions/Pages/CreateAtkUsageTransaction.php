@@ -28,7 +28,7 @@ class CreateAtkUsageTransaction extends CreateRecord
             $user->employee->department,
             (int) $data['atk_item_id'],
             (float) $data['qty_used'],
-            $user->id,
+            $user,
             $data['purpose'],
             null,
             $data['usage_date'],

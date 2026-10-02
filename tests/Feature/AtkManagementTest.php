@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Exports\AtkItemImportTemplateExport;
 use App\Exports\AtkReportExport;
 use App\Filament\Resources\AtkRequests\Pages\CreateAtkRequest;
+use App\Filament\Resources\AtkUsageTransactions\Pages\CreateAtkUsageTransaction;
 use App\Models\AtkCategory;
 use App\Models\AtkDepartmentBalance;
 use App\Models\AtkItem;
@@ -310,6 +311,47 @@ class AtkManagementTest extends TestCase
         $this->expectException(ValidationException::class);
 
         app(AtkDepartmentStockService::class)->use($department, $item->id, 3, $requester);
+    }
+
+    public function test_requester_can_record_atk_usage_from_the_create_form(): void
+    {
+        [$requester, $department] = $this->requester();
+        $requester->directPermissions()->attach(
+            Permission::query()
+                ->whereIn('code', ['atk.request', 'atk.usage'])
+                ->pluck('id')
+        );
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-USAGE-FORM-001',
+            'name' => 'Pulpen Hitam',
+            'unit' => 'PCS',
+            'is_active' => true,
+        ]);
+        AtkDepartmentBalance::query()->create([
+            'department_id' => $department->id,
+            'atk_item_id' => $item->id,
+            'qty_available' => 3,
+        ]);
+
+        Livewire::actingAs($requester)
+            ->test(CreateAtkUsageTransaction::class)
+            ->fillForm([
+                'atk_item_id' => $item->id,
+                'usage_date' => today()->toDateString(),
+                'qty_used' => 1,
+                'purpose' => 'Kebutuhan administrasi',
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $this->assertDatabaseHas('atk_usage_transactions', [
+            'department_id' => $department->id,
+            'atk_item_id' => $item->id,
+            'qty_used' => 1,
+            'purpose' => 'Kebutuhan administrasi',
+            'used_by' => $requester->id,
+        ]);
+        $this->assertSame('2.00', AtkDepartmentBalance::query()->firstOrFail()->qty_available);
     }
 
     public function test_request_numbers_are_department_scoped_and_receiving_is_idempotent(): void
