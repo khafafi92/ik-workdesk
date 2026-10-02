@@ -453,6 +453,47 @@ class AtkManagementTest extends TestCase
         Excel::assertDownloaded('laporan-atk-semua-data.xlsx', fn (AtkReportExport $export): bool => $export instanceof AtkReportExport);
     }
 
+    public function test_department_receipt_summary_excludes_requests_that_have_not_been_received(): void
+    {
+        [$requester, $department] = $this->requester();
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-REPORT-001',
+            'name' => 'Pulpen Hitam',
+            'unit' => 'PCS',
+            'is_active' => true,
+        ]);
+        $receivedRequest = $this->request($requester, $department);
+        AtkRequestItem::query()->create([
+            'atk_request_id' => $receivedRequest->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 10,
+            'qty_issued' => 10,
+            'qty_received' => 10,
+            'unit' => 'PCS',
+            'status' => 'received',
+        ]);
+        $pendingRequest = $this->request($requester, $department);
+        AtkRequestItem::query()->create([
+            'atk_request_id' => $pendingRequest->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 5,
+            'unit' => 'PCS',
+            'status' => 'pending',
+        ]);
+
+        $sheet = (new AtkReportExport)->sheets()[0];
+
+        $this->assertSame([
+            'Departemen', 'Barang ATK', 'Jumlah Diterima', 'Satuan',
+        ], $sheet->headings());
+        $this->assertSame([[
+            $department->name,
+            'Pulpen Hitam',
+            10.0,
+            'PCS',
+        ]], $sheet->collection()->all());
+    }
+
     public function test_excel_template_can_be_imported_by_ga(): void
     {
         $ga = User::factory()->create(['is_admin' => true]);

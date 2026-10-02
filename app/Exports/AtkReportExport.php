@@ -21,8 +21,8 @@ class AtkReportExport implements WithMultipleSheets
     {
         return [
             new AtkCollectionSheet('Rekap Department', [
-                'Departemen', 'Barang ATK', 'Jumlah Diminta', 'Satuan',
-            ], $this->departmentRequestSummaryRows()),
+                'Departemen', 'Barang ATK', 'Jumlah Diterima', 'Satuan',
+            ], $this->departmentReceiptSummaryRows()),
             new AtkCollectionSheet('Permintaan', [
                 'Nomor Permintaan', 'Tanggal', 'Entitas', 'Peminta', 'Departemen', 'Keperluan', 'Status', 'Item', 'Jumlah Diminta', 'Jumlah Diserahkan', 'Jumlah Diterima', 'Satuan',
             ], $this->requestRows()),
@@ -62,7 +62,7 @@ class AtkReportExport implements WithMultipleSheets
             ]))->all();
     }
 
-    private function departmentRequestSummaryRows(): array
+    private function departmentReceiptSummaryRows(): array
     {
         return AtkRequest::query()
             ->with(['department', 'items.item'])
@@ -70,12 +70,14 @@ class AtkReportExport implements WithMultipleSheets
             ->when($this->until, fn ($query) => $query->whereDate('request_date', '<=', $this->until))
             ->whereNotIn('status', ['cancelled'])
             ->get()
-            ->flatMap(fn (AtkRequest $request) => $request->items->map(fn ($item): array => [
-                'department' => $request->department?->name ?? 'Tanpa departemen',
-                'item' => $item->item?->name ?? 'Barang tidak ditemukan',
-                'unit' => $item->unit,
-                'quantity' => (float) $item->qty_requested,
-            ]))
+            ->flatMap(fn (AtkRequest $request) => $request->items
+                ->filter(fn ($item): bool => (float) $item->qty_received > 0)
+                ->map(fn ($item): array => [
+                    'department' => $request->department?->name ?? 'Tanpa departemen',
+                    'item' => $item->item?->name ?? 'Barang tidak ditemukan',
+                    'unit' => $item->unit,
+                    'quantity' => (float) $item->qty_received,
+                ]))
             ->groupBy(fn (array $row): string => "{$row['department']}|{$row['item']}|{$row['unit']}")
             ->map(fn ($rows): array => [
                 $rows->first()['department'],
