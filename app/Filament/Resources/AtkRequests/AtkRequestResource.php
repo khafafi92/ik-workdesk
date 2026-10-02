@@ -361,7 +361,7 @@ class AtkRequestResource extends Resource
         return $record->items()->with('item')->get()
             ->filter(fn (AtkRequestItem $item): bool => $item->outstandingRequested() > 0)
             ->mapWithKeys(fn (AtkRequestItem $item): array => [
-                $item->id => "{$item->item->name} (sisa: ".number_format($item->outstandingRequested(), 0, ',', '.').')',
+                $item->id => "{$item->item->name} (".number_format($item->outstandingRequested(), 0, ',', '.').')',
             ])->all();
     }
 
