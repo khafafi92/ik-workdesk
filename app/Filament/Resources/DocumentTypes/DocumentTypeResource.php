@@ -22,11 +22,6 @@ class DocumentTypeResource extends Resource
 {
     protected static ?string $model = DocumentType::class;
 
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
-    }
-
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
     protected static ?string $navigationLabel = 'Jenis Surat';
