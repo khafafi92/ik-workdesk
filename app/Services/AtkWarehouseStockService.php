@@ -34,11 +34,11 @@ class AtkWarehouseStockService
 
     public function issue(AtkRequestItem $requestItem, float $quantity, User $actor): AtkRequestItem
     {
-        return DB::transaction(function () use ($requestItem, $quantity, $actor): AtkRequestItem {
+        $quantity = round($quantity, 2);
+
+        $issuedRequestItem = DB::transaction(function () use ($requestItem, $quantity, $actor): AtkRequestItem {
             $requestItem = AtkRequestItem::query()->with('request')->lockForUpdate()->findOrFail($requestItem->id);
             $item = AtkItem::query()->lockForUpdate()->findOrFail($requestItem->atk_item_id);
-            $quantity = round($quantity, 2);
-
             if ($quantity <= 0 || $quantity > $requestItem->outstandingRequested()) {
                 throw ValidationException::withMessages(['qty' => 'Jumlah issue harus lebih dari nol dan tidak boleh melebihi sisa permintaan.']);
             }
@@ -79,6 +79,10 @@ class AtkWarehouseStockService
 
             return $requestItem->fresh();
         });
+
+        app(AtkRequestNotificationService::class)->notifyRequesterOfIssuedItem($issuedRequestItem, $quantity);
+
+        return $issuedRequestItem;
     }
 
     private function move(AtkItem $item, float $quantity, string $type, User $actor, ?string $description): AtkStockMovement

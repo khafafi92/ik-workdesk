@@ -231,6 +231,12 @@ class AtkManagementTest extends TestCase
 
         app(AtkWarehouseStockService::class)->issue($requestItem, 2, $ga);
 
+        $notification = $requester->notifications()->latest()->first();
+
+        $this->assertNotNull($notification);
+        $this->assertSame('Barang ATK telah diserahkan', $notification->data['title']);
+        $this->assertStringContainsString('Map Dokumen sejumlah 2 PCS', $notification->data['body']);
+
         $this->actingAs($requester)
             ->get('/panel/atk-requests')
             ->assertOk()
