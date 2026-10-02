@@ -12,6 +12,7 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
@@ -42,7 +43,7 @@ class HrApcaLetterResource extends Resource
     {
         return $schema->components([
             Section::make('Nomor surat HR APCA')
-                ->description('Nomor sudah dicadangkan saat draft dibuat. Nomor tidak berubah ketika data surat dilengkapi.')
+                ->description('Nomor urut sudah dicadangkan saat draft dibuat. Format mengikuti jenis dan tanggal surat.')
                 ->columns(3)
                 ->schema([
                     Placeholder::make('document_number')
@@ -59,6 +60,10 @@ class HrApcaLetterResource extends Resource
                 ->description('Lengkapi isi ini, lalu klik simpan draft. Surat dapat diterbitkan setelah data sudah benar.')
                 ->columns(2)
                 ->schema([
+                    Select::make('document_type_id')
+                        ->label('Jenis surat')
+                        ->options(fn (): array => app(HrApcaLetterService::class)->typeOptions())
+                        ->required(),
                     TextInput::make('subject')
                         ->label('Keterangan surat')
                         ->helperText('Contoh: Surat Keterangan Kerja - Rizaldy.')
@@ -101,6 +106,10 @@ class HrApcaLetterResource extends Resource
                     ->color('primary')
                     ->form([
                         DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required(),
+                        Select::make('letter_kind')
+                            ->label('Jenis surat')
+                            ->options(app(HrApcaLetterService::class)->kinds())
+                            ->required(),
                     ])
                     ->modalHeading(fn (): string => 'Gunakan nomor '.app(HrApcaLetterService::class)->nextNumber())
                     ->modalDescription('Pilih tanggal surat. Sistem membuat draft kosong dan mencadangkan nomor berikutnya.')
@@ -110,6 +119,7 @@ class HrApcaLetterResource extends Resource
                         $letter = app(HrApcaLetterService::class)->createDraft(
                             auth()->user(),
                             $data['document_date'],
+                            $data['letter_kind'],
                         );
 
                         Notification::make()
@@ -176,6 +186,7 @@ class HrApcaLetterResource extends Resource
     {
         return $record->status === 'draft'
             && $record->subject !== 'Belum diisi'
+            && $record->document_type_id !== null
             && auth()->user()?->hasPermission('letters.issue') === true;
     }
 

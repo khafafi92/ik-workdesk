@@ -228,16 +228,16 @@ class DocumentNumberServiceTest extends TestCase
         $issuer = User::factory()->create();
         $service = app(HrKpmogLetterService::class);
 
-        $first = $service->createDraft($issuer);
+        $first = $service->createDraft($issuer, '2026-10-02');
 
-        $this->assertSame('001', $first->document_number);
+        $this->assertSame('001/KPMOG-HR/X/2026', $first->document_number);
         $this->assertSame('draft', $first->status);
         $this->assertSame('HR-KPMOG', $first->profile->code);
 
         $first->update(['subject' => 'Surat Pengantar MCU']);
         app(DocumentNumberService::class)->issue($first, $issuer);
 
-        $this->assertSame('001', $first->refresh()->document_number);
+        $this->assertSame('001/KPMOG-HR/X/2026', $first->refresh()->document_number);
         $this->assertSame('issued', $first->status);
         $this->assertSame('002', $service->nextNumber());
     }
@@ -253,8 +253,8 @@ class DocumentNumberServiceTest extends TestCase
         $second = $service->createDraft($issuer, '2026-01-01');
 
         $this->assertSame('2025-12-31', $first->document_date->toDateString());
-        $this->assertSame('001', $first->document_number);
-        $this->assertSame('001', $second->document_number);
+        $this->assertSame('001/KPMOG-HR/XII/2025', $first->document_number);
+        $this->assertSame('001/KPMOG-HR/I/2026', $second->document_number);
         $this->assertSame('002', $service->nextNumber('2026-10-02'));
     }
 
@@ -263,6 +263,7 @@ class DocumentNumberServiceTest extends TestCase
         $this->company('KPMOG');
         $this->company('APCA');
         Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        Department::create(['code' => 'HC', 'name' => 'Human Capital', 'is_active' => true]);
         $issuer = User::factory()->create();
         app(HrKpmogLetterService::class)->createDraft($issuer);
         $service = app(HrApcaLetterService::class);
@@ -275,18 +276,19 @@ class DocumentNumberServiceTest extends TestCase
         $this->assertSame('003', $service->nextNumber());
     }
 
-    public function test_hr_apca_can_reserve_a_serial_number_before_its_letter_type_is_known(): void
+    public function test_hr_apca_draft_requires_a_letter_type_and_reserves_a_complete_number(): void
     {
         $this->company('KPMOG');
         $this->company('APCA');
         Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        Department::create(['code' => 'HC', 'name' => 'Human Capital', 'is_active' => true]);
         $issuer = User::factory()->create();
 
         app(HrKpmogLetterService::class)->createDraft($issuer);
-        $letter = app(HrApcaLetterService::class)->createDraft($issuer, '2025-09-18');
+        $letter = app(HrApcaLetterService::class)->createDraft($issuer, '2025-09-18', 'SKK');
 
-        $this->assertSame('001', $letter->document_number);
-        $this->assertNull($letter->document_type_id);
+        $this->assertSame('001/ATE-HC/SKK/IX/2025', $letter->document_number);
+        $this->assertNotNull($letter->document_type_id);
         $this->assertSame('draft', $letter->status);
     }
 
@@ -295,12 +297,13 @@ class DocumentNumberServiceTest extends TestCase
         $this->company('KPMOG');
         $this->company('APCA');
         Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        Department::create(['code' => 'HC', 'name' => 'Human Capital', 'is_active' => true]);
         $user = User::factory()->create(['is_admin' => true]);
         $this->actingAs($user);
         Filament::setCurrentPanel(Filament::getPanel('admin'));
 
         $kpmogLetter = app(HrKpmogLetterService::class)->createDraft($user);
-        $apcaLetter = app(HrApcaLetterService::class)->createDraft($user, '2025-09-18');
+        $apcaLetter = app(HrApcaLetterService::class)->createDraft($user, '2025-09-18', 'SKK');
 
         Livewire::test(EditHrKpmogLetter::class, ['record' => $kpmogLetter->id])
             ->fillForm(['subject' => 'Surat Pengantar MCU'])

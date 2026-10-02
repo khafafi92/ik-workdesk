@@ -2360,7 +2360,7 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
 
 .ik-atk-requirement-metrics {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     margin: 0;
     border-left: 1px solid var(--ik-atk-border);
     background: #fbfcfe;
@@ -2428,7 +2428,7 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
 
 .ik-atk-requirement-table {
     width: 100%;
-    min-width: 44rem;
+    min-width: 82rem;
     border-collapse: collapse;
     text-align: left;
 }
@@ -2456,6 +2456,9 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
 .ik-atk-requirement-table tbody tr:last-child td { border-bottom: 0; }
 
 .ik-atk-requirement-table td:first-child { min-width: 14rem; }
+.ik-atk-requirement-table td:nth-child(2) { min-width: 15rem; }
+.ik-atk-requirement-table td:nth-child(3) { min-width: 12rem; }
+.ik-atk-requirement-table td:last-child { min-width: 15rem; }
 .ik-atk-requirement-table td > strong {
     display: block;
     color: var(--ik-atk-ink);
@@ -2469,6 +2472,19 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     font-size: 0.73rem;
 }
 
+.ik-atk-requirement-meta,
+.ik-atk-requirement-note {
+    display: block;
+    margin-top: 0.16rem;
+    color: var(--ik-atk-muted);
+    font-size: 0.73rem;
+    line-height: 1.45;
+}
+
+.ik-atk-requirement-note {
+    color: #3d506e;
+}
+
 .ik-atk-requirement-code {
     color: #3d506e;
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
@@ -2480,16 +2496,30 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
 .ik-atk-requirement-quantity { text-align: right; }
 
 .ik-atk-requirement-quantity strong {
-    color: #96320f !important;
+    color: var(--ik-atk-ink) !important;
     font-size: 1rem;
     font-variant-numeric: tabular-nums;
 }
+
+.ik-atk-requirement-quantity.is-outstanding strong { color: #96320f !important; }
 
 .ik-atk-requirement-quantity span {
     color: var(--ik-atk-muted);
     font-size: 0.72rem;
     font-weight: 650;
 }
+
+.ik-atk-requirement-status {
+    display: inline-block;
+    color: #172b4d;
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.35;
+}
+
+.ik-atk-requirement-status.is-procurement { color: #96320f; }
+.ik-atk-requirement-status.is-receipt { color: #0057b8; }
+.ik-atk-requirement-status.is-ready { color: #216a4a; }
 
 .ik-atk-requirement-empty {
     padding: 3rem 1.25rem !important;
@@ -2517,15 +2547,15 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     .ik-atk-requirement-lead-copy,
     .ik-atk-requirement-list-header { padding: 1.1rem; }
 
-    .ik-atk-requirement-metrics { grid-template-columns: 1fr; }
+    .ik-atk-requirement-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
     .ik-atk-requirement-metrics > div {
         padding: 0.9rem 1.1rem;
-        border-right: 0;
         border-bottom: 1px solid var(--ik-atk-border);
     }
 
-    .ik-atk-requirement-metrics > div:last-child { border-bottom: 0; }
+    .ik-atk-requirement-metrics > div:nth-child(2n) { border-right: 0; }
+    .ik-atk-requirement-metrics > div:nth-last-child(-n + 2) { border-bottom: 0; }
 
     .ik-atk-requirement-list-header {
         align-items: flex-start;
@@ -2577,6 +2607,17 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     .ik-atk-requirement-table td:first-child::before { display: none; }
     .ik-atk-requirement-table td:last-child { padding-bottom: 0; }
     .ik-atk-requirement-quantity { text-align: right; }
+    .ik-atk-requirement-table td.ik-atk-requirement-action {
+        display: block;
+        padding-top: 0.7rem;
+        text-align: left;
+    }
+
+    .ik-atk-requirement-table td.ik-atk-requirement-action::before {
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+
     .ik-atk-requirement-empty { display: block !important; }
     .ik-atk-requirement-empty::before { display: none; }
 }

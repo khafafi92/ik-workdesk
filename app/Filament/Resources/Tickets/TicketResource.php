@@ -261,6 +261,17 @@ class TicketResource extends Resource
             ->exists();
     }
 
+    public static function canPromoteToCollaborative(Ticket $ticket): bool
+    {
+        $user = auth()->user();
+
+        return $user !== null
+            && $user->hasPermission('tickets.manage')
+            && static::currentUserCanAccessTicket($ticket)
+            && $ticket->workflow_type !== 'collaborative'
+            && ! in_array($ticket->status, ['resolved', 'closed', 'cancel', 'cancelled', 'rejected'], true);
+    }
+
     public static function canReviseRejectedLegalRequest(
         Ticket $ticket,
         ?User $user = null

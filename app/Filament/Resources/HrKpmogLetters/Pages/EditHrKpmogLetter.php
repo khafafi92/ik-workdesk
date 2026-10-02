@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\HrKpmogLetters\Pages;
 
 use App\Filament\Resources\HrKpmogLetters\HrKpmogLetterResource;
+use App\Services\HrKpmogLetterService;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
@@ -34,6 +35,11 @@ class EditHrKpmogLetter extends EditRecord
     protected function getCancelFormAction(): Action
     {
         return parent::getCancelFormAction()->label('Kembali');
+    }
+
+    protected function afterSave(): void
+    {
+        $this->record = app(HrKpmogLetterService::class)->refreshNumber($this->record);
     }
 
     protected function getRedirectUrl(): string

@@ -46,6 +46,26 @@ class HrKpmogLetterService
         return app(DocumentNumberService::class)->reserve($letter);
     }
 
+    public function refreshNumber(OutgoingLetter $letter): OutgoingLetter
+    {
+        if ($letter->status !== 'draft' || blank($letter->running_number)) {
+            return $letter;
+        }
+
+        $template = $letter->numberingTemplate;
+
+        if ($template === null) {
+            throw ValidationException::withMessages(['document_number' => 'Template nomor surat tidak ditemukan.']);
+        }
+
+        $letter->update([
+            'document_number' => app(DocumentNumberService::class)->format($template, $letter, $letter->running_number),
+            'updated_by' => auth()->id(),
+        ]);
+
+        return $letter->refresh();
+    }
+
     private function template(): ?DocumentNumberingTemplate
     {
         return DocumentNumberingTemplate::query()
@@ -85,7 +105,7 @@ class HrKpmogLetterService
                 'name' => 'Nomor urut HR KPMOG',
             ],
             [
-                'template' => '{running:3}',
+                'template' => '{running:3}/{company_code}-{department_code}/{roman_month}/{year}',
                 'running_digits' => 3,
                 'reset_period' => 'yearly',
                 'priority' => 100,

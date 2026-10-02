@@ -195,6 +195,45 @@ class AtkManagementTest extends TestCase
             ->assertSeeText('Serahkan sisa barang dari Gudang Utama jika stok tersedia.');
     }
 
+    public function test_atk_requirement_summary_shows_request_context_and_delivery_progress(): void
+    {
+        [$requester, $department] = $this->requester();
+        $manager = User::factory()->create(['is_admin' => true]);
+        $request = $this->request($requester, $department);
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-SUMMARY-001',
+            'name' => 'Kertas A4',
+            'unit' => 'RIM',
+            'is_active' => true,
+        ]);
+        AtkRequestItem::query()->create([
+            'atk_request_id' => $request->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 10,
+            'qty_issued' => 6,
+            'qty_received' => 2,
+            'unit' => 'RIM',
+            'status' => 'issued',
+            'ga_note' => 'Sisa sedang disiapkan.',
+        ]);
+
+        $this->actingAs($manager)
+            ->get('/panel/atk-requirement-summary')
+            ->assertOk()
+            ->assertSeeText('Kebutuhan ATK yang belum selesai')
+            ->assertSeeText('Permintaan terbuka')
+            ->assertSeeText('Belum diserahkan')
+            ->assertSeeText('Menunggu konfirmasi')
+            ->assertSeeText($request->request_number)
+            ->assertSeeText($requester->name)
+            ->assertSeeText($department->name)
+            ->assertSeeText('Diminta')
+            ->assertSeeText('Diserahkan')
+            ->assertSeeText('Diterima')
+            ->assertSeeText('Perlu diserahkan dan dikonfirmasi')
+            ->assertSeeText('Catatan GA: Sisa sedang disiapkan.');
+    }
+
     public function test_outgoing_letter_form_explains_the_draft_and_issuance_flow(): void
     {
         $manager = User::factory()->create(['is_admin' => true]);
