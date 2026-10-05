@@ -166,7 +166,7 @@ class HrApcaLetterResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('letters.outgoing') === true
+        return auth()->user()?->hasPermission('letters.hr-apca') === true
             && auth()->user()?->hasPermission('letters.view') === true;
     }
 

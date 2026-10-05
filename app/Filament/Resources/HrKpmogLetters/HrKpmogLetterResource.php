@@ -159,7 +159,7 @@ class HrKpmogLetterResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('letters.outgoing') === true
+        return auth()->user()?->hasPermission('letters.hr-kpmog') === true
             && auth()->user()?->hasPermission('letters.view') === true;
     }
 

@@ -136,14 +136,22 @@ class KpmogProjectLetterResource extends Resource
                     ])
                     ->visible(fn (): bool => static::canCreate())
                     ->action(function (array $data): void {
-                        $result = app(KpmogProjectLetterImportService::class)->import($data['file'], auth()->user());
-                        $details = collect($result['messages'])->take(5)->implode(' ');
+                        try {
+                            $result = app(KpmogProjectLetterImportService::class)->import($data['file'], auth()->user());
+                            $details = collect($result['messages'])->take(5)->implode(' ');
 
-                        Notification::make()
-                            ->title('Import register selesai')
-                            ->body("Masuk: {$result['created']}; sudah ada: {$result['skippedExisting']}; duplikat dalam file: {$result['skippedDuplicate']}; tidak valid: {$result['skippedInvalid']}. {$details}")
-                            ->success()
-                            ->send();
+                            Notification::make()
+                                ->title('Import register selesai')
+                                ->body("Masuk: {$result['created']}; sudah ada: {$result['skippedExisting']}; duplikat dalam file: {$result['skippedDuplicate']}; tidak valid: {$result['skippedInvalid']}. {$details}")
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Import register gagal')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     }),
                 Action::make('use_next_number')
                     ->label(fn (): string => 'Gunakan nomor '.app(KpmogProjectLetterService::class)->nextNumber())
@@ -211,7 +219,7 @@ class KpmogProjectLetterResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('letters.outgoing') === true
+        return auth()->user()?->hasPermission('letters.kpmog-project-bd') === true
             && auth()->user()?->hasPermission('letters.view') === true;
     }
 

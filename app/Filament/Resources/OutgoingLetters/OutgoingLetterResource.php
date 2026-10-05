@@ -40,7 +40,7 @@ class OutgoingLetterResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
-        return false;
+        return static::canViewAny();
     }
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;

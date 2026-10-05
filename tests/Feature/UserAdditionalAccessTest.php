@@ -2,12 +2,17 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Resources\DocumentNumberingTemplates\DocumentNumberingTemplateResource;
+use App\Filament\Resources\LetterProfiles\LetterProfileResource;
+use App\Filament\Resources\OutgoingLetters\OutgoingLetterResource;
+use App\Filament\Resources\Users\Pages\EditUser;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\UserAdditionalAccessService;
 use Database\Seeders\AccessControlSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class UserAdditionalAccessTest extends TestCase
@@ -101,5 +106,63 @@ class UserAdditionalAccessTest extends TestCase
         $this->assertSame(['outgoing-letters'], $service->menuStateFor($user)['letters']);
         $this->actingAs($user)->get('/panel/outgoing-letters')->assertOk();
         $this->actingAs($user)->get('/panel/document-types')->assertForbidden();
+    }
+
+    public function test_surat_checklist_includes_each_letter_register_as_an_independent_submenu(): void
+    {
+        $user = User::factory()->create(['is_admin' => false]);
+        $service = app(UserAdditionalAccessService::class);
+
+        $service->sync($user, $service->accessGroupsFromMenuState([
+            'letters' => ['hr-kpmog-letters'],
+        ]));
+
+        $this->assertTrue($user->hasPermission('letters.hr-kpmog'));
+        $this->assertTrue($user->hasPermission('letters.view'));
+        $this->assertFalse($user->hasPermission('letters.hr-apca'));
+        $this->assertFalse($user->hasPermission('letters.kpmog-project-bd'));
+        $this->assertFalse($user->hasPermission('letters.ate-general'));
+        $this->assertSame(['hr-kpmog-letters'], $service->menuStateFor($user)['letters']);
+
+        $this->actingAs($user)->get('/panel/hr-kpmog-letters')->assertOk();
+        $this->actingAs($user)->get('/panel/hr-apca-letters')->assertForbidden();
+        $this->actingAs($user)->get('/panel/kpmog-project-letters')->assertForbidden();
+        $this->actingAs($user)->get('/panel/ate-general-letters')->assertForbidden();
+    }
+
+    public function test_surat_submenus_selected_in_user_setup_appear_in_navigation(): void
+    {
+        app(AccessControlSeeder::class)->run();
+        $administrator = User::factory()->create(['is_admin' => true]);
+        $user = User::factory()->create(['is_admin' => false]);
+
+        Livewire::actingAs($administrator)
+            ->test(EditUser::class, ['record' => $user->getRouteKey()])
+            ->fillForm([
+                'access_level' => 'requester',
+                'menu_access' => [
+                    'letters' => [
+                        'outgoing-letters',
+                        'letter-profiles',
+                        'document-numbering-templates',
+                    ],
+                ],
+            ])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $user->refresh();
+        $this->actingAs($user);
+
+        $this->assertTrue($user->hasPermission('letters.outgoing'));
+        $this->assertTrue($user->hasPermission('letters.profiles'));
+        $this->assertTrue($user->hasPermission('letters.numbering-templates'));
+        $this->assertTrue(OutgoingLetterResource::shouldRegisterNavigation());
+        $this->assertTrue(LetterProfileResource::shouldRegisterNavigation());
+        $this->assertTrue(DocumentNumberingTemplateResource::shouldRegisterNavigation());
+
+        $this->get('/panel/outgoing-letters')->assertOk();
+        $this->get('/panel/letter-profiles')->assertOk();
+        $this->get('/panel/document-numbering-templates')->assertOk();
     }
 }
