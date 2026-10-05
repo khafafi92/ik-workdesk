@@ -1,0 +1,625 @@
+.ik-global-chat {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.ik-global-chat-heading,
+.ik-global-chat-room-heading,
+.ik-global-chat-message-meta,
+.ik-global-chat-composer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.ik-global-chat-heading h2,
+.ik-global-chat-room-heading h3 {
+    margin: 0;
+    color: #323338;
+    font-weight: 750;
+}
+
+.ik-global-chat-heading p,
+.ik-global-chat-room-heading p,
+.ik-global-chat-connection,
+.ik-global-chat-loading,
+.ik-global-chat-help,
+.ik-global-chat-message-meta time {
+    margin: 0.25rem 0 0;
+    color: #555866;
+    font-size: 0.875rem;
+}
+
+.ik-global-chat-connection {
+    max-width: 24rem;
+    text-align: right;
+}
+
+.ik-global-chat-companies {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    padding: 0.15rem 0 0.4rem;
+}
+
+.ik-global-chat-companies button,
+.ik-global-chat-load-older,
+.ik-global-chat-selected-files button {
+    min-height: 2.75rem;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid #858b99;
+    border-radius: 0.5rem;
+    color: #323338;
+    background: #fff;
+    font-weight: 650;
+    white-space: nowrap;
+}
+
+.ik-global-chat-companies button[aria-pressed="true"] {
+    border-color: #005fbd;
+    color: #fff;
+    background: #005fbd;
+}
+
+.ik-global-chat button:focus-visible,
+.ik-global-chat a:focus-visible,
+.ik-global-chat textarea:focus-visible,
+.ik-global-chat input:focus-visible {
+    outline: 3px solid #005fbd;
+    outline-offset: 2px;
+}
+
+.ik-global-chat-room {
+    display: flex;
+    min-height: 28rem;
+    max-height: min(72vh, 58rem);
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid #d5dbe7;
+    border-radius: 0.875rem;
+    background: #fff;
+}
+
+.ik-global-chat-room-heading {
+    flex: none;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e2e6ef;
+    background: #f8fafc;
+}
+
+.ik-global-chat-room-heading > span {
+    color: #323338;
+    font-size: 0.875rem;
+    font-weight: 650;
+}
+
+.ik-global-chat-messages {
+    display: flex;
+    min-height: 12rem;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1rem 1.25rem;
+    scroll-padding-block: 1rem;
+}
+
+.ik-global-chat-load-older {
+    align-self: center;
+}
+
+.ik-global-chat-message {
+    max-width: min(82%, 54rem);
+    padding: 0.75rem 0.9rem;
+    border: 1px solid #d5dbe7;
+    border-radius: 0.75rem 0.75rem 0.75rem 0.2rem;
+    color: #323338;
+    background: #fff;
+    overflow-wrap: anywhere;
+}
+
+.ik-global-chat-message.is-own {
+    align-self: flex-end;
+    border-color: #b9d8fb;
+    border-radius: 0.75rem 0.75rem 0.2rem 0.75rem;
+    background: #eaf4ff;
+}
+
+.ik-global-chat-message-meta {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.75rem;
+}
+
+.ik-global-chat-message-meta strong {
+    color: #323338;
+    font-size: 0.875rem;
+}
+
+.ik-global-chat-message-meta time {
+    font-size: 0.75rem;
+}
+
+.ik-global-chat-message > p {
+    margin: 0.5rem 0 0;
+    color: #323338;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.ik-global-chat-attachments,
+.ik-global-chat-selected-files {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0.6rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.ik-global-chat-attachments a {
+    color: #005fbd;
+    font-size: 0.875rem;
+    font-weight: 650;
+    overflow-wrap: anywhere;
+}
+
+.ik-global-chat-attachments span {
+    color: #555866;
+    font-size: 0.75rem;
+    font-weight: 400;
+}
+
+.ik-global-chat-empty {
+    align-self: center;
+    max-width: 38rem;
+    margin: auto;
+    color: #454854;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.ik-global-chat-no-company {
+    padding: 2rem 1rem;
+    border: 1px solid #d5dbe7;
+    border-radius: 0.75rem;
+    background: #fff;
+}
+
+.ik-global-chat-composer {
+    flex: none;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #e2e6ef;
+    background: #fff;
+}
+
+.ik-global-chat-composer > label:first-child {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: #323338;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.ik-global-chat-composer textarea {
+    display: block;
+    width: 100%;
+    min-height: 5rem;
+    padding: 0.75rem;
+    border: 1px solid #858b99;
+    border-radius: 0.5rem;
+    color: #323338;
+    background: #fff;
+    resize: vertical;
+}
+
+.ik-global-chat-composer textarea::placeholder {
+    color: #555866;
+    opacity: 1;
+}
+
+.ik-global-chat-composer-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+}
+
+.ik-global-chat-file-label,
+.ik-global-chat-send,
+.ik-global-chat-selected-files button {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid #005fbd;
+    border-radius: 0.5rem;
+    color: #005fbd;
+    background: #fff;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.ik-global-chat-file-label:focus-within {
+    outline: 3px solid #005fbd;
+    outline-offset: 2px;
+}
+
+.ik-global-chat-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    clip-path: inset(50%);
+}
+
+.ik-global-chat-send {
+    color: #fff;
+    background: #005fbd;
+}
+
+.ik-global-chat-send:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.ik-global-chat-help {
+    margin-top: 0.5rem;
+}
+
+.ik-global-chat-error {
+    margin: 0.4rem 0;
+    color: #a12639;
+    font-size: 0.875rem;
+}
+
+.ik-global-chat-uploading {
+    margin: 0.5rem 0 0;
+    color: #323338;
+    font-size: 0.875rem;
+}
+
+.ik-global-chat-selected-files li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    color: #323338;
+    overflow-wrap: anywhere;
+}
+
+.ik-global-chat-selected-files button {
+    min-height: 2.75rem;
+    flex: none;
+    padding-inline: 0.7rem;
+    color: #a12639;
+    border-color: #a12639;
+}
+
+.ik-ai-settings,
+.ik-ai-chat {
+    display: grid;
+    gap: 1rem;
+    min-width: 0;
+}
+
+.ik-ai-settings-panel,
+.ik-ai-empty,
+.ik-ai-conversation {
+    border: 1px solid #d5dbe7;
+    border-radius: 0.75rem;
+    background: #fff;
+}
+
+.ik-ai-settings-panel {
+    padding: 1.25rem;
+}
+
+.ik-ai-settings-panel header h2 {
+    margin: 0;
+    color: #323338;
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.ik-ai-settings-panel header > p,
+.ik-ai-help {
+    margin: 0.35rem 0 0;
+    color: #555866;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.ik-ai-settings-form {
+    display: grid;
+    max-width: 48rem;
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.ik-ai-field {
+    display: grid;
+    gap: 0.4rem;
+}
+
+.ik-ai-field > label,
+.ik-ai-composer > label {
+    color: #323338;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.ik-ai-field input,
+.ik-ai-composer textarea {
+    width: 100%;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid #858b99;
+    border-radius: 0.4rem;
+    color: #323338;
+    background: #fff;
+}
+
+.ik-ai-field input:focus-visible,
+.ik-ai-composer textarea:focus-visible,
+.ik-ai-toggle input:focus-visible,
+.ik-ai-primary-button:focus-visible,
+.ik-ai-messages:focus-visible,
+.ik-ai-empty a:focus-visible {
+    outline: 3px solid #005fbd;
+    outline-offset: 2px;
+}
+
+.ik-ai-toggle {
+    display: flex;
+    min-height: 2.75rem;
+    align-items: center;
+    gap: 0.65rem;
+    color: #323338;
+    font-weight: 650;
+}
+
+.ik-ai-toggle input {
+    width: 1.15rem;
+    height: 1.15rem;
+    accent-color: #005fbd;
+}
+
+.ik-ai-primary-button {
+    display: inline-flex;
+    min-height: 2.75rem;
+    width: fit-content;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid #005fbd;
+    border-radius: 0.4rem;
+    color: #fff;
+    background: #005fbd;
+    cursor: pointer;
+    font-weight: 700;
+}
+
+.ik-ai-primary-button:disabled {
+    cursor: wait;
+    opacity: 0.65;
+}
+
+.ik-ai-error {
+    margin: 0.15rem 0 0;
+    color: #a12639;
+    font-size: 0.875rem;
+}
+
+.ik-ai-usage-summary {
+    max-width: 48rem;
+    margin-top: 1rem;
+}
+
+.ik-ai-usage-summary > p:first-child,
+.ik-ai-usage-summary > p:nth-child(2) {
+    margin: 0.4rem 0;
+    color: #323338;
+    font-weight: 650;
+}
+
+.ik-ai-progress-track {
+    height: 0.75rem;
+    overflow: hidden;
+    border: 1px solid #858b99;
+    border-radius: 0.25rem;
+    background: #f1f3f7;
+}
+
+.ik-ai-progress-track span {
+    display: block;
+    height: 100%;
+    background: #005fbd;
+}
+
+.ik-ai-empty {
+    padding: 1.25rem;
+    color: #454854;
+    line-height: 1.55;
+}
+
+.ik-ai-empty p {
+    margin: 0;
+}
+
+.ik-ai-empty a {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    margin-top: 0.5rem;
+    color: #005fbd;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+}
+
+.ik-ai-disclosure {
+    margin: 0;
+    padding: 0.8rem 1rem;
+    border: 1px solid #858b99;
+    border-radius: 0.5rem;
+    color: #323338;
+    background: #fff;
+    line-height: 1.5;
+}
+
+.ik-ai-conversation {
+    display: flex;
+    min-height: 24rem;
+    max-height: min(72vh, 58rem);
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.ik-ai-messages {
+    display: flex;
+    min-height: 12rem;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0.75rem;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 1rem 1.25rem;
+    scroll-padding-block: 1rem;
+}
+
+.ik-ai-message {
+    max-width: min(88%, 58rem);
+    padding: 0.75rem 0.9rem;
+    border: 1px solid #d5dbe7;
+    border-radius: 0.65rem;
+    color: #323338;
+    overflow-wrap: anywhere;
+}
+
+.ik-ai-message.is-user {
+    align-self: flex-end;
+    border-color: #b9d8fb;
+    background: #eaf4ff;
+}
+
+.ik-ai-message.is-assistant {
+    align-self: flex-start;
+    background: #fff;
+}
+
+.ik-ai-message strong {
+    font-size: 0.875rem;
+}
+
+.ik-ai-message p {
+    margin: 0.45rem 0 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.ik-ai-composer {
+    flex: none;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid #d5dbe7;
+    background: #fff;
+}
+
+.ik-ai-composer > label {
+    display: block;
+    margin-bottom: 0.4rem;
+}
+
+.ik-ai-composer textarea {
+    display: block;
+    min-height: 5rem;
+    resize: vertical;
+}
+
+.ik-ai-composer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.65rem;
+}
+
+.ik-ai-composer-actions .ik-ai-help {
+    margin: 0;
+}
+
+.ik-ai-loading {
+    margin: 0.5rem 0 0;
+    color: #323338;
+    font-size: 0.875rem;
+}
+
+@media (max-width: 700px) {
+    .ik-global-chat-heading {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .ik-global-chat-connection {
+        text-align: left;
+    }
+
+    .ik-global-chat-room {
+        min-height: 24rem;
+        max-height: 76dvh;
+    }
+
+    .ik-global-chat-room-heading,
+    .ik-global-chat-messages,
+    .ik-global-chat-composer {
+        padding-inline: 0.8rem;
+    }
+
+    .ik-global-chat-message {
+        max-width: 94%;
+    }
+
+    .ik-global-chat-composer {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .ik-ai-settings-panel {
+        padding: 0.9rem;
+    }
+
+    .ik-ai-conversation {
+        min-height: 24rem;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .ik-ai-messages {
+        max-height: 45dvh;
+        padding-inline: 0.8rem;
+    }
+
+    .ik-ai-composer {
+        padding-inline: 0.8rem;
+    }
+
+    .ik-ai-composer {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .ik-ai-message {
+        max-width: 96%;
+    }
+
+    .ik-ai-composer-actions {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

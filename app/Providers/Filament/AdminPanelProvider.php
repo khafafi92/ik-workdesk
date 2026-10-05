@@ -23,6 +23,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 // end
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Vite;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
@@ -65,6 +66,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Vehicle Booking')->collapsed(),
                 NavigationGroup::make()->label('Notifications')->collapsed(),
                 NavigationGroup::make()->label('Service Desk'),
+                NavigationGroup::make()->label('Collaboration'),
                 NavigationGroup::make()->label('Daily Reports'),
             ])
             ->navigationItems([
@@ -75,6 +77,25 @@ class AdminPanelProvider extends PanelProvider
                     ->visible(fn (): bool => Auth::check() && Auth::user()->hasRole('system-admin')),
             ])
             ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => (
+                    file_exists(public_path('build/manifest.json'))
+                    || file_exists(public_path('hot'))
+                )
+                    ? '<script>window.ikGlobalChatRealtime = '.
+                        json_encode([
+                            'enabled' => config('broadcasting.default') === 'reverb'
+                                && filled(config('broadcasting.connections.reverb.key')),
+                            'key' => config('broadcasting.connections.reverb.key'),
+                            'host' => config('broadcasting.connections.reverb.options.host'),
+                            'port' => config('broadcasting.connections.reverb.options.port'),
+                            'scheme' => config('broadcasting.connections.reverb.options.scheme'),
+                        ], JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT).
+                        ';</script>'.
+                        app(Vite::class)(['resources/js/global-chat.js'])->toHtml()
+                    : '',
+            )
+            ->renderHook(
                 PanelsRenderHook::STYLES_AFTER,
                 fn (): string => '<link rel="stylesheet" href="'.
                     asset('css/filament/admin/workdesk-theme.css').
@@ -83,6 +104,10 @@ class AdminPanelProvider extends PanelProvider
                     '<link rel="stylesheet" href="'.
                     asset('css/filament/admin/workdesk-ui-polish.css').
                     '?v='.filemtime(public_path('css/filament/admin/workdesk-ui-polish.css')).
+                    '">'.
+                    '<link rel="stylesheet" href="'.
+                    asset('css/filament/admin/global-chat.css').
+                    '?v='.filemtime(public_path('css/filament/admin/global-chat.css')).
                     '">',
             )
             ->renderHook(
@@ -120,6 +145,7 @@ class AdminPanelProvider extends PanelProvider
                                     'Vehicle Booking',
                                     'Notifications',
                                     'Service Desk',
+                                    'Collaboration',
                                     'Daily Reports',
                                 ]),
                             )

@@ -35,6 +35,14 @@ class EmployeeForm
                     ->searchable()
                     ->preload(),
 
+                Select::make('permitCompanies')
+                    ->label('Companies')
+                    ->relationship('permitCompanies', 'name')
+                    ->multiple()
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Chat Room Global hanya menampilkan company yang dipilih. Tanpa pilihan company, karyawan tidak dapat membuka room.'),
+
                 TextInput::make('employee_no')
                     ->label('Employee No')
                     ->maxLength(255),

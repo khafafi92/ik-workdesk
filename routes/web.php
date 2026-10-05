@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AttendanceReportDownloadController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\FindingAttachmentDownloadController;
+use App\Http\Controllers\GlobalChatAttachmentDownloadController;
 use App\Http\Controllers\LtroMttrImportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketAttachmentDownloadController;
@@ -53,6 +54,14 @@ Route::get(
     ->whereNumber('attachmentIndex')
     ->middleware(['auth'])
     ->name('ticket-comments.attachments.download');
+
+Route::get(
+    '/global-chat/messages/{message}/attachments/{attachment}',
+    GlobalChatAttachmentDownloadController::class
+)
+    ->whereNumber(['message', 'attachment'])
+    ->middleware(['auth'])
+    ->name('global-chat.attachments.download');
 
 Route::get(
     '/tickets/{ticket}/attachments/{attachmentIndex}',

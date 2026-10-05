@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Employee extends Model
 {
@@ -21,22 +24,32 @@ class Employee extends Model
         'is_active' => 'boolean',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function department()
+    public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
     }
 
-    public function workTasks()
+    public function permitCompanies(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            PermitCompany::class,
+            'employee_permit_company',
+            'employee_id',
+            'permit_company_id',
+        );
+    }
+
+    public function workTasks(): HasMany
     {
         return $this->hasMany(WorkTask::class);
     }
 
-    public function requestedTickets()
+    public function requestedTickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
     }

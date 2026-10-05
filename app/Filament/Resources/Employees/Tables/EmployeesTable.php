@@ -20,6 +20,11 @@ class EmployeesTable
                     ->placeholder('-')
                     ->searchable()
                     ->sortable(),
+                TextColumn::make('permitCompanies.name')
+                    ->label('Companies')
+                    ->placeholder('-')
+                    ->listWithLineBreaks()
+                    ->searchable(),
                 TextColumn::make('employee_no')
                     ->searchable(),
                 TextColumn::make('name')
