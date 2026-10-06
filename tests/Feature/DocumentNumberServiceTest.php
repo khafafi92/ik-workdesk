@@ -169,11 +169,10 @@ class DocumentNumberServiceTest extends TestCase
         $this->assertDatabaseCount('document_number_sequences', 0);
     }
 
-    public function test_apca_outgoing_letter_uses_the_creators_department_and_requested_number_format(): void
+    public function test_apca_outgoing_letter_allows_an_administrator_to_choose_the_department(): void
     {
         $company = $this->company('APCA');
-        $creatorDepartment = Department::create(['code' => 'IT', 'name' => 'Information Technology', 'is_active' => true]);
-        $otherDepartment = Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        $legalDepartment = Department::create(['code' => 'LG', 'name' => 'Legal', 'is_active' => true]);
         $type = $this->type('TUGAS');
         $profile = LetterProfile::create([
             'code' => 'ATE-UMUM',
@@ -191,7 +190,7 @@ class DocumentNumberServiceTest extends TestCase
             'reset_period' => 'yearly',
             'is_active' => true,
         ]);
-        $creator = $this->userWithDepartment('IT', ['is_admin' => true]);
+        $creator = User::factory()->create(['is_admin' => true]);
         $this->actingAs($creator);
         Filament::setCurrentPanel(Filament::getPanel('admin'));
 
@@ -199,22 +198,22 @@ class DocumentNumberServiceTest extends TestCase
             ->fillForm([
                 'letter_profile_id' => $profile->id,
                 'permit_company_id' => $company->id,
-                'department_id' => $otherDepartment->id,
+                'department_id' => $legalDepartment->id,
                 'document_type_id' => $type->id,
                 'document_date' => '2026-10-15',
                 'subject' => 'Surat tugas',
                 'is_legacy_number' => false,
             ])
-            ->assertSeeText('001/IT-ATE/X/2026')
+            ->assertSeeText('001/LG-ATE/X/2026')
             ->call('create')
             ->assertHasNoFormErrors();
 
         $letter = OutgoingLetter::query()->latest('id')->firstOrFail();
-        $this->assertSame($creatorDepartment->id, $letter->department_id);
+        $this->assertSame($legalDepartment->id, $letter->department_id);
 
         app(DocumentNumberService::class)->issue($letter, $creator);
 
-        $this->assertSame('001/IT-ATE/X/2026', $letter->refresh()->document_number);
+        $this->assertSame('001/LG-ATE/X/2026', $letter->refresh()->document_number);
     }
 
     public function test_issued_letter_content_and_number_are_immutable(): void

@@ -74,7 +74,7 @@ class OutgoingLetterResource extends Resource
 
                             $set('permit_company_id', $profile->permit_company_id);
                             $set('department_id', static::usesApcaGeneralNumbering($profile->id, $profile->permit_company_id)
-                                ? static::creatorDepartmentId()
+                                ? (auth()->user()?->is_admin ? $profile->department_id : static::creatorDepartmentId())
                                 : $profile->department_id);
                         })
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
@@ -83,10 +83,13 @@ class OutgoingLetterResource extends Resource
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
                     Select::make('department_id')->label('Departemen penerbit')->relationship('department', 'name')->searchable()->preload()->live()
                         ->helperText(fn (Get $get): string => static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))
-                            ? 'Kode departemen diambil dari departemen akun pembuat surat.'
+                            ? (auth()->user()?->is_admin
+                                ? 'Pilih departemen yang menerbitkan surat.'
+                                : 'Kode departemen diambil dari departemen akun pembuat surat.')
                             : 'Pilih departemen pengirim jika surat menggunakan kode departemen.')
                         ->disabled(fn (Get $get, ?OutgoingLetter $record): bool => static::isNumberLocked($record)
-                            || static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id')))
+                            || (static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))
+                                && auth()->user()?->is_admin !== true))
                         ->dehydrated(fn (Get $get): bool => static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))),
                     Select::make('document_type_id')->label('Jenis surat')->relationship('documentType', 'name')->searchable()->preload()->live()
                         ->helperText('Jenis surat menentukan kode pada nomor surat, bila template menggunakannya.')
@@ -295,10 +298,14 @@ class OutgoingLetterResource extends Resource
         $departmentId = $get('department_id');
 
         if (static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))) {
-            $departmentId = static::creatorDepartmentId();
+            $departmentId = auth()->user()?->is_admin
+                ? $get('department_id')
+                : static::creatorDepartmentId();
 
             if ($departmentId === null) {
-                return 'Akun pembuat surat harus memiliki departemen aktif untuk membuat nomor APCA.';
+                return auth()->user()?->is_admin
+                    ? 'Pilih departemen penerbit untuk melihat preview nomor APCA.'
+                    : 'Akun pembuat surat harus memiliki departemen aktif untuk membuat nomor APCA.';
             }
         }
 
