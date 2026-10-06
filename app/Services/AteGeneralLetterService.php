@@ -38,6 +38,7 @@ class AteGeneralLetterService
     public function createDraft(User $user, string $date, string $kind): OutgoingLetter
     {
         $definition = $this->definition($kind);
+        $department = $this->departmentForUser($user);
         [$profile] = $this->ensureConfiguration();
         $type = $this->typeFor($kind);
 
@@ -45,19 +46,19 @@ class AteGeneralLetterService
             throw ValidationException::withMessages(['letter_kind' => 'Jenis surat APCA ini tidak aktif.']);
         }
 
-        $department = $definition['department'] === null ? null : $this->department($definition['department']);
-
-        $letter = OutgoingLetter::query()->create([
+        $letter = new OutgoingLetter([
             'letter_profile_id' => $profile->id,
             'permit_company_id' => $profile->permit_company_id,
-            'department_id' => $department?->id,
+            'department_id' => $department->id,
             'document_type_id' => $type->id,
             'document_date' => $date,
             'subject' => 'Belum diisi',
             'status' => 'draft',
+        ]);
+        $letter->forceFill([
             'created_by' => $user->id,
             'updated_by' => $user->id,
-        ]);
+        ])->save();
 
         return app(DocumentNumberService::class)->reserve(
             $letter,
@@ -71,8 +72,12 @@ class AteGeneralLetterService
             return $letter;
         }
 
+        $letter->loadMissing(['department', 'creator.employee.department']);
+        $department = $letter->department ?? $this->departmentForUser($letter->creator);
+
         $letter->update([
-            'document_number' => $this->formatNumber($letter, $letter->running_number),
+            'department_id' => $department->id,
+            'document_number' => $this->formatNumber($letter, $letter->running_number, $department),
             'updated_by' => auth()->id(),
         ]);
 
@@ -82,15 +87,15 @@ class AteGeneralLetterService
     private function definitions(): array
     {
         return [
-            'perdin' => ['label' => 'Surat Perdin (A.01)', 'type_code' => 'ATE-PERDIN', 'prefix' => 'A.01', 'department' => null, 'format' => 'standard'],
-            'tugas' => ['label' => 'Surat Tugas (B.01)', 'type_code' => 'ATE-TUGAS', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
-            'pernyataan' => ['label' => 'Surat Pernyataan (B.01)', 'type_code' => 'ATE-PERNYATAAN', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
-            'pengantar' => ['label' => 'Surat Pengantar (B.01)', 'type_code' => 'ATE-PENGANTAR', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
-            'permohonan' => ['label' => 'Surat Permohonan (B.01)', 'type_code' => 'ATE-PERMOHONAN', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
-            'keputusan' => ['label' => 'Surat Keputusan (A.01)', 'type_code' => 'ATE-KEPUTUSAN', 'prefix' => 'A.01', 'department' => null, 'format' => 'standard'],
-            'sket' => ['label' => 'SKET (B.01)', 'type_code' => 'ATE-SKET', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
-            'tanda_terima_dok' => ['label' => 'Tanda Terima Dokumen (B.01)', 'type_code' => 'ATE-TTD', 'prefix' => 'B.01', 'department' => null, 'format' => 'receipt'],
-            'info_memo_luwuk' => ['label' => 'Info Memo Luwuk (FIN-LWK)', 'type_code' => 'ATE-INFO-MEMO-LWK', 'prefix' => null, 'department' => 'FIN', 'format' => 'memo_luwuk'],
+            'perdin' => ['label' => 'Surat Perdin (A.01)', 'type_code' => 'ATE-PERDIN'],
+            'tugas' => ['label' => 'Surat Tugas (B.01)', 'type_code' => 'ATE-TUGAS'],
+            'pernyataan' => ['label' => 'Surat Pernyataan (B.01)', 'type_code' => 'ATE-PERNYATAAN'],
+            'pengantar' => ['label' => 'Surat Pengantar (B.01)', 'type_code' => 'ATE-PENGANTAR'],
+            'permohonan' => ['label' => 'Surat Permohonan (B.01)', 'type_code' => 'ATE-PERMOHONAN'],
+            'keputusan' => ['label' => 'Surat Keputusan (A.01)', 'type_code' => 'ATE-KEPUTUSAN'],
+            'sket' => ['label' => 'SKET (B.01)', 'type_code' => 'ATE-SKET'],
+            'tanda_terima_dok' => ['label' => 'Tanda Terima Dokumen (B.01)', 'type_code' => 'ATE-TTD'],
+            'info_memo_luwuk' => ['label' => 'Info Memo Luwuk (FIN-LWK)', 'type_code' => 'ATE-INFO-MEMO-LWK'],
         ];
     }
 
@@ -105,35 +110,43 @@ class AteGeneralLetterService
         return $definition;
     }
 
-    private function formatNumber(OutgoingLetter $letter, int $runningNumber): string
+    private function formatNumber(OutgoingLetter $letter, int $runningNumber, ?Department $department = null): string
     {
-        $letter->loadMissing('documentType');
-        $definition = collect($this->definitions())
-            ->first(fn (array $item): bool => $item['type_code'] === $letter->documentType?->code);
+        $letter->loadMissing(['department', 'documentType']);
+        $typeExists = collect($this->definitions())
+            ->contains(fn (array $item): bool => $item['type_code'] === $letter->documentType?->code);
 
-        if ($definition === null) {
+        if (! $typeExists) {
             throw ValidationException::withMessages(['document_type_id' => 'Jenis surat ATE tidak valid.']);
+        }
+
+        $department ??= $letter->department;
+
+        if ($department === null || blank($department->code)) {
+            throw ValidationException::withMessages(['department_id' => 'Departemen user pembuat surat belum ditetapkan.']);
         }
 
         $date = Carbon::parse($letter->document_date);
         $running = str_pad((string) $runningNumber, 3, '0', STR_PAD_LEFT);
         $month = $this->romanMonth($date->month);
-        $prefix = $this->prefixFromName($letter->documentType?->name) ?? $definition['prefix'];
 
-        return match ($definition['format']) {
-            'receipt' => "{$prefix}/TTD-ATE/{$month}/{$date->year}",
-            'memo_luwuk' => "{$running}-FIN-LWK-ATE-{$month}-{$date->year}",
-            default => "{$prefix}/{$running}/ATE/{$month}/{$date->year}",
-        };
+        return "{$running}/{$department->code}-ATE/{$month}/{$date->year}";
     }
 
-    private function prefixFromName(?string $name): ?string
+    private function departmentForUser(?User $user): Department
     {
-        if (preg_match('/\(([^()]+)\)\s*$/u', $name ?? '', $matches) !== 1) {
-            return null;
+        if ($user === null) {
+            throw ValidationException::withMessages(['department_id' => 'User pembuat surat tidak ditemukan.']);
         }
 
-        return $matches[1];
+        $user->loadMissing('employee.department');
+        $department = $user->employee?->department;
+
+        if ($department === null || ! $department->is_active || blank($department->code)) {
+            throw ValidationException::withMessages(['department_id' => 'Departemen aktif belum ditetapkan untuk user pembuat surat.']);
+        }
+
+        return $department;
     }
 
     private function ensureConfiguration(): array
@@ -150,7 +163,7 @@ class AteGeneralLetterService
                 'name' => 'Surat Umum APCA',
                 'permit_company_id' => $company->id,
                 'form_variant' => 'general',
-                'description' => 'Register surat umum APCA dengan pola nomor ATE berdasarkan jenis surat.',
+                'description' => 'Register surat umum APCA dengan pola nomor berdasarkan departemen pembuat surat.',
                 'is_active' => true,
             ],
         );
@@ -185,12 +198,6 @@ class AteGeneralLetterService
             ['code' => $definition['type_code']],
             ['name' => $definition['label'], 'is_active' => true],
         );
-    }
-
-    private function department(string $code): Department
-    {
-        return Department::query()->whereRaw('UPPER(code) = ?', [$code])->first()
-            ?? Department::query()->create(['code' => $code, 'name' => 'Finance', 'is_active' => true]);
     }
 
     private function romanMonth(int $month): string

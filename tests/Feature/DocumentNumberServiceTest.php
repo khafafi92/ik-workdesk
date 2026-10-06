@@ -13,6 +13,7 @@ use App\Filament\Resources\KpmogProjectLetters\Pages\EditKpmogProjectLetter;
 use App\Models\Department;
 use App\Models\DocumentNumberingTemplate;
 use App\Models\DocumentType;
+use App\Models\Employee;
 use App\Models\LetterProfile;
 use App\Models\OutgoingLetter;
 use App\Models\PermitCompany;
@@ -350,7 +351,7 @@ class DocumentNumberServiceTest extends TestCase
     public function test_ate_general_letters_use_their_respective_master_number_formats(): void
     {
         $this->company('APCA');
-        $user = User::factory()->create();
+        $user = $this->userWithDepartment('IT');
         $service = app(AteGeneralLetterService::class);
 
         $perdin = $service->createDraft($user, '2024-04-10', 'perdin');
@@ -359,17 +360,17 @@ class DocumentNumberServiceTest extends TestCase
         $memo = $service->createDraft($user, '2026-02-01', 'info_memo_luwuk');
         $nextPerdin = $service->createDraft($user, '2024-05-01', 'perdin');
 
-        $this->assertSame('A.01/001/ATE/IV/2024', $perdin->document_number);
-        $this->assertSame('B.01/001/ATE/VIII/2025', $tugas->document_number);
-        $this->assertSame('B.01/TTD-ATE/VII/2025', $ttd->document_number);
-        $this->assertSame('001-FIN-LWK-ATE-II-2026', $memo->document_number);
-        $this->assertSame('A.01/002/ATE/V/2024', $nextPerdin->document_number);
+        $this->assertSame('001/IT-ATE/IV/2024', $perdin->document_number);
+        $this->assertSame('001/IT-ATE/VIII/2025', $tugas->document_number);
+        $this->assertSame('001/IT-ATE/VII/2025', $ttd->document_number);
+        $this->assertSame('001/IT-ATE/II/2026', $memo->document_number);
+        $this->assertSame('002/IT-ATE/V/2024', $nextPerdin->document_number);
     }
 
     public function test_ate_general_letter_choices_and_prefixes_follow_the_document_type_master(): void
     {
         $this->company('APCA');
-        $user = User::factory()->create();
+        $user = $this->userWithDepartment('IT');
         $service = app(AteGeneralLetterService::class);
 
         $service->createDraft($user, '2024-04-10', 'perdin');
@@ -417,14 +418,56 @@ class DocumentNumberServiceTest extends TestCase
         $perdin = $service->createDraft($user, '2025-04-10', 'perdin');
         $receipt = $service->createDraft($user, '2025-07-20', 'tanda_terima_dok');
 
-        $this->assertSame('A.01/001/ATE/IV/2025', $perdin->document_number);
-        $this->assertSame('B.01/TTD-ATE/VII/2025', $receipt->document_number);
+        $this->assertSame('001/IT-ATE/IV/2025', $perdin->document_number);
+        $this->assertSame('001/IT-ATE/VII/2025', $receipt->document_number);
+    }
+
+    public function test_ate_general_letters_require_the_creator_to_have_an_active_department(): void
+    {
+        $this->company('APCA');
+        $user = User::factory()->create();
+
+        try {
+            app(AteGeneralLetterService::class)->createDraft($user, '2026-10-01', 'perdin');
+            $this->fail('A user without a department must not receive a letter number.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('department_id', $exception->errors());
+        }
+
+        $this->assertDatabaseCount('outgoing_letters', 0);
+    }
+
+    public function test_ate_general_draft_keeps_its_creator_department_when_the_user_department_changes(): void
+    {
+        $this->company('APCA');
+        $user = $this->userWithDepartment('IT');
+        $letter = app(AteGeneralLetterService::class)->createDraft($user, '2026-10-01', 'perdin');
+        $hr = Department::query()->create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+
+        $user->employee->update(['department_id' => $hr->id]);
+        $updated = app(AteGeneralLetterService::class)->refreshNumber($letter);
+
+        $this->assertSame('001/IT-ATE/X/2026', $updated->document_number);
+        $this->assertSame($letter->department_id, $updated->department_id);
+    }
+
+    public function test_ate_general_draft_without_saved_department_uses_its_creator_department(): void
+    {
+        $this->company('APCA');
+        $user = $this->userWithDepartment('IT');
+        $letter = app(AteGeneralLetterService::class)->createDraft($user, '2026-10-01', 'perdin');
+        $letter->update(['department_id' => null]);
+
+        $updated = app(AteGeneralLetterService::class)->refreshNumber($letter->fresh());
+
+        $this->assertSame('001/IT-ATE/X/2026', $updated->document_number);
+        $this->assertSame($user->employee->department_id, $updated->department_id);
     }
 
     public function test_saving_ate_general_draft_returns_to_its_register(): void
     {
         $this->company('APCA');
-        $user = User::factory()->create(['is_admin' => true]);
+        $user = $this->userWithDepartment('IT', ['is_admin' => true]);
         $this->actingAs($user);
         Filament::setCurrentPanel(Filament::getPanel('admin'));
         $letter = app(AteGeneralLetterService::class)->createDraft($user, '2025-08-15', 'tugas');
@@ -468,6 +511,24 @@ class DocumentNumberServiceTest extends TestCase
             ['code' => $code],
             ['name' => $code, 'is_active' => true],
         );
+    }
+
+    private function userWithDepartment(string $departmentCode, array $userAttributes = []): User
+    {
+        $department = Department::query()->firstOrCreate(
+            ['code' => $departmentCode],
+            ['name' => $departmentCode, 'is_active' => true],
+        );
+        $user = User::factory()->create($userAttributes);
+
+        Employee::query()->create([
+            'user_id' => $user->id,
+            'department_id' => $department->id,
+            'name' => $user->name,
+            'is_active' => true,
+        ]);
+
+        return $user;
     }
 
     private function letter(PermitCompany $company, ?DocumentType $type, string $date): OutgoingLetter
