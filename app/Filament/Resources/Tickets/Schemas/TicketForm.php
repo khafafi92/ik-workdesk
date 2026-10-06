@@ -454,7 +454,6 @@ class TicketForm
                             : 'Attachments'
                     )
                     ->multiple()
-                    ->maxFiles(10)
                     ->disk('local')
                     ->directory('service-request-attachments')
                     ->visibility('private')

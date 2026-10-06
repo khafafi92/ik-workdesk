@@ -125,10 +125,9 @@ class GlobalChatRoom extends Page
 
         $this->validate([
             'message' => ['nullable', 'string', 'max:5000'],
-            'attachments' => ['array', 'max:10'],
+            'attachments' => ['array'],
             'attachments.*' => [
                 'file',
-                'max:10240',
                 'mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png',
             ],
         ]);

@@ -205,6 +205,34 @@ class GlobalChatRoomTest extends TestCase
             ->assertOk();
     }
 
+    public function test_message_accepts_more_than_ten_attachments_and_files_over_ten_megabytes(): void
+    {
+        Storage::fake('local');
+
+        $user = $this->employeeUser($this->alpha);
+        $attachments = [
+            UploadedFile::fake()->create('large.pdf', 10241, 'application/pdf'),
+        ];
+
+        for ($index = 1; $index <= 10; $index++) {
+            $attachments[] = UploadedFile::fake()->create(
+                "attachment-{$index}.pdf",
+                1,
+                'application/pdf',
+            );
+        }
+
+        Livewire::actingAs($user)
+            ->test(GlobalChatRoom::class)
+            ->set('attachments', $attachments)
+            ->call('addMessage')
+            ->assertHasNoErrors();
+
+        $message = GlobalChatMessage::query()->where('user_id', $user->id)->firstOrFail();
+
+        $this->assertSame(11, $message->attachments()->count());
+    }
+
     public function test_administrators_can_access_every_active_company_room(): void
     {
         $admin = User::factory()->create(['is_admin' => true]);

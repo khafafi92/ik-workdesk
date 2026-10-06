@@ -221,6 +221,8 @@ Gunakan file ini untuk:
 | `reported_at` | waktu laporan |
 | `due_at` | target selesai opsional |
 
+Lampiran Service Desk tidak dibatasi jumlah atau ukuran per file oleh aplikasi. Server menerima total request upload hingga 1 GB.
+
 ### Contoh mengubah deskripsi
 
 Jika ingin menambah keterangan pada Subject, cari:

@@ -122,7 +122,6 @@ class FindingsRelationManager extends RelationManager
                 FileUpload::make('response_attachments')
                     ->label('Response Attachments')
                     ->multiple()
-                    ->maxFiles(10)
                     ->disk('local')
                     ->directory('work-task-finding-responses')
                     ->visibility('private')

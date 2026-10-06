@@ -52,4 +52,4 @@ The administrator page reports prompt and completion tokens that OpenAI returns 
 
 ## Messages and attachments
 
-Messages are plain text. Each message can include up to 10 PDF, Word, Excel, JPG, or PNG files, with a maximum of 10 MB per file. Attachments stay on the private local disk and download through a company-authorized route.
+Messages are plain text and can include multiple PDF, Word, Excel, JPG, or PNG files. The application does not limit the number or size of attachments. The server limits each upload request to 1 GB total. Attachments stay on the private local disk and download through a company-authorized route.

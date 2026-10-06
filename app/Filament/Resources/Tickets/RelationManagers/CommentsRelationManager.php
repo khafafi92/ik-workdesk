@@ -49,7 +49,6 @@ class CommentsRelationManager extends RelationManager
                 FileUpload::make('attachments')
                     ->label('Attachments')
                     ->multiple()
-                    ->maxFiles(10)
                     ->disk('local')
                     ->directory('ticket-comments')
                     ->visibility('private')

@@ -13,7 +13,7 @@ return [
     | - `disk`:       The disk to use for temporary file uploads.
     | - `directory`:  The directory within the disk to use for temporary file uploads.
     | - `rules`:      Validation rules applied to all temporary file uploads.
-    |                 'file|max:102400' allows up to 100MB per file.
+    |                 'file' accepts any file size allowed by the server.
     | - `middleware`:  Middleware to apply to the temporary file upload endpoint.
     | - `preview_mimes`: MIME types that can be previewed in the browser.
     | - `max_upload_time`: Maximum time in minutes for a file upload to complete.
@@ -24,7 +24,7 @@ return [
     'temporary_file_upload' => [
         'disk' => null,             // Uses the default disk
         'directory' => null,        // Uses the default directory
-        'rules' => 'file|max:102400', // 100MB max per file (in kilobytes)
+        'rules' => 'file',
         'middleware' => null,
         'preview_mimes' => [
             'png', 'gif', 'bmp', 'svg', 'wav', 'mp4',
