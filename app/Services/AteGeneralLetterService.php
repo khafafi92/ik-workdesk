@@ -178,7 +178,7 @@ class AteGeneralLetterService
                     'name' => 'Nomor ATE '.strtoupper($kind),
                 ],
                 [
-                    'template' => '{running:3}',
+                    'template' => '{running:3}/{department_code}-ATE/{roman_month}/{year}',
                     'running_digits' => 3,
                     'reset_period' => 'yearly',
                     'priority' => 100,

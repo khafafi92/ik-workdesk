@@ -10,6 +10,7 @@ use App\Filament\Resources\HrKpmogLetters\HrKpmogLetterResource;
 use App\Filament\Resources\HrKpmogLetters\Pages\EditHrKpmogLetter;
 use App\Filament\Resources\KpmogProjectLetters\KpmogProjectLetterResource;
 use App\Filament\Resources\KpmogProjectLetters\Pages\EditKpmogProjectLetter;
+use App\Filament\Resources\OutgoingLetters\Pages\CreateOutgoingLetter;
 use App\Models\Department;
 use App\Models\DocumentNumberingTemplate;
 use App\Models\DocumentType;
@@ -166,6 +167,54 @@ class DocumentNumberServiceTest extends TestCase
 
         $this->assertSame('001/ATE-HC/SKK/IX/2024', app(DocumentNumberService::class)->preview($letter));
         $this->assertDatabaseCount('document_number_sequences', 0);
+    }
+
+    public function test_apca_outgoing_letter_uses_the_creators_department_and_requested_number_format(): void
+    {
+        $company = $this->company('APCA');
+        $creatorDepartment = Department::create(['code' => 'IT', 'name' => 'Information Technology', 'is_active' => true]);
+        $otherDepartment = Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        $type = $this->type('TUGAS');
+        $profile = LetterProfile::create([
+            'code' => 'ATE-UMUM',
+            'name' => 'Surat Umum APCA',
+            'permit_company_id' => $company->id,
+            'form_variant' => 'general',
+            'is_active' => true,
+        ]);
+        DocumentNumberingTemplate::create([
+            'letter_profile_id' => $profile->id,
+            'permit_company_id' => $company->id,
+            'document_type_id' => $type->id,
+            'name' => 'Nomor surat APCA',
+            'template' => '{running:3}/{department_code}-ATE/{roman_month}/{year}',
+            'reset_period' => 'yearly',
+            'is_active' => true,
+        ]);
+        $creator = $this->userWithDepartment('IT', ['is_admin' => true]);
+        $this->actingAs($creator);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        Livewire::test(CreateOutgoingLetter::class)
+            ->fillForm([
+                'letter_profile_id' => $profile->id,
+                'permit_company_id' => $company->id,
+                'department_id' => $otherDepartment->id,
+                'document_type_id' => $type->id,
+                'document_date' => '2026-10-15',
+                'subject' => 'Surat tugas',
+                'is_legacy_number' => false,
+            ])
+            ->assertSeeText('001/IT-ATE/X/2026')
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $letter = OutgoingLetter::query()->latest('id')->firstOrFail();
+        $this->assertSame($creatorDepartment->id, $letter->department_id);
+
+        app(DocumentNumberService::class)->issue($letter, $creator);
+
+        $this->assertSame('001/IT-ATE/X/2026', $letter->refresh()->document_number);
     }
 
     public function test_issued_letter_content_and_number_are_immutable(): void

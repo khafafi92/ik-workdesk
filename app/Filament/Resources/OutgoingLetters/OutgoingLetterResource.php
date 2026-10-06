@@ -32,6 +32,7 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class OutgoingLetterResource extends Resource
@@ -59,7 +60,7 @@ class OutgoingLetterResource extends Resource
     {
         return $schema->components([
             Section::make('1. Tentukan profil dan identitas surat')
-                ->description('Pilih profil sesuai kelompok surat. Entitas dan departemen akan terisi dari profil, lalu lengkapi jenis serta tanggal surat.')
+                ->description('Pilih profil sesuai kelompok surat. Entitas dan departemen terisi dari profil atau akun pembuat, lalu lengkapi jenis serta tanggal surat.')
                 ->columns(3)
                 ->schema([
                     Select::make('letter_profile_id')->label('Profil surat')->relationship('profile', 'name')->searchable()->preload()->required()->live()
@@ -72,15 +73,21 @@ class OutgoingLetterResource extends Resource
                             }
 
                             $set('permit_company_id', $profile->permit_company_id);
-                            $set('department_id', $profile->department_id);
+                            $set('department_id', static::usesApcaGeneralNumbering($profile->id, $profile->permit_company_id)
+                                ? static::creatorDepartmentId()
+                                : $profile->department_id);
                         })
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
                     Select::make('permit_company_id')->label('Entitas penerbit')->relationship('company', 'name')->searchable()->preload()->required()->live()
                         ->helperText('Pilih entitas yang menerbitkan surat.')
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
                     Select::make('department_id')->label('Departemen penerbit')->relationship('department', 'name')->searchable()->preload()->live()
-                        ->helperText('Pilih departemen pengirim jika surat menggunakan kode departemen.')
-                        ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
+                        ->helperText(fn (Get $get): string => static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))
+                            ? 'Kode departemen diambil dari departemen akun pembuat surat.'
+                            : 'Pilih departemen pengirim jika surat menggunakan kode departemen.')
+                        ->disabled(fn (Get $get, ?OutgoingLetter $record): bool => static::isNumberLocked($record)
+                            || static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id')))
+                        ->dehydrated(fn (Get $get): bool => static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))),
                     Select::make('document_type_id')->label('Jenis surat')->relationship('documentType', 'name')->searchable()->preload()->live()
                         ->helperText('Jenis surat menentukan kode pada nomor surat, bila template menggunakannya.')
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
@@ -238,6 +245,29 @@ class OutgoingLetterResource extends Resource
         return auth()->user()?->hasPermission('letters.legacy-import') === true;
     }
 
+    public static function usesApcaGeneralNumbering(mixed $profileId, mixed $companyId): bool
+    {
+        if (blank($profileId) || blank($companyId)) {
+            return false;
+        }
+
+        return LetterProfile::query()
+            ->whereKey($profileId)
+            ->where('code', 'ATE-UMUM')
+            ->where('permit_company_id', $companyId)
+            ->whereHas('company', fn (Builder $query): Builder => $query->where('code', 'APCA'))
+            ->exists();
+    }
+
+    public static function creatorDepartmentId(): ?int
+    {
+        $user = auth()->user();
+        $user?->loadMissing('employee.department');
+        $department = $user?->employee?->department;
+
+        return $department?->is_active ? (int) $department->id : null;
+    }
+
     public static function getNavigationGroup(): ?string
     {
         return 'Surat';
@@ -262,10 +292,20 @@ class OutgoingLetterResource extends Resource
             return 'Pilih entitas penerbit dan tanggal surat untuk melihat preview.';
         }
 
+        $departmentId = $get('department_id');
+
+        if (static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))) {
+            $departmentId = static::creatorDepartmentId();
+
+            if ($departmentId === null) {
+                return 'Akun pembuat surat harus memiliki departemen aktif untuk membuat nomor APCA.';
+            }
+        }
+
         try {
             $letter = new OutgoingLetter([
                 'letter_profile_id' => $get('letter_profile_id'),
-                'permit_company_id' => $get('permit_company_id'), 'department_id' => $get('department_id'),
+                'permit_company_id' => $get('permit_company_id'), 'department_id' => $departmentId,
                 'document_type_id' => $get('document_type_id'), 'work_project_id' => $get('work_project_id'),
                 'location_code' => $get('location_code'), 'document_date' => $get('document_date'),
             ]);
