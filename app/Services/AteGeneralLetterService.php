@@ -16,16 +16,35 @@ class AteGeneralLetterService
 {
     public function kinds(): array
     {
-        return collect($this->definitions())
-            ->mapWithKeys(fn (array $definition, string $kind): array => [$kind => $definition['label']])
+        $definitions = $this->definitions();
+        $types = DocumentType::query()
+            ->whereIn('code', collect($definitions)->pluck('type_code'))
+            ->get()
+            ->keyBy('code');
+
+        return collect($definitions)
+            ->mapWithKeys(function (array $definition, string $kind) use ($types): array {
+                $type = $types->get($definition['type_code']);
+
+                if ($type !== null && ! $type->is_active) {
+                    return [];
+                }
+
+                return [$kind => $type?->name ?? $definition['label']];
+            })
             ->all();
     }
 
     public function createDraft(User $user, string $date, string $kind): OutgoingLetter
     {
-        [$profile] = $this->ensureConfiguration();
         $definition = $this->definition($kind);
+        [$profile] = $this->ensureConfiguration();
         $type = $this->typeFor($kind);
+
+        if (! $type->is_active) {
+            throw ValidationException::withMessages(['letter_kind' => 'Jenis surat APCA ini tidak aktif.']);
+        }
+
         $department = $definition['department'] === null ? null : $this->department($definition['department']);
 
         $letter = OutgoingLetter::query()->create([
@@ -63,14 +82,14 @@ class AteGeneralLetterService
     private function definitions(): array
     {
         return [
-            'perdin' => ['label' => 'Surat Perdin (A.12)', 'type_code' => 'ATE-PERDIN', 'prefix' => 'A.12', 'department' => null, 'format' => 'standard'],
-            'tugas' => ['label' => 'Surat Tugas (B.08)', 'type_code' => 'ATE-TUGAS', 'prefix' => 'B.08', 'department' => null, 'format' => 'standard'],
-            'pernyataan' => ['label' => 'Surat Pernyataan (B.11)', 'type_code' => 'ATE-PERNYATAAN', 'prefix' => 'B.11', 'department' => null, 'format' => 'standard'],
-            'pengantar' => ['label' => 'Surat Pengantar (B.19)', 'type_code' => 'ATE-PENGANTAR', 'prefix' => 'B.19', 'department' => null, 'format' => 'standard'],
-            'permohonan' => ['label' => 'Surat Permohonan (B.09)', 'type_code' => 'ATE-PERMOHONAN', 'prefix' => 'B.09', 'department' => null, 'format' => 'standard'],
+            'perdin' => ['label' => 'Surat Perdin (A.01)', 'type_code' => 'ATE-PERDIN', 'prefix' => 'A.01', 'department' => null, 'format' => 'standard'],
+            'tugas' => ['label' => 'Surat Tugas (B.01)', 'type_code' => 'ATE-TUGAS', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
+            'pernyataan' => ['label' => 'Surat Pernyataan (B.01)', 'type_code' => 'ATE-PERNYATAAN', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
+            'pengantar' => ['label' => 'Surat Pengantar (B.01)', 'type_code' => 'ATE-PENGANTAR', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
+            'permohonan' => ['label' => 'Surat Permohonan (B.01)', 'type_code' => 'ATE-PERMOHONAN', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
             'keputusan' => ['label' => 'Surat Keputusan (A.01)', 'type_code' => 'ATE-KEPUTUSAN', 'prefix' => 'A.01', 'department' => null, 'format' => 'standard'],
-            'sket' => ['label' => 'SKET (B.09)', 'type_code' => 'ATE-SKET', 'prefix' => 'B.09', 'department' => null, 'format' => 'standard'],
-            'tanda_terima_dok' => ['label' => 'Tanda Terima Dokumen (B.014)', 'type_code' => 'ATE-TTD', 'prefix' => 'B.014', 'department' => null, 'format' => 'receipt'],
+            'sket' => ['label' => 'SKET (B.01)', 'type_code' => 'ATE-SKET', 'prefix' => 'B.01', 'department' => null, 'format' => 'standard'],
+            'tanda_terima_dok' => ['label' => 'Tanda Terima Dokumen (B.01)', 'type_code' => 'ATE-TTD', 'prefix' => 'B.01', 'department' => null, 'format' => 'receipt'],
             'info_memo_luwuk' => ['label' => 'Info Memo Luwuk (FIN-LWK)', 'type_code' => 'ATE-INFO-MEMO-LWK', 'prefix' => null, 'department' => 'FIN', 'format' => 'memo_luwuk'],
         ];
     }
@@ -99,12 +118,22 @@ class AteGeneralLetterService
         $date = Carbon::parse($letter->document_date);
         $running = str_pad((string) $runningNumber, 3, '0', STR_PAD_LEFT);
         $month = $this->romanMonth($date->month);
+        $prefix = $this->prefixFromName($letter->documentType?->name) ?? $definition['prefix'];
 
         return match ($definition['format']) {
-            'receipt' => "{$definition['prefix']}/TTD-ATE/{$month}/{$date->year}",
+            'receipt' => "{$prefix}/TTD-ATE/{$month}/{$date->year}",
             'memo_luwuk' => "{$running}-FIN-LWK-ATE-{$month}-{$date->year}",
-            default => "{$definition['prefix']}/{$running}/ATE/{$month}/{$date->year}",
+            default => "{$prefix}/{$running}/ATE/{$month}/{$date->year}",
         };
+    }
+
+    private function prefixFromName(?string $name): ?string
+    {
+        if (preg_match('/\(([^()]+)\)\s*$/u', $name ?? '', $matches) !== 1) {
+            return null;
+        }
+
+        return $matches[1];
     }
 
     private function ensureConfiguration(): array

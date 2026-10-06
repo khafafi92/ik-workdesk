@@ -359,11 +359,66 @@ class DocumentNumberServiceTest extends TestCase
         $memo = $service->createDraft($user, '2026-02-01', 'info_memo_luwuk');
         $nextPerdin = $service->createDraft($user, '2024-05-01', 'perdin');
 
-        $this->assertSame('A.12/001/ATE/IV/2024', $perdin->document_number);
-        $this->assertSame('B.08/001/ATE/VIII/2025', $tugas->document_number);
-        $this->assertSame('B.014/TTD-ATE/VII/2025', $ttd->document_number);
+        $this->assertSame('A.01/001/ATE/IV/2024', $perdin->document_number);
+        $this->assertSame('B.01/001/ATE/VIII/2025', $tugas->document_number);
+        $this->assertSame('B.01/TTD-ATE/VII/2025', $ttd->document_number);
         $this->assertSame('001-FIN-LWK-ATE-II-2026', $memo->document_number);
-        $this->assertSame('A.12/002/ATE/V/2024', $nextPerdin->document_number);
+        $this->assertSame('A.01/002/ATE/V/2024', $nextPerdin->document_number);
+    }
+
+    public function test_ate_general_letter_choices_and_prefixes_follow_the_document_type_master(): void
+    {
+        $this->company('APCA');
+        $user = User::factory()->create();
+        $service = app(AteGeneralLetterService::class);
+
+        $service->createDraft($user, '2024-04-10', 'perdin');
+
+        DocumentType::query()->where('code', 'ATE-PERDIN')->update([
+            'name' => 'Surat Perdin (A.01)',
+        ]);
+        DocumentType::query()->where('code', 'ATE-TUGAS')->update([
+            'name' => 'Surat Tugas (B.01)',
+        ]);
+        DocumentType::query()->where('code', 'ATE-PERNYATAAN')->update([
+            'name' => 'Surat Pernyataan (B.01)',
+        ]);
+        DocumentType::query()->where('code', 'ATE-PENGANTAR')->update([
+            'name' => 'Surat Pengantar (B.01)',
+        ]);
+        DocumentType::query()->where('code', 'ATE-PERMOHONAN')->update([
+            'name' => 'Surat Permohonan (B.01)',
+        ]);
+        DocumentType::query()->where('code', 'ATE-KEPUTUSAN')->update([
+            'name' => 'Surat Keputusan (A.01)',
+        ]);
+        DocumentType::query()->where('code', 'ATE-SKET')->update([
+            'name' => 'SKET (B.01)',
+        ]);
+        DocumentType::query()->where('code', 'ATE-TTD')->update([
+            'name' => 'Tanda Terima Dokumen (B.01)',
+        ]);
+        DocumentType::query()->where('code', 'ATE-INFO-MEMO-LWK')->update([
+            'name' => 'Info Memo Luwuk (FIN-LWK)',
+        ]);
+
+        $this->assertSame([
+            'perdin' => 'Surat Perdin (A.01)',
+            'tugas' => 'Surat Tugas (B.01)',
+            'pernyataan' => 'Surat Pernyataan (B.01)',
+            'pengantar' => 'Surat Pengantar (B.01)',
+            'permohonan' => 'Surat Permohonan (B.01)',
+            'keputusan' => 'Surat Keputusan (A.01)',
+            'sket' => 'SKET (B.01)',
+            'tanda_terima_dok' => 'Tanda Terima Dokumen (B.01)',
+            'info_memo_luwuk' => 'Info Memo Luwuk (FIN-LWK)',
+        ], $service->kinds());
+
+        $perdin = $service->createDraft($user, '2025-04-10', 'perdin');
+        $receipt = $service->createDraft($user, '2025-07-20', 'tanda_terima_dok');
+
+        $this->assertSame('A.01/001/ATE/IV/2025', $perdin->document_number);
+        $this->assertSame('B.01/TTD-ATE/VII/2025', $receipt->document_number);
     }
 
     public function test_saving_ate_general_draft_returns_to_its_register(): void
