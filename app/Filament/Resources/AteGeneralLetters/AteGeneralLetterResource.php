@@ -4,6 +4,7 @@ namespace App\Filament\Resources\AteGeneralLetters;
 
 use App\Filament\Resources\AteGeneralLetters\Pages\EditAteGeneralLetter;
 use App\Filament\Resources\AteGeneralLetters\Pages\ListAteGeneralLetters;
+use App\Models\Department;
 use App\Models\OutgoingLetter;
 use App\Services\AteGeneralLetterService;
 use App\Services\DocumentNumberService;
@@ -43,7 +44,7 @@ class AteGeneralLetterResource extends Resource
     {
         return $schema->components([
             Section::make('Nomor dan jenis surat')
-                ->description('Jenis surat dipilih saat nomor digunakan. Bila jenis salah, batalkan draft lalu gunakan nomor baru agar riwayat nomor tetap jelas.')
+                ->description('Jenis surat dipilih saat nomor digunakan. Urutannya terpisah per jenis dan tahun.')
                 ->columns(3)
                 ->schema([
                     Placeholder::make('document_number')
@@ -52,9 +53,17 @@ class AteGeneralLetterResource extends Resource
                     Placeholder::make('document_type_label')
                         ->label('Jenis surat')
                         ->content(fn (?OutgoingLetter $record): string => $record?->documentType?->name ?? '-'),
+                    Select::make('department_id')
+                        ->label('Departemen')
+                        ->options(static::departmentOptions())
+                        ->searchable()
+                        ->required()
+                        ->helperText('Nomor memakai kode departemen pada master yang dipilih.')
+                        ->disabled(fn (?OutgoingLetter $record): bool => $record?->status !== 'draft'),
                     DatePicker::make('document_date')
                         ->label('Tanggal surat')
-                        ->required(),
+                        ->required()
+                        ->disabled(fn (?OutgoingLetter $record): bool => $record?->status !== 'draft'),
                 ]),
             Section::make('Isi surat')
                 ->description('Lengkapi keterangan dan tujuan surat sebelum diterbitkan.')
@@ -80,6 +89,7 @@ class AteGeneralLetterResource extends Resource
                 TextColumn::make('document_date')->label('Tanggal')->date('d M Y')->sortable(),
                 TextColumn::make('document_number')->label('Nomor surat')->searchable()->sortable()->wrap(),
                 TextColumn::make('documentType.name')->label('Jenis surat')->searchable()->wrap(),
+                TextColumn::make('department.code')->label('Departemen')->placeholder('-')->searchable(),
                 TextColumn::make('recipient')->label('Tujuan surat')->placeholder('-')->searchable()->wrap(),
                 TextColumn::make('subject')->label('Keterangan surat')->placeholder('Perlu dilengkapi')->searchable()->wrap(),
                 TextColumn::make('status')->label('Status')->badge()
@@ -110,10 +120,16 @@ class AteGeneralLetterResource extends Resource
                             ->label('Jenis surat')
                             ->options(app(AteGeneralLetterService::class)->kinds())
                             ->required(),
+                        Select::make('department_id')
+                            ->label('Departemen')
+                            ->options(static::departmentOptions())
+                            ->searchable()
+                            ->required()
+                            ->helperText('Nomor memakai kode departemen pada master yang dipilih.'),
                         DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required(),
                     ])
                     ->modalHeading('Pilih jenis surat APCA')
-                    ->modalDescription('Setiap jenis surat memiliki urutan nomor sendiri. Sistem langsung membentuk nomor sesuai pola yang telah ditetapkan.')
+                    ->modalDescription('Urutan nomor terpisah untuk setiap jenis surat dan tahun. Pilih departemen yang menerbitkan surat.')
                     ->modalSubmitActionLabel('Gunakan nomor dan buat draft')
                     ->visible(fn (): bool => static::canCreate())
                     ->action(function (array $data): void {
@@ -121,6 +137,7 @@ class AteGeneralLetterResource extends Resource
                             auth()->user(),
                             $data['document_date'],
                             $data['letter_kind'],
+                            (int) $data['department_id'],
                         );
 
                         Notification::make()
@@ -139,7 +156,8 @@ class AteGeneralLetterResource extends Resource
                     ->modalDescription('Pastikan data surat benar. Nomor surat akan tetap tercatat sebagai nomor terbit.')
                     ->visible(fn (OutgoingLetter $record): bool => static::canIssue($record))
                     ->action(function (OutgoingLetter $record): void {
-                        app(DocumentNumberService::class)->issue($record, auth()->user());
+                        $letter = app(AteGeneralLetterService::class)->refreshNumber($record);
+                        app(DocumentNumberService::class)->issue($letter, auth()->user());
                         Notification::make()->title('Surat '.$record->document_number.' berhasil diterbitkan.')->success()->send();
                     }),
                 Action::make('cancel')
@@ -201,5 +219,17 @@ class AteGeneralLetterResource extends Resource
             'index' => ListAteGeneralLetters::route('/'),
             'edit' => EditAteGeneralLetter::route('/{record}/edit'),
         ];
+    }
+
+    private static function departmentOptions(): array
+    {
+        return Department::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get()
+            ->mapWithKeys(fn (Department $department): array => [
+                $department->id => trim($department->code.' - '.$department->name),
+            ])
+            ->all();
     }
 }

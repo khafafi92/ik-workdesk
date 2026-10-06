@@ -30,15 +30,15 @@ class AteGeneralLetterService
                     return [];
                 }
 
-                return [$kind => $type?->name ?? $definition['label']];
+                return [$kind => $definition['label']];
             })
             ->all();
     }
 
-    public function createDraft(User $user, string $date, string $kind): OutgoingLetter
+    public function createDraft(User $user, string $date, string $kind, int $departmentId): OutgoingLetter
     {
-        $definition = $this->definition($kind);
-        $department = $this->departmentForUser($user);
+        $this->definition($kind);
+        $department = $this->departmentById($departmentId);
         [$profile] = $this->ensureConfiguration();
         $type = $this->typeFor($kind);
 
@@ -72,8 +72,14 @@ class AteGeneralLetterService
             return $letter;
         }
 
-        $letter->loadMissing(['department', 'creator.employee.department']);
-        $department = $letter->department ?? $this->departmentForUser($letter->creator);
+        $letter->load('department');
+        $department = $letter->department;
+
+        if ($department === null || ! $department->is_active || blank($department->code)) {
+            throw ValidationException::withMessages([
+                'department_id' => 'Pilih departemen aktif sebelum menyimpan atau menerbitkan surat.',
+            ]);
+        }
 
         $letter->update([
             'department_id' => $department->id,
@@ -87,15 +93,15 @@ class AteGeneralLetterService
     private function definitions(): array
     {
         return [
-            'perdin' => ['label' => 'Surat Perdin (A.01)', 'type_code' => 'ATE-PERDIN'],
-            'tugas' => ['label' => 'Surat Tugas (B.01)', 'type_code' => 'ATE-TUGAS'],
-            'pernyataan' => ['label' => 'Surat Pernyataan (B.01)', 'type_code' => 'ATE-PERNYATAAN'],
-            'pengantar' => ['label' => 'Surat Pengantar (B.01)', 'type_code' => 'ATE-PENGANTAR'],
-            'permohonan' => ['label' => 'Surat Permohonan (B.01)', 'type_code' => 'ATE-PERMOHONAN'],
-            'keputusan' => ['label' => 'Surat Keputusan (A.01)', 'type_code' => 'ATE-KEPUTUSAN'],
-            'sket' => ['label' => 'SKET (B.01)', 'type_code' => 'ATE-SKET'],
-            'tanda_terima_dok' => ['label' => 'Tanda Terima Dokumen (B.01)', 'type_code' => 'ATE-TTD'],
-            'info_memo_luwuk' => ['label' => 'Info Memo Luwuk (FIN-LWK)', 'type_code' => 'ATE-INFO-MEMO-LWK'],
+            'perdin' => ['label' => 'Surat Perdin', 'type_code' => 'ATE-PERDIN'],
+            'tugas' => ['label' => 'Surat Tugas', 'type_code' => 'ATE-TUGAS'],
+            'pernyataan' => ['label' => 'Surat Pernyataan', 'type_code' => 'ATE-PERNYATAAN'],
+            'pengantar' => ['label' => 'Surat Pengantar', 'type_code' => 'ATE-PENGANTAR'],
+            'permohonan' => ['label' => 'Surat Permohonan', 'type_code' => 'ATE-PERMOHONAN'],
+            'keputusan' => ['label' => 'Surat Keputusan', 'type_code' => 'ATE-KEPUTUSAN'],
+            'sket' => ['label' => 'SKET', 'type_code' => 'ATE-SKET'],
+            'tanda_terima_dok' => ['label' => 'Tanda Terima Dok', 'type_code' => 'ATE-TTD'],
+            'info_memo_luwuk' => ['label' => 'Info Memo Luwuk', 'type_code' => 'ATE-INFO-MEMO-LWK'],
         ];
     }
 
@@ -123,7 +129,7 @@ class AteGeneralLetterService
         $department ??= $letter->department;
 
         if ($department === null || blank($department->code)) {
-            throw ValidationException::withMessages(['department_id' => 'Departemen user pembuat surat belum ditetapkan.']);
+            throw ValidationException::withMessages(['department_id' => 'Pilih departemen aktif dari master departemen.']);
         }
 
         $date = Carbon::parse($letter->document_date);
@@ -133,17 +139,15 @@ class AteGeneralLetterService
         return "{$running}/{$department->code}-ATE/{$month}/{$date->year}";
     }
 
-    private function departmentForUser(?User $user): Department
+    private function departmentById(int $departmentId): Department
     {
-        if ($user === null) {
-            throw ValidationException::withMessages(['department_id' => 'User pembuat surat tidak ditemukan.']);
-        }
-
-        $user->loadMissing('employee.department');
-        $department = $user->employee?->department;
+        $department = Department::query()
+            ->whereKey($departmentId)
+            ->where('is_active', true)
+            ->first();
 
         if ($department === null || ! $department->is_active || blank($department->code)) {
-            throw ValidationException::withMessages(['department_id' => 'Departemen aktif belum ditetapkan untuk user pembuat surat.']);
+            throw ValidationException::withMessages(['department_id' => 'Pilih departemen aktif dari master departemen.']);
         }
 
         return $department;
@@ -163,7 +167,7 @@ class AteGeneralLetterService
                 'name' => 'Surat Umum APCA',
                 'permit_company_id' => $company->id,
                 'form_variant' => 'general',
-                'description' => 'Register surat umum APCA dengan pola nomor berdasarkan departemen pembuat surat.',
+                'description' => 'Register surat umum APCA dengan nomor berdasarkan departemen yang dipilih.',
                 'is_active' => true,
             ],
         );

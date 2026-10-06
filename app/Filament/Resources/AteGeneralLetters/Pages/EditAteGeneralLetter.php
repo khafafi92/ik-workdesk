@@ -3,7 +3,6 @@
 namespace App\Filament\Resources\AteGeneralLetters\Pages;
 
 use App\Filament\Resources\AteGeneralLetters\AteGeneralLetterResource;
-use App\Models\OutgoingLetter;
 use App\Services\AteGeneralLetterService;
 use Filament\Resources\Pages\EditRecord;
 
@@ -18,9 +17,7 @@ class EditAteGeneralLetter extends EditRecord
 
     protected function afterSave(): void
     {
-        /** @var OutgoingLetter $letter */
-        $letter = $this->record;
-        app(AteGeneralLetterService::class)->refreshNumber($letter);
+        app(AteGeneralLetterService::class)->refreshNumber($this->record);
     }
 
     protected function getRedirectUrl(): string
