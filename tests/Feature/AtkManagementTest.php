@@ -25,6 +25,7 @@ use App\Services\AtkItemImportService;
 use App\Services\AtkWarehouseStockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -614,6 +615,18 @@ class AtkManagementTest extends TestCase
         Excel::assertDownloaded('laporan-atk-semua-data.xlsx', fn (AtkReportExport $export): bool => $export instanceof AtkReportExport);
     }
 
+    public function test_atk_report_page_explains_the_monthly_summary(): void
+    {
+        $manager = User::factory()->create(['is_admin' => true]);
+
+        $this->actingAs($manager)
+            ->get('/panel/atk-reports')
+            ->assertOk()
+            ->assertSeeText('Rekap Bulanan')
+            ->assertSeeText('bulan permintaan')
+            ->assertSeeText('Permintaan yang dibatalkan tidak dihitung.');
+    }
+
     public function test_department_receipt_summary_excludes_requests_that_have_not_been_received(): void
     {
         [$requester, $department] = $this->requester();
@@ -642,7 +655,7 @@ class AtkManagementTest extends TestCase
             'status' => 'pending',
         ]);
 
-        $sheet = (new AtkReportExport)->sheets()[0];
+        $sheet = (new AtkReportExport)->sheets()[1];
 
         $this->assertSame([
             'Departemen', 'Barang ATK', 'Jumlah Diterima', 'Satuan',
@@ -652,6 +665,81 @@ class AtkManagementTest extends TestCase
             'Pulpen Hitam',
             10.0,
             'PCS',
+        ]], $sheet->collection()->all());
+    }
+
+    public function test_atk_report_summarizes_requests_by_month_and_excludes_cancelled_requests(): void
+    {
+        [$requester, $department] = $this->requester();
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-MONTHLY-001',
+            'name' => 'Kertas A4',
+            'size' => 'A4',
+            'unit' => 'REAM',
+            'is_active' => true,
+        ]);
+
+        $firstRequest = $this->request($requester, $department);
+        $firstRequest->update(['request_date' => '2026-01-05']);
+        AtkRequestItem::query()->create([
+            'atk_request_id' => $firstRequest->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 5,
+            'qty_issued' => 3,
+            'qty_received' => 1,
+            'unit' => 'REAM',
+        ]);
+
+        $secondRequest = $this->request($requester, $department);
+        $secondRequest->update(['request_date' => '2026-01-20']);
+        AtkRequestItem::query()->create([
+            'atk_request_id' => $secondRequest->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 3,
+            'qty_issued' => 2,
+            'qty_received' => 1,
+            'unit' => 'REAM',
+        ]);
+
+        $nextMonthRequest = $this->request($requester, $department);
+        $nextMonthRequest->update(['request_date' => '2026-02-02']);
+        AtkRequestItem::query()->create([
+            'atk_request_id' => $nextMonthRequest->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 10,
+            'unit' => 'REAM',
+        ]);
+
+        $cancelledRequest = $this->request($requester, $department);
+        $cancelledRequest->update(['request_date' => '2026-01-25', 'status' => 'cancelled']);
+        AtkRequestItem::query()->create([
+            'atk_request_id' => $cancelledRequest->id,
+            'atk_item_id' => $item->id,
+            'qty_requested' => 100,
+            'unit' => 'REAM',
+        ]);
+
+        $sheet = (new AtkReportExport(
+            Carbon::parse('2026-01-01'),
+            Carbon::parse('2026-01-31'),
+        ))->sheets()[0];
+
+        $this->assertSame([
+            'Bulan Permintaan', 'Departemen', 'Entitas', 'Kode Barang', 'Barang ATK', 'Ukuran', 'Satuan',
+            'Jumlah Permintaan', 'Jumlah Diminta', 'Jumlah Diserahkan', 'Jumlah Diterima',
+        ], $sheet->headings());
+        $this->assertSame([[
+            '2026-01',
+            $department->name,
+            'KPMOG',
+            'ATK-MONTHLY-001',
+            'Kertas A4',
+            'A4',
+            'REAM',
+            2,
+            8.0,
+            5.0,
+            2.0,
         ]], $sheet->collection()->all());
     }
 
