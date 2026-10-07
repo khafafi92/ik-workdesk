@@ -135,7 +135,7 @@ class AtkRequestResource extends Resource
                                 ->required()
                                 ->columnSpan(6),
                             TextInput::make('qty_requested')
-                                ->label('Jumlah yang diminta')
+                                ->label('Jumlah')
                                 ->numeric()
                                 ->minValue(0.01)
                                 ->step(0.01)
