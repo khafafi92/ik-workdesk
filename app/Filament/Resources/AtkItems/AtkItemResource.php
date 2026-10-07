@@ -21,7 +21,6 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
@@ -52,6 +51,7 @@ class AtkItemResource extends Resource
                 ->schema([
                     TextInput::make('code')->label('Kode barang')->required()->maxLength(50)->unique(ignoreRecord: true),
                     TextInput::make('name')->label('Nama barang')->required()->maxLength(255),
+                    TextInput::make('size')->label('Ukuran')->maxLength(100),
                     Select::make('atk_category_id')
                         ->label('Kategori')
                         ->relationship('categoryMaster', 'name', fn (Builder $query): Builder => $query->where('is_active', true))
@@ -73,6 +73,12 @@ class AtkItemResource extends Resource
                         ->step(0.01)
                         ->default(0)
                         ->disabledOn('edit'),
+                    TextInput::make('actual_stock')
+                        ->label('Stok fisik aktual')
+                        ->helperText('Nilai ini hanya mencatat hasil penghitungan fisik. Gunakan Penyesuaian untuk mengubah stok sistem.')
+                        ->numeric()
+                        ->minValue(0)
+                        ->step(0.01),
                 ]),
         ]);
     }
@@ -81,17 +87,16 @@ class AtkItemResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('code')->label('Kode')->searchable()->sortable(),
-                TextColumn::make('name')->label('Nama barang')->searchable()->sortable(),
-                TextColumn::make('category')->label('Kategori')->toggleable(),
+                TextColumn::make('row_number')->label('No.')->rowIndex(),
+                TextColumn::make('name')->label('Item Name')->searchable(['name', 'code'])->sortable(),
+                TextColumn::make('size')->label('Size')->sortable(),
                 TextColumn::make('current_stock')
-                    ->label('Stok Gudang Utama')
-                    ->numeric(decimalPlaces: 0)
+                    ->label('Quantity')
+                    ->numeric(maxDecimalPlaces: 2)
                     ->sortable()
                     ->color(fn (AtkItem $record): string => $record->minimum_stock !== null && $record->current_stock <= $record->minimum_stock ? 'danger' : 'success'),
-                TextColumn::make('minimum_stock')->label('Min. stok')->numeric(decimalPlaces: 2)->toggleable(),
-                TextColumn::make('unit')->label('Satuan'),
-                IconColumn::make('is_active')->label('Aktif')->boolean(),
+                TextColumn::make('actual_stock')->label('Actual')->numeric(maxDecimalPlaces: 2)->sortable(),
+                TextColumn::make('unit')->label('Unit'),
             ])
             ->filters([
                 TernaryFilter::make('is_active')->label('Aktif'),
@@ -110,7 +115,7 @@ class AtkItemResource extends Resource
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('primary')
                     ->modalHeading('Import master dan stok ATK')
-                    ->modalDescription('Gunakan template Excel. Untuk item lama, kolom current_stock menjadi saldo target Gudang Utama dan selisihnya dicatat sebagai mutasi.')
+                    ->modalDescription('Gunakan kolom Item Name, Size, Quantity, Actual, dan Unit. Code dibuat otomatis. Quantity memperbarui stok sistem, sedangkan Actual hanya mencatat stok fisik.')
                     ->form([
                         FileUpload::make('file')
                             ->label('File Excel')
@@ -125,16 +130,24 @@ class AtkItemResource extends Resource
                             ->required(),
                     ])
                     ->action(function (array $data): void {
-                        $result = app(AtkItemImportService::class)->import(
-                            $data['file'],
-                            auth()->user(),
-                        );
+                        try {
+                            $result = app(AtkItemImportService::class)->import(
+                                $data['file'],
+                                auth()->user(),
+                            );
 
-                        Notification::make()
-                            ->title('Import ATK selesai')
-                            ->body("Baru: {$result['created']}; diperbarui: {$result['updated']}; stok disesuaikan: {$result['stockAdjusted']}.")
-                            ->success()
-                            ->send();
+                            Notification::make()
+                                ->title('Import ATK selesai')
+                                ->body("Baru: {$result['created']}; diperbarui: {$result['updated']}; stok disesuaikan: {$result['stockAdjusted']}.")
+                                ->success()
+                                ->send();
+                        } catch (\Throwable $e) {
+                            Notification::make()
+                                ->title('Import ATK gagal')
+                                ->body($e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
                     }),
             ])
             ->recordActions([

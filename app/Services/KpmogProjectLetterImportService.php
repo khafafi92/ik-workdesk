@@ -9,8 +9,11 @@ use App\Models\OutgoingLetter;
 use App\Models\User;
 use Carbon\Carbon;
 use DateTimeInterface;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
 
@@ -19,10 +22,12 @@ class KpmogProjectLetterImportService
     /**
      * @return array{created: int, skippedExisting: int, skippedDuplicate: int, skippedInvalid: int, messages: array<int, string>}
      */
-    public function import(string $path, User $actor): array
+    public function import(string|UploadedFile|TemporaryUploadedFile $path, User $actor): array
     {
+        $resolvedPath = $this->resolveImportPath($path);
+
         $reader = new KpmogProjectLetterRowsImport;
-        Excel::import($reader, $path, 'local');
+        Excel::import($reader, $resolvedPath);
         $rows = ($reader->rows ?? collect())
             ->filter(fn ($row): bool => collect($row)->contains(fn ($value): bool => filled($value)))
             ->values();
@@ -124,6 +129,27 @@ class KpmogProjectLetterImportService
         });
 
         return $result;
+    }
+
+    private function resolveImportPath(string|UploadedFile|TemporaryUploadedFile $path): string
+    {
+        if ($path instanceof UploadedFile && method_exists($path, 'getRealPath')) {
+            $realPath = $path->getRealPath();
+
+            if (is_string($realPath) && file_exists($realPath)) {
+                return $realPath;
+            }
+        }
+
+        if (is_string($path) && ! str_starts_with($path, DIRECTORY_SEPARATOR)) {
+            $storagePath = Storage::disk('local')->path($path);
+
+            if (file_exists($storagePath)) {
+                return $storagePath;
+            }
+        }
+
+        return is_string($path) ? $path : $path->getPathname();
     }
 
     private function value(array|Collection $row, string ...$keys): ?string

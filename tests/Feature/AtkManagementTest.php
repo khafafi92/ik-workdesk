@@ -4,6 +4,9 @@ namespace Tests\Feature;
 
 use App\Exports\AtkItemImportTemplateExport;
 use App\Exports\AtkReportExport;
+use App\Filament\Resources\AtkItems\Pages\CreateAtkItem;
+use App\Filament\Resources\AtkItems\Pages\EditAtkItem;
+use App\Filament\Resources\AtkItems\Pages\ListAtkItems;
 use App\Filament\Resources\AtkRequests\Pages\CreateAtkRequest;
 use App\Filament\Resources\AtkUsageTransactions\Pages\CreateAtkUsageTransaction;
 use App\Models\AtkCategory;
@@ -21,6 +24,7 @@ use App\Services\AtkDepartmentStockService;
 use App\Services\AtkItemImportService;
 use App\Services\AtkWarehouseStockService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -30,6 +34,78 @@ use Tests\TestCase;
 class AtkManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_atk_inventory_uses_the_new_columns_without_changing_system_stock(): void
+    {
+        $manager = User::factory()->create(['is_admin' => true]);
+        $unit = AtkUnit::query()->create(['name' => 'Ream', 'is_active' => true]);
+
+        Livewire::actingAs($manager)
+            ->test(CreateAtkItem::class)
+            ->fillForm([
+                'code' => 'ATK-A4-001',
+                'name' => 'A4 Paper',
+                'size' => 'A4',
+                'atk_unit_id' => $unit->id,
+                'current_stock' => 23,
+                'actual_stock' => 19,
+                'is_active' => true,
+            ])
+            ->call('create')
+            ->assertHasNoFormErrors();
+
+        $item = AtkItem::query()->where('code', 'ATK-A4-001')->sole();
+
+        Livewire::actingAs($manager)
+            ->test(ListAtkItems::class)
+            ->assertSee('No.')
+            ->assertSee('Item Name')
+            ->assertSee('Size')
+            ->assertSee('Quantity')
+            ->assertSee('Actual')
+            ->assertSee('Unit')
+            ->assertCanSeeTableRecords([$item])
+            ->searchTable('ATK-A4-001')
+            ->assertCanSeeTableRecords([$item]);
+
+        Livewire::actingAs($manager)
+            ->test(EditAtkItem::class, ['record' => $item->getRouteKey()])
+            ->fillForm(['actual_stock' => 17])
+            ->call('save')
+            ->assertHasNoFormErrors();
+
+        $this->assertSame('23.00', $item->fresh()->current_stock);
+        $this->assertSame('17.00', $item->fresh()->actual_stock);
+    }
+
+    public function test_atk_stock_columns_hide_unneeded_decimal_zeros(): void
+    {
+        $manager = User::factory()->create(['is_admin' => true]);
+        $wholeItem = AtkItem::query()->create([
+            'code' => 'ATK-WHOLE-001',
+            'name' => 'Barang jumlah bulat',
+            'unit' => 'PCS',
+            'current_stock' => 1,
+            'actual_stock' => 1,
+            'is_active' => true,
+        ]);
+        $fractionalItem = AtkItem::query()->create([
+            'code' => 'ATK-FRACTION-001',
+            'name' => 'Barang jumlah pecahan',
+            'unit' => 'PCS',
+            'current_stock' => 1.5,
+            'actual_stock' => 1.5,
+            'is_active' => true,
+        ]);
+
+        Livewire::actingAs($manager)
+            ->test(ListAtkItems::class)
+            ->assertCanSeeTableRecords([$wholeItem, $fractionalItem])
+            ->assertSeeText('1')
+            ->assertSeeText('1.5')
+            ->assertDontSeeText('1.00')
+            ->assertDontSeeText('1.50');
+    }
 
     public function test_authorized_requester_can_submit_a_complete_atk_request_from_the_form(): void
     {
@@ -464,6 +540,21 @@ class AtkManagementTest extends TestCase
         $this->actingAs($requester)->get('/panel/atk-reports')->assertForbidden();
     }
 
+    public function test_atk_import_accepts_uploaded_file_instances_from_filament(): void
+    {
+        $ga = User::factory()->create(['is_admin' => true]);
+
+        $file = UploadedFile::fake()->createWithContent('items.csv', implode("\n", [
+            'code,name,category,unit,minimum_stock,current_stock,is_active',
+            'ATK-IMPORT,Pulpen Biru,Alat Tulis,pcs,10,25,1',
+        ]));
+
+        $result = app(AtkItemImportService::class)->import($file, $ga);
+
+        $this->assertSame(['created' => 1, 'updated' => 0, 'stockAdjusted' => 1], $result);
+        $this->assertDatabaseHas('atk_items', ['code' => 'ATK-IMPORT', 'current_stock' => 25]);
+    }
+
     public function test_ga_can_import_items_and_stock_with_ledger_entries(): void
     {
         $ga = User::factory()->create(['is_admin' => true]);
@@ -487,6 +578,31 @@ class AtkManagementTest extends TestCase
 
         $this->assertDatabaseHas('atk_items', ['code' => 'ATK-IMPORT', 'current_stock' => 20]);
         $this->assertDatabaseCount('atk_stock_movements', 2);
+    }
+
+    public function test_legacy_atk_import_does_not_clear_size_or_actual_stock(): void
+    {
+        $ga = User::factory()->create(['is_admin' => true]);
+        $item = AtkItem::query()->create([
+            'code' => 'ATK-LEGACY',
+            'name' => 'A4 Paper',
+            'size' => 'A4',
+            'unit' => 'Ream',
+            'current_stock' => 10,
+            'actual_stock' => 8,
+            'is_active' => true,
+        ]);
+        Storage::fake('local');
+        Storage::disk('local')->put('atk-imports/legacy.csv', implode("\n", [
+            'code,name,category,unit,minimum_stock,current_stock,is_active',
+            'ATK-LEGACY,A4 Paper,Kertas,Ream,5,12,1',
+        ]));
+
+        app(AtkItemImportService::class)->import('atk-imports/legacy.csv', $ga);
+
+        $this->assertSame('A4', $item->fresh()->size);
+        $this->assertSame('8.00', $item->fresh()->actual_stock);
+        $this->assertSame('12.00', $item->fresh()->current_stock);
     }
 
     public function test_atk_report_is_available_as_an_excel_download(): void
@@ -543,14 +659,72 @@ class AtkManagementTest extends TestCase
     {
         $ga = User::factory()->create(['is_admin' => true]);
         Storage::fake('local');
+        $sheet = (new AtkItemImportTemplateExport)->sheets()[0];
+        $this->assertSame(['Item Name', 'Size', 'Quantity', 'Actual', 'Unit'], $sheet->headings());
         Excel::store(new AtkItemImportTemplateExport, 'atk-imports/template.xlsx', 'local');
 
         $result = app(AtkItemImportService::class)->import('atk-imports/template.xlsx', $ga);
 
         $this->assertSame(2, $result['created']);
-        $this->assertDatabaseHas('atk_items', ['code' => 'ATK-001', 'current_stock' => 50]);
-        $this->assertDatabaseHas('atk_items', ['code' => 'ATK-002', 'current_stock' => 20]);
-        $this->assertSame('PCS', AtkItem::query()->where('code', 'ATK-001')->firstOrFail()->unitMaster->name);
+        $a4 = AtkItem::query()->where(['name' => 'A4 Paper', 'size' => 'A4'])->sole();
+        $f4 = AtkItem::query()->where(['name' => 'A4 Paper', 'size' => 'F4'])->sole();
+        $this->assertMatchesRegularExpression('/^ATK-\d{5}$/', $a4->code);
+        $this->assertSame('23.00', $a4->current_stock);
+        $this->assertSame('19.00', $a4->actual_stock);
+        $this->assertSame('2.00', $f4->current_stock);
+        $this->assertSame('3.00', $f4->actual_stock);
+        $this->assertSame('Ream', $a4->unitMaster->name);
+    }
+
+    public function test_atk_import_accepts_fractional_quantity_from_the_simplified_template(): void
+    {
+        $ga = User::factory()->create(['is_admin' => true]);
+        Storage::fake('local');
+        Storage::disk('local')->put('atk-imports/fraction.csv', implode("\n", [
+            'item_name,size,quantity,actual,unit',
+            'A3 Paper,A3,1/2,1/2,Ream',
+        ]));
+
+        app(AtkItemImportService::class)->import('atk-imports/fraction.csv', $ga);
+
+        $item = AtkItem::query()->where(['name' => 'A3 Paper', 'size' => 'A3'])->sole();
+        $this->assertSame('0.50', $item->current_stock);
+        $this->assertSame('0.50', $item->actual_stock);
+        $this->assertNull($item->category);
+        $this->assertNull($item->minimum_stock);
+    }
+
+    public function test_atk_import_converts_rim_to_ream_and_parses_quantities_with_rim_suffix(): void
+    {
+        $ga = User::factory()->create(['is_admin' => true]);
+        Storage::fake('local');
+        Storage::disk('local')->put('atk-imports/ream.csv', implode("\n", [
+            'item_name,size,quantity,actual,unit',
+            'A4 Paper,A4,6 Rim,1 1/2,Rim',
+        ]));
+
+        app(AtkItemImportService::class)->import('atk-imports/ream.csv', $ga);
+
+        $item = AtkItem::query()->where(['name' => 'A4 Paper', 'size' => 'A4'])->sole();
+        $this->assertSame('6.00', $item->current_stock);
+        $this->assertSame('1.50', $item->actual_stock);
+        $this->assertSame('Ream', $item->unitMaster->name);
+    }
+
+    public function test_atk_import_uses_the_unit_written_after_a_quantity(): void
+    {
+        $ga = User::factory()->create(['is_admin' => true]);
+        Storage::fake('local');
+        Storage::disk('local')->put('atk-imports/quantity-unit.csv', implode("\n", [
+            'item_name,size,quantity,actual,unit',
+            'Amplop KPM,Kecil,1 Box,1,Ea',
+        ]));
+
+        app(AtkItemImportService::class)->import('atk-imports/quantity-unit.csv', $ga);
+
+        $item = AtkItem::query()->where(['name' => 'Amplop KPM', 'size' => 'Kecil'])->sole();
+        $this->assertSame('1.00', $item->current_stock);
+        $this->assertSame('Box', $item->unitMaster->name);
     }
 
     public function test_atk_categories_and_units_are_managed_separately_from_item_stock(): void

@@ -11,10 +11,10 @@ class AtkItemImportTemplateExport implements WithMultipleSheets
     {
         return [
             new AtkCollectionSheet('Master ATK', [
-                'code', 'name', 'category', 'unit', 'minimum_stock', 'current_stock', 'is_active',
+                'Item Name', 'Size', 'Quantity', 'Actual', 'Unit',
             ], [
-                ['ATK-001', 'Pulpen hitam', 'Alat tulis', 'pcs', 10, 50, 1],
-                ['ATK-002', 'Kertas A4', 'Kertas', 'rim', 5, 20, 1],
+                ['A4 Paper', 'A4', 23, 19, 'Ream'],
+                ['A4 Paper', 'F4', 2, 3, 'Ream'],
             ]),
         ];
     }

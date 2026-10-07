@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class AtkItem extends Model
 {
-    protected $fillable = ['code', 'name', 'category', 'atk_category_id', 'unit', 'atk_unit_id', 'current_stock', 'minimum_stock', 'is_active'];
+    protected $fillable = ['code', 'name', 'size', 'category', 'atk_category_id', 'unit', 'atk_unit_id', 'current_stock', 'actual_stock', 'minimum_stock', 'is_active'];
 
     protected function casts(): array
     {
-        return ['current_stock' => 'decimal:2', 'minimum_stock' => 'decimal:2', 'is_active' => 'boolean'];
+        return ['current_stock' => 'decimal:2', 'actual_stock' => 'decimal:2', 'minimum_stock' => 'decimal:2', 'is_active' => 'boolean'];
     }
 
     public function requestItems(): HasMany

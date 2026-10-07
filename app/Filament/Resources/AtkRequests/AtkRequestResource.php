@@ -140,13 +140,13 @@ class AtkRequestResource extends Resource
                                 ->minValue(0.01)
                                 ->step(0.01)
                                 ->required()
-                                ->columnSpan(2),
+                                ->columnSpan(3),
                             TextInput::make('unit')
                                 ->label('Satuan barang')
                                 ->default('pcs')
                                 ->required()
                                 ->maxLength(30)
-                                ->columnSpan(2),
+                                ->columnSpan(3),
                             TextInput::make('requester_note')
                                 ->label('Catatan untuk GA')
                                 ->maxLength(500)

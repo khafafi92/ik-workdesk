@@ -112,6 +112,12 @@ class DashboardAccessibilityTest extends TestCase
     public function test_reminder_totals_previews_and_filters_respect_employee_scope(): void
     {
         $owner = User::factory()->create(['is_admin' => false]);
+        $permission = Permission::create([
+            'code' => 'reminders.view',
+            'name' => 'View Reminders',
+            'is_active' => true,
+        ]);
+        $owner->directPermissions()->attach($permission);
         $employee = $this->employee($owner, 'OWN');
         $other = $this->employee(User::factory()->create(['is_admin' => false]), 'OTHER');
         $own = $this->reminder('Own reminder', now(), $employee);

@@ -100,12 +100,15 @@ class Dashboard extends BaseDashboard
             'overdue' => (clone $remindersQuery)->where('status', 'pending')
                 ->where('reminder_at', '<', $todayStart),
         ];
-        $reminderCounts = [];
+        $reminderCounts = $this->getReminderCounts(
+            $remindersQuery,
+            $todayStart,
+            $todayEnd,
+        );
         $reminderPreviews = [];
         $reminderUrls = [];
 
         foreach ($reminderQueries as $schedule => $query) {
-            $reminderCounts[$schedule] = (clone $query)->count();
             $reminderPreviews[$schedule] = (clone $query)->orderBy('reminder_at')->orderBy('id')->limit(3)->get();
             $reminderUrls[$schedule] = ReminderResource::getUrl('index', [
                 'filters' => ['schedule' => ['value' => $schedule]],
@@ -124,71 +127,71 @@ class Dashboard extends BaseDashboard
             'hold',
         ];
 
+        $ticketCounts = $canViewStatistics
+            ? $this->getTicketCounts($ticketsQuery, $now, $openTicketStatuses)
+            : null;
+
         $ticketStats = $canViewStatistics ? [
             [
                 'label' => 'Total Tickets',
-                'value' => (clone $ticketsQuery)->count(),
+                'value' => $ticketCounts->total,
                 'tone' => 'default',
             ],
             [
                 'label' => 'Open',
-                'value' => (clone $ticketsQuery)->where('status', 'open')->count(),
+                'value' => $ticketCounts->open,
                 'tone' => 'danger',
             ],
             [
                 'label' => 'In Progress',
-                'value' => (clone $ticketsQuery)->where('status', 'in_progress')->count(),
+                'value' => $ticketCounts->inProgress,
                 'tone' => 'warning',
             ],
             [
                 'label' => 'Awaiting Response',
-                'value' => (clone $ticketsQuery)->where('status', 'waiting_user')->count(),
+                'value' => $ticketCounts->awaitingResponse,
                 'tone' => 'info',
             ],
             [
                 'label' => 'Completed',
-                'value' => (clone $ticketsQuery)->where('status', 'resolved')->count(),
+                'value' => $ticketCounts->completed,
                 'tone' => 'success',
             ],
             [
                 'label' => 'Overdue',
-                'value' => (clone $ticketsQuery)
-                    ->whereNotNull('due_at')
-                    ->where('due_at', '<', $now)
-                    ->whereIn('status', $openTicketStatuses)
-                    ->count(),
+                'value' => $ticketCounts->overdue,
                 'tone' => 'danger',
             ],
         ] : [];
 
+        $workCounts = $canViewStatistics
+            ? $this->getWorkTaskCounts($workTasksQuery, $now, $openWorkStatuses)
+            : null;
+
         $workStats = $canViewStatistics ? [
             [
                 'label' => 'Total Work Logs',
-                'value' => (clone $workTasksQuery)->count(),
+                'value' => $workCounts->total,
                 'tone' => 'default',
             ],
             [
                 'label' => 'Planned',
-                'value' => (clone $workTasksQuery)->where('status', 'planned')->count(),
+                'value' => $workCounts->planned,
                 'tone' => 'default',
             ],
             [
                 'label' => 'In Progress',
-                'value' => (clone $workTasksQuery)->where('status', 'in_progress')->count(),
+                'value' => $workCounts->inProgress,
                 'tone' => 'warning',
             ],
             [
                 'label' => 'Completed',
-                'value' => (clone $workTasksQuery)->where('status', 'done')->count(),
+                'value' => $workCounts->completed,
                 'tone' => 'success',
             ],
             [
                 'label' => 'Overdue',
-                'value' => (clone $workTasksQuery)
-                    ->whereNotNull('due_at')
-                    ->where('due_at', '<', $now)
-                    ->whereIn('status', $openWorkStatuses)
-                    ->count(),
+                'value' => $workCounts->overdue,
                 'tone' => 'danger',
             ],
         ] : [];
@@ -196,7 +199,7 @@ class Dashboard extends BaseDashboard
         $reminderStats = $canViewStatistics ? [
             [
                 'label' => 'Pending Reminders',
-                'value' => (clone $remindersQuery)->where('status', 'pending')->count(),
+                'value' => array_sum($reminderCounts),
                 'tone' => 'default',
             ],
             [
@@ -307,6 +310,88 @@ class Dashboard extends BaseDashboard
                 array_keys($this->getDashboardSectionOptions()),
             )),
         ])->save();
+    }
+
+    private function getReminderCounts(
+        \Illuminate\Database\Eloquent\Builder $query,
+        CarbonInterface $todayStart,
+        CarbonInterface $todayEnd,
+    ): array {
+        $counts = (clone $query)->toBase()
+            ->selectRaw(
+                'COALESCE(SUM(CASE WHEN status = ? AND reminder_at BETWEEN ? AND ? THEN 1 ELSE 0 END), 0) as today_count, '
+                .'COALESCE(SUM(CASE WHEN status = ? AND reminder_at > ? THEN 1 ELSE 0 END), 0) as upcoming_count, '
+                .'COALESCE(SUM(CASE WHEN status = ? AND reminder_at < ? THEN 1 ELSE 0 END), 0) as overdue_count',
+                [
+                    'pending', $todayStart, $todayEnd,
+                    'pending', $todayEnd,
+                    'pending', $todayStart,
+                ],
+            )
+            ->first();
+
+        return [
+            'today' => $this->countValue($counts, 'today_count'),
+            'upcoming' => $this->countValue($counts, 'upcoming_count'),
+            'overdue' => $this->countValue($counts, 'overdue_count'),
+        ];
+    }
+
+    private function getTicketCounts(
+        \Illuminate\Database\Eloquent\Builder $query,
+        CarbonInterface $now,
+        array $openStatuses,
+    ): object {
+        $counts = (clone $query)->toBase()
+            ->selectRaw(
+                'COUNT(*) as total, '
+                .'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as open_count, '
+                .'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as in_progress_count, '
+                .'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as awaiting_response_count, '
+                .'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as completed_count, '
+                .'COALESCE(SUM(CASE WHEN due_at < ? AND status IN (?, ?, ?) THEN 1 ELSE 0 END), 0) as overdue_count',
+                ['open', 'in_progress', 'waiting_user', 'resolved', $now, ...$openStatuses],
+            )
+            ->first();
+
+        return (object) [
+            'total' => $this->countValue($counts, 'total'),
+            'open' => $this->countValue($counts, 'open_count'),
+            'inProgress' => $this->countValue($counts, 'in_progress_count'),
+            'awaitingResponse' => $this->countValue($counts, 'awaiting_response_count'),
+            'completed' => $this->countValue($counts, 'completed_count'),
+            'overdue' => $this->countValue($counts, 'overdue_count'),
+        ];
+    }
+
+    private function getWorkTaskCounts(
+        \Illuminate\Database\Eloquent\Builder $query,
+        CarbonInterface $now,
+        array $openStatuses,
+    ): object {
+        $counts = (clone $query)->toBase()
+            ->selectRaw(
+                'COUNT(*) as total, '
+                .'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as planned_count, '
+                .'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as in_progress_count, '
+                .'COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as completed_count, '
+                .'COALESCE(SUM(CASE WHEN due_at < ? AND status IN (?, ?, ?) THEN 1 ELSE 0 END), 0) as overdue_count',
+                ['planned', 'in_progress', 'done', $now, ...$openStatuses],
+            )
+            ->first();
+
+        return (object) [
+            'total' => $this->countValue($counts, 'total'),
+            'planned' => $this->countValue($counts, 'planned_count'),
+            'inProgress' => $this->countValue($counts, 'in_progress_count'),
+            'completed' => $this->countValue($counts, 'completed_count'),
+            'overdue' => $this->countValue($counts, 'overdue_count'),
+        ];
+    }
+
+    private function countValue(?object $counts, string $key): int
+    {
+        return (int) ($counts?->{$key} ?? 0);
     }
 
     /**
