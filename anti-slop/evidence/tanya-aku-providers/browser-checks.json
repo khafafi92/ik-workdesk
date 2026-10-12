@@ -1,0 +1,130 @@
+{
+  "date": "2026-10-12",
+  "fixture": "SQLite terpisah, akun dan key QA, respons API simulasi",
+  "checks": [
+    "Penyedia DeepSeek: form dan ringkasan berganti, key kosong",
+    "Aktifkan tanpa key: validasi tampil",
+    "Simpan DeepSeek: berhasil, key dikosongkan",
+    "Simpan Claude dan default: berhasil",
+    "Kirim anthropic: jawaban dan ID model tampil",
+    "Kirim deepseek: jawaban dan ID model tampil",
+    "Kirim openai: jawaban dan ID model tampil",
+    "Gagal API: pesan kesalahan tampil dan draft tetap ada",
+    "Keyboard pilih penyedia dan Tab: form berganti, fokus terlihat",
+    "Loading: penyedia terkunci dan status menghubungi tampil",
+    "Nonaktifkan semua: chat menampilkan keadaan belum tersedia",
+    "Link Master Tanya Aku: membuka pengaturan",
+    "Pengguna biasa: Master 403, model aktif tersedia tanpa API key, riwayat akun terpisah"
+  ],
+  "layout": [
+    {
+      "width": 1440,
+      "master": {
+        "width": 1440,
+        "scroll": 1440,
+        "select": 46.375,
+        "save": 45.1875
+      },
+      "chat": {
+        "scroll": 1440,
+        "select": 46.375,
+        "send": 45.1875
+      }
+    },
+    {
+      "width": 1024,
+      "master": {
+        "width": 1024,
+        "scroll": 1024,
+        "select": 46.375,
+        "save": 45.1875
+      },
+      "chat": {
+        "scroll": 1024,
+        "select": 46.375,
+        "send": 45.1875
+      }
+    },
+    {
+      "width": 768,
+      "master": {
+        "width": 768,
+        "scroll": 768,
+        "select": 46.375,
+        "save": 45.1875
+      },
+      "chat": {
+        "scroll": 768,
+        "select": 46.375,
+        "send": 45.1875
+      }
+    },
+    {
+      "width": 390,
+      "master": {
+        "width": 390,
+        "scroll": 390,
+        "select": 46.375,
+        "save": 45.1875
+      },
+      "chat": {
+        "scroll": 390,
+        "select": 46.375,
+        "send": 45.1875
+      }
+    },
+    {
+      "width": 320,
+      "master": {
+        "width": 320,
+        "scroll": 320,
+        "select": 46.375,
+        "save": 45.1875
+      },
+      "chat": {
+        "scroll": 320,
+        "select": 46.375,
+        "send": 45.1875
+      }
+    }
+  ],
+  "colors": [
+    {
+      "selector": ".ik-ai-help",
+      "color": "rgb(85, 88, 102)",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "rgb(85, 88, 102)"
+    },
+    {
+      "selector": ".ik-ai-field label",
+      "color": "rgb(50, 51, 56)",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "rgb(50, 51, 56)"
+    },
+    {
+      "selector": ".ik-ai-primary-button",
+      "color": "rgb(255, 255, 255)",
+      "background": "rgb(0, 95, 189)",
+      "border": "rgb(0, 95, 189)"
+    },
+    {
+      "selector": ".ik-ai-field select",
+      "color": "rgb(50, 51, 56)",
+      "background": "rgb(255, 255, 255)",
+      "border": "rgb(133, 139, 153)"
+    },
+    {
+      "selector": "#ai-api-key::placeholder",
+      "color": "rgb(100, 116, 139)",
+      "background": "rgba(0, 0, 0, 0)",
+      "border": "rgb(100, 116, 139)"
+    }
+  ],
+  "loadingColors": {
+    "color": "rgb(255, 255, 255)",
+    "background": "rgb(0, 95, 189)",
+    "opacity": "1",
+    "fieldsetOpacity": "1"
+  },
+  "consoleErrors": []
+}

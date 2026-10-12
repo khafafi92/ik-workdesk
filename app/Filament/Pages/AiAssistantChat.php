@@ -2,16 +2,18 @@
 
 namespace App\Filament\Pages;
 
+use App\Enums\AiProvider;
 use App\Models\AiAssistantMessage;
 use App\Models\AiAssistantSettings;
 use App\Services\AiAssistantException;
-use App\Services\OpenAiChatService;
+use App\Services\AiChatService;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Report;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -24,6 +26,18 @@ class AiAssistantChat extends Page
     protected string $view = 'filament.pages.ai-assistant-chat';
 
     public string $question = '';
+
+    public string $provider = '';
+
+    public function mount(): void
+    {
+        $this->provider = AiAssistantSettings::defaultProvider() ?? '';
+    }
+
+    public function updatedProvider(): void
+    {
+        $this->resetValidation();
+    }
 
     public static function canAccess(): bool
     {
@@ -62,14 +76,19 @@ class AiAssistantChat extends Page
 
     public function send(): void
     {
+        abort_unless(static::canAccess(), 403);
+        $this->question = trim($this->question);
+
         $validated = $this->validate([
             'question' => ['required', 'string', 'max:4000'],
+            'provider' => ['required', Rule::in(AiAssistantSettings::query()->available()->pluck('provider')->all())],
         ]);
 
         try {
-            app(OpenAiChatService::class)->respond(
+            app(AiChatService::class)->respond(
                 auth()->user(),
                 trim($validated['question']),
+                $validated['provider'],
             );
         } catch (AiAssistantException $exception) {
             throw ValidationException::withMessages([
@@ -92,19 +111,22 @@ class AiAssistantChat extends Page
 
     protected function getViewData(): array
     {
-        $settings = AiAssistantSettings::current();
+        $availableModels = AiAssistantSettings::query()->available()
+            ->orderBy('id')
+            ->get(['provider', 'model']);
 
         return [
+            'availableModels' => $availableModels,
+            'providerLabel' => AiProvider::tryFrom($this->provider)?->label() ?? 'penyedia AI',
             'messages' => AiAssistantMessage::query()
                 ->where('user_id', auth()->id())
+                ->where('provider', $this->provider)
                 ->latest('id')
                 ->limit(40)
                 ->get()
                 ->reverse()
                 ->values(),
-            'assistantAvailable' => $settings->is_enabled
-                && $settings->hasApiKey()
-                && $settings->monthly_token_limit > 0,
+            'assistantAvailable' => $availableModels->isNotEmpty(),
         ];
     }
 }

@@ -340,6 +340,33 @@
     max-width: 48rem;
     gap: 1rem;
     margin-top: 1.25rem;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+}
+
+.ik-ai-provider-picker {
+    max-width: 48rem;
+    margin-top: 1.25rem;
+}
+
+.ik-ai-chat-model-picker {
+    max-width: 48rem;
+}
+
+.ik-ai-provider-legend {
+    margin-bottom: 1rem;
+    color: #323338;
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.ik-ai-message-model {
+    display: block;
+    margin-top: 0.25rem;
+    color: #555866;
+    font-size: 0.8125rem;
+    overflow-wrap: anywhere;
 }
 
 .ik-ai-field {
@@ -355,6 +382,7 @@
 }
 
 .ik-ai-field input,
+.ik-ai-field select,
 .ik-ai-composer textarea {
     width: 100%;
     min-width: 0;
@@ -367,6 +395,7 @@
 }
 
 .ik-ai-field input:focus-visible,
+.ik-ai-field select:focus-visible,
 .ik-ai-composer textarea:focus-visible,
 .ik-ai-toggle input:focus-visible,
 .ik-ai-primary-button:focus-visible,
@@ -408,7 +437,12 @@
 
 .ik-ai-primary-button:disabled {
     cursor: wait;
-    opacity: 0.65;
+    color: #fff !important;
+    opacity: 1 !important;
+}
+
+.ik-ai-settings-form:disabled {
+    opacity: 1 !important;
 }
 
 .ik-ai-error {

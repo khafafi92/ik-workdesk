@@ -1,0 +1,89 @@
+{
+  "environment": "Isolated SQLite, dummy keys, mocked Gemini API; no live Google requests",
+  "checks": {
+    "defaultProvider": "gemini",
+    "answer": "Anda\n\nPertanyaan QA Gemini\n\nTanya Aku\ngemini-3.8-flash\n\nJawaban uji Gemini",
+    "hiddenThinking": true,
+    "keyAbsent": true,
+    "errorHandled": true,
+    "failedDraftPreserved": true,
+    "keyboardSwitch": true,
+    "userDefault": "gemini",
+    "adminHistoryPrivate": true,
+    "masterStatus": 403,
+    "userCanSend": true
+  },
+  "layouts": [
+    {
+      "path": "/panel/ai-assistant-settings",
+      "width": 320,
+      "overflow": false,
+      "keyValue": "",
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ai-assistant-settings",
+      "width": 390,
+      "overflow": false,
+      "keyValue": "",
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ai-assistant-settings",
+      "width": 768,
+      "overflow": false,
+      "keyValue": "",
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ai-assistant-settings",
+      "width": 1024,
+      "overflow": false,
+      "keyValue": "",
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ai-assistant-settings",
+      "width": 1440,
+      "overflow": false,
+      "keyValue": "",
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ask-me",
+      "width": 320,
+      "overflow": false,
+      "keyValue": null,
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ask-me",
+      "width": 390,
+      "overflow": false,
+      "keyValue": null,
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ask-me",
+      "width": 768,
+      "overflow": false,
+      "keyValue": null,
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ask-me",
+      "width": 1024,
+      "overflow": false,
+      "keyValue": null,
+      "selectHeight": 46.375
+    },
+    {
+      "path": "/panel/ask-me",
+      "width": 1440,
+      "overflow": false,
+      "keyValue": null,
+      "selectHeight": 46.375
+    }
+  ],
+  "pageErrors": []
+}

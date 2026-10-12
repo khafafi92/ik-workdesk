@@ -13,6 +13,8 @@ class AiAssistantMessage extends Model
         'content',
         'prompt_tokens',
         'completion_tokens',
+        'provider',
+        'model',
     ];
 
     protected function casts(): array
