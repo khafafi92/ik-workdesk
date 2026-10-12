@@ -16,6 +16,7 @@ use Filament\Actions\Action;
 use Filament\Actions\CreateAction;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -51,40 +52,27 @@ class AtkRequestResource extends Resource
         return $schema->components([
             Section::make('Informasi permintaan')
                 ->description('Isi keperluan dan entitas yang akan memakai barang. Setelah dikirim, permintaan langsung masuk ke daftar tindak lanjut GA.')
-                ->columns(2)
+                ->columnSpanFull()
+                ->columns(12)
                 ->schema([
                     TextInput::make('request_number')
                         ->label('Nomor permintaan')
                         ->disabled()
                         ->dehydrated(false)
-                        ->placeholder('Dibuat saat permintaan dikirim'),
+                        ->placeholder('Dibuat saat permintaan dikirim')
+                        ->columnSpan(2),
                     TextInput::make('request_date')
                         ->label('Tanggal permintaan')
                         ->default(now()->toDateString())
                         ->disabled()
-                        ->dehydrated(false),
-                    Select::make('requester_department_id')
-                        ->label('Departemen peminta')
-                        ->options(fn (): array => Department::query()
-                            ->where('is_active', true)
-                            ->orderBy('name')
-                            ->pluck('name', 'id')
-                            ->all())
-                        ->searchable()
-                        ->preload()
-                        ->required()
-                        ->visible(fn (): bool => static::canChooseRequesterDepartment())
-                        ->helperText('Akun Anda belum terhubung ke employee. Pilih department asal permintaan ini.'),
-                    Placeholder::make('employee_department_notice')
-                        ->label('Departemen peminta')
-                        ->content('Akun belum terhubung ke employee dan tidak dapat memilih department. Hubungkan akun melalui User Management sebelum membuat permintaan ATK.')
-                        ->visible(fn (): bool => static::hasMissingEmployeeDepartment()),
-                    Textarea::make('purpose')
+                        ->dehydrated(false)
+                        ->columnSpan(2),
+                    TextInput::make('purpose')
                         ->label('Keperluan')
                         ->helperText('Jelaskan barang ini akan digunakan untuk apa.')
                         ->required()
-                        ->columnSpanFull()
-                        ->maxLength(1000),
+                        ->maxLength(1000)
+                        ->columnSpan(5),
                     Select::make('permit_company_id')
                         ->label('Entitas peminta')
                         ->helperText('Pilih entitas yang akan menggunakan barang.')
@@ -101,17 +89,42 @@ class AtkRequestResource extends Resource
                         ->searchable()
                         ->preload()
                         ->required()
+                        ->columnSpan(3),
+                    Select::make('requester_department_id')
+                        ->label('Departemen peminta')
+                        ->options(fn (): array => Department::query()
+                            ->where('is_active', true)
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->all())
+                        ->searchable()
+                        ->preload()
+                        ->required()
+                        ->visible(fn (): bool => static::canChooseRequesterDepartment())
+                        ->helperText('Akun Anda belum terhubung ke employee. Pilih department asal permintaan ini.')
+                        ->columnSpanFull(),
+                    Placeholder::make('employee_department_notice')
+                        ->label('Departemen peminta')
+                        ->content('Akun belum terhubung ke employee dan tidak dapat memilih department. Hubungkan akun melalui User Management sebelum membuat permintaan ATK.')
+                        ->visible(fn (): bool => static::hasMissingEmployeeDepartment())
                         ->columnSpanFull(),
                 ]),
             Section::make('Daftar barang')
                 ->description('Pilih barang dan jumlah yang dibutuhkan. Setelah dikirim, penyerahan dapat dilakukan bertahap dan progresnya terlihat di daftar permintaan.')
+                ->columnSpanFull()
                 ->schema([
                     Repeater::make('items')
                         ->relationship()
                         ->addActionLabel('Tambah barang')
                         ->minItems(1)
                         ->defaultItems(1)
-                        ->columns(12)
+                        ->compact()
+                        ->table([
+                            TableColumn::make('Barang ATK')->markAsRequired()->width('40%'),
+                            TableColumn::make('Jumlah')->markAsRequired()->width('15%'),
+                            TableColumn::make('Satuan')->markAsRequired()->width('15%'),
+                            TableColumn::make('Catatan untuk GA')->width('30%'),
+                        ])
                         ->schema([
                             Select::make('atk_item_id')
                                 ->label('Barang ATK')
@@ -132,25 +145,21 @@ class AtkRequestResource extends Resource
                                 ->afterStateUpdated(function (mixed $state, Set $set): void {
                                     $set('unit', AtkItem::query()->find($state)?->unit ?? '');
                                 })
-                                ->required()
-                                ->columnSpan(6),
+                                ->required(),
                             TextInput::make('qty_requested')
                                 ->label('Jumlah')
                                 ->numeric()
                                 ->minValue(0.01)
                                 ->step(0.01)
-                                ->required()
-                                ->columnSpan(3),
+                                ->required(),
                             TextInput::make('unit')
                                 ->label('Satuan barang')
                                 ->default('pcs')
                                 ->required()
-                                ->maxLength(30)
-                                ->columnSpan(3),
+                                ->maxLength(30),
                             TextInput::make('requester_note')
                                 ->label('Catatan untuk GA')
-                                ->maxLength(500)
-                                ->columnSpan(12),
+                                ->maxLength(500),
                         ]),
                 ]),
         ]);
