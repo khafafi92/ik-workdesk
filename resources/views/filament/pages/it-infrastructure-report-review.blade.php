@@ -39,7 +39,7 @@
             @php($records = $this->latestDevices())
             <section class="it-review-section" aria-label="Kondisi terakhir setiap objek">
                 <div class="it-review-table-wrap" role="region" aria-label="Kondisi terakhir" tabindex="0">
-                    <table><thead><tr><th>Objek</th><th>Kondisi terakhir</th><th>Pemeriksaan final terakhir</th><th>Waktu</th></tr></thead>
+                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Objek</th><th scope="col">Kondisi terakhir</th><th scope="col">Pemeriksaan final terakhir</th><th scope="col">Waktu</th></tr></thead>
                         <tbody>@forelse ($records as $device)
                             @php($condition = $device->last_condition ?? 'unchecked')
                             <tr><td>{{ $device->code }}<br>{{ $device->name }}</td><td><span class="it-review-status" data-condition="{{ $condition }}">{{ \App\Enums\ItInspectionCondition::from($condition)->label() }}</span></td><td>@if ($device->last_inspection_id)<a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $device->last_inspection_id]) }}">{{ $device->last_number }}</a>@else Belum ada pemeriksaan final @endif</td><td>{{ $device->last_checked_at ?? 'Belum diperiksa' }}</td></tr>
@@ -52,7 +52,7 @@
             @php($records = $this->inspections())
             <section class="it-review-section" aria-label="Riwayat pemeriksaan">
                 <div class="it-review-table-wrap" role="region" aria-label="Pemeriksaan" tabindex="0">
-                    <table><thead><tr><th>Nomor</th><th>Objek</th><th>Waktu / petugas</th><th>Dokumen</th><th>Kondisi</th></tr></thead>
+                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Nomor</th><th scope="col">Objek</th><th scope="col">Waktu / petugas</th><th scope="col">Dokumen</th><th scope="col">Kondisi</th></tr></thead>
                         <tbody>@forelse ($records as $inspection)
                             <tr><td><a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $inspection->id]) }}">{{ $inspection->inspection_number }}</a></td><td>{{ $inspection->device_snapshot['name'] }}</td><td>{{ $inspection->checked_at->format('d/m/Y H:i') }}<br>{{ $inspection->inspector_snapshot['name'] }}</td><td>{{ $inspection->status->label() }}</td><td>{{ $inspection->overall_condition->label() }}</td></tr>
                         @empty<tr><td colspan="5">Belum ada pemeriksaan untuk pilihan ini.</td></tr>@endforelse</tbody>
@@ -65,7 +65,7 @@
             <section class="it-review-section" aria-label="Temuan dan tindak lanjut">
                 <p class="it-review-help">Tindak lanjut disimpan terpisah; hasil final tetap utuh.</p>
                 <div class="it-review-table-wrap" role="region" aria-label="Temuan" tabindex="0">
-                    <table><thead><tr><th>Objek / pemeriksaan</th><th>Temuan</th><th>Tindak lanjut</th><th>Penyelesaian</th></tr></thead>
+                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Objek / pemeriksaan</th><th scope="col">Temuan</th><th scope="col">Tindak lanjut</th><th scope="col">Penyelesaian</th></tr></thead>
                         <tbody>@forelse ($records as $finding)
                             <tr><td>{{ $finding->inspection->device_snapshot['name'] }}<br><a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $finding->it_inspection_id]) }}">{{ $finding->inspection->inspection_number }}</a></td><td><span class="it-review-status" data-condition="{{ $finding->result->condition->value }}">{{ $finding->result->condition->label() }}</span><br>{{ $finding->result->item_snapshot['label'] }}<br>{{ $finding->result->finding }}</td><td>{{ $finding->action_plan }}<br>{{ $finding->assignee->name }}</td>
                                 <td><strong>{{ $finding->status->label() }}</strong>

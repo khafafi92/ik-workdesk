@@ -1,6 +1,6 @@
 <div class="it-review-table-wrap" role="region" aria-label="Riwayat perangkat" tabindex="0">
-    <table>
-        <thead><tr><th>Pemeriksaan</th><th>Waktu</th><th>Petugas</th><th>Dokumen</th><th>Kondisi</th></tr></thead>
+    <table class="it-infrastructure-table">
+        <thead><tr><th scope="col">Pemeriksaan</th><th scope="col">Waktu</th><th scope="col">Petugas</th><th scope="col">Dokumen</th><th scope="col">Kondisi</th></tr></thead>
         <tbody>
             @forelse ($this->inspectionHistory() as $inspection)
                 <tr>

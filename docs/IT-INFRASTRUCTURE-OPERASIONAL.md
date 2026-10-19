@@ -181,3 +181,16 @@ Delivery gate (anti-slop selama implementasi; lembar operasional IT dengan pola 
 Verifikasi PostgreSQL 18.4: 74 tests / 1316 assertions PASS. Database uji sementara dibersihkan; fingerprint schema public, daftar migration dan jumlah record tabel bisnis utama tetap sama. Browser juga membuka hasil final lama: seluruh 114 field checklist pada sembilan kelompok berstatus disabled. Setelah pemeriksaan, tab dikembalikan ke form baru tanpa menyimpan data percobaan.
 
 Bukti: `output/it-infrastructure-review/form-checklist-satu-lembar-20261018.png`.
+
+### Penyamaan tabel master dan rekap dengan pengecekan
+
+Pada 19 Oktober 2026, tabel Master Perangkat, Riwayat perangkat, serta tab Kondisi terakhir, Temuan dan Riwayat di Rekap & Laporan mengikuti tabel Pengecekan Infrastruktur: garis sel `#64748b`, header `#f8fafc`, isi putih, teks 14px dan padding `.4rem .5rem`. Header master memakai huruf biasa. Class `it-infrastructure-table` membatasi CSS pada tabel yang diminta; pencarian, pengurutan, filter, pagination, aksi, query dan permission tetap memakai implementasi existing. Tidak ada migration atau perubahan data.
+
+Delivery gate, anti-slop selama implementasi dengan arah Filament/Internal 9, ENERGY 1 / RHYTHM 1 / MOTION 1:
+
+- **Hard Gate PASS pada perubahan ini**: tidak menambah aset, menu, kontrol, data atau klaim. Kontras teks/header 9.90:1, teks/putih 10.35:1, batas sel/putih 4.76:1 dan fokus biru/putih 5.98:1 dihitung dengan checker project. Browser memeriksa pencarian Thinkpad, pencarian tanpa hasil, pengurutan nama, filter Laptop, reset filter, tab laporan dan filter Critical tanpa hasil. State loading existing tetap muncul selama perubahan filter.
+- **Purpose-Gate PASS**: garis setiap sel dan padding yang sama mengikuti acuan pengecekan agar kolom mudah dibandingkan. Tidak menambahkan efek, ikon, animasi atau warna baru. Hover master tidak lagi menambahkan bayangan tepi di dalam tabel bergaris.
+- **Liveliness PASS**: tabel tetap menjadi fokus layar, dengan tipografi panel, header netral, aksen biru untuk tindakan/fokus dan hierarki existing. Arah serta dials tidak berubah.
+- **Craftsmanship PASS pada cakupan ini**: 30 test operasional / 465 assertions lulus, mencakup form, pemeriksaan, laporan, ekspor dan akses. Pint, sintaks PHP dan whitespace lulus. Browser membuka riwayat perangkat nyata tanpa menyimpan perubahan; padding sel terukur 6.4px/8px dan garis `#64748b`. Fokus Tab pada pengurutan master serta tab rekap terlihat. Lebar dokumen 375px pada viewport 390px dan 753px pada 768px, pada master maupun rekap; tabel lebar bergulir dalam region lokal. Viewport dipulihkan dan console tidak mencatat error pada pemeriksaan. Ini pemeriksaan perubahan tabel, bukan audit aksesibilitas seluruh aplikasi atau uji ponsel fisik.
+
+Bukti: `output/it-infrastructure-review/tabel-master-selaras-20261019.png` dan `tabel-rekap-selaras-20261019.png`.

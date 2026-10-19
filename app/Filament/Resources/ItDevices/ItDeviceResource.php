@@ -122,7 +122,7 @@ class ItDeviceResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->columns([
+        return $table->extraAttributes(['class' => 'it-infrastructure-table'])->columns([
             TextColumn::make('code')->label('Kode register')->searchable()->sortable(),
             TextColumn::make('name')->label('Nama perangkat / ruang')->searchable()->sortable(),
             TextColumn::make('device_type')->label('Jenis')->formatStateUsing(fn ($state) => $state->label()),

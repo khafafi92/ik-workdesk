@@ -2662,3 +2662,65 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
         align-self: flex-start;
     }
 }
+
+.it-review table.it-infrastructure-table,
+.it-infrastructure-table .fi-ta-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: .875rem;
+    color: #334155;
+}
+
+.it-review table.it-infrastructure-table :is(th, td),
+.it-infrastructure-table .fi-ta-table :is(th, td) {
+    border: 1px solid #64748b !important;
+    padding: .4rem .5rem;
+    vertical-align: top;
+}
+
+.it-review table.it-infrastructure-table th,
+.it-infrastructure-table .fi-ta-table thead,
+.it-infrastructure-table .fi-ta-table th {
+    background: #f8fafc !important;
+    color: #334155 !important;
+    font-size: .875rem !important;
+    font-weight: 600 !important;
+    letter-spacing: normal;
+    text-transform: none;
+}
+
+.it-review table.it-infrastructure-table td,
+.it-infrastructure-table .fi-ta-table td {
+    background: #fff;
+}
+
+.it-infrastructure-table .fi-ta-table {
+    min-width: 68rem;
+}
+
+.it-infrastructure-table .fi-ta-table .fi-ta-col {
+    padding: 0;
+    min-height: 2.75rem;
+    align-items: center;
+}
+
+.it-infrastructure-table .fi-ta-table .fi-ta-text {
+    color: #334155;
+    padding: 0;
+}
+
+.it-infrastructure-table .fi-ta-row:hover {
+    box-shadow: none;
+}
+
+.it-infrastructure-table .fi-ta-table :is(a, button):focus-visible {
+    outline: 2px solid #005fcc;
+    outline-offset: -2px;
+}
+
+@media (max-width: 640px) {
+    .it-infrastructure-table .fi-ta-table :is(a, button) {
+        min-height: 2.75rem;
+    }
+}
