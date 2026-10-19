@@ -113,7 +113,7 @@ class ItDeviceResource extends Resource
                     Textarea::make('specifications')->label('Spesifikasi')->maxLength(6000)->rows(2)->columnSpanFull(),
                 ]),
                 Tab::make('OS & lisensi')->visible($isComputer)->columns(['md' => 2, 'xl' => 3])->schema([
-                    TextInput::make('operating_system')->label('OS')->datalist(['Windows', 'Ubuntu', 'macOS']),
+                    TextInput::make('operating_system')->label('OS'),
                     TextInput::make('windows_version')->label('Versi'),
                     Select::make('windows_license_status')->label('Lisensi')->options(self::licenseOptions())->default('unverified')->required(),
                     TextInput::make('office_version')->label('Versi Microsoft Office'),
@@ -176,7 +176,7 @@ class ItDeviceResource extends Resource
                 EditAction::make()->label('Edit'),
                 DeleteAction::make()->label('Hapus')->authorize('delete')
                     ->modalHeading(fn (ItDevice $record) => 'Hapus '.$record->name.'?')
-                    ->modalDescription('Perangkat akan dihapus permanen. Perangkat yang memiliki riwayat pemeriksaan atau masih menjadi induk perangkat lain tidak dapat dihapus.')
+                    ->modalDescription('Perangkat akan dihapus dari Master Perangkat dan pilihan pengecekan baru, termasuk jika memiliki hasil Critical. Riwayat pemeriksaan dan tindak lanjut tetap tersimpan.')
                     ->modalSubmitActionLabel('Hapus perangkat')->modalCancelActionLabel('Batal')
                     ->successNotificationTitle('Perangkat berhasil dihapus')->failureNotification(null)
                     ->using(function (ItDevice $record): bool {

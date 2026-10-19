@@ -14,14 +14,14 @@
             <div class="it-review-field">
                 {{ $this->deviceSelector }}
             </div>
-            @if ($this->canCreate())<x-filament::button color="gray" wire:click="newInspection">Pemeriksaan baru</x-filament::button>@endif
+            @if ($this->canInspectAgain())<x-filament::button color="gray" wire:click="newInspection">{{ $inspectionId ? 'Pengecekan berikutnya' : 'Pemeriksaan baru' }}</x-filament::button>@endif
         </div>
         <p id="it-inspection-device-help" class="it-review-help">{{ $this->typeLabel() }} · Pengelola: {{ $this->device()['managing_department'] }} · Petugas: {{ $this->inspectorLabel() }}. Simpan isian sebelum berpindah perangkat.</p>
         @if ($floor = \App\Enums\ItSwitchFloor::tryFrom($this->device()['floor'] ?? ''))
             <p class="it-review-help">LT (Lantai): {{ $floor->label() }}</p>
         @endif
         @if ($this->isFinalized())
-            <div class="it-review-notice" role="status"><strong>Hasil sudah final.</strong> Hasil dikunci; tindak lanjut tersedia di Rekap & Laporan.</div>
+            <div class="it-review-notice" role="status"><strong>Hasil sudah final.</strong> Setiap pengecekan berikutnya dicatat sebagai pemeriksaan baru. Tindak lanjut tersedia di Rekap & Laporan.</div>
         @endif
         <form wire:submit="saveDraft">
             {{ $this->form }}

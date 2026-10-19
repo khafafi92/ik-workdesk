@@ -3,6 +3,7 @@
 namespace Tests\Feature\ItInfrastructure;
 
 use App\Enums\ItDeviceType;
+use App\Enums\ItInspectionCondition;
 use App\Enums\ItPermission;
 use App\Filament\Resources\ItDevices\Pages\ListItDevices;
 use App\Models\Department;
@@ -42,45 +43,50 @@ class ItDeviceDeletionTest extends ItInfrastructureTestCase
         $this->assertSame('Hapus '.$device->name.'?', $page->instance()->getMountedAction()->getModalHeading());
         $this->assertNotNull($device->fresh());
         $page->callMountedTableAction()->assertNotified('Perangkat berhasil dihapus');
-        $this->assertNull($device->fresh());
-        $this->assertNull($detail->fresh());
+        $this->assertTrue($device->fresh()->trashed());
+        $this->assertFalse(ItDevice::query()->whereKey($device->id)->exists());
+        $this->assertNotNull($detail->fresh());
         $this->assertSame('00002/APCA/IT/2025', app(ItAssetNumberGenerator::class)->next('APCA', 2025));
     }
 
-    public function test_deletion_rejects_draft_and_final_history_without_changing_details_or_snapshots(): void
+    public function test_deletion_allows_critical_draft_and_final_history_without_changing_results(): void
     {
-        $device = $this->device();
-        $detail = $device->computerDetail()->create(['operating_system' => 'Windows']);
-        $inspection = $this->inspection($device);
         foreach ([false, true] as $finalized) {
+            $device = $this->device();
+            $detail = $device->computerDetail()->create(['operating_system' => 'Windows']);
+            $inspection = $this->inspection($device);
+            $result = $this->inspectionResult($inspection, ItInspectionCondition::Critical);
+            $followUp = $this->followUp($result);
             if ($finalized) {
                 $this->fillRemainingResults($inspection);
                 $this->finalize($inspection);
             }
             $before = $inspection->fresh()->getRawOriginal();
+            $beforeResult = $result->fresh()->getRawOriginal();
+            $beforeFollowUp = $followUp->fresh()->getRawOriginal();
             Livewire::test(ListItDevices::class)->callTableAction('delete', $device)
-                ->assertNotified('Perangkat tidak dapat dihapus');
+                ->assertNotified('Perangkat berhasil dihapus');
             $this->assertSame($before, $inspection->fresh()->getRawOriginal());
-            $this->assertNotNull($device->fresh());
+            $this->assertSame($beforeResult, $result->fresh()->getRawOriginal());
+            $this->assertSame($beforeFollowUp, $followUp->fresh()->getRawOriginal());
+            $this->assertTrue($device->fresh()->trashed());
             $this->assertNotNull($detail->fresh());
+            $this->assertTrue($inspection->fresh()->device->trashed());
         }
     }
 
-    public function test_parent_cannot_be_deleted_until_child_relationship_is_removed(): void
+    public function test_parent_can_be_deleted_and_child_can_still_be_edited(): void
     {
         $parent = $this->device(ItDeviceType::Server);
         $child = $this->device(ItDeviceType::Hypervisor, ['parent_device_id' => $parent->id]);
-        try {
-            app(ItDeviceService::class)->delete($this->inspector, $parent);
-            $this->fail('Parent with a child was deleted.');
-        } catch (ValidationException $exception) {
-            $this->assertArrayHasKey('device', $exception->errors());
-        }
-        $this->assertSame($parent->id, $child->fresh()->parent_device_id);
-        $this->assertNotNull($parent->fresh());
-        $child->update(['parent_device_id' => null]);
         $this->assertTrue(app(ItDeviceService::class)->delete($this->inspector, $parent));
-        $this->assertNotNull($child->fresh());
+        $this->assertSame($parent->id, $child->fresh()->parent_device_id);
+        $this->assertTrue($parent->fresh()->trashed());
+        $child->update(['name' => 'Child diperbarui']);
+        $this->assertSame('Child diperbarui', $child->fresh()->name);
+        $this->assertTrue($child->fresh()->parentDevice->trashed());
+        $this->expectException(ValidationException::class);
+        $parent->fresh()->forceDelete();
     }
 
     public function test_read_only_user_has_no_delete_action_or_service_access(): void

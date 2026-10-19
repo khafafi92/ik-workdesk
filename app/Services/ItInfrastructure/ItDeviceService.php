@@ -26,7 +26,6 @@ class ItDeviceService
         return DB::transaction(function () use ($actor, $device): bool {
             $device = ItDevice::query()->lockForUpdate()->findOrFail($device->id);
             Gate::forUser($actor)->authorize('delete', $device);
-            $device->computerDetail()->delete();
 
             return (bool) $device->delete();
         });
@@ -66,7 +65,7 @@ class ItDeviceService
                             return;
                         }
                         $legacy = str_replace('/IT/', '//IT/', $value);
-                        if (ItDevice::query()->where('asset_number', $legacy)->where('id', '!=', $device->id ?? 0)->exists()) {
+                        if (ItDevice::withTrashed()->where('asset_number', $legacy)->where('id', '!=', $device->id ?? 0)->exists()) {
                             $fail('Nomor Aset sudah digunakan oleh perangkat lain.');
                         }
                     }],

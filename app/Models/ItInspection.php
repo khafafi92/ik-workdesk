@@ -130,7 +130,7 @@ class ItInspection extends Model
 
     public function device(): BelongsTo
     {
-        return $this->belongsTo(ItDevice::class, 'it_device_id');
+        return $this->belongsTo(ItDevice::class, 'it_device_id')->withTrashed();
     }
 
     public function template(): BelongsTo

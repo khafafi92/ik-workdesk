@@ -2,7 +2,6 @@
 
 namespace App\Exports;
 
-use App\Enums\ItInspectionCondition;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -27,37 +26,32 @@ class ItDeviceSummarySheet extends StringValueBinder implements FromQuery, Shoul
 
     public function query(): Builder
     {
-        $inspectionIds = (clone $this->inspections)->select('it_inspections.id');
-        $query = (clone $this->devices)->with([
-            'managingDepartment', 'computerDetail', 'assignedEmployee.department', 'assignedEmployee.user',
-            'inspections' => fn ($query) => $query->whereIn('id', clone $inspectionIds)->orderByDesc('checked_at')->orderByDesc('id')->limit(1),
-        ])->withCount(['inspections as final_inspections_count' => fn ($query) => $query->whereIn('id', clone $inspectionIds)]);
+        $deviceIds = (clone $this->devices)->reorder()->select('it_devices.id');
+        $findingIds = (clone $this->findings)->reorder()->select('it_inspection_follow_ups.id');
+        $query = (clone $this->inspections)->whereIn('it_device_id', $deviceIds)->with([
+            'device.managingDepartment', 'device.computerDetail', 'device.assignedEmployee.department', 'device.assignedEmployee.user',
+        ]);
 
         foreach (['open', 'in_progress', 'resolved'] as $status) {
-            $query->addSelect([$status.'_findings_count' => (clone $this->findings)
-                ->where('status', $status)
-                ->whereHas('inspection', fn ($query) => $query->whereColumn('it_inspections.it_device_id', 'it_devices.id'))
-                ->selectRaw('count(*)')]);
+            $query->withCount(['followUps as '.$status.'_findings_count' => fn ($query) => $query->where('status', $status)->whereIn('id', clone $findingIds)]);
         }
 
-        return $query;
+        return $query->orderBy('it_device_id')->orderBy('checked_at')->orderBy('id');
     }
 
     public function headings(): array
     {
-        return [...ItDeviceExportFields::headings(), 'Jumlah pemeriksaan final dalam filter', 'Nomor pemeriksaan terakhir dalam filter', 'Tanggal pemeriksaan terakhir dalam filter', 'Petugas pemeriksaan terakhir', 'Kondisi terakhir dalam filter', 'Temuan terbuka', 'Temuan dalam proses', 'Temuan selesai', 'Total temuan belum selesai'];
+        return [...ItDeviceExportFields::headings(), 'Nomor pemeriksaan', 'Tanggal pemeriksaan', 'Petugas', 'Kondisi', 'Temuan terbuka', 'Temuan dalam proses', 'Temuan selesai', 'Total temuan belum selesai'];
     }
 
-    public function map($device): array
+    public function map($inspection): array
     {
-        $last = $device->inspections->first();
-
         return [
-            ...ItDeviceExportFields::forDevice($device),
-            (int) $device->final_inspections_count, $last?->inspection_number, $last?->checked_at?->format('Y-m-d H:i'),
-            $last?->inspector_snapshot['name'] ?? '', $last?->overall_condition?->label() ?? ItInspectionCondition::Unchecked->label(),
-            (int) $device->open_findings_count, (int) $device->in_progress_findings_count, (int) $device->resolved_findings_count,
-            (int) $device->open_findings_count + (int) $device->in_progress_findings_count,
+            ...ItDeviceExportFields::forDevice($inspection->device),
+            $inspection->inspection_number, $inspection->checked_at->format('Y-m-d H:i'),
+            $inspection->inspector_snapshot['name'], $inspection->overall_condition->label(),
+            (int) $inspection->open_findings_count, (int) $inspection->in_progress_findings_count, (int) $inspection->resolved_findings_count,
+            (int) $inspection->open_findings_count + (int) $inspection->in_progress_findings_count,
         ];
     }
 }

@@ -64,6 +64,12 @@ class ItInspectionPage extends ItInfrastructurePage
         return Gate::allows('create', ItInspection::class);
     }
 
+    public function canInspectAgain(): bool
+    {
+        return $this->canCreate()
+            && (! $this->inspection || Gate::allows('inspectDevice', [ItInspection::class, $this->inspection->device]));
+    }
+
     public function mount(): void
     {
         if ($this->inspectionId && (str_starts_with($this->inspectionId, 'review-') || str_starts_with($this->inspectionId, 'example-'))) {

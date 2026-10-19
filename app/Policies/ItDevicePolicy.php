@@ -26,7 +26,7 @@ class ItDevicePolicy
 
     public function update(User $user, ItDevice $device): bool
     {
-        return ItInfrastructureAccess::allows($user, $device->managing_department_id, ItPermission::DevicesManage);
+        return ! $device->trashed() && ItInfrastructureAccess::allows($user, $device->managing_department_id, ItPermission::DevicesManage);
     }
 
     public function assignDepartment(User $user, int $departmentId): bool

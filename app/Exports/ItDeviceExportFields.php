@@ -24,6 +24,7 @@ class ItDeviceExportFields
 
         return self::values([
             ...$device->inspectionSnapshot(),
+            'is_active' => ! $device->trashed() && $device->is_active,
             'assigned_user_name' => $device->assignedEmployee?->user?->name ?? $device->assigned_user_name ?? $device->assignedEmployee?->name,
         ], $device->location_name?->value, $device->location_detail);
     }

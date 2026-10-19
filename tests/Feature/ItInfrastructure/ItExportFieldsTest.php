@@ -132,10 +132,17 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
     {
         $room = $this->device(ItDeviceType::ServerRoom, ['location_detail' => 'Ruang server']);
         $switch = $this->device(ItDeviceType::Switch, ['floor' => 'B2', 'location_detail' => 'Rack 2']);
+        foreach ([$room, $switch] as $device) {
+            $inspection = $this->inspection($device);
+            $this->fillRemainingResults($inspection);
+            $this->finalize($inspection);
+        }
         $page = Livewire::test(ItInfrastructureReportPage::class)->instance();
         [$sheet] = (new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()))->sheets();
-        foreach ($sheet->query()->get() as $device) {
-            $row = array_combine($sheet->headings(), $sheet->map($device));
+        $this->assertSame(2, $sheet->query()->count());
+        foreach ($sheet->query()->get() as $inspection) {
+            $device = $inspection->device;
+            $row = array_combine($sheet->headings(), $sheet->map($inspection));
             $this->assertSame('Office HO', $row['Lokasi']);
             $this->assertSame($device->id === $switch->id ? 'B2' : null, $row['LT (Lantai)']);
             $this->assertSame($device->id === $room->id ? 'Ruang server' : 'Rack 2', $row['Detail ruang / rack']);
@@ -153,6 +160,9 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
     {
         $location = WorkLocation::query()->create(['gps_name' => 'KPMOG OFFICE']);
         $device = $this->device(attributes: ['location_name' => null, 'work_location_id' => $location->id]);
+        $inspection = $this->inspection($device);
+        $this->fillRemainingResults($inspection);
+        $this->finalize($inspection);
         $page = Livewire::test(ItInfrastructureReportPage::class)->instance();
         [$sheet] = (new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()))->sheets();
         $row = array_combine($sheet->headings(), $sheet->map($sheet->query()->sole()));

@@ -16,11 +16,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class ItDevice extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'work_location_id', 'location_name', 'location_detail', 'floor', 'managing_department_id', 'assigned_employee_id', 'assigned_user_name', 'parent_device_id', 'lifecycle_status', 'disposed_at', 'disposal_reason', 'is_active', 'notes', 'created_by', 'updated_by'];
 
     protected $attributes = ['is_active' => true];
@@ -81,16 +84,13 @@ class ItDevice extends Model
                     throw ValidationException::withMessages(['parent_device_id' => 'Relasi induk perangkat tidak boleh membentuk siklus.']);
                 }
                 $seen[] = (int) $parentId;
-                $parentId = self::query()->findOrFail($parentId)->parent_device_id;
+                $parentId = self::withTrashed()->findOrFail($parentId)->parent_device_id;
             }
         });
 
         static::deleting(function (self $device): void {
-            if ($device->inspections()->exists()) {
-                throw ValidationException::withMessages(['device' => 'Perangkat memiliki riwayat pemeriksaan dan tidak dapat dihapus. Nonaktifkan perangkat untuk mempertahankan riwayat.']);
-            }
-            if ($device->childDevices()->exists()) {
-                throw ValidationException::withMessages(['device' => 'Perangkat masih menjadi induk perangkat lain. Lepaskan relasi induk sebelum menghapus.']);
+            if ($device->isForceDeleting()) {
+                throw ValidationException::withMessages(['device' => 'Penghapusan permanen tidak tersedia agar riwayat pemeriksaan tetap tersimpan.']);
             }
         });
     }
@@ -135,7 +135,7 @@ class ItDevice extends Model
 
     public function parentDevice(): BelongsTo
     {
-        return $this->belongsTo(self::class, 'parent_device_id');
+        return $this->belongsTo(self::class, 'parent_device_id')->withTrashed();
     }
 
     public function childDevices(): HasMany

@@ -29,7 +29,7 @@ class ItInspectionPolicy
 
     public function inspectDevice(User $user, ItDevice $device): bool
     {
-        return $device->is_active && $device->lifecycle_status !== ItAssetLifecycle::Disposed
+        return ! $device->trashed() && $device->is_active && $device->lifecycle_status !== ItAssetLifecycle::Disposed
             && ItInfrastructureAccess::allows($user, $device->managing_department_id, ItPermission::InspectionsCreate, ItPermission::InspectionsManage);
     }
 

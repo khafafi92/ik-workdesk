@@ -103,11 +103,13 @@ class ItDeviceTest extends ItInfrastructureTestCase
         $this->device(ItDeviceType::Server)->computerDetail()->create([]);
     }
 
-    public function test_devices_with_inspection_history_cannot_be_deleted(): void
+    public function test_devices_with_inspection_history_are_removed_from_master_without_losing_history(): void
     {
         $device = $this->device();
-        $this->inspection($device);
-        $this->expectException(ValidationException::class);
+        $inspection = $this->inspection($device);
         $device->delete();
+        $this->assertTrue($device->fresh()->trashed());
+        $this->assertFalse(ItDevice::query()->whereKey($device->id)->exists());
+        $this->assertNotNull($inspection->fresh());
     }
 }

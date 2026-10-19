@@ -57,7 +57,7 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
     public string $dateUntil = '';
 
     #[Url]
-    public string $reportTab = 'latest';
+    public string $reportTab = 'history';
 
     public array $resolutionNotes = [];
 
@@ -170,7 +170,9 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
     {
         abort_unless($this->canViewReports(), 403);
 
-        return $this->inspectionQuery()->orderByDesc('checked_at')->orderByDesc('id')->paginate(25, ['*'], 'historyPage');
+        return $this->inspectionQuery()->with('device')
+            ->when($this->conditionFilter !== '', fn ($query) => $query->where('overall_condition', $this->conditionFilter))
+            ->orderByDesc('checked_at')->orderByDesc('id')->paginate(25, ['*'], 'historyPage');
     }
 
     public function findings()
@@ -181,7 +183,7 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
     #[Computed]
     public function deviceOptions(): array
     {
-        return ItInfrastructureAccess::scope(ItDevice::query(), auth()->user(), 'it_devices.managing_department_id', ItPermission::ReportsView, ItPermission::ReportsExport, ItPermission::FollowUpsManage)->orderBy('name')->pluck('name', 'id')->all();
+        return ItInfrastructureAccess::scope(ItDevice::withTrashed(), auth()->user(), 'it_devices.managing_department_id', ItPermission::ReportsView, ItPermission::ReportsExport, ItPermission::FollowUpsManage)->orderBy('name')->pluck('name', 'id')->all();
     }
 
     #[Computed]
@@ -213,11 +215,12 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
             throw ValidationException::withMessages(['dateFrom' => $problem]);
         }
 
-        $devices = $this->latestDevicesQuery();
+        $devices = $this->deviceQuery()->withTrashed();
         $inspections = $this->inspectionQuery()->where('status', ItInspectionStatus::Finalized->value);
         $findings = $this->findingsQuery();
         if ($this->conditionFilter !== '') {
-            $findings->whereHas('inspection', fn ($inspection) => $inspection->whereIn('it_device_id', (clone $devices)->reorder()->select('it_devices.id')));
+            $inspections->where('overall_condition', $this->conditionFilter);
+            $findings->whereIn('it_inspection_id', (clone $inspections)->select('it_inspections.id'));
         }
 
         return Excel::download(new ItMaintenanceSummaryExport($devices, $inspections, $findings), 'ringkasan-perawatan-infrastruktur-'.now()->format('Ymd-His').'.xlsx');

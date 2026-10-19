@@ -561,7 +561,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         Livewire::test(ListItDevices::class)->assertSee('Belum ada perangkat');
         Livewire::test(ItInspectionPage::class)->assertSee('Tambah Perangkat')->assertDontSee('Mode review');
         Livewire::test(ItInspectionPage::class, ['deviceId' => 'laptop', 'inspectionId' => 'example-1'])->assertSee('Tambah Perangkat');
-        Livewire::test(ItInfrastructureReportPage::class)->assertSee('Tidak ada perangkat yang cocok');
+        Livewire::test(ItInfrastructureReportPage::class)->assertSee('Belum ada pemeriksaan untuk pilihan ini.');
         $this->assertSame(0, ItDevice::query()->count());
         $this->assertSame(0, ItInspection::query()->count());
     }
@@ -726,7 +726,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         });
     }
 
-    public function test_summary_workbook_counts_unique_devices_and_retains_old_findings_after_latest_normal(): void
+    public function test_summary_workbook_keeps_separate_inspection_rows_and_findings_after_latest_normal(): void
     {
         $this->asAdministrator();
         $device = $this->register(['name' => '=1+1', 'asset_number' => '00050/APCA/IT/2025']);
@@ -757,17 +757,18 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             $this->assertSame(3, $summary->getHighestDataRow());
             $rows = $summary->toArray(null, true, false);
             $columns = array_flip($rows[0]);
-            $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $device->asset_number);
+            $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Nomor pemeriksaan']] === $latest->inspection_number);
             $this->assertSame('=1+1', $row[1]);
-            $this->assertSame(2, $row[$columns['Jumlah pemeriksaan final dalam filter']]);
-            $this->assertSame($latest->inspection_number, $row[$columns['Nomor pemeriksaan terakhir dalam filter']]);
-            $this->assertSame('Normal', $row[$columns['Kondisi terakhir dalam filter']]);
-            $this->assertSame([0, 1, 1, 1], array_slice($row, $columns['Temuan terbuka']));
+            $this->assertSame('Normal', $row[$columns['Kondisi']]);
+            $this->assertSame([0, 0, 0, 0], array_slice($row, $columns['Temuan terbuka']));
+            $oldRow = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Nomor pemeriksaan']] === $old->inspection_number);
+            $this->assertSame($device->asset_number, $oldRow[0]);
+            $this->assertSame('Warning', $oldRow[$columns['Kondisi']]);
+            $this->assertSame([0, 1, 1, 1], array_slice($oldRow, $columns['Temuan terbuka']));
             $untested = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $other->asset_number);
-            $this->assertSame(0, $untested[$columns['Jumlah pemeriksaan final dalam filter']]);
-            $this->assertSame('Belum Diperiksa', $untested[$columns['Kondisi terakhir dalam filter']]);
+            $this->assertNull($untested);
             $this->assertSame(DataType::TYPE_STRING, $summary->getCell('B2')->getDataType());
-            $this->assertSame(DataType::TYPE_NUMERIC, $summary->getCell([$columns['Jumlah pemeriksaan final dalam filter'] + 1, 2])->getDataType());
+            $this->assertSame(DataType::TYPE_NUMERIC, $summary->getCell([$columns['Temuan terbuka'] + 1, 2])->getDataType());
             $details = $workbook->getSheet(1);
             $this->assertSame(3, $details->getHighestDataRow());
             $detailRows = $details->toArray(null, true, false);
@@ -789,6 +790,9 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->asAdministrator();
         $service = app(ItInspectionService::class);
         $devices = collect(range(1, 26))->map(fn ($i) => $this->register(['name' => 'Laptop '.$i]));
+        foreach ($devices->skip(1) as $unit) {
+            $service->save($this->inspector, $unit->id, null, $this->inspectionData($unit), true);
+        }
         $device = $devices->first();
         $data = $this->inspectionData($device);
         $data['checked_at'] = now()->subDays(2)->format('Y-m-d\TH:i');
@@ -809,7 +813,8 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $name = 'ringkasan-perawatan-infrastruktur-'.now()->format('Ymd-His').'.xlsx';
         Excel::assertDownloaded($name, function (ItMaintenanceSummaryExport $export) use ($devices, $old): bool {
             [$summary, $findings] = $export->sheets();
-            $this->assertEqualsCanonicalizing($devices->pluck('id')->all(), $summary->query()->pluck('id')->all());
+            $this->assertEqualsCanonicalizing($devices->pluck('id')->all(), $summary->query()->pluck('it_device_id')->unique()->values()->all());
+            $this->assertSame(27, $summary->query()->count());
             $this->assertSame([$old->id], $findings->query()->pluck('it_inspection_id')->all());
 
             return true;
@@ -819,8 +824,8 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         Excel::assertDownloaded($name, function (ItMaintenanceSummaryExport $export) use ($old): bool {
             [$summary, $findings] = $export->sheets();
             $row = $summary->query()->sole();
-            $this->assertSame($old->id, (int) $row->last_inspection_id);
-            $this->assertSame(1, (int) $row->final_inspections_count);
+            $this->assertSame($old->id, (int) $row->id);
+            $this->assertSame('warning', $row->overall_condition->value);
             $this->assertSame([$old->id], $findings->query()->pluck('it_inspection_id')->all());
 
             return true;

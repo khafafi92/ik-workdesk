@@ -7,7 +7,7 @@
                 <select id="it-report-category" wire:model.live="categoryFilter"><option value="">Semua kategori</option>@foreach ($this->categoryOptions() as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</select>
             </div>
             <div class="it-review-field">
-                <label for="it-report-condition">Kondisi terakhir</label>
+                <label for="it-report-condition">{{ $reportTab === 'latest' ? 'Kondisi terakhir' : 'Kondisi pemeriksaan' }}</label>
                 <select id="it-report-condition" wire:model.live="conditionFilter"><option value="">Semua kondisi</option>@foreach (\App\Enums\ItInspectionCondition::cases() as $condition)<option value="{{ $condition->value }}">{{ $condition->label() }}</option>@endforeach</select>
             </div>
             <div class="it-review-field"><label for="it-report-from">Dari tanggal</label><input id="it-report-from" class="it-review-value" type="date" wire:model.live="dateFrom"></div>
@@ -25,11 +25,11 @@
             @endif
             <div><dt>Temuan belum selesai</dt><dd>{{ $stats['open_findings'] }}</dd></div>
         </dl>
-        <p class="it-review-help">Aset dihitung per objek unik. Periode dan petugas menyaring pemeriksaan; filter kondisi menyaring kondisi terakhir dan ekspor pemeriksaan final.</p>
+        <p class="it-review-help">Setiap pengecekan memiliki baris tersendiri sesuai waktunya. Periode, petugas dan kondisi menyaring riwayat; ekspor memuat pemeriksaan final.</p>
         <x-filament::tabs label="Tampilan laporan">
+            @if ($this->canViewReports())<x-filament::tabs.item :active="$reportTab === 'history'" wire:click="$set('reportTab', 'history')">Riwayat pengecekan</x-filament::tabs.item>@endif
             @if ($this->canViewReports())<x-filament::tabs.item :active="$reportTab === 'latest'" wire:click="$set('reportTab', 'latest')">Kondisi terakhir</x-filament::tabs.item>@endif
             <x-filament::tabs.item :active="$reportTab === 'findings'" wire:click="$set('reportTab', 'findings')">Temuan</x-filament::tabs.item>
-            @if ($this->canViewReports())<x-filament::tabs.item :active="$reportTab === 'history'" wire:click="$set('reportTab', 'history')">Riwayat</x-filament::tabs.item>@endif
         </x-filament::tabs>
         @if ($this->canViewReports() && $reportTab === 'latest')
             @php($records = $this->latestDevices())
@@ -48,10 +48,10 @@
             @php($records = $this->inspections())
             <section class="it-review-section" aria-label="Riwayat pemeriksaan">
                 <div class="it-review-table-wrap" role="region" aria-label="Pemeriksaan" tabindex="0">
-                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Nomor</th><th scope="col">Objek</th><th scope="col">Waktu / petugas</th><th scope="col">Dokumen</th><th scope="col">Kondisi</th></tr></thead>
+                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Nomor</th><th scope="col">Nama Perangkat</th><th scope="col">Waktu / petugas</th><th scope="col">Dokumen</th><th scope="col">Kondisi</th><th scope="col">Pengecekan baru</th></tr></thead>
                         <tbody>@forelse ($records as $inspection)
-                            <tr><td><a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $inspection->id]) }}">{{ $inspection->inspection_number }}</a></td><td>{{ $inspection->device_snapshot['name'] }}</td><td>{{ $inspection->checked_at->format('d/m/Y H:i') }}<br>{{ $inspection->inspector_snapshot['name'] }}</td><td>{{ $inspection->status->label() }}</td><td>{{ $inspection->overall_condition->label() }}</td></tr>
-                        @empty<tr><td colspan="5">Belum ada pemeriksaan untuk pilihan ini.</td></tr>@endforelse</tbody>
+                            <tr><td><a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $inspection->id]) }}">{{ $inspection->inspection_number }}</a></td><td>{{ $inspection->device_snapshot['name'] }}</td><td>{{ $inspection->checked_at->format('d/m/Y H:i') }}<br>{{ $inspection->inspector_snapshot['name'] }}</td><td>{{ $inspection->status->label() }}</td><td>{{ $inspection->overall_condition->label() }}</td><td>@can('inspectDevice', [\App\Models\ItInspection::class, $inspection->device])<a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionPage::getUrl(['device' => $inspection->it_device_id]) }}">Periksa lagi</a>@endcan</td></tr>
+                        @empty<tr><td colspan="6">Belum ada pemeriksaan untuk pilihan ini.</td></tr>@endforelse</tbody>
                     </table>
                 </div>
                 <x-filament::pagination :paginator="$records" />
@@ -92,6 +92,6 @@
                 <x-filament::button color="gray" wire:click="exportReport" wire:loading.attr="disabled">Ekspor Rincian Checklist</x-filament::button>
             @endcan
         </div>
-        @can('export', \App\Models\ItInspection::class)<p class="it-review-help">Ringkasan Excel berisi rekap per perangkat dan lembar temuan/perawatan dari pemeriksaan final sesuai filter. Status tindak lanjut mengikuti kondisi saat ekspor.</p>@endcan
+        @can('export', \App\Models\ItInspection::class)<p class="it-review-help">Ringkasan Excel memuat satu baris per pemeriksaan final dan lembar temuan/perawatan sesuai filter. Status tindak lanjut mengikuti kondisi saat ekspor.</p>@endcan
     </div>
 </x-filament-panels::page>
