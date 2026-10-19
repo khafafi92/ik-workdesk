@@ -34,7 +34,7 @@ class ItDeviceTest extends ItInfrastructureTestCase
         $room = $this->device(ItDeviceType::ServerRoom);
         $inspection = $this->inspection($room);
         $this->assertNull($room->work_location_id);
-        $this->assertSame('Office', $inspection->location_snapshot['location']['gps_name']);
+        $this->assertSame('Office HO', $inspection->location_snapshot['location']['gps_name']);
         $this->assertSame(0, WorkLocation::query()->count());
     }
 
@@ -44,7 +44,7 @@ class ItDeviceTest extends ItInfrastructureTestCase
         $inspection = $this->inspection($this->device(ItDeviceType::ServerRoom, ['work_location_id' => $location->id]), ['work_location_id' => $location->id]);
         $snapshot = $inspection->device_snapshot;
         unset($snapshot['location_name']);
-        DB::table('it_inspections')->where('id', $inspection->id)->update(['device_snapshot' => json_encode($snapshot)]);
+        DB::table('it_inspections')->where('id', $inspection->id)->update(['device_snapshot' => json_encode($snapshot), 'location_name' => null]);
         $inspection->refresh();
         $this->assertSame($location->id, $inspection->work_location_id);
         $this->expectException(ValidationException::class);

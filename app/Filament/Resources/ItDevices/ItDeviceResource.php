@@ -4,6 +4,7 @@ namespace App\Filament\Resources\ItDevices;
 
 use App\Enums\ItAssetLifecycle;
 use App\Enums\ItDeviceCategory;
+use App\Enums\ItDeviceLocation;
 use App\Enums\ItDeviceType;
 use App\Enums\ItLicenseStatus;
 use App\Enums\ItSwitchFloor;
@@ -86,7 +87,7 @@ class ItDeviceResource extends Resource
                         }
                     }),
                     Select::make('managing_department_id')->label('Department pengelola')->options(fn () => Department::query()->whereIn('id', auth()->user()->accessibleDepartmentIds())->orderBy('name')->pluck('name', 'id'))->default(fn () => auth()->user()->employee?->department_id)->searchable()->required(),
-                    TextEntry::make('office_location')->label('Lokasi')->state(ItDevice::OFFICE_LOCATION),
+                    Select::make('location_name')->label('Lokasi')->placeholder('Pilih lokasi perangkat')->options(ItDeviceLocation::options())->required($isRoom),
                     Select::make('floor')->label('LT (Lantai)')->placeholder('Pilih lantai')->options(collect(ItSwitchFloor::cases())->mapWithKeys(fn (ItSwitchFloor $floor) => [$floor->value => $floor->label()])->all())->visible(fn (Get $get) => $get('device_type') === 'switch'),
                     TextInput::make('location_detail')->label('Detail ruang / rack'),
                     TextInput::make('serial_number')->label('Serial Number')->maxLength(255)->hidden($isRoom),
@@ -143,7 +144,7 @@ class ItDeviceResource extends Resource
             TextColumn::make('device_type')->label('Jenis')->formatStateUsing(fn ($state) => $state->label()),
             TextColumn::make('serial_number')->label('Serial Number')->searchable()->toggleable(isToggledHiddenByDefault: true),
             TextColumn::make('managingDepartment.name')->label('Pengelola')->sortable(),
-            TextColumn::make('office_location')->label('Lokasi')->state(ItDevice::OFFICE_LOCATION),
+            TextColumn::make('location_name')->label('Lokasi')->formatStateUsing(fn (ItDeviceLocation $state) => $state->value)->placeholder('Belum dipilih')->sortable(),
             TextColumn::make('floor')->label('LT')->formatStateUsing(fn (?ItSwitchFloor $state) => $state?->label())->sortable()->toggleable(),
             TextColumn::make('assigned_user_name')->label('Nama User')->searchable(),
             TextColumn::make('lifecycle_status')->label('Status Pemakaian')->formatStateUsing(fn ($state) => $state?->label() ?? 'Objek ruangan'),

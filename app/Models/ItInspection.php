@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\ItAssetLifecycle;
+use App\Enums\ItDeviceLocation;
 use App\Enums\ItInspectionCondition;
 use App\Enums\ItInspectionStatus;
 use App\Enums\ItObjectKind;
@@ -16,13 +17,13 @@ use Illuminate\Validation\ValidationException;
 
 class ItInspection extends Model
 {
-    protected $fillable = ['inspection_number', 'it_device_id', 'it_checklist_template_id', 'checked_at', 'inspector_id', 'work_location_id', 'location_detail', 'status', 'notes', 'finalization_notes', 'finalized_at', 'finalized_by'];
+    protected $fillable = ['inspection_number', 'it_device_id', 'it_checklist_template_id', 'checked_at', 'inspector_id', 'work_location_id', 'location_name', 'location_detail', 'status', 'notes', 'finalization_notes', 'finalized_at', 'finalized_by'];
 
     protected $attributes = ['status' => 'draft', 'overall_condition' => 'unchecked'];
 
     protected function casts(): array
     {
-        return ['checked_at' => 'datetime', 'finalized_at' => 'datetime', 'status' => ItInspectionStatus::class, 'overall_condition' => ItInspectionCondition::class, 'condition_counts' => 'array', 'device_snapshot' => 'array', 'inspector_snapshot' => 'array', 'location_snapshot' => 'array'];
+        return ['checked_at' => 'datetime', 'finalized_at' => 'datetime', 'location_name' => ItDeviceLocation::class, 'status' => ItInspectionStatus::class, 'overall_condition' => ItInspectionCondition::class, 'condition_counts' => 'array', 'device_snapshot' => 'array', 'inspector_snapshot' => 'array', 'location_snapshot' => 'array'];
     }
 
     protected static function booted(): void
@@ -51,6 +52,9 @@ class ItInspection extends Model
                 }
                 $inspection->managing_department_id = $device->managing_department_id;
                 $inspection->device_snapshot = $device->inspectionSnapshot();
+                if (! array_key_exists('location_name', $inspection->getAttributes())) {
+                    $inspection->location_name = $device->location_name;
+                }
                 $inspection->location_detail ??= $device->location_detail;
             } elseif ($inspection->isDirty(['it_device_id', 'it_checklist_template_id', 'managing_department_id', 'device_snapshot', 'inspection_number'])) {
                 throw ValidationException::withMessages(['inspection' => 'Objek, template, nomor, department, dan salinan identitas tidak dapat diganti.']);
@@ -62,12 +66,19 @@ class ItInspection extends Model
             if (! $inspection->exists || $inspection->isDirty('inspector_id')) {
                 $inspection->inspector_snapshot = $inspector->only(['id', 'name']);
             }
-            if (($inspection->device_snapshot['object_kind'] ?? null) === ItObjectKind::Room->value && ! $inspection->work_location_id && empty($inspection->device_snapshot['location_name'])) {
-                throw ValidationException::withMessages(['work_location_id' => 'Pemeriksaan ruang wajib memiliki lokasi aktual.']);
+            $hasHistoricalLocation = $inspection->exists && ! $inspection->isDirty(['work_location_id', 'location_name']) && filled($inspection->location_snapshot['location']['gps_name'] ?? null);
+            if (($inspection->device_snapshot['object_kind'] ?? null) === ItObjectKind::Room->value && ! $inspection->work_location_id && ! $inspection->location_name && ! $hasHistoricalLocation) {
+                throw ValidationException::withMessages(['location_name' => 'Pemeriksaan ruang wajib memiliki lokasi aktual.']);
             }
-            if (! $inspection->exists || $inspection->isDirty(['work_location_id', 'location_detail'])) {
+            if (! $inspection->exists || $inspection->isDirty(['work_location_id', 'location_name', 'location_detail'])) {
                 $location = $inspection->work_location_id ? WorkLocation::query()->findOrFail($inspection->work_location_id) : null;
-                $inspection->location_snapshot = ['location' => $location?->only(['id', 'gps_name', 'address']) ?? (isset($inspection->device_snapshot['location_name']) ? ['gps_name' => $inspection->device_snapshot['location_name']] : null), 'detail' => $inspection->location_detail];
+                $locationData = $location?->only(['id', 'gps_name', 'address']);
+                if ($inspection->location_name) {
+                    $locationData = ['gps_name' => $inspection->location_name->value];
+                } elseif (! $locationData && $inspection->exists && ! $inspection->isDirty('location_name')) {
+                    $locationData = $inspection->location_snapshot['location'] ?? null;
+                }
+                $inspection->location_snapshot = ['location' => $locationData, 'detail' => $inspection->location_detail];
             }
 
             if ($inspection->status === ItInspectionStatus::Finalized) {

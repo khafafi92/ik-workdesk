@@ -4,7 +4,6 @@ namespace App\Exports;
 
 use App\Enums\ItInspectionCondition;
 use App\Enums\ItObjectKind;
-use App\Models\ItDevice;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -60,7 +59,7 @@ class ItDeviceSummarySheet extends StringValueBinder implements FromQuery, Shoul
                 ItObjectKind::Room => 'Ruang', ItObjectKind::Virtual => 'Virtual', ItObjectKind::Physical => 'Fisik',
             },
             $device->serial_number, $device->managingDepartment?->name,
-            collect([ItDevice::OFFICE_LOCATION, $device->location_detail, $device->floor?->label()])->filter()->implode(' / '),
+            collect([$device->location_name?->value ?? $device->location?->gps_name, $device->location_detail, $device->floor?->label()])->filter()->implode(' / '),
             $device->lifecycle_status?->label() ?? 'Tidak Berlaku', $device->is_active ? 'Aktif' : 'Nonaktif', $device->assigned_user_name,
             (int) $device->final_inspections_count, $last?->inspection_number, $last?->checked_at?->format('Y-m-d H:i'),
             $last?->inspector_snapshot['name'] ?? '', $last?->overall_condition?->label() ?? ItInspectionCondition::Unchecked->label(),

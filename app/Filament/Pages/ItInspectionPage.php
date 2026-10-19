@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\ItAssetLifecycle;
+use App\Enums\ItDeviceLocation;
 use App\Enums\ItDeviceType;
 use App\Enums\ItInspectionCondition;
 use App\Enums\ItInspectionStatus;
@@ -18,7 +19,6 @@ use BackedEnum;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
-use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -206,7 +206,8 @@ class ItInspectionPage extends ItInfrastructurePage
         return $schema->statePath('data')->components([
             Section::make('Informasi pemeriksaan')->columns(['md' => 2, 'xl' => 4])->schema([
                 DateTimePicker::make('checked_at')->label('Tanggal dan waktu')->required()->seconds(false)->maxDate(now()),
-                TextEntry::make('office_location')->label('Lokasi pemeriksaan')->state(fn () => $this->inspection ? ($this->inspection->location_snapshot['location']['gps_name'] ?? 'Tidak dicatat') : ItDevice::OFFICE_LOCATION),
+                Select::make('location_name')->label('Lokasi pemeriksaan')->options(ItDeviceLocation::options())
+                    ->placeholder(fn () => $this->inspection?->location_snapshot['location']['gps_name'] ?? 'Pilih lokasi pemeriksaan'),
                 TextInput::make('location_detail')->label('Detail lokasi / rack')->maxLength(255),
                 TextInput::make('notes')->label('Catatan pemeriksaan')->placeholder('Catatan (opsional)')->maxLength(3000),
             ]),

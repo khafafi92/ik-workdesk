@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\ItAssetLifecycle;
 use App\Enums\ItDeviceCategory;
+use App\Enums\ItDeviceLocation;
 use App\Enums\ItDeviceType;
 use App\Enums\ItObjectKind;
 use App\Enums\ItPermission;
@@ -18,15 +19,13 @@ use Illuminate\Validation\ValidationException;
 
 class ItDevice extends Model
 {
-    public const OFFICE_LOCATION = 'Office';
-
-    protected $fillable = ['code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'work_location_id', 'location_detail', 'floor', 'managing_department_id', 'assigned_employee_id', 'assigned_user_name', 'parent_device_id', 'lifecycle_status', 'disposed_at', 'disposal_reason', 'is_active', 'notes', 'created_by', 'updated_by'];
+    protected $fillable = ['code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'work_location_id', 'location_name', 'location_detail', 'floor', 'managing_department_id', 'assigned_employee_id', 'assigned_user_name', 'parent_device_id', 'lifecycle_status', 'disposed_at', 'disposal_reason', 'is_active', 'notes', 'created_by', 'updated_by'];
 
     protected $attributes = ['is_active' => true];
 
     protected function casts(): array
     {
-        return ['category' => ItDeviceCategory::class, 'device_type' => ItDeviceType::class, 'object_kind' => ItObjectKind::class, 'floor' => ItSwitchFloor::class, 'lifecycle_status' => ItAssetLifecycle::class, 'disposed_at' => 'date', 'is_active' => 'boolean'];
+        return ['category' => ItDeviceCategory::class, 'device_type' => ItDeviceType::class, 'object_kind' => ItObjectKind::class, 'location_name' => ItDeviceLocation::class, 'floor' => ItSwitchFloor::class, 'lifecycle_status' => ItAssetLifecycle::class, 'disposed_at' => 'date', 'is_active' => 'boolean'];
     }
 
     protected static function booted(): void
@@ -162,7 +161,7 @@ class ItDevice extends Model
         $this->loadMissing(['assignedEmployee.department', 'computerDetail', 'managingDepartment']);
 
         return [
-            'location_name' => self::OFFICE_LOCATION,
+            'location_name' => $this->location_name?->value,
             ...$this->only(['id', 'code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'floor', 'lifecycle_status', 'notes']),
             'managing_department' => $this->managingDepartment?->only(['id', 'code', 'name']),
             'assigned_employee' => $this->assignedEmployee ? [...$this->assignedEmployee->only(['id', 'employee_no', 'name', 'department_id', 'position']), 'division' => $this->assignedEmployee->department?->name] : null,

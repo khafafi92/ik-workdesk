@@ -52,7 +52,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     {
         return [...[
             'code' => 'LAP-'.fake()->unique()->numerify('######'), 'name' => 'Laptop Kantor', 'device_type' => 'laptop',
-            'managing_department_id' => $this->department->id, 'lifecycle_status' => 'in_use', 'is_active' => true,
+            'managing_department_id' => $this->department->id, 'lifecycle_status' => 'in_use', 'is_active' => true, 'location_name' => 'Office HO',
             'windows_license_status' => 'unverified', 'office_license_status' => 'unverified', 'ram_gb' => 8,
             'storage_devices' => [['type' => 'ssd', 'capacity_gb' => 512]],
         ], ...$overrides];
@@ -260,7 +260,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_switch_floor_is_saved_and_keeps_its_historical_value_in_reports_and_exports(): void
     {
         $this->asAdministrator();
-        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Switch distribusi', 'device_type' => 'switch', 'floor' => '2'])
+        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Switch distribusi', 'device_type' => 'switch', 'floor' => '2', 'location_name' => 'Office HO'])
             ->call('create')->assertHasNoFormErrors();
         $device = ItDevice::query()->sole();
         $this->assertSame(ItSwitchFloor::Floor2, $device->floor);
@@ -278,11 +278,11 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])->assertSee('LT 3');
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])->assertSee('LT 2')->assertDontSee('LT 3');
         $details = new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id));
-        $this->assertStringContainsString('Office / LT 2', $details->map($details->query()->first())[8]);
+        $this->assertStringContainsString('Office HO / LT 2', $details->map($details->query()->first())[8]);
         $page = Livewire::test(ItInfrastructureReportPage::class)->instance();
         [$summary, $findings] = (new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()))->sheets();
-        $this->assertStringContainsString('Office / LT 3', $summary->map($summary->query()->sole())[7]);
-        $this->assertStringContainsString('Office / LT 2', $findings->map($findings->query()->sole())[8]);
+        $this->assertStringContainsString('Office HO / LT 3', $summary->map($summary->query()->sole())[7]);
+        $this->assertStringContainsString('Office HO / LT 2', $findings->map($findings->query()->sole())[8]);
     }
 
     public function test_switch_floor_accepts_only_the_requested_floors_and_clears_when_type_changes(): void

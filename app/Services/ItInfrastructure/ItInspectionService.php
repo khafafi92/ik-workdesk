@@ -2,6 +2,7 @@
 
 namespace App\Services\ItInfrastructure;
 
+use App\Enums\ItDeviceLocation;
 use App\Enums\ItInspectionCondition;
 use App\Enums\ItInspectionStatus;
 use App\Enums\ItPermission;
@@ -59,7 +60,7 @@ class ItInspectionService
             $results[$item->code] = ['condition' => 'unchecked', 'measured_value' => '', 'notes' => '', 'finding' => '', 'not_applicable_reason' => '', 'action_plan' => '', 'assigned_to' => '', 'due_at' => ''];
         }
 
-        return ['checked_at' => now()->format('Y-m-d\TH:i'), 'work_location_id' => null, 'location_detail' => $device->location_detail, 'notes' => '', 'results' => $results];
+        return ['checked_at' => now()->format('Y-m-d\TH:i'), 'work_location_id' => null, 'location_name' => $device->location_name?->value, 'location_detail' => $device->location_detail, 'notes' => '', 'results' => $results];
     }
 
     public function formData(ItInspection $inspection): array
@@ -83,7 +84,7 @@ class ItInspectionService
             ];
         }
 
-        return ['checked_at' => $inspection->checked_at->format('Y-m-d\TH:i'), 'work_location_id' => $inspection->work_location_id, 'location_detail' => $inspection->location_detail, 'notes' => $inspection->notes, 'results' => $results];
+        return ['checked_at' => $inspection->checked_at->format('Y-m-d\TH:i'), 'work_location_id' => $inspection->work_location_id, 'location_name' => $inspection->location_name?->value, 'location_detail' => $inspection->location_detail, 'notes' => $inspection->notes, 'results' => $results];
     }
 
     public function save(User $actor, int $deviceId, ?int $id, array $data, bool $finalize): ItInspection
@@ -109,10 +110,19 @@ class ItInspectionService
                         'inspector_id' => $actor->id,
                     ]);
                 }
-                $data['work_location_id'] = $inspection->exists ? $inspection->work_location_id : null;
+                if (! array_key_exists('location_name', $data)) {
+                    $data['location_name'] = $inspection->exists ? $inspection->location_name?->value : $device->location_name?->value;
+                }
+                if (blank($data['location_name'])) {
+                    $data['location_name'] = null;
+                }
+                $data['work_location_id'] = filled($data['location_name']) ? null : ($inspection->exists ? $inspection->work_location_id : null);
+                $room = ($inspection->exists ? $inspection->device_snapshot['object_kind'] : $device->object_kind->value) === 'room';
+                $hasHistoricalLocation = $inspection->exists && ! $inspection->location_name && filled($inspection->location_snapshot['location']['gps_name'] ?? null);
                 $rules = [
                     'checked_at' => ['required', 'date', 'before_or_equal:now'],
                     'work_location_id' => ['nullable', 'integer', Rule::exists('work_locations', 'id')],
+                    'location_name' => [$room && ! $hasHistoricalLocation ? 'required' : 'nullable', Rule::enum(ItDeviceLocation::class)],
                     'location_detail' => ['nullable', 'string', 'max:255'],
                     'notes' => ['nullable', 'string', 'max:3000'],
                     'results' => ['required', 'array'],
@@ -137,7 +147,7 @@ class ItInspectionService
                     'results.*.assigned_to.required' => 'Penanggung jawab wajib dipilih untuk Warning/Critical.',
                     'results.*.not_applicable_reason.required' => 'Alasan N/A wajib diisi.',
                 ])->validate();
-                $inspection->fill(collect($validated)->only(['checked_at', 'work_location_id', 'location_detail', 'notes'])->all());
+                $inspection->fill(collect($validated)->only(['checked_at', 'work_location_id', 'location_name', 'location_detail', 'notes'])->all());
                 $new = ! $inspection->exists;
                 $inspection->save();
                 foreach ($template->items as $item) {

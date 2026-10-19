@@ -3,6 +3,7 @@
 namespace App\Services\ItInfrastructure;
 
 use App\Enums\ItAssetLifecycle;
+use App\Enums\ItDeviceLocation;
 use App\Enums\ItDeviceType;
 use App\Enums\ItLicenseStatus;
 use App\Enums\ItSwitchFloor;
@@ -26,7 +27,13 @@ class ItDeviceService
                 $device = $device ? ItDevice::query()->lockForUpdate()->findOrFail($device->id) : new ItDevice;
                 Gate::forUser($actor)->authorize($device->exists ? 'update' : 'create', $device->exists ? $device : ItDevice::class);
                 $data['code'] ??= $device->code ?? 'IT-'.Str::ulid();
-                $data['work_location_id'] = null;
+                if (! array_key_exists('location_name', $data)) {
+                    $data['location_name'] = $device->location_name?->value;
+                }
+                if (blank($data['location_name'])) {
+                    $data['location_name'] = null;
+                }
+                $data['work_location_id'] = filled($data['location_name']) ? null : $device->work_location_id;
                 $type = is_string($data['device_type'] ?? null) ? ItDeviceType::tryFrom($data['device_type']) : null;
                 $room = $type === ItDeviceType::ServerRoom;
                 $computer = in_array($type, [ItDeviceType::Laptop, ItDeviceType::Pc], true);
@@ -36,6 +43,7 @@ class ItDeviceService
                     'device_type' => ['required', Rule::enum(ItDeviceType::class)],
                     'managing_department_id' => ['required', 'integer', Rule::exists('departments', 'id')],
                     'work_location_id' => ['nullable', 'integer', Rule::exists('work_locations', 'id')],
+                    'location_name' => [$room && ! $device->work_location_id ? 'required' : 'nullable', Rule::enum(ItDeviceLocation::class)],
                     'asset_number' => ['nullable', 'string', 'max:255', Rule::unique('it_devices', 'asset_number')->ignore($device->id)],
                     'serial_number' => ['nullable', 'string', 'max:255'],
                     'lifecycle_status' => [$room ? 'nullable' : 'required', Rule::enum(ItAssetLifecycle::class)],
@@ -82,7 +90,7 @@ class ItDeviceService
                     }
                     $validated['assigned_user_name'] = $employee->user?->name ?? $employee->name;
                 }
-                $device->fill(Arr::only($validated, ['code', 'name', 'device_type', 'managing_department_id', 'work_location_id', 'location_detail', 'floor', 'asset_number', 'serial_number', 'specifications', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name', 'is_active', 'notes', 'disposed_at', 'disposal_reason']));
+                $device->fill(Arr::only($validated, ['code', 'name', 'device_type', 'managing_department_id', 'work_location_id', 'location_name', 'location_detail', 'floor', 'asset_number', 'serial_number', 'specifications', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name', 'is_active', 'notes', 'disposed_at', 'disposal_reason']));
                 $device->category = $type->category();
                 $device->object_kind = $type->kind();
                 $device->created_by ??= $actor->id;

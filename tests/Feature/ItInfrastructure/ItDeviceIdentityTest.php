@@ -28,7 +28,7 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
     {
         Livewire::test(CreateItDevice::class)->assertSee('Nomor Aset')->assertSee('Office')
             ->assertDontSee('Kode register')->assertDontSeeHtml('id="form.work_location_id"')
-            ->fillForm(['asset_number' => '0000123', 'name' => 'Laptop aset'])
+            ->fillForm(['asset_number' => '0000123', 'name' => 'Laptop aset', 'location_name' => 'Office HO'])
             ->call('create')->assertHasNoFormErrors();
         $device = ItDevice::query()->sole();
         $code = $device->code;
@@ -58,7 +58,7 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
 
     public function test_room_can_be_registered_and_inspected_at_office_without_attendance_master(): void
     {
-        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Ruang server Office', 'device_type' => 'server_room'])
+        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Ruang server Office', 'device_type' => 'server_room', 'location_name' => 'Office HO'])
             ->call('create')->assertHasNoFormErrors();
         $device = ItDevice::query()->sole();
         Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])->assertSee('Office')
@@ -66,7 +66,7 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
         $inspection = $device->inspections()->sole();
         $this->assertNull($device->work_location_id);
         $this->assertNull($inspection->work_location_id);
-        $this->assertSame('Office', $inspection->location_snapshot['location']['gps_name']);
+        $this->assertSame('Office HO', $inspection->location_snapshot['location']['gps_name']);
         $data = app(ItInspectionService::class)->formData($inspection);
         foreach ($data['results'] as &$row) {
             $row['condition'] = 'normal';
@@ -87,7 +87,7 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
         unset($snapshot['location_name']);
         $locationSnapshot = ['location' => $location->only(['id', 'gps_name', 'address']), 'detail' => 'Rack lama'];
         DB::table('it_inspections')->where('id', $draft->id)->update([
-            'work_location_id' => $location->id, 'device_snapshot' => json_encode($snapshot), 'location_detail' => 'Rack lama',
+            'work_location_id' => $location->id, 'location_name' => null, 'device_snapshot' => json_encode($snapshot), 'location_detail' => 'Rack lama',
             'location_snapshot' => json_encode($locationSnapshot),
         ]);
         $draft->refresh();
@@ -97,7 +97,7 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
         $data['work_location_id'] = $location->id;
         $new = $service->save($this->inspector, $device->id, null, $data, false);
         $this->assertNull($new->work_location_id);
-        $this->assertSame('Office', $new->location_snapshot['location']['gps_name']);
+        $this->assertSame('Office HO', $new->location_snapshot['location']['gps_name']);
         $this->assertSame(1, WorkLocation::query()->count());
     }
 }

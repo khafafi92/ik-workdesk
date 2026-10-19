@@ -63,6 +63,7 @@ abstract class ItInfrastructureTestCase extends TestCase
             '2026_10_16_000000_create_it_infrastructure_tables.php',
             '2026_10_16_000100_add_it_infrastructure_permissions.php',
             '2026_10_19_000000_add_floor_to_it_devices.php',
+            '2026_10_19_010000_add_location_name_to_it_devices_and_inspections.php',
         ];
         foreach ($migrations as $migration) {
             (require database_path('migrations/'.$migration))->up();
@@ -106,6 +107,7 @@ abstract class ItInfrastructureTestCase extends TestCase
             'code' => 'OBJ-'.fake()->unique()->numerify('######'),
             'device_type' => $type,
             'name' => 'Objek pengujian',
+            'location_name' => 'Office HO',
             'managing_department_id' => $this->department->id,
             'created_by' => $this->inspector->id,
             ...$attributes,
