@@ -44,8 +44,8 @@ class ItDeviceComputerDetail extends Model
                 $verifiedBy = $detail->{$product.'_verified_by'};
                 $verifiedAt = $detail->{$product.'_verified_at'};
                 $notes = $detail->{$product.'_verification_notes'};
-                if ($status !== ItLicenseStatus::Unverified && (! $verifiedBy || ! $verifiedAt || $verifiedAt->isFuture() || blank($notes) || ! User::query()->findOrFail($verifiedBy)->isActiveForAccess())) {
-                    throw ValidationException::withMessages([$product.'_license_status' => 'Status lisensi memerlukan petugas aktif, waktu, dan dasar verifikasi.']);
+                if ($status !== ItLicenseStatus::Unverified && (! $verifiedBy || ! $verifiedAt || $verifiedAt->isFuture() || ! User::query()->findOrFail($verifiedBy)->isActiveForAccess())) {
+                    throw ValidationException::withMessages([$product.'_license_status' => 'Status lisensi memerlukan petugas aktif dan waktu pencatatan.']);
                 }
                 if ($status === ItLicenseStatus::Unverified && ($verifiedBy || $verifiedAt || filled($notes))) {
                     throw ValidationException::withMessages([$product.'_license_status' => 'Bersihkan data verifikasi saat status Belum Diverifikasi.']);

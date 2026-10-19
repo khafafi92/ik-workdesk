@@ -10,8 +10,8 @@ trait InteractsWithItDeviceRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         return [...$data, ...Arr::only($this->getRecord()->computerDetail?->attributesToArray() ?? [], [
-            'operating_system', 'windows_version', 'office_version', 'windows_license_status', 'windows_verification_notes',
-            'office_license_status', 'office_verification_notes', 'ram_gb', 'storage_devices',
+            'operating_system', 'windows_version', 'office_version', 'windows_license_status',
+            'office_license_status', 'ram_gb', 'storage_devices',
         ])];
     }
 

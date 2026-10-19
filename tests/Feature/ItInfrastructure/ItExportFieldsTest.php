@@ -53,8 +53,7 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
             'asset_number' => '00035/APCA/IT/2025', 'name' => '=Laptop terdaftar', 'device_type' => 'laptop',
             'location_name' => 'Office HO', 'location_detail' => 'Ruang IT', 'serial_number' => '001234', 'specifications' => 'Core i5',
             'operating_system' => 'Ubuntu', 'windows_version' => '24.04 LTS', 'windows_license_status' => 'not_applicable',
-            'windows_verification_notes' => 'Ubuntu tanpa lisensi Windows', 'office_version' => '2024', 'office_license_status' => 'valid',
-            'office_verification_notes' => 'Lisensi perusahaan', 'ram_gb' => 16,
+            'office_version' => '2024', 'office_license_status' => 'valid', 'ram_gb' => 16,
             'storage_devices' => [['type' => 'ssd', 'capacity_gb' => 512], ['type' => 'hdd', 'capacity_gb' => 1024]],
             'assigned_employee_id' => $this->inspector->employee->id, 'lifecycle_status' => 'in_use', 'notes' => '=Catatan asli',
         ])->call('create')->assertHasNoFormErrors();
@@ -75,27 +74,27 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
         $summary = $this->workbook(new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()));
         $details = $this->workbook(new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id)));
         try {
-            $headings = ['Nomor Aset', 'Nama Perangkat', 'Jenis perangkat / objek', 'Department pengelola', 'Lokasi', 'LT (Lantai)', 'Detail ruang / rack', 'Serial Number', 'Spesifikasi', 'OS', 'Versi', 'Lisensi', 'Versi Microsoft Office', 'Lisensi Microsoft Office', 'RAM (GB)', 'Dasar verifikasi lisensi OS', 'Dasar verifikasi lisensi Office', 'HDD / SSD', 'Nama User', 'Jabatan', 'Divisi', 'Status Pemakaian', 'Aktif untuk pemeriksaan baru', 'Tanggal penghapusan', 'Alasan penghapusan', 'Keterangan'];
-            $historical = ['00035/APCA/IT/2025', '=Laptop terdaftar', 'Laptop', 'IT', 'Office HO', null, 'Ruang IT', '001234', 'Core i5', 'Ubuntu', '24.04 LTS', 'Tidak Berlaku', '2024', 'Original/Valid', 16.0, 'Ubuntu tanpa lisensi Windows', 'Lisensi perusahaan', 'SSD 512 GB; HDD 1024 GB', 'User terdaftar', 'IT Officer', 'IT', 'Digunakan', 'Ya', null, null, '=Catatan asli'];
+            $headings = ['Nomor Aset', 'Nama Perangkat', 'Jenis perangkat / objek', 'Department pengelola', 'Lokasi', 'LT (Lantai)', 'Detail ruang / rack', 'Serial Number', 'Spesifikasi', 'OS', 'Versi', 'Lisensi', 'Versi Microsoft Office', 'Lisensi Microsoft Office', 'RAM (GB)', 'HDD / SSD', 'Nama User', 'Jabatan', 'Divisi', 'Status Pemakaian', 'Aktif untuk pemeriksaan baru', 'Tanggal penghapusan', 'Alasan penghapusan', 'Keterangan'];
+            $historical = ['00035/APCA/IT/2025', '=Laptop terdaftar', 'Laptop', 'IT', 'Office HO', null, 'Ruang IT', '001234', 'Core i5', 'Ubuntu', '24.04 LTS', 'Tidak Berlaku', '2024', 'Original/Valid', 16.0, 'SSD 512 GB; HDD 1024 GB', 'User terdaftar', 'IT Officer', 'IT', 'Digunakan', 'Ya', null, null, '=Catatan asli'];
             foreach ([$summary->getSheet(0), $summary->getSheet(1), $details->getActiveSheet()] as $sheet) {
                 $rows = $sheet->toArray(null, true, false);
-                $this->assertSame($headings, array_slice($rows[0], 0, 26));
-                foreach (['Kategori', 'Bentuk objek', 'Status register', 'Kode register', 'Nama perangkat / ruang'] as $removed) {
+                $this->assertSame($headings, array_slice($rows[0], 0, 24));
+                foreach (['Kategori', 'Bentuk objek', 'Status register', 'Kode register', 'Nama perangkat / ruang', 'Dasar verifikasi lisensi OS', 'Dasar verifikasi lisensi Office'] as $removed) {
                     $this->assertNotContains($removed, $rows[0]);
                 }
                 if ($sheet === $summary->getSheet(0)) {
                     $expected = $historical;
-                    foreach ([1 => 'Laptop diperbarui', 4 => 'Office Alamanda', 6 => 'Meja 8', 7 => '005678', 10 => '26.04 LTS', 14 => 32.0, 18 => 'Nama terbaru', 19 => 'Supervisor', 20 => 'Operations', 22 => 'Tidak'] as $index => $value) {
+                    foreach ([1 => 'Laptop diperbarui', 4 => 'Office Alamanda', 6 => 'Meja 8', 7 => '005678', 10 => '26.04 LTS', 14 => 32.0, 16 => 'Nama terbaru', 17 => 'Supervisor', 18 => 'Operations', 20 => 'Tidak'] as $index => $value) {
                         $expected[$index] = $value;
                     }
                 } else {
                     $expected = $historical;
                 }
-                $this->assertSame($expected, array_slice($rows[1], 0, 26));
+                $this->assertSame($expected, array_slice($rows[1], 0, 24));
                 $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('A2')->getDataType());
                 $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('H2')->getDataType());
                 $this->assertSame(DataType::TYPE_NUMERIC, $sheet->getCell('O2')->getDataType());
-                $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('Z2')->getDataType());
+                $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('X2')->getDataType());
             }
             $this->assertSame($before, $inspection->fresh()->getRawOriginal());
         } finally {

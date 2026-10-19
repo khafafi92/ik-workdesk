@@ -87,7 +87,6 @@ class ItDeviceService
                 if ($computer) {
                     foreach (['windows', 'office'] as $product) {
                         $rules[$product.'_license_status'] = ['required', Rule::enum(ItLicenseStatus::class)];
-                        $rules[$product.'_verification_notes'] = [($data[$product.'_license_status'] ?? 'unverified') === 'unverified' ? 'nullable' : 'required', 'string', 'max:3000'];
                     }
                     foreach (['operating_system', 'windows_version', 'office_version'] as $field) {
                         $rules[$field] = ['nullable', 'string', 'max:255'];
@@ -133,11 +132,10 @@ class ItDeviceService
                     $detail->fill(Arr::only($validated, ['operating_system', 'windows_version', 'office_version', 'ram_gb', 'storage_devices']));
                     foreach (['windows', 'office'] as $product) {
                         $status = $validated[$product.'_license_status'];
-                        $notes = $status === 'unverified' ? null : $validated[$product.'_verification_notes'];
-                        $changed = ! $detail->exists || $detail->{$product.'_license_status'}?->value !== $status || $detail->{$product.'_verification_notes'} !== $notes;
+                        $changed = ! $detail->exists || $detail->{$product.'_license_status'}?->value !== $status;
                         $detail->{$product.'_license_status'} = $status;
-                        $detail->{$product.'_verification_notes'} = $notes;
                         if ($changed || $status === 'unverified') {
+                            $detail->{$product.'_verification_notes'} = null;
                             $detail->{$product.'_verified_by'} = $status === 'unverified' ? null : $actor->id;
                             $detail->{$product.'_verified_at'} = $status === 'unverified' ? null : now();
                         }

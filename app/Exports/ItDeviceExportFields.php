@@ -15,7 +15,7 @@ class ItDeviceExportFields
 {
     public static function headings(): array
     {
-        return ['Nomor Aset', 'Nama Perangkat', 'Jenis perangkat / objek', 'Department pengelola', 'Lokasi', 'LT (Lantai)', 'Detail ruang / rack', 'Serial Number', 'Spesifikasi', 'OS', 'Versi', 'Lisensi', 'Versi Microsoft Office', 'Lisensi Microsoft Office', 'RAM (GB)', 'Dasar verifikasi lisensi OS', 'Dasar verifikasi lisensi Office', 'HDD / SSD', 'Nama User', 'Jabatan', 'Divisi', 'Status Pemakaian', 'Aktif untuk pemeriksaan baru', 'Tanggal penghapusan', 'Alasan penghapusan', 'Keterangan'];
+        return ['Nomor Aset', 'Nama Perangkat', 'Jenis perangkat / objek', 'Department pengelola', 'Lokasi', 'LT (Lantai)', 'Detail ruang / rack', 'Serial Number', 'Spesifikasi', 'OS', 'Versi', 'Lisensi', 'Versi Microsoft Office', 'Lisensi Microsoft Office', 'RAM (GB)', 'HDD / SSD', 'Nama User', 'Jabatan', 'Divisi', 'Status Pemakaian', 'Aktif untuk pemeriksaan baru', 'Tanggal penghapusan', 'Alasan penghapusan', 'Keterangan'];
     }
 
     public static function forDevice(ItDevice $device): array
@@ -49,7 +49,6 @@ class ItDeviceExportFields
             self::enumLabel($computer['windows_license_status'] ?? null, ItLicenseStatus::class), $computer['office_version'] ?? null,
             self::enumLabel($computer['office_license_status'] ?? null, ItLicenseStatus::class),
             isset($computer['ram_gb']) ? (float) $computer['ram_gb'] : null,
-            $computer['windows_verification_notes'] ?? null, $computer['office_verification_notes'] ?? null,
             collect($computer['storage_devices'] ?? [])->map(fn (array $storage) => trim(match ($storage['type'] ?? null) {
                 'hdd' => 'HDD', 'ssd' => 'SSD', 'nvme' => 'NVMe SSD', default => '',
             }.' '.($storage['capacity_gb'] ?? '').' GB'))->implode('; '),

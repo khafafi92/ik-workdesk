@@ -115,12 +115,10 @@ class ItDeviceResource extends Resource
                 Tab::make('OS & lisensi')->visible($isComputer)->columns(['md' => 2, 'xl' => 3])->schema([
                     TextInput::make('operating_system')->label('OS')->datalist(['Windows', 'Ubuntu', 'macOS']),
                     TextInput::make('windows_version')->label('Versi'),
-                    Select::make('windows_license_status')->label('Lisensi')->options(self::licenseOptions())->default('unverified')->required()->live(),
+                    Select::make('windows_license_status')->label('Lisensi')->options(self::licenseOptions())->default('unverified')->required(),
                     TextInput::make('office_version')->label('Versi Microsoft Office'),
-                    Select::make('office_license_status')->label('Lisensi Microsoft Office')->options(self::licenseOptions())->default('unverified')->required()->live(),
+                    Select::make('office_license_status')->label('Lisensi Microsoft Office')->options(self::licenseOptions())->default('unverified')->required(),
                     TextInput::make('ram_gb')->label('RAM (GB)')->numeric()->minValue(0.01),
-                    Textarea::make('windows_verification_notes')->label('Dasar verifikasi lisensi OS')->rows(2)->visible(fn (Get $get) => $get('windows_license_status') !== 'unverified')->required(fn (Get $get) => $get('windows_license_status') !== 'unverified')->helperText('Bukti verifikasi atau alasan Tidak Berlaku.'),
-                    Textarea::make('office_verification_notes')->label('Dasar verifikasi lisensi Office')->rows(2)->visible(fn (Get $get) => $get('office_license_status') !== 'unverified')->required(fn (Get $get) => $get('office_license_status') !== 'unverified'),
                     Repeater::make('storage_devices')->label('HDD / SSD')->schema([
                         Select::make('type')->label('Jenis media')->options(['hdd' => 'HDD', 'ssd' => 'SSD', 'nvme' => 'NVMe SSD'])->required(),
                         TextInput::make('capacity_gb')->label('Kapasitas (GB)')->numeric()->minValue(0.01)->required(),

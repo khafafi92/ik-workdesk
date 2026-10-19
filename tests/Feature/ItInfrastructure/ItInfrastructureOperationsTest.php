@@ -314,7 +314,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     {
         $this->asAdministrator();
         $this->register(['asset_number' => '00001/APCA/IT/2025']);
-        foreach ([['asset_number' => '00001/APCA/IT/2025'], ['windows_license_status' => 'valid', 'windows_verification_notes' => '']] as $invalid) {
+        foreach ([['asset_number' => '00001/APCA/IT/2025'], ['windows_license_status' => 'invalid-status']] as $invalid) {
             try {
                 $this->register($invalid);
                 $this->fail('Isian tidak sah diterima.');
@@ -694,7 +694,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             $workbook = IOFactory::load($file);
             $sheet = $workbook->getActiveSheet();
             $this->assertSame(19, $sheet->getHighestDataRow());
-            $this->assertSame($inspection->inspection_number, $sheet->getCell('AA2')->getValue());
+            $this->assertSame($inspection->inspection_number, $sheet->getCell('Y2')->getValue());
             $this->assertSame('=1+1', $sheet->getCell('B2')->getValue());
             $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('B2')->getDataType());
             $workbook->disconnectWorksheets();

@@ -85,12 +85,13 @@ class ItDeviceTest extends ItInfrastructureTestCase
         $this->assertSame('16.00', $detail->ram_gb);
     }
 
-    public function test_licenses_require_recorded_verification_including_not_applicable(): void
+    public function test_license_status_records_actor_and_time_without_requiring_notes(): void
     {
         $detail = $this->device()->computerDetail()->create([]);
         foreach ([ItLicenseStatus::Valid, ItLicenseStatus::Unofficial, ItLicenseStatus::NotApplicable] as $status) {
-            $detail->update(['windows_license_status' => $status, 'windows_verified_by' => $this->inspector->id, 'windows_verified_at' => now(), 'windows_verification_notes' => 'Bukti verifikasi diperiksa']);
+            $detail->update(['windows_license_status' => $status, 'windows_verified_by' => $this->inspector->id, 'windows_verified_at' => now()]);
             $this->assertSame($status, $detail->fresh()->windows_license_status);
+            $this->assertNull($detail->fresh()->windows_verification_notes);
         }
         $this->expectException(ValidationException::class);
         $detail->update(['office_license_status' => ItLicenseStatus::Valid]);
