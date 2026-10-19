@@ -9,6 +9,7 @@ use App\Enums\ItLicenseStatus;
 use App\Enums\ItObjectKind;
 use App\Models\ItDevice;
 use App\Models\WorkLocation;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Tests\Support\ItInfrastructureTestCase;
 
@@ -28,16 +29,23 @@ class ItDeviceTest extends ItInfrastructureTestCase
         $room->update(['asset_number' => 'ROOM-ASSET']);
     }
 
-    public function test_room_requires_existing_location(): void
+    public function test_room_uses_office_without_creating_attendance_location(): void
     {
-        $this->expectException(ValidationException::class);
-        $this->device(ItDeviceType::ServerRoom);
+        $room = $this->device(ItDeviceType::ServerRoom);
+        $inspection = $this->inspection($room);
+        $this->assertNull($room->work_location_id);
+        $this->assertSame('Office', $inspection->location_snapshot['location']['gps_name']);
+        $this->assertSame(0, WorkLocation::query()->count());
     }
 
     public function test_room_inspection_cannot_clear_actual_location(): void
     {
         $location = WorkLocation::query()->create(['gps_name' => 'Ruang Server']);
-        $inspection = $this->inspection($this->device(ItDeviceType::ServerRoom, ['work_location_id' => $location->id]));
+        $inspection = $this->inspection($this->device(ItDeviceType::ServerRoom, ['work_location_id' => $location->id]), ['work_location_id' => $location->id]);
+        $snapshot = $inspection->device_snapshot;
+        unset($snapshot['location_name']);
+        DB::table('it_inspections')->where('id', $inspection->id)->update(['device_snapshot' => json_encode($snapshot)]);
+        $inspection->refresh();
         $this->assertSame($location->id, $inspection->work_location_id);
         $this->expectException(ValidationException::class);
         $inspection->update(['work_location_id' => null]);

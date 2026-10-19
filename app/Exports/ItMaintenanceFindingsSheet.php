@@ -29,7 +29,7 @@ class ItMaintenanceFindingsSheet extends StringValueBinder implements FromQuery,
 
     public function headings(): array
     {
-        return ['Nomor pemeriksaan', 'Tanggal pemeriksaan', 'Petugas pemeriksaan', 'Kode perangkat', 'Nama Perangkat saat diperiksa', 'Jenis', 'Nomor aset saat diperiksa', 'Serial number saat diperiksa', 'Department saat diperiksa', 'Lokasi saat diperiksa', 'Kelompok', 'Pemeriksaan', 'Kondisi saat diperiksa', 'Temuan', 'Rencana perawatan / tindak lanjut', 'Penanggung jawab', 'Batas waktu tindak lanjut', 'Status tindak lanjut saat ekspor', 'Catatan penyelesaian', 'Diselesaikan oleh', 'Waktu penyelesaian'];
+        return ['Nomor pemeriksaan', 'Tanggal pemeriksaan', 'Petugas pemeriksaan', 'Nomor aset saat diperiksa', 'Nama Perangkat saat diperiksa', 'Jenis', 'Serial number saat diperiksa', 'Department saat diperiksa', 'Lokasi saat diperiksa', 'Kelompok', 'Pemeriksaan', 'Kondisi saat diperiksa', 'Temuan', 'Rencana perawatan / tindak lanjut', 'Penanggung jawab', 'Batas waktu tindak lanjut', 'Status tindak lanjut saat ekspor', 'Catatan penyelesaian', 'Diselesaikan oleh', 'Waktu penyelesaian'];
     }
 
     public function map($finding): array
@@ -39,7 +39,7 @@ class ItMaintenanceFindingsSheet extends StringValueBinder implements FromQuery,
 
         return [
             $inspection->inspection_number, $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
-            $device['code'], $device['name'], ItDeviceType::from($device['device_type'])->label(), $device['asset_number'] ?? '', $device['serial_number'] ?? '',
+            $device['asset_number'] ?? '', $device['name'], ItDeviceType::from($device['device_type'])->label(), $device['serial_number'] ?? '',
             $device['managing_department']['name'] ?? '',
             collect([$inspection->location_snapshot['location']['gps_name'] ?? null, $inspection->location_snapshot['detail'] ?? null, ItSwitchFloor::tryFrom($device['floor'] ?? '')?->label()])->filter()->implode(' / '),
             $finding->result->item_snapshot['section'], $finding->result->item_snapshot['label'], $finding->result->condition->label(),

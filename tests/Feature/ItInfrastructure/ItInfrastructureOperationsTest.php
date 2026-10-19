@@ -93,13 +93,13 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->assertCount(50, $select->getOptions());
         $this->assertArrayNotHasKey($target->id, $select->getOptions());
         foreach (['zz server', 'srv-search-99', 'asset-unik-99', 'serial-unik-99'] as $search) {
-            $this->assertSame([$target->id => $target->name.' · '.$target->code], $select->getSearchResults($search));
+            $this->assertSame([$target->id => $target->name.' · '.$target->asset_number], $select->getSearchResults($search));
         }
         $this->assertSame([], $select->getSearchResults('Tidak ada perangkat ini'));
         $component->set('deviceId', (string) $target->id)->assertSet('inspectionId', null)->assertSee('Server Fisik');
         $this->assertSame($target->id, $component->instance()->selectedDevice->id);
         $selected = $component->instance()->getSchema('deviceSelector')->getComponents()[0];
-        $this->assertSame($target->name.' · '.$target->code, $selected->getOptionLabel());
+        $this->assertSame($target->name.' · '.$target->asset_number, $selected->getOptionLabel());
         $component->call('saveDraft')->assertHasNoErrors();
         $this->assertSame($target->id, ItInspection::query()->sole()->it_device_id);
     }
@@ -107,7 +107,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_searchable_dropdown_keeps_historical_label_and_is_disabled_for_report_reader(): void
     {
         $this->asAdministrator();
-        $device = $this->register(['name' => 'Nama saat diperiksa', 'code' => 'LAP-HISTORY']);
+        $device = $this->register(['name' => 'Nama saat diperiksa', 'code' => 'LAP-HISTORY', 'asset_number' => 'ASET-HISTORY']);
         $inspection = app(ItInspectionService::class)->save($this->inspector, $device->id, null, $this->inspectionData($device), true);
         app(ItDeviceService::class)->save($this->inspector, $this->deviceData(['code' => $device->code, 'name' => 'Nama sekarang', 'is_active' => false]), $device);
         $reader = $this->userIn($this->department);
@@ -116,7 +116,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $component = Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id]);
         $select = $component->instance()->getSchema('deviceSelector')->getComponents()[0];
         $this->assertTrue($select->isDisabled());
-        $this->assertSame('Nama saat diperiksa · LAP-HISTORY', $select->getOptionLabel());
+        $this->assertSame('Nama saat diperiksa · ASET-HISTORY', $select->getOptionLabel());
         $this->assertSame([], $select->getSearchResults('LAP-HISTORY'));
     }
 
@@ -137,11 +137,11 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_native_master_create_save_and_create_another_write_real_records(): void
     {
         $this->asAdministrator();
-        $component = Livewire::test(CreateItDevice::class)->fillForm($this->deviceData(['code' => 'LAP-A']))
+        $component = Livewire::test(CreateItDevice::class)->fillForm($this->deviceData(['asset_number' => 'LAP-A']))
             ->call('create', true)->assertHasNoFormErrors()->assertSet('data.name', null);
-        $component->fillForm($this->deviceData(['code' => 'LAP-B']))->call('create')->assertHasNoFormErrors();
+        $component->fillForm($this->deviceData(['asset_number' => 'LAP-B']))->call('create')->assertHasNoFormErrors();
         $this->assertSame(2, ItDevice::query()->count());
-        $device = ItDevice::query()->where('code', 'LAP-A')->firstOrFail();
+        $device = ItDevice::query()->where('asset_number', 'LAP-A')->firstOrFail();
         Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['name' => 'Laptop A diperbarui', 'ram_gb' => 16])->call('save')->assertHasNoFormErrors();
         $this->assertSame('Laptop A diperbarui', $device->refresh()->name);
         $this->assertSame('16.00', $device->computerDetail->ram_gb);
@@ -278,11 +278,11 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])->assertSee('LT 3');
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])->assertSee('LT 2')->assertDontSee('LT 3');
         $details = new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id));
-        $this->assertStringContainsString('LT 2', $details->map($details->query()->first())[9]);
+        $this->assertStringContainsString('Office / LT 2', $details->map($details->query()->first())[8]);
         $page = Livewire::test(ItInfrastructureReportPage::class)->instance();
         [$summary, $findings] = (new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()))->sheets();
-        $this->assertStringContainsString('LT 3', $summary->map($summary->query()->sole())[8]);
-        $this->assertStringContainsString('LT 2', $findings->map($findings->query()->sole())[9]);
+        $this->assertStringContainsString('Office / LT 3', $summary->map($summary->query()->sole())[7]);
+        $this->assertStringContainsString('Office / LT 2', $findings->map($findings->query()->sole())[8]);
     }
 
     public function test_switch_floor_accepts_only_the_requested_floors_and_clears_when_type_changes(): void
@@ -724,8 +724,8 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_summary_workbook_counts_unique_devices_and_retains_old_findings_after_latest_normal(): void
     {
         $this->asAdministrator();
-        $device = $this->register(['name' => '=1+1']);
-        $other = $this->register(['name' => 'Tanpa pemeriksaan']);
+        $device = $this->register(['name' => '=1+1', 'asset_number' => 'ASSET-SUMMARY']);
+        $other = $this->register(['name' => 'Tanpa pemeriksaan', 'asset_number' => 'ASSET-UNTESTED']);
         $service = app(ItInspectionService::class);
         $data = $this->inspectionData($device);
         $data['checked_at'] = now()->subDay()->format('Y-m-d\TH:i');
@@ -751,24 +751,24 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             $summary = $workbook->getSheet(0);
             $this->assertSame(3, $summary->getHighestDataRow());
             $rows = $summary->toArray(null, true, false);
-            $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $device->code);
+            $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $device->asset_number);
             $this->assertSame('=1+1', $row[1]);
-            $this->assertSame(2, $row[12]);
-            $this->assertSame($latest->inspection_number, $row[13]);
-            $this->assertSame('Normal', $row[16]);
-            $this->assertSame([0, 1, 1, 1], array_slice($row, 17));
-            $untested = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $other->code);
-            $this->assertSame(0, $untested[12]);
-            $this->assertSame('Belum Diperiksa', $untested[16]);
+            $this->assertSame(2, $row[11]);
+            $this->assertSame($latest->inspection_number, $row[12]);
+            $this->assertSame('Normal', $row[15]);
+            $this->assertSame([0, 1, 1, 1], array_slice($row, 16));
+            $untested = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $other->asset_number);
+            $this->assertSame(0, $untested[11]);
+            $this->assertSame('Belum Diperiksa', $untested[15]);
             $this->assertSame(DataType::TYPE_STRING, $summary->getCell('B2')->getDataType());
-            $this->assertSame(DataType::TYPE_NUMERIC, $summary->getCell('M2')->getDataType());
+            $this->assertSame(DataType::TYPE_NUMERIC, $summary->getCell('L2')->getDataType());
             $details = $workbook->getSheet(1);
             $this->assertSame(3, $details->getHighestDataRow());
-            $this->assertSame('=Perawatan', $details->getCell('O2')->getValue());
-            $this->assertSame(DataType::TYPE_STRING, $details->getCell('O2')->getDataType());
-            $this->assertSame('Selesai', $details->getCell('R2')->getValue());
-            $this->assertSame('Sudah diperbaiki', $details->getCell('S2')->getValue());
-            $this->assertSame('Dalam Proses', $details->getCell('R3')->getValue());
+            $this->assertSame('=Perawatan', $details->getCell('N2')->getValue());
+            $this->assertSame(DataType::TYPE_STRING, $details->getCell('N2')->getDataType());
+            $this->assertSame('Selesai', $details->getCell('Q2')->getValue());
+            $this->assertSame('Sudah diperbaiki', $details->getCell('R2')->getValue());
+            $this->assertSame('Dalam Proses', $details->getCell('Q3')->getValue());
             $workbook->disconnectWorksheets();
         } finally {
             unlink($file);

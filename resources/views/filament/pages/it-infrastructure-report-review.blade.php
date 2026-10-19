@@ -38,7 +38,7 @@
                     <table class="it-infrastructure-table"><thead><tr><th scope="col">Objek</th><th scope="col">Kondisi terakhir</th><th scope="col">Pemeriksaan final terakhir</th><th scope="col">Waktu</th></tr></thead>
                         <tbody>@forelse ($records as $device)
                             @php($condition = $device->last_condition ?? 'unchecked')
-                            <tr><td>{{ $device->code }}<br>{{ $device->name }}</td><td><span class="it-review-status" data-condition="{{ $condition }}">{{ \App\Enums\ItInspectionCondition::from($condition)->label() }}</span></td><td>@if ($device->last_inspection_id)<a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $device->last_inspection_id]) }}">{{ $device->last_number }}</a>@else Belum ada pemeriksaan final @endif</td><td>{{ $device->last_checked_at ?? 'Belum diperiksa' }}</td></tr>
+                            <tr><td>@if (filled($device->asset_number)){{ $device->asset_number }}<br>@endif{{ $device->name }}</td><td><span class="it-review-status" data-condition="{{ $condition }}">{{ \App\Enums\ItInspectionCondition::from($condition)->label() }}</span></td><td>@if ($device->last_inspection_id)<a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $device->last_inspection_id]) }}">{{ $device->last_number }}</a>@else Belum ada pemeriksaan final @endif</td><td>{{ $device->last_checked_at ?? 'Belum diperiksa' }}</td></tr>
                         @empty<tr><td colspan="4">Tidak ada perangkat yang cocok. Tambahkan master atau ubah filter.</td></tr>@endforelse</tbody>
                     </table>
                 </div>

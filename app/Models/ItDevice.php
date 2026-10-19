@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 
 class ItDevice extends Model
 {
+    public const OFFICE_LOCATION = 'Office';
+
     protected $fillable = ['code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'work_location_id', 'location_detail', 'floor', 'managing_department_id', 'assigned_employee_id', 'assigned_user_name', 'parent_device_id', 'lifecycle_status', 'disposed_at', 'disposal_reason', 'is_active', 'notes', 'created_by', 'updated_by'];
 
     protected $attributes = ['is_active' => true];
@@ -49,8 +51,8 @@ class ItDevice extends Model
             }
 
             if ($device->object_kind === ItObjectKind::Room) {
-                if (! $device->work_location_id || $device->asset_number || $device->serial_number || $device->lifecycle_status || $device->assigned_employee_id || filled($device->assigned_user_name) || $device->disposed_at || filled($device->disposal_reason)) {
-                    throw ValidationException::withMessages(['work_location_id' => 'Ruang wajib merujuk lokasi dan tidak memiliki identitas, pemakai, atau siklus hidup aset.']);
+                if ($device->asset_number || $device->serial_number || $device->lifecycle_status || $device->assigned_employee_id || filled($device->assigned_user_name) || $device->disposed_at || filled($device->disposal_reason)) {
+                    throw ValidationException::withMessages(['work_location_id' => 'Ruang tidak memiliki identitas, pemakai, atau siklus hidup aset.']);
                 }
             } else {
                 $device->lifecycle_status ??= ItAssetLifecycle::Unused;
@@ -160,6 +162,7 @@ class ItDevice extends Model
         $this->loadMissing(['assignedEmployee.department', 'computerDetail', 'managingDepartment']);
 
         return [
+            'location_name' => self::OFFICE_LOCATION,
             ...$this->only(['id', 'code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'floor', 'lifecycle_status', 'notes']),
             'managing_department' => $this->managingDepartment?->only(['id', 'code', 'name']),
             'assigned_employee' => $this->assignedEmployee ? [...$this->assignedEmployee->only(['id', 'employee_no', 'name', 'department_id', 'position']), 'division' => $this->assignedEmployee->department?->name] : null,

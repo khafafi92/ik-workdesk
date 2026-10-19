@@ -59,7 +59,7 @@ class ItInspectionService
             $results[$item->code] = ['condition' => 'unchecked', 'measured_value' => '', 'notes' => '', 'finding' => '', 'not_applicable_reason' => '', 'action_plan' => '', 'assigned_to' => '', 'due_at' => ''];
         }
 
-        return ['checked_at' => now()->format('Y-m-d\TH:i'), 'work_location_id' => $device->work_location_id, 'location_detail' => $device->location_detail, 'notes' => '', 'results' => $results];
+        return ['checked_at' => now()->format('Y-m-d\TH:i'), 'work_location_id' => null, 'location_detail' => $device->location_detail, 'notes' => '', 'results' => $results];
     }
 
     public function formData(ItInspection $inspection): array
@@ -109,9 +109,10 @@ class ItInspectionService
                         'inspector_id' => $actor->id,
                     ]);
                 }
+                $data['work_location_id'] = $inspection->exists ? $inspection->work_location_id : null;
                 $rules = [
                     'checked_at' => ['required', 'date', 'before_or_equal:now'],
-                    'work_location_id' => [($inspection->device_snapshot['object_kind'] ?? $device->object_kind->value ?? '') === 'room' ? 'required' : 'nullable', 'integer', Rule::exists('work_locations', 'id')],
+                    'work_location_id' => ['nullable', 'integer', Rule::exists('work_locations', 'id')],
                     'location_detail' => ['nullable', 'string', 'max:255'],
                     'notes' => ['nullable', 'string', 'max:3000'],
                     'results' => ['required', 'array'],

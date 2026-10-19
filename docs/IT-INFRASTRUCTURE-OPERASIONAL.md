@@ -6,7 +6,7 @@ Modul diaktifkan pada PostgreSQL aplikasi lokal pada 16 Oktober 2026 atas permin
 
 1. Buka Infrastruktur IT → Master Perangkat (`/panel/it-devices`).
 2. Klik Tambah Perangkat. Pilih jenis Laptop, PC, Server Fisik, FortiGate, Switch, Access Point, atau objek lain yang sesuai.
-3. Isi nama serta department pengelola. Kode register dibuat otomatis dan dapat diganti dengan kode internal yang unik. Nomor aset, serial, lokasi, spesifikasi, pemakai dan siklus hidup berada pada tab terkait. Ruang server wajib memakai Work Locations existing dan tidak memiliki serial/nomor aset/lifecycle perangkat.
+3. Isi Nomor Aset, nama serta department pengelola. Nomor Aset menggantikan Kode Register pada form dan daftar; boleh kosong jika belum tersedia dan harus unik jika diisi. Lokasi tetap Office tanpa input master GPS absensi. Serial, spesifikasi dan pemakaian berada pada tab terkait. Ruang server tidak memiliki serial/nomor aset/lifecycle perangkat. Kode teknis existing tetap disimpan secara internal untuk menjaga identitas dan riwayat.
 4. Untuk Laptop/PC, isi OS, Windows, Office, RAM dan HDD/SSD pada tab OS & lisensi. Media penyimpanan dapat ditambahkan lebih dari satu. Status lisensi awal Belum Diverifikasi; keputusan lisensi lainnya memerlukan dasar verifikasi. Identitas petugas dan waktu verifikasi diambil dari akun login.
 5. Klik Simpan & tambah lagi untuk memasukkan perangkat berikutnya, atau Simpan Perangkat untuk membuka data yang tersimpan. Banyak laptop dengan jenis yang sama tetap menjadi record terpisah. Jumlah perangkat tidak dibatasi pada objek awal simulasi.
 
@@ -264,3 +264,18 @@ Delivery gate, anti-slop selama implementasi; arah Filament/Internal 9 dengan EN
 - **Craftsmanship PASS pada cakupan ini**: browser mengonfirmasi label Nama Perangkat dan Status Pemakaian, seluruh opsi LT, pemilihan Lobi dan fokus Tab menuju Detail ruang/rack. Halaman ponsel selebar 375px pada viewport 390px dan tablet 753px pada 768px; form Switch menumpuk satu kolom pada ponsel. Viewport dipulihkan, console tanpa error, dan form browser tidak disimpan sebagai data percobaan.
 
 Bukti: `output/it-infrastructure-review/switch-lantai-20261019.png`.
+
+## Nomor Aset dan lokasi Office
+
+Nomor Aset menjadi field pertama pada Master Perangkat dan kolom pertama pada daftar. Tidak ada lagi input atau kolom Kode Register. Pencarian pilihan perangkat menampilkan nama dan nomor aset jika tersedia; nomor kosong tetap ditampilkan sebagai kosong, tanpa mengambil kode lama sebagai nomor aset. Ekspor ringkasan/rincian/temuan memakai Nomor Aset tanpa kolom kode teknis yang berulang. Format workbook berkurang satu kolom karena kolom Nomor Aset duplikat dihapus.
+
+Lokasi perangkat dan pemeriksaan baru tetap Office, ditampilkan sebagai teks. Service mengabaikan penggantian lokasi melalui payload dengan memakai lokasi tetap untuk perangkat dan pemeriksaan baru; draft lama mempertahankan referensi lokasinya. Nilai Office dicatat pada snapshot pemeriksaan baru tanpa membuat Work Locations, koordinat atau radius absensi. Ruang Server juga dapat disimpan/diperiksa tanpa master GPS. LT Switch dan detail ruang/rack tetap tersedia. Pemeriksaan lama tidak diisi ulang atau diubah; ringkasan dan ekspor historis membaca snapshot aslinya. Perubahan ini tidak memerlukan migration atau seed.
+
+Verifikasi: 85 tests / 1431 assertions SQLite dan 85 tests / 1601 assertions PostgreSQL 18.4 lulus. Nomor aset dengan nol di depan, keunikan, simpan/edit, identitas internal yang tetap, snapshot nomor aset historis, Ruang Server tanpa GPS, finalisasi, lokasi draft lama, ekspor dan akses diuji di database terisolasi. Database PostgreSQL sementara dibersihkan; fingerprint schema, migration dan jumlah record utama aplikasi tetap identik. Pint, sintaks PHP dan whitespace lulus. Log: `output/it-infrastructure-review/asset-office-tests-final.log` dan `output/it-infrastructure-review/asset-office-postgres.log`.
+
+Delivery gate, anti-slop selama implementasi; arah formulir operasional Filament/Internal 9, ENERGY 1 / RHYTHM 1 / MOTION 1:
+
+- **Hard Gate PASS pada cakupan ini**: browser memverifikasi Nomor Aset di posisi pertama, nol input Kode Register/lokasi GPS, serta Office pada edit dan pemeriksaan baru. Simpan, validasi duplikat, riwayat, dan error ditangani service/komponen existing serta diuji. Tidak ada data, aset visual atau menu baru. Warna/kontras mengikuti kontrol existing yang sudah diperiksa; console tanpa error.
+- **Purpose-Gate PASS**: Nomor Aset menggantikan identitas ganda pada form/daftar/ekspor. Teks Office mengganti dropdown kosong karena lokasi telah ditetapkan pengguna; tidak menambah dekorasi atau kontrol.
+- **Liveliness PASS**: fokus tetap identitas perangkat dan hasil pemeriksaan, dengan tab, tipografi, tabel bergaris dan aksen tindakan Filament/Internal 9 yang sama. Dials dan struktur whitespace tetap mengikuti modul existing.
+- **Craftsmanship PASS pada cakupan ini**: keyboard Tab dari Nomor Aset menuju Nama Perangkat; lebar dokumen 1521px pada viewport 1536px dan 375px pada viewport 390px. Form menumpuk satu kolom pada ponsel tanpa overflow halaman. Viewport dipulihkan. Uji browser memakai data existing tanpa menyimpan data percobaan. Screenshot: `output/it-infrastructure-review/asset-office-desktop-local.png` dan `output/it-infrastructure-review/asset-office-phone-local.png`.

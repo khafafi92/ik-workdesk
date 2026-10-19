@@ -12,13 +12,13 @@ use App\Models\ItChecklistTemplate;
 use App\Models\ItDevice;
 use App\Models\ItInspection;
 use App\Models\User;
-use App\Models\WorkLocation;
 use App\Services\ItInfrastructure\ItInfrastructureAccess;
 use App\Services\ItInfrastructure\ItInspectionService;
 use BackedEnum;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -108,8 +108,8 @@ class ItInspectionPage extends ItInfrastructurePage
                     $query->orWhereLike($column, '%'.$search.'%');
                 }
             }))
-            ->orderBy('name')->orderBy('id')->limit(50)->get(['id', 'name', 'code'])
-            ->mapWithKeys(fn ($device) => [$device->id => $device->name.' · '.$device->code])->all();
+            ->orderBy('name')->orderBy('id')->limit(50)->get(['id', 'name', 'asset_number'])
+            ->mapWithKeys(fn ($device) => [$device->id => self::deviceOptionLabel($device->toArray())])->all();
     }
 
     private function selectedDeviceLabel(mixed $value): ?string
@@ -120,11 +120,16 @@ class ItInspectionPage extends ItInfrastructurePage
         if ($this->inspection && (int) $this->inspection->it_device_id === (int) $value) {
             $snapshot = $this->inspection->device_snapshot;
 
-            return $snapshot['name'].' · '.$snapshot['code'];
+            return self::deviceOptionLabel($snapshot);
         }
-        $device = $this->inspectableDevicesQuery()->find($value, ['id', 'name', 'code']);
+        $device = $this->inspectableDevicesQuery()->find($value, ['id', 'name', 'asset_number']);
 
-        return $device ? $device->name.' · '.$device->code : null;
+        return $device ? self::deviceOptionLabel($device->toArray()) : null;
+    }
+
+    private static function deviceOptionLabel(array $device): string
+    {
+        return $device['name'].(filled($device['asset_number'] ?? null) ? ' · '.$device['asset_number'] : '');
     }
 
     public function deviceSelector(Schema $schema): Schema
@@ -137,7 +142,7 @@ class ItInspectionPage extends ItInfrastructurePage
                     return $this->inspection ? [$this->deviceId => $this->selectedDeviceLabel($this->deviceId)] + $options : $options;
                 })
                 ->searchable()->searchDebounce(300)
-                ->searchPrompt('Ketik nama, kode, nomor aset, atau serial number')
+                ->searchPrompt('Ketik nama, nomor aset, atau serial number')
                 ->searchingMessage('Mencari perangkat...')->noSearchResultsMessage('Perangkat tidak ditemukan.')
                 ->getSearchResultsUsing(fn (string $search): array => $this->deviceSearchResults($search))
                 ->getOptionLabelUsing(fn ($value): ?string => $this->selectedDeviceLabel($value))
@@ -201,15 +206,7 @@ class ItInspectionPage extends ItInfrastructurePage
         return $schema->statePath('data')->components([
             Section::make('Informasi pemeriksaan')->columns(['md' => 2, 'xl' => 4])->schema([
                 DateTimePicker::make('checked_at')->label('Tanggal dan waktu')->required()->seconds(false)->maxDate(now()),
-                Select::make('work_location_id')->label('Lokasi pemeriksaan')->options(function (): array {
-                    $options = WorkLocation::query()->orderBy('gps_name')->pluck('gps_name', 'id')->all();
-                    $historical = $this->inspection?->location_snapshot['location'] ?? null;
-                    if ($historical) {
-                        $options[$historical['id']] = $historical['gps_name'];
-                    }
-
-                    return $options;
-                })->searchable(),
+                TextEntry::make('office_location')->label('Lokasi pemeriksaan')->state(fn () => $this->inspection ? ($this->inspection->location_snapshot['location']['gps_name'] ?? 'Tidak dicatat') : ItDevice::OFFICE_LOCATION),
                 TextInput::make('location_detail')->label('Detail lokasi / rack')->maxLength(255),
                 TextInput::make('notes')->label('Catatan pemeriksaan')->placeholder('Catatan (opsional)')->maxLength(3000),
             ]),

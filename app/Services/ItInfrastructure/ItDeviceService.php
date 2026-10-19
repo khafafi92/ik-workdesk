@@ -13,6 +13,7 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
@@ -24,6 +25,8 @@ class ItDeviceService
             return DB::transaction(function () use ($actor, $data, $device): ItDevice {
                 $device = $device ? ItDevice::query()->lockForUpdate()->findOrFail($device->id) : new ItDevice;
                 Gate::forUser($actor)->authorize($device->exists ? 'update' : 'create', $device->exists ? $device : ItDevice::class);
+                $data['code'] ??= $device->code ?? 'IT-'.Str::ulid();
+                $data['work_location_id'] = null;
                 $type = is_string($data['device_type'] ?? null) ? ItDeviceType::tryFrom($data['device_type']) : null;
                 $room = $type === ItDeviceType::ServerRoom;
                 $computer = in_array($type, [ItDeviceType::Laptop, ItDeviceType::Pc], true);
@@ -32,7 +35,7 @@ class ItDeviceService
                     'name' => ['required', 'string', 'max:255'],
                     'device_type' => ['required', Rule::enum(ItDeviceType::class)],
                     'managing_department_id' => ['required', 'integer', Rule::exists('departments', 'id')],
-                    'work_location_id' => [$room ? 'required' : 'nullable', 'integer', Rule::exists('work_locations', 'id')],
+                    'work_location_id' => ['nullable', 'integer', Rule::exists('work_locations', 'id')],
                     'asset_number' => ['nullable', 'string', 'max:255', Rule::unique('it_devices', 'asset_number')->ignore($device->id)],
                     'serial_number' => ['nullable', 'string', 'max:255'],
                     'lifecycle_status' => [$room ? 'nullable' : 'required', Rule::enum(ItAssetLifecycle::class)],

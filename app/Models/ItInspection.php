@@ -51,7 +51,6 @@ class ItInspection extends Model
                 }
                 $inspection->managing_department_id = $device->managing_department_id;
                 $inspection->device_snapshot = $device->inspectionSnapshot();
-                $inspection->work_location_id ??= $device->work_location_id;
                 $inspection->location_detail ??= $device->location_detail;
             } elseif ($inspection->isDirty(['it_device_id', 'it_checklist_template_id', 'managing_department_id', 'device_snapshot', 'inspection_number'])) {
                 throw ValidationException::withMessages(['inspection' => 'Objek, template, nomor, department, dan salinan identitas tidak dapat diganti.']);
@@ -63,12 +62,12 @@ class ItInspection extends Model
             if (! $inspection->exists || $inspection->isDirty('inspector_id')) {
                 $inspection->inspector_snapshot = $inspector->only(['id', 'name']);
             }
-            if (($inspection->device_snapshot['object_kind'] ?? null) === ItObjectKind::Room->value && ! $inspection->work_location_id) {
+            if (($inspection->device_snapshot['object_kind'] ?? null) === ItObjectKind::Room->value && ! $inspection->work_location_id && empty($inspection->device_snapshot['location_name'])) {
                 throw ValidationException::withMessages(['work_location_id' => 'Pemeriksaan ruang wajib memiliki lokasi aktual.']);
             }
             if (! $inspection->exists || $inspection->isDirty(['work_location_id', 'location_detail'])) {
                 $location = $inspection->work_location_id ? WorkLocation::query()->findOrFail($inspection->work_location_id) : null;
-                $inspection->location_snapshot = ['location' => $location?->only(['id', 'gps_name', 'address']), 'detail' => $inspection->location_detail];
+                $inspection->location_snapshot = ['location' => $location?->only(['id', 'gps_name', 'address']) ?? (isset($inspection->device_snapshot['location_name']) ? ['gps_name' => $inspection->device_snapshot['location_name']] : null), 'detail' => $inspection->location_detail];
             }
 
             if ($inspection->status === ItInspectionStatus::Finalized) {
