@@ -299,7 +299,7 @@ Delivery gate, anti-slop selama implementasi; arah Filament/Internal 9, ENERGY 1
 
 ## Nomor aset otomatis
 
-Nomor aset baru memakai `NNNNN/PERUSAHAAN//IT/TAHUN`, misalnya `00035/APCA//IT/2025` atau `00037/KPMOG//IT/2025`. Pengguna memilih perusahaan APCA/KPMOG dan tahun aset; nomor lengkap dibuat saat Simpan dan tampil sebagai field baca saja. Tahun dapat diubah ke 2025 atau tahun aset lainnya, tanpa dipaksa menjadi tahun saat ini. Contoh format merupakan placeholder/petunjuk, bukan nomor yang telah dialokasikan.
+Nomor aset baru memakai `NNNNN/PERUSAHAAN//IT/TAHUN`, misalnya `00035/APCA//IT/2025` atau `00037/KPMOG//IT/2025`. Pengguna memilih perusahaan APCA/KPMOG dan tahun aset; nomor lengkap dibuat saat Simpan. Field baca saja pada Tambah Perangkat, lalu dapat dikoreksi melalui Edit setelah tersimpan. Tahun dapat diubah ke 2025 atau tahun aset lainnya, tanpa dipaksa menjadi tahun saat ini. Contoh format merupakan placeholder/petunjuk, bukan nomor yang telah dialokasikan.
 
 Nomor urut merupakan satu rangkaian bersama lintas perusahaan dan tahun. Tabel `it_asset_number_sequences` menyimpan nomor terakhir. Migration `2026_10_19_020000_create_it_asset_number_sequences_table` mengawali rangkaian dari nomor terbesar pada master maupun snapshot pemeriksaan lama; jika tidak ada nomor yang sesuai pola, dimulai dari 00001. Migration tidak menulis ulang perangkat atau pemeriksaan. Penomoran dan penyimpanan aset berjalan dalam transaksi dengan kunci baris counter; transaksi yang gagal tidak menghabiskan nomor. Batas 99999 menampilkan validasi dan tidak menghasilkan nomor enam digit.
 
@@ -313,3 +313,16 @@ Delivery gate, anti-slop selama implementasi; arah formulir operasional Filament
 - **Purpose-Gate PASS**: perusahaan dan tahun menjadi input untuk nomor otomatis; field nomor tetap dapat dibaca/disalin. Tidak menambah menu, dekorasi, font, animasi atau aset visual.
 - **Liveliness PASS**: form tetap berfokus pada identitas perangkat, dengan hierarki tab, aksen tindakan dan tabel bergaris Internal 9 yang sama; ENERGY 1 / RHYTHM 1 / MOTION 1.
 - **Craftsmanship PASS pada cakupan ini**: browser memilih KPMOG dan tahun 2025, memastikan Nomor Aset memiliki atribut readOnly, dan Tab dari Tahun Aset menuju Lokasi. Lebar dokumen 1521px pada viewport 1536px serta 375px pada viewport 390px; field menumpuk tanpa overflow halaman. Viewport dipulihkan, console tanpa error dan form tidak disimpan sebagai data percobaan. Bukti: `output/it-infrastructure-review/asset-number-auto-desktop-20261019.png` dan `output/it-infrastructure-review/asset-number-auto-phone-20261019.png`.
+
+## Koreksi nomor aset melalui Edit
+
+Nomor otomatis yang sudah tersimpan dapat diedit langsung pada Master Perangkat. Petunjuk field menjelaskan format koreksi. Pembuatan perangkat baru tetap otomatis; aturan akses, normalisasi format, keunikan nomor, transaksi dan snapshot pemeriksaan tidak berubah. Koreksi ke nomor lebih tinggi menaikkan counter agar nomor berikutnya melanjutkan urutan; koreksi ke nomor lebih rendah tidak menurunkannya. Pemeriksaan lama tetap memakai nomor pada snapshot saat diperiksa.
+
+Verifikasi: suite penomoran 10 tests / 217 assertions SQLite dan 10 tests / 237 assertions PostgreSQL lulus. Test memastikan form baru baca saja, form Edit dapat diketik, koreksi 00001 ke 00035 dilanjutkan otomatis menjadi 00036, nomor duplikat/format salah ditolak tanpa mengubah record/counter, dan koreksi ke 00002 tetap dilanjutkan menjadi 00037. Suite juga menguji riwayat, ekspor, rollback dan batas nomor. Dua worker PostgreSQL mengalokasikan 40 nomor berbeda. Database uji dibersihkan dan fingerprint aplikasi tetap identik. Pint, sintaks PHP dan whitespace lulus. Tidak memerlukan migration atau perubahan data existing saat deployment.
+
+Delivery gate, anti-slop selama implementasi; arah Filament/Internal 9, ENERGY 1 / RHYTHM 1 / MOTION 1:
+
+- **Hard Gate PASS pada cakupan ini**: browser mengonfirmasi field Edit enabled dan readOnly=false, menerima pengetikan nomor contoh pengguna. Validasi/simpan/counter diuji di database terisolasi. Warna, kontras, error/loading/empty state existing dipertahankan; tidak ada menu, aset visual atau data operasional percobaan baru.
+- **Purpose-Gate PASS**: membuka input existing untuk koreksi sesuai permintaan pengguna, dengan petunjuk format pada posisi yang sama; tanpa dekorasi atau kontrol tambahan.
+- **Liveliness PASS**: hierarki form, tab, tipografi dan aksen tindakan Internal 9 tetap memakai dials yang sama.
+- **Craftsmanship PASS pada cakupan ini**: Tab dari Nomor Aset menuju Nama Perangkat; dokumen 1521px pada viewport 1536px serta 375px pada viewport 390px tanpa overflow halaman. Viewport dipulihkan dan console tanpa error. Nomor contoh hanya diketik pada form yang tidak disimpan. Bukti: `output/it-infrastructure-review/asset-number-edit-desktop-20261019.png` dan `output/it-infrastructure-review/asset-number-edit-phone-20261019.png`.

@@ -171,4 +171,33 @@ class ItAssetNumberTest extends ItInfrastructureTestCase
         $this->assertSame(0, ItDevice::query()->count());
         $this->assertSame(99999, DB::table('it_asset_number_sequences')->value('last_number'));
     }
+
+    public function test_generated_number_is_editable_and_corrections_keep_the_counter_ahead_without_duplicates(): void
+    {
+        Livewire::test(CreateItDevice::class)->assertFormFieldReadOnly('asset_number')
+            ->fillForm(['name' => 'Aset yang dikoreksi', 'asset_company' => 'APCA', 'asset_year' => 2025])
+            ->call('create')->assertHasNoFormErrors();
+        $device = ItDevice::query()->sole();
+        $this->assertSame('00001/APCA//IT/2025', $device->asset_number);
+        Livewire::test(EditItDevice::class, ['record' => $device->id])
+            ->assertFormFieldExists('asset_number', fn ($field): bool => ! $field->isReadOnly() && ! $field->isDisabled())
+            ->fillForm(['asset_number' => '00035/KPMOG//IT/2025'])->call('save')->assertHasNoFormErrors();
+        $this->assertSame('00035/KPMOG//IT/2025', $device->fresh()->asset_number);
+        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Aset berikutnya', 'asset_company' => 'APCA', 'asset_year' => 2025])
+            ->call('create')->assertHasNoFormErrors();
+        $next = ItDevice::query()->latest('id')->firstOrFail();
+        $this->assertSame('00036/APCA//IT/2025', $next->asset_number);
+        foreach ([$next->asset_number, '00035/KPMOG/IT/2025'] as $invalid) {
+            Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['asset_number' => $invalid])
+                ->call('save')->assertHasFormErrors(['asset_number']);
+            $this->assertSame('00035/KPMOG//IT/2025', $device->fresh()->asset_number);
+            $this->assertSame(36, DB::table('it_asset_number_sequences')->value('last_number'));
+        }
+        Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['asset_number' => '00002/APCA//IT/2025'])
+            ->call('save')->assertHasNoFormErrors();
+        $this->assertSame(36, DB::table('it_asset_number_sequences')->value('last_number'));
+        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Aset sesudah koreksi', 'asset_company' => 'KPMOG', 'asset_year' => 2025])
+            ->call('create')->assertHasNoFormErrors();
+        $this->assertSame('00037/KPMOG//IT/2025', ItDevice::query()->latest('id')->firstOrFail()->asset_number);
+    }
 }

@@ -73,8 +73,10 @@ class ItDeviceResource extends Resource
         return $schema->components([
             Tabs::make('Data perangkat')->tabs([
                 Tab::make('Identitas')->columns(['md' => 2, 'xl' => 3])->schema([
-                    TextInput::make('asset_number')->label('Nomor Aset')->readOnly()->placeholder('Dibuat otomatis saat disimpan')
-                        ->helperText('Format otomatis: 00035/APCA//IT/2025 atau 00037/KPMOG//IT/2025.')
+                    TextInput::make('asset_number')->label('Nomor Aset')->readOnly(fn (?ItDevice $record) => ! $record?->exists)->placeholder('Dibuat otomatis saat disimpan')
+                        ->helperText(fn (?ItDevice $record) => $record?->exists
+                            ? 'Dapat dikoreksi sesuai label aset. Format: 00035/APCA//IT/2025 atau 00037/KPMOG//IT/2025.'
+                            : 'Format otomatis: 00035/APCA//IT/2025 atau 00037/KPMOG//IT/2025.')
                         ->mutateStateForValidationUsing(fn ($state, ?ItDevice $record) => ItAssetNumber::normalize($state, $record?->getRawOriginal('asset_number')))
                         ->dehydrateStateUsing(fn ($state, ?ItDevice $record) => ItAssetNumber::normalize($state, $record?->getRawOriginal('asset_number')))
                         ->rules(fn (?ItDevice $record) => [new ItAssetNumber($record?->getRawOriginal('asset_number'))])
