@@ -5,6 +5,7 @@ namespace App\Services\ItInfrastructure;
 use App\Enums\ItAssetLifecycle;
 use App\Enums\ItDeviceType;
 use App\Enums\ItLicenseStatus;
+use App\Models\Employee;
 use App\Models\ItDevice;
 use App\Models\User;
 use Illuminate\Support\Arr;
@@ -39,6 +40,7 @@ class ItDeviceService
                     'notes' => ['nullable', 'string', 'max:3000'],
                     'location_detail' => ['nullable', 'string', 'max:255'],
                     'assigned_user_name' => ['nullable', 'string', 'max:255'],
+                    'assigned_employee_id' => ['nullable', 'integer', Rule::exists('employees', 'id')],
                     'disposed_at' => ['nullable', 'date', 'before_or_equal:today'],
                     'disposal_reason' => ['nullable', 'string', 'max:3000'],
                 ];
@@ -60,11 +62,17 @@ class ItDeviceService
                 $validated = Validator::make($data, $rules)->validate();
                 Gate::forUser($actor)->authorize('assignDepartment', [ItDevice::class, (int) $validated['managing_department_id']]);
                 if ($room) {
-                    foreach (['asset_number', 'serial_number', 'lifecycle_status', 'assigned_user_name', 'disposed_at', 'disposal_reason'] as $field) {
+                    foreach (['asset_number', 'serial_number', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name', 'disposed_at', 'disposal_reason'] as $field) {
                         $validated[$field] = null;
                     }
+                } elseif (filled($validated['assigned_employee_id'] ?? null)) {
+                    $employee = Employee::query()->with('user')->findOrFail($validated['assigned_employee_id']);
+                    if ((! $employee->is_active || ! $employee->user) && (int) $device->assigned_employee_id !== $employee->id) {
+                        throw ValidationException::withMessages(['assigned_employee_id' => 'Pilih user terdaftar dengan data karyawan aktif.']);
+                    }
+                    $validated['assigned_user_name'] = $employee->user?->name ?? $employee->name;
                 }
-                $device->fill(Arr::only($validated, ['code', 'name', 'device_type', 'managing_department_id', 'work_location_id', 'location_detail', 'asset_number', 'serial_number', 'specifications', 'lifecycle_status', 'assigned_user_name', 'is_active', 'notes', 'disposed_at', 'disposal_reason']));
+                $device->fill(Arr::only($validated, ['code', 'name', 'device_type', 'managing_department_id', 'work_location_id', 'location_detail', 'asset_number', 'serial_number', 'specifications', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name', 'is_active', 'notes', 'disposed_at', 'disposal_reason']));
                 $device->category = $type->category();
                 $device->object_kind = $type->kind();
                 $device->created_by ??= $actor->id;

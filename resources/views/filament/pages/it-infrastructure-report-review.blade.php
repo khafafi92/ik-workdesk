@@ -7,10 +7,6 @@
                 <select id="it-report-category" wire:model.live="categoryFilter"><option value="">Semua kategori</option>@foreach ($this->categoryOptions() as $value => $label)<option value="{{ $value }}">{{ $label }}</option>@endforeach</select>
             </div>
             <div class="it-review-field">
-                <label for="it-report-device">Perangkat / ruang</label>
-                <select id="it-report-device" wire:model.live="deviceFilter"><option value="">Semua objek</option>@foreach ($this->deviceOptions as $id => $name)<option value="{{ $id }}">{{ $name }}</option>@endforeach</select>
-            </div>
-            <div class="it-review-field">
                 <label for="it-report-condition">Kondisi terakhir</label>
                 <select id="it-report-condition" wire:model.live="conditionFilter"><option value="">Semua kondisi</option>@foreach (\App\Enums\ItInspectionCondition::cases() as $condition)<option value="{{ $condition->value }}">{{ $condition->label() }}</option>@endforeach</select>
             </div>

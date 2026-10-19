@@ -18,7 +18,7 @@ class ItInfrastructureChecklistSeeder extends Seeder
             foreach (ItDeviceType::cases() as $type) {
                 $template = ItChecklistTemplate::query()->firstOrCreate([
                     'code' => 'it-'.$type->value,
-                    'version' => $type === ItDeviceType::Server ? 2 : 1,
+                    'version' => in_array($type, [ItDeviceType::Server, ItDeviceType::Laptop, ItDeviceType::Pc], true) ? 2 : 1,
                 ], [
                     'name' => 'Pengecekan '.$type->label(),
                     'category' => $type->category(),
@@ -26,7 +26,7 @@ class ItInfrastructureChecklistSeeder extends Seeder
                     'is_active' => true,
                 ]);
 
-                if ($template->wasRecentlyCreated && $type === ItDeviceType::Server) {
+                if ($template->wasRecentlyCreated && $template->version > 1) {
                     ItChecklistTemplate::query()->where('code', $template->code)->where('version', '<', $template->version)->update(['is_active' => false]);
                 }
 

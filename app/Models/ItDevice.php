@@ -144,7 +144,7 @@ class ItDevice extends Model
         return [
             ...$this->only(['id', 'code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'lifecycle_status', 'notes']),
             'managing_department' => $this->managingDepartment?->only(['id', 'code', 'name']),
-            'assigned_employee' => $this->assignedEmployee?->only(['id', 'employee_no', 'name', 'department_id']),
+            'assigned_employee' => $this->assignedEmployee ? [...$this->assignedEmployee->only(['id', 'employee_no', 'name', 'department_id', 'position']), 'division' => $this->assignedEmployee->department?->name] : null,
             'assigned_user_name' => $this->assigned_user_name,
             'computer_detail' => $this->computerDetail?->toArray(),
         ];

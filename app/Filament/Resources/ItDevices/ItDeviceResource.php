@@ -12,6 +12,7 @@ use App\Filament\Resources\ItDevices\Pages\EditItDevice;
 use App\Filament\Resources\ItDevices\Pages\ListItDevices;
 use App\Filament\Resources\ItDevices\Pages\ViewItDevice;
 use App\Models\Department;
+use App\Models\Employee;
 use App\Models\ItDevice;
 use App\Models\ItInspection;
 use App\Models\WorkLocation;
@@ -26,6 +27,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Infolists\Components\TextEntry;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -72,9 +74,9 @@ class ItDeviceResource extends Resource
                 Tab::make('Identitas')->columns(['md' => 2, 'xl' => 3])->schema([
                     TextInput::make('code')->label('Kode register')->default(fn () => 'IT-'.strtoupper(Str::random(10)))->required()->maxLength(80)->unique(ignoreRecord: true),
                     TextInput::make('name')->label('Nama device / objek')->required()->maxLength(255),
-                    Select::make('device_type')->label('Jenis perangkat / objek')->default('laptop')->options(collect(ItDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->category()->label().' / '.$type->label()])->all())->required()->disabled(fn (?ItDevice $record) => $record && ($record->computerDetail()->exists() || $record->inspections()->exists()))->dehydrated()->live()->afterStateUpdated(function ($state, Set $set): void {
+                    Select::make('device_type')->label('Jenis perangkat / objek')->default('laptop')->options(collect(ItDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->label()])->all())->required()->disabled(fn (?ItDevice $record) => $record && ($record->computerDetail()->exists() || $record->inspections()->exists()))->dehydrated()->live()->afterStateUpdated(function ($state, Set $set): void {
                         if ($state === 'server_room') {
-                            foreach (['asset_number', 'serial_number', 'lifecycle_status', 'assigned_user_name'] as $field) {
+                            foreach (['asset_number', 'serial_number', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name'] as $field) {
                                 $set($field, null);
                             }
                         } else {
@@ -89,13 +91,13 @@ class ItDeviceResource extends Resource
                     Textarea::make('specifications')->label('Spesifikasi')->maxLength(6000)->rows(2)->columnSpanFull(),
                 ]),
                 Tab::make('OS & lisensi')->visible($isComputer)->columns(['md' => 2, 'xl' => 3])->schema([
-                    TextInput::make('operating_system')->label('OS'),
-                    TextInput::make('windows_version')->label('Versi Windows'),
-                    Select::make('windows_license_status')->label('Lisensi Windows')->options(self::licenseOptions())->default('unverified')->required()->live(),
+                    TextInput::make('operating_system')->label('OS')->datalist(['Windows', 'Ubuntu', 'macOS']),
+                    TextInput::make('windows_version')->label('Versi'),
+                    Select::make('windows_license_status')->label('Lisensi')->options(self::licenseOptions())->default('unverified')->required()->live(),
                     TextInput::make('office_version')->label('Versi Microsoft Office'),
                     Select::make('office_license_status')->label('Lisensi Microsoft Office')->options(self::licenseOptions())->default('unverified')->required()->live(),
                     TextInput::make('ram_gb')->label('RAM (GB)')->numeric()->minValue(0.01),
-                    Textarea::make('windows_verification_notes')->label('Dasar verifikasi lisensi Windows')->rows(2)->visible(fn (Get $get) => $get('windows_license_status') !== 'unverified')->required(fn (Get $get) => $get('windows_license_status') !== 'unverified')->helperText('Bukti verifikasi atau alasan Tidak Berlaku.'),
+                    Textarea::make('windows_verification_notes')->label('Dasar verifikasi lisensi OS')->rows(2)->visible(fn (Get $get) => $get('windows_license_status') !== 'unverified')->required(fn (Get $get) => $get('windows_license_status') !== 'unverified')->helperText('Bukti verifikasi atau alasan Tidak Berlaku.'),
                     Textarea::make('office_verification_notes')->label('Dasar verifikasi lisensi Office')->rows(2)->visible(fn (Get $get) => $get('office_license_status') !== 'unverified')->required(fn (Get $get) => $get('office_license_status') !== 'unverified'),
                     Repeater::make('storage_devices')->label('HDD / SSD')->schema([
                         Select::make('type')->label('Jenis media')->options(['hdd' => 'HDD', 'ssd' => 'SSD', 'nvme' => 'NVMe SSD'])->required(),
@@ -103,7 +105,13 @@ class ItDeviceResource extends Resource
                     ])->defaultItems(0)->compact()->table([TableColumn::make('Jenis media'), TableColumn::make('Kapasitas (GB)')])->maxItems(8)->reorderable(false)->addActionLabel('Tambah HDD / SSD')->columnSpanFull(),
                 ]),
                 Tab::make('Pemakaian')->columns(['md' => 2, 'xl' => 3])->schema([
-                    TextInput::make('assigned_user_name')->label('Nama User')->hidden($isRoom),
+                    Select::make('assigned_employee_id')->label('User terdaftar')->options(fn (?ItDevice $record): array => Employee::query()
+                        ->where(fn (Builder $query) => $query->where(fn (Builder $query) => $query->where('is_active', true)->whereHas('user'))->orWhere('id', $record?->assigned_employee_id))
+                        ->with('user')->orderBy('name')->get()->mapWithKeys(fn (Employee $employee) => [$employee->id => $employee->user?->name ?? $employee->name])->all())
+                        ->searchable()->live()->hidden($isRoom)->afterStateUpdated(fn ($state, Set $set) => $set('assigned_user_name', Employee::query()->with('user')->find($state)?->user?->name)),
+                    TextEntry::make('assigned_position')->label('Jabatan')->state(fn (Get $get) => self::assignedEmployee($get)?->position)->placeholder('Belum tercatat')->hidden($isRoom),
+                    TextEntry::make('assigned_division')->label('Divisi')->state(fn (Get $get) => self::assignedEmployee($get)?->department?->name)->placeholder('Belum tercatat')->hidden($isRoom),
+                    TextInput::make('assigned_user_name')->label('Nama User')->maxLength(255)->hidden(fn (Get $get) => $isRoom($get) || filled($get('assigned_employee_id'))),
                     Select::make('lifecycle_status')->label('Status pemakaian / siklus hidup')->default('in_use')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all())->hidden($isRoom)->required(fn (Get $get) => $get('device_type') !== 'server_room')->live(),
                     Toggle::make('is_active')->label('Aktif untuk pemeriksaan baru')->default(true)->required(),
                     DatePicker::make('disposed_at')->label('Tanggal penghapusan')->maxDate(today())->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
@@ -118,6 +126,11 @@ class ItDeviceResource extends Resource
     private static function licenseOptions(): array
     {
         return collect(ItLicenseStatus::cases())->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all();
+    }
+
+    private static function assignedEmployee(Get $get): ?Employee
+    {
+        return filled($get('assigned_employee_id')) ? Employee::query()->with('department')->find($get('assigned_employee_id')) : null;
     }
 
     public static function table(Table $table): Table

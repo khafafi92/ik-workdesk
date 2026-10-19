@@ -78,11 +78,7 @@ $computerBase = [
         'power_adapter' => ['Adaptor / suplai daya', 'Periksa kabel, konektor, daya dan kesesuaian adaptor atau PSU.'],
     ],
     'Performa dan penyimpanan' => [
-        'boot' => ['Boot dan shutdown', 'Periksa waktu dan kegagalan boot atau shutdown.'],
-        'performance' => ['Performa penggunaan', 'Uji respons aplikasi kerja dan catat hang atau panas berlebih.'],
         'cpu_usage' => ['Penggunaan CPU', 'Catat penggunaan CPU saat pemeriksaan.', 'number', '%'],
-        'ram_usage' => ['Penggunaan RAM', 'Catat penggunaan RAM dan gejala kekurangan memori.', 'number', '%'],
-        'disk_health' => ['Disk health HDD/SSD', 'Periksa SMART, warning dan error per media penyimpanan.', 'rows'],
         'storage_capacity' => ['Kapasitas penyimpanan', 'Catat total dan sisa ruang per drive.', 'rows'],
     ],
     'Layar dan input' => [
@@ -94,17 +90,13 @@ $computerBase = [
     'Jaringan' => [
         'lan' => ['LAN', 'Periksa link, alamat IP dan koneksi jaringan kabel.'],
         'wifi' => ['Wi-Fi', 'Uji asosiasi, kestabilan dan kualitas koneksi.'],
-        'network_access' => ['Akses jaringan kerja', 'Uji gateway, DNS, internet dan layanan internal yang diperlukan.'],
     ],
-    'Keamanan dan lisensi' => [
+    'Keamanan' => [
         'antivirus' => ['Antivirus / EDR', 'Periksa layanan perlindungan aktif dan hasil deteksi.'],
         'antivirus_update' => ['Pembaruan antivirus', 'Periksa waktu pembaruan engine dan signature.'],
         'os_patch' => ['Update OS', 'Periksa patch, pembaruan tertunda dan restart tertunda.'],
         'firewall' => ['Firewall perangkat', 'Periksa profil dan status firewall sesuai kebijakan.'],
-        'access_security' => ['Keamanan akses', 'Periksa screen lock dan penggunaan akun sesuai kebijakan.'],
         'disk_encryption' => ['Enkripsi disk', 'Periksa enkripsi bila diwajibkan; jangan menyalin recovery key.'],
-        'windows_license' => ['Verifikasi lisensi Windows', 'Catat dasar verifikasi lisensi; status aktivasi saja tidak membuktikan lisensi resmi.'],
-        'office_license' => ['Verifikasi lisensi Microsoft Office', 'Catat dasar verifikasi lisensi Office atau alasan tidak berlaku.'],
     ],
 ];
 

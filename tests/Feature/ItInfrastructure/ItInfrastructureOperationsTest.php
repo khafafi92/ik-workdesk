@@ -122,9 +122,9 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_multiple_laptops_and_server_are_persisted_and_searchable(): void
     {
         $this->asAdministrator();
-        $one = $this->register(['name' => 'Laptop Finance 01']);
-        $two = $this->register(['name' => 'Laptop Finance 02']);
-        $server = $this->register(['name' => 'Server Aplikasi', 'device_type' => 'server']);
+        $one = $this->register(['code' => 'LAP-FIN-ONE', 'name' => 'Laptop Finance 01']);
+        $two = $this->register(['code' => 'LAP-FIN-TWO', 'name' => 'Laptop Finance 02']);
+        $server = $this->register(['code' => 'SRV-APP', 'name' => 'Server Aplikasi', 'device_type' => 'server']);
         session()->flush();
         $this->assertSame(3, ItDevice::query()->count());
         $this->assertSame('512', (string) $one->computerDetail->storage_devices[0]['capacity_gb']);
@@ -154,6 +154,60 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->assertSame('Laptop baru', $device->name);
         $this->assertEmpty($device->computerDetail->storage_devices);
         $this->assertSame('unverified', $device->computerDetail->windows_license_status->value);
+    }
+
+    public function test_registered_user_populates_usage_and_snapshot_without_trusting_submitted_name(): void
+    {
+        $this->asAdministrator();
+        $assignee = $this->userIn($this->department);
+        $employee = $assignee->employee;
+        $employee->update(['position' => 'Analis Infrastruktur']);
+        $component = Livewire::test(CreateItDevice::class)->fillForm([
+            'name' => 'Laptop Ubuntu', 'operating_system' => 'Ubuntu', 'windows_version' => '24.04',
+            'assigned_employee_id' => $employee->id, 'assigned_user_name' => 'Nama palsu dari request',
+        ])->assertSee('Analis Infrastruktur')->assertSee($this->department->name)
+            ->call('create')->assertHasNoFormErrors();
+        $device = ItDevice::query()->sole();
+        $this->assertSame($employee->id, $device->assigned_employee_id);
+        $this->assertSame($assignee->name, $device->assigned_user_name);
+        Livewire::test(EditItDevice::class, ['record' => $device->id])->assertFormSet([
+            'assigned_employee_id' => $employee->id, 'operating_system' => 'Ubuntu', 'windows_version' => '24.04',
+        ])->assertSee('Analis Infrastruktur');
+        $snapshot = app(ItInspectionService::class)->save($this->inspector, $device->id, null, $this->inspectionData($device), true);
+        $employee->update(['position' => 'Jabatan berubah']);
+        $this->assertSame('Analis Infrastruktur', $snapshot->fresh()->device_snapshot['assigned_employee']['position']);
+        $this->assertSame($this->department->name, $snapshot->device_snapshot['assigned_employee']['division']);
+
+        $employee->update(['is_active' => false]);
+        app(ItDeviceService::class)->save($this->inspector, $this->deviceData(['code' => $device->code, 'assigned_employee_id' => $employee->id]), $device);
+        $this->assertSame($employee->id, $device->fresh()->assigned_employee_id);
+        try {
+            $this->register(['assigned_employee_id' => $employee->id]);
+            $this->fail('User nonaktif dipilih untuk perangkat baru.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('data.assigned_employee_id', $exception->errors());
+        }
+        $this->assertSame(1, ItDevice::query()->count());
+    }
+
+    public function test_switching_from_pc_to_laptop_uses_only_the_revised_laptop_checklist(): void
+    {
+        $this->asAdministrator();
+        $pc = $this->register(['device_type' => 'pc']);
+        $laptop = $this->register();
+        $component = Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $pc->id])
+            ->assertSee('Hardware PC')->assertDontSee('Baterai laptop')
+            ->set('deviceId', (string) $laptop->id)->assertSee('Baterai laptop')->assertDontSee('Hardware PC');
+        $this->assertCount(18, $component->get('data.results'));
+        foreach (['boot', 'performance', 'ram_usage', 'disk_health', 'network_access', 'access_security', 'windows_license', 'office_license', 'psu', 'cooling', 'external_monitor'] as $code) {
+            $this->assertArrayNotHasKey($code, $component->get('data.results'));
+        }
+        $component->set('data.results.cpu_usage.measured_value', '15')->call('saveDraft')->assertHasNoErrors();
+        $inspection = ItInspection::query()->findOrFail($component->get('inspectionId'));
+        $this->assertSame($laptop->id, $inspection->it_device_id);
+        $this->assertSame(18, $inspection->results()->count());
+        Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])
+            ->assertDontSee('Hardware PC')->assertSet('data.results.cpu_usage.measured_value', '15');
     }
 
     public function test_real_master_rejects_duplicate_asset_and_invalid_license_without_partial_write(): void
@@ -208,7 +262,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $service = app(ItInspectionService::class);
         $data = $this->inspectionData($device);
         $draft = $service->save($this->inspector, $device->id, null, $data, false);
-        $this->assertSame(26, $draft->results()->count());
+        $this->assertSame(18, $draft->results()->count());
         $this->assertSame(ItInspectionStatus::Draft, $draft->status);
         $beforeName = $device->name;
         app(ItDeviceService::class)->save($this->inspector, $this->deviceData(['code' => $device->code, 'name' => 'Nama baru']), $device);
@@ -236,7 +290,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             ->set('data.results.cpu_usage.measured_value', '42')
             ->call('saveDraft')->assertHasNoErrors();
         $inspection = ItInspection::query()->findOrFail($component->get('inspectionId'));
-        $this->assertSame(26, $inspection->results()->count());
+        $this->assertSame(18, $inspection->results()->count());
         $this->assertSame(1, $inspection->followUps()->count());
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])
             ->assertSet('data.results.physical_condition.finding', 'Engsel longgar')->assertSet('data.results.cpu_usage.measured_value', '42');
@@ -247,8 +301,8 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->asAdministrator();
         $device = $this->register();
         Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])
-            ->set('data.results.disk_health.condition', 'not_applicable')->call('saveDraft')
-            ->assertHasErrors('data.results.disk_health.not_applicable_reason')->assertSeeHtml('id="check-error-disk_health"');
+            ->set('data.results.storage_capacity.condition', 'not_applicable')->call('saveDraft')
+            ->assertHasErrors('data.results.storage_capacity.not_applicable_reason')->assertSeeHtml('id="check-error-storage_capacity"');
         Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])
             ->set('data.results.cpu_usage.measured_value', 'bukan angka')->call('saveDraft')
             ->assertHasErrors('data.results.cpu_usage.measured_value')->assertSeeHtml('id="check-error-cpu_usage"');
@@ -308,8 +362,8 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $data = $this->inspectionData($device);
         $data['results']['physical_condition'] = [...$data['results']['physical_condition'], 'condition' => 'warning', 'finding' => 'Engsel longgar', 'action_plan' => 'Perbaiki engsel', 'assigned_to' => $this->inspector->id];
         $data['results']['cpu_usage']['measured_value'] = '0';
-        $data['results']['disk_health']['measured_value'] = "SSD normal\nHDD normal";
-        $data['results']['disk_health']['notes'] = '<script>alert(1)</script>';
+        $data['results']['storage_capacity']['measured_value'] = "SSD normal\nHDD normal";
+        $data['results']['storage_capacity']['notes'] = '<script>alert(1)</script>';
         $inspection = app(ItInspectionService::class)->save($this->inspector, $device->id, null, $data, true);
         $device->update(['name' => 'Nama sekarang', 'is_active' => false]);
         $url = ItInspectionSummaryPage::getUrl(['inspection' => $inspection->id]);
@@ -324,7 +378,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)->assertDontSeeHtml('<script>alert(1)</script>')
             ->assertDontSeeHtml('wire:submit="saveDraft"')->assertDontSeeHtml('wire:model="data.results.')
             ->assertDontSee('Lanjutkan draft');
-        $this->assertSame(25, $component->instance()->conditionCounts()['normal']);
+        $this->assertSame(17, $component->instance()->conditionCounts()['normal']);
         $this->assertSame(1, $component->instance()->conditionCounts()['warning']);
         $this->assertFalse(ItInspectionSummaryPage::shouldRegisterNavigation());
     }
@@ -539,7 +593,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             file_put_contents($file, $bytes);
             $workbook = IOFactory::load($file);
             $sheet = $workbook->getActiveSheet();
-            $this->assertSame(27, $sheet->getHighestDataRow());
+            $this->assertSame(19, $sheet->getHighestDataRow());
             $this->assertSame($inspection->inspection_number, $sheet->getCell('A2')->getValue());
             $this->assertSame('=1+1', $sheet->getCell('E2')->getValue());
             $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('E2')->getDataType());

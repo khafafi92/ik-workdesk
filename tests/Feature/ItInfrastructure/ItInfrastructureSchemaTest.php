@@ -104,6 +104,41 @@ class ItInfrastructureSchemaTest extends ItInfrastructureTestCase
         $this->assertTrue(ItChecklistTemplate::query()->where('device_type', 'storage')->sole()->items()->where('code', 'air_conditioner')->exists());
     }
 
+    public function test_computer_checklist_revision_preserves_old_drafts_and_final_results(): void
+    {
+        $removed = ['boot', 'performance', 'ram_usage', 'disk_health', 'network_access', 'access_security', 'windows_license', 'office_license'];
+        $oldRecords = [];
+        foreach ([ItDeviceType::Laptop, ItDeviceType::Pc] as $type) {
+            $template = ItChecklistTemplate::query()->where('device_type', $type->value)->sole();
+            $template->update(['version' => 1]);
+            foreach ($removed as $index => $code) {
+                $template->items()->create(['code' => $code, 'section' => 'Checklist versi lama', 'label' => $code, 'instructions' => 'Petunjuk historis', 'sort_order' => 100 + $index, 'value_type' => 'text']);
+            }
+            $inspection = $this->inspection($this->device($type));
+            $this->fillRemainingResults($inspection);
+            if ($type === ItDeviceType::Laptop) {
+                $this->finalize($inspection);
+            }
+            $oldRecords[] = [$template, $inspection, $inspection->fresh()->getRawOriginal(), $inspection->results()->get()->map->getRawOriginal()->all()];
+        }
+
+        (new ItInfrastructureChecklistSeeder)->run();
+        (new ItInfrastructureChecklistSeeder)->run();
+
+        foreach ($oldRecords as [$old, $inspection, $before, $results]) {
+            $current = ItChecklistTemplate::query()->where('device_type', $old->device_type->value)->where('is_active', true)->sole();
+            $this->assertSame(2, $current->version);
+            $this->assertSame(18, $current->items()->count());
+            $this->assertSame(0, $current->items()->whereIn('code', $removed)->count());
+            $this->assertFalse($old->fresh()->is_active);
+            $this->assertSame(26, $old->items()->count());
+            $this->assertSame($before, $inspection->fresh()->getRawOriginal());
+            $this->assertSame($results, $inspection->results()->get()->map->getRawOriginal()->all());
+        }
+        $this->assertSame(14, ItChecklistTemplate::query()->count());
+        $this->assertSame(12, ItChecklistTemplate::query()->where('is_active', true)->count());
+    }
+
     public function test_existing_access_control_seeder_only_gives_it_role_permissions_to_system_admin(): void
     {
         (new AccessControlSeeder)->run();
