@@ -22,7 +22,7 @@ class ItInfrastructureSchemaTest extends ItInfrastructureTestCase
     public function test_schema_has_only_module_and_allowlisted_parent_tables_without_ticket_integration(): void
     {
         $tables = collect(Schema::getTables())->pluck('name');
-        $this->assertCount(8, $tables->filter(fn (string $name): bool => str_starts_with($name, 'it_')));
+        $this->assertCount(9, $tables->filter(fn (string $name): bool => str_starts_with($name, 'it_')));
         $this->assertFalse(Schema::hasTable('tickets'));
         $this->assertFalse(Schema::hasTable('ltro_assets'));
         $this->assertFalse(Schema::hasTable('atk_items'));
@@ -182,9 +182,9 @@ class ItInfrastructureSchemaTest extends ItInfrastructureTestCase
         $this->device(attributes: ['asset_number' => '', 'serial_number' => 'UNKNOWN']);
         $this->device(attributes: ['asset_number' => null, 'serial_number' => 'UNKNOWN']);
         $this->assertSame(2, ItDevice::query()->whereNull('asset_number')->count());
-        $this->device(attributes: ['asset_number' => 'IT-001']);
+        $this->device(attributes: ['asset_number' => '00001/APCA//IT/2025']);
         $this->expectException(QueryException::class);
-        $this->device(attributes: ['asset_number' => 'IT-001']);
+        $this->device(attributes: ['asset_number' => '00001/APCA//IT/2025']);
     }
 
     public function test_database_rejects_cross_template_result_even_without_model_events(): void

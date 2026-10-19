@@ -9,12 +9,14 @@ use App\Enums\ItDeviceType;
 use App\Enums\ItObjectKind;
 use App\Enums\ItPermission;
 use App\Enums\ItSwitchFloor;
+use App\Rules\ItAssetNumber;
 use App\Services\ItInfrastructure\ItInfrastructureAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class ItDevice extends Model
@@ -48,6 +50,9 @@ class ItDevice extends Model
             foreach (['asset_number', 'serial_number'] as $field) {
                 $device->{$field} = filled($device->{$field}) ? trim($device->{$field}) : null;
             }
+            $originalAssetNumber = $device->getRawOriginal('asset_number');
+            $device->asset_number = ItAssetNumber::normalize($device->asset_number, $originalAssetNumber);
+            Validator::make(['asset_number' => $device->asset_number], ['asset_number' => ['nullable', new ItAssetNumber($originalAssetNumber)]])->validate();
 
             if ($device->object_kind === ItObjectKind::Room) {
                 if ($device->asset_number || $device->serial_number || $device->lifecycle_status || $device->assigned_employee_id || filled($device->assigned_user_name) || $device->disposed_at || filled($device->disposal_reason)) {

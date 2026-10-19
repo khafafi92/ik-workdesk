@@ -10,6 +10,7 @@ use App\Enums\ItSwitchFloor;
 use App\Models\Employee;
 use App\Models\ItDevice;
 use App\Models\User;
+use App\Rules\ItAssetNumber;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -27,6 +28,9 @@ class ItDeviceService
                 $device = $device ? ItDevice::query()->lockForUpdate()->findOrFail($device->id) : new ItDevice;
                 Gate::forUser($actor)->authorize($device->exists ? 'update' : 'create', $device->exists ? $device : ItDevice::class);
                 $data['code'] ??= $device->code ?? 'IT-'.Str::ulid();
+                if (array_key_exists('asset_number', $data)) {
+                    $data['asset_number'] = ItAssetNumber::normalize($data['asset_number'], $device->getRawOriginal('asset_number'));
+                }
                 if (! array_key_exists('location_name', $data)) {
                     $data['location_name'] = $device->location_name?->value;
                 }
@@ -37,6 +41,8 @@ class ItDeviceService
                 $type = is_string($data['device_type'] ?? null) ? ItDeviceType::tryFrom($data['device_type']) : null;
                 $room = $type === ItDeviceType::ServerRoom;
                 $computer = in_array($type, [ItDeviceType::Laptop, ItDeviceType::Pc], true);
+                $data['asset_number'] ??= $device->asset_number;
+                $generateAssetNumber = ! $room && blank($data['asset_number']) && (! $device->exists || filled($data['asset_company'] ?? null));
                 $rules = [
                     'code' => ['required', 'string', 'max:80', Rule::unique('it_devices', 'code')->ignore($device->id)],
                     'name' => ['required', 'string', 'max:255'],
@@ -44,7 +50,9 @@ class ItDeviceService
                     'managing_department_id' => ['required', 'integer', Rule::exists('departments', 'id')],
                     'work_location_id' => ['nullable', 'integer', Rule::exists('work_locations', 'id')],
                     'location_name' => [$room && ! $device->work_location_id ? 'required' : 'nullable', Rule::enum(ItDeviceLocation::class)],
-                    'asset_number' => ['nullable', 'string', 'max:255', Rule::unique('it_devices', 'asset_number')->ignore($device->id)],
+                    'asset_number' => ['nullable', 'string', 'max:255', new ItAssetNumber($device->getRawOriginal('asset_number')), Rule::unique('it_devices', 'asset_number')->ignore($device->id)],
+                    'asset_company' => [$generateAssetNumber ? 'required' : 'nullable', 'in:APCA,KPMOG'],
+                    'asset_year' => [$generateAssetNumber ? 'required' : 'nullable', 'integer', 'between:1000,9999'],
                     'serial_number' => ['nullable', 'string', 'max:255'],
                     'lifecycle_status' => [$room ? 'nullable' : 'required', Rule::enum(ItAssetLifecycle::class)],
                     'is_active' => ['required', 'boolean'],
@@ -74,6 +82,11 @@ class ItDeviceService
                 }
                 $validated = Validator::make($data, $rules)->validate();
                 Gate::forUser($actor)->authorize('assignDepartment', [ItDevice::class, (int) $validated['managing_department_id']]);
+                if ($generateAssetNumber) {
+                    $validated['asset_number'] = app(ItAssetNumberGenerator::class)->next($validated['asset_company'], (int) $validated['asset_year']);
+                } elseif (! $room && filled($validated['asset_number']) && $validated['asset_number'] !== $device->getRawOriginal('asset_number')) {
+                    app(ItAssetNumberGenerator::class)->reserve($validated['asset_number']);
+                }
                 if ($type !== ItDeviceType::Switch) {
                     $validated['floor'] = null;
                 } elseif (array_key_exists('floor', $validated) && blank($validated['floor'])) {

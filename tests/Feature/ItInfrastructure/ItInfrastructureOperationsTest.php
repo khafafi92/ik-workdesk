@@ -52,7 +52,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     {
         return [...[
             'code' => 'LAP-'.fake()->unique()->numerify('######'), 'name' => 'Laptop Kantor', 'device_type' => 'laptop',
-            'managing_department_id' => $this->department->id, 'lifecycle_status' => 'in_use', 'is_active' => true, 'location_name' => 'Office HO',
+            'managing_department_id' => $this->department->id, 'lifecycle_status' => 'in_use', 'is_active' => true, 'location_name' => 'Office HO', 'asset_company' => 'APCA', 'asset_year' => 2025,
             'windows_license_status' => 'unverified', 'office_license_status' => 'unverified', 'ram_gb' => 8,
             'storage_devices' => [['type' => 'ssd', 'capacity_gb' => 512]],
         ], ...$overrides];
@@ -81,7 +81,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         foreach (range(1, 52) as $i) {
             $this->register(['name' => 'Laptop '.str_pad((string) $i, 3, '0', STR_PAD_LEFT)]);
         }
-        $target = $this->register(['name' => 'ZZ Server Produksi', 'device_type' => 'server', 'code' => 'SRV-SEARCH-99', 'asset_number' => 'ASSET-UNIK-99', 'serial_number' => 'SERIAL-UNIK-99']);
+        $target = $this->register(['name' => 'ZZ Server Produksi', 'device_type' => 'server', 'code' => 'SRV-SEARCH-99', 'asset_number' => '00099/APCA//IT/2025', 'serial_number' => 'SERIAL-UNIK-99']);
         $other = Department::query()->create(['code' => 'HR', 'name' => 'HR']);
         $this->register(['name' => 'ZZ Server Produksi HR', 'managing_department_id' => $other->id]);
         $this->register(['name' => 'ZZ Server Produksi Nonaktif', 'is_active' => false]);
@@ -92,7 +92,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->assertTrue($select->isSearchable());
         $this->assertCount(50, $select->getOptions());
         $this->assertArrayNotHasKey($target->id, $select->getOptions());
-        foreach (['zz server', 'srv-search-99', 'asset-unik-99', 'serial-unik-99'] as $search) {
+        foreach (['zz server', 'srv-search-99', '00099/apca//it/2025', 'serial-unik-99'] as $search) {
             $this->assertSame([$target->id => $target->name.' · '.$target->asset_number], $select->getSearchResults($search));
         }
         $this->assertSame([], $select->getSearchResults('Tidak ada perangkat ini'));
@@ -107,7 +107,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_searchable_dropdown_keeps_historical_label_and_is_disabled_for_report_reader(): void
     {
         $this->asAdministrator();
-        $device = $this->register(['name' => 'Nama saat diperiksa', 'code' => 'LAP-HISTORY', 'asset_number' => 'ASET-HISTORY']);
+        $device = $this->register(['name' => 'Nama saat diperiksa', 'code' => 'LAP-HISTORY', 'asset_number' => '00040/KPMOG//IT/2025']);
         $inspection = app(ItInspectionService::class)->save($this->inspector, $device->id, null, $this->inspectionData($device), true);
         app(ItDeviceService::class)->save($this->inspector, $this->deviceData(['code' => $device->code, 'name' => 'Nama sekarang', 'is_active' => false]), $device);
         $reader = $this->userIn($this->department);
@@ -116,32 +116,32 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $component = Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id]);
         $select = $component->instance()->getSchema('deviceSelector')->getComponents()[0];
         $this->assertTrue($select->isDisabled());
-        $this->assertSame('Nama saat diperiksa · ASET-HISTORY', $select->getOptionLabel());
+        $this->assertSame('Nama saat diperiksa · 00040/KPMOG//IT/2025', $select->getOptionLabel());
         $this->assertSame([], $select->getSearchResults('LAP-HISTORY'));
     }
 
     public function test_multiple_laptops_and_server_are_persisted_and_searchable(): void
     {
         $this->asAdministrator();
-        $one = $this->register(['code' => 'LAP-FIN-ONE', 'name' => 'Laptop Finance 01']);
-        $two = $this->register(['code' => 'LAP-FIN-TWO', 'name' => 'Laptop Finance 02']);
+        $one = $this->register(['code' => 'LAP-FIN-ONE', 'name' => 'Laptop Finance Utama']);
+        $two = $this->register(['code' => 'LAP-FIN-TWO', 'name' => 'Laptop Finance Cadangan']);
         $server = $this->register(['code' => 'SRV-APP', 'name' => 'Server Aplikasi', 'device_type' => 'server']);
         session()->flush();
         $this->assertSame(3, ItDevice::query()->count());
         $this->assertSame('512', (string) $one->computerDetail->storage_devices[0]['capacity_gb']);
         $this->assertNull($server->computerDetail);
         Livewire::test(ListItDevices::class)->assertSee('Tambah Perangkat')->assertDontSee('Mode review')
-            ->assertCanSeeTableRecords([$one, $two, $server])->searchTable('Finance 02')->assertCanSeeTableRecords([$two])->assertCanNotSeeTableRecords([$one, $server]);
+            ->assertCanSeeTableRecords([$one, $two, $server])->searchTable('Cadangan')->assertCanSeeTableRecords([$two])->assertCanNotSeeTableRecords([$one, $server]);
     }
 
     public function test_native_master_create_save_and_create_another_write_real_records(): void
     {
         $this->asAdministrator();
-        $component = Livewire::test(CreateItDevice::class)->fillForm($this->deviceData(['asset_number' => 'LAP-A']))
+        $component = Livewire::test(CreateItDevice::class)->fillForm($this->deviceData(['asset_number' => '00041/APCA//IT/2025']))
             ->call('create', true)->assertHasNoFormErrors()->assertSet('data.name', null);
-        $component->fillForm($this->deviceData(['asset_number' => 'LAP-B']))->call('create')->assertHasNoFormErrors();
+        $component->fillForm($this->deviceData(['asset_number' => '00042/APCA//IT/2025']))->call('create')->assertHasNoFormErrors();
         $this->assertSame(2, ItDevice::query()->count());
-        $device = ItDevice::query()->where('asset_number', 'LAP-A')->firstOrFail();
+        $device = ItDevice::query()->where('asset_number', '00041/APCA//IT/2025')->firstOrFail();
         Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['name' => 'Laptop A diperbarui', 'ram_gb' => 16])->call('save')->assertHasNoFormErrors();
         $this->assertSame('Laptop A diperbarui', $device->refresh()->name);
         $this->assertSame('16.00', $device->computerDetail->ram_gb);
@@ -150,7 +150,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_quick_registration_uses_defaults_without_an_empty_required_storage_row(): void
     {
         $this->asAdministrator();
-        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Laptop baru'])->call('create')->assertHasNoFormErrors();
+        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Laptop baru', 'asset_company' => 'APCA', 'asset_year' => 2025])->call('create')->assertHasNoFormErrors();
         $device = ItDevice::query()->sole();
         $this->assertSame('Laptop baru', $device->name);
         $this->assertEmpty($device->computerDetail->storage_devices);
@@ -165,6 +165,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $employee->update(['position' => 'Analis Infrastruktur']);
         $component = Livewire::test(CreateItDevice::class)->fillForm([
             'name' => 'Laptop Ubuntu', 'operating_system' => 'Ubuntu', 'windows_version' => '24.04',
+            'asset_company' => 'APCA', 'asset_year' => 2025,
             'assigned_employee_id' => $employee->id, 'assigned_user_name' => 'Nama palsu dari request',
         ])->assertSee('Analis Infrastruktur')->assertSee($this->department->name)
             ->call('create')->assertHasNoFormErrors();
@@ -260,7 +261,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_switch_floor_is_saved_and_keeps_its_historical_value_in_reports_and_exports(): void
     {
         $this->asAdministrator();
-        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Switch distribusi', 'device_type' => 'switch', 'floor' => '2', 'location_name' => 'Office HO'])
+        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Switch distribusi', 'device_type' => 'switch', 'floor' => '2', 'location_name' => 'Office HO', 'asset_company' => 'APCA', 'asset_year' => 2025])
             ->call('create')->assertHasNoFormErrors();
         $device = ItDevice::query()->sole();
         $this->assertSame(ItSwitchFloor::Floor2, $device->floor);
@@ -309,8 +310,8 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_real_master_rejects_duplicate_asset_and_invalid_license_without_partial_write(): void
     {
         $this->asAdministrator();
-        $this->register(['asset_number' => 'ASSET-001']);
-        foreach ([['asset_number' => 'ASSET-001'], ['windows_license_status' => 'valid', 'windows_verification_notes' => '']] as $invalid) {
+        $this->register(['asset_number' => '00001/APCA//IT/2025']);
+        foreach ([['asset_number' => '00001/APCA//IT/2025'], ['windows_license_status' => 'valid', 'windows_verification_notes' => '']] as $invalid) {
             try {
                 $this->register($invalid);
                 $this->fail('Isian tidak sah diterima.');
@@ -701,6 +702,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
 
     public function test_export_permission_and_department_filter_are_enforced_by_download_action(): void
     {
+        $this->freezeTime();
         $this->asAdministrator();
         $one = $this->register();
         $other = Department::query()->create(['code' => 'HR', 'name' => 'HR']);
@@ -724,8 +726,8 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_summary_workbook_counts_unique_devices_and_retains_old_findings_after_latest_normal(): void
     {
         $this->asAdministrator();
-        $device = $this->register(['name' => '=1+1', 'asset_number' => 'ASSET-SUMMARY']);
-        $other = $this->register(['name' => 'Tanpa pemeriksaan', 'asset_number' => 'ASSET-UNTESTED']);
+        $device = $this->register(['name' => '=1+1', 'asset_number' => '00050/APCA//IT/2025']);
+        $other = $this->register(['name' => 'Tanpa pemeriksaan', 'asset_number' => '00051/KPMOG//IT/2025']);
         $service = app(ItInspectionService::class);
         $data = $this->inspectionData($device);
         $data['checked_at'] = now()->subDay()->format('Y-m-d\TH:i');

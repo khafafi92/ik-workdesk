@@ -31,7 +31,7 @@ class ItDeviceLocationTest extends ItInfrastructureTestCase
 
     public function test_all_three_locations_can_be_saved_changed_and_reopened(): void
     {
-        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Switch kantor', 'device_type' => 'switch', 'location_name' => 'Office HO', 'floor' => '2'])
+        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Switch kantor', 'device_type' => 'switch', 'location_name' => 'Office HO', 'floor' => '2', 'asset_company' => 'APCA', 'asset_year' => 2025])
             ->call('create')->assertHasNoFormErrors();
         $device = ItDevice::query()->sole();
         foreach (ItDeviceLocation::cases() as $location) {

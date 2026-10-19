@@ -28,12 +28,12 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
     {
         Livewire::test(CreateItDevice::class)->assertSee('Nomor Aset')->assertSee('Office')
             ->assertDontSee('Kode register')->assertDontSeeHtml('id="form.work_location_id"')
-            ->fillForm(['asset_number' => '0000123', 'name' => 'Laptop aset', 'location_name' => 'Office HO'])
+            ->fillForm(['asset_number' => '00123/APCA//IT/2025', 'name' => 'Laptop aset', 'location_name' => 'Office HO'])
             ->call('create')->assertHasNoFormErrors();
         $device = ItDevice::query()->sole();
         $code = $device->code;
         $this->assertNotEmpty($code);
-        $this->assertSame('0000123', $device->asset_number);
+        $this->assertSame('00123/APCA//IT/2025', $device->asset_number);
         $service = app(ItInspectionService::class);
         $data = $service->blank($device);
         foreach ($data['results'] as &$row) {
@@ -42,16 +42,16 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
         unset($row);
         $inspection = $service->save($this->inspector, $device->id, null, $data, true);
         $before = $inspection->getRawOriginal();
-        Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['asset_number' => '0000456'])
+        Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['asset_number' => '00456/APCA//IT/2025'])
             ->call('save')->assertHasNoFormErrors();
         $this->assertSame($code, $device->fresh()->code);
-        $this->assertSame('0000456', $device->fresh()->asset_number);
-        $this->assertSame('0000123', $inspection->fresh()->device_snapshot['asset_number']);
+        $this->assertSame('00456/APCA//IT/2025', $device->fresh()->asset_number);
+        $this->assertSame('00123/APCA//IT/2025', $inspection->fresh()->device_snapshot['asset_number']);
         $this->assertSame($before, $inspection->fresh()->getRawOriginal());
-        Livewire::test(CreateItDevice::class)->fillForm(['asset_number' => '0000456', 'name' => 'Duplikat'])
+        Livewire::test(CreateItDevice::class)->fillForm(['asset_number' => '00456/APCA//IT/2025', 'name' => 'Duplikat'])
             ->call('create')->assertHasFormErrors(['asset_number']);
         Livewire::test(ListItDevices::class)->assertSee('Nomor Aset')->assertSee('Office')->assertDontSee('Kode register')
-            ->searchTable('0000456')->assertCanSeeTableRecords([$device]);
+            ->searchTable('00456/APCA//IT/2025')->assertCanSeeTableRecords([$device]);
         $this->assertSame(1, ItDevice::query()->count());
         $this->assertSame(0, WorkLocation::query()->count());
     }

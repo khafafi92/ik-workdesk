@@ -5,6 +5,7 @@ require dirname(__DIR__).'/vendor/autoload.php';
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Process\Process;
 
 $root = dirname(__DIR__);
 $app = require $root.'/bootstrap/app.php';
@@ -63,12 +64,19 @@ try {
         $root.'/vendor/phpunit/phpunit/phpunit',
         '-c', $root.'/phpunit.it-infrastructure-postgres.xml',
         '--do-not-cache-result',
+        ...array_slice($argv, 1),
     ], [0 => STDIN, 1 => STDOUT, 2 => STDERR], $pipes, $root, $processEnvironment, ['bypass_shell' => true]);
 
     if (! is_resource($process)) {
         throw new RuntimeException('PHPUnit PostgreSQL tidak dapat dijalankan.');
     }
     $exitCode = proc_close($process);
+    if ($exitCode === 0) {
+        $concurrency = new Process([PHP_BINARY, $root.'/tests/run-it-asset-number-concurrency.php'], $root, $processEnvironment);
+        $concurrency->setTimeout(60);
+        $concurrency->mustRun();
+        echo $concurrency->getOutput();
+    }
 } finally {
     if ($created) {
         $current = $source->selectOne('SELECT oid, datdba FROM pg_database WHERE datname = ?', [$database]);
