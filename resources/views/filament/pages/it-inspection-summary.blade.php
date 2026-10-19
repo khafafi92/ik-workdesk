@@ -23,8 +23,8 @@
             <section class="it-review-section" aria-labelledby="summary-group-{{ $loop->index }}">
                 <h2 id="summary-group-{{ $loop->index }}">{{ $group }}</h2>
                 <div class="it-review-table-wrap" role="region" aria-label="Hasil {{ $group }}" tabindex="0">
-                    <table class="it-review-inspection-results">
-                        <thead><tr><th>Pemeriksaan</th><th>Hasil</th><th>Nilai / rincian</th><th>Catatan & temuan</th></tr></thead>
+                    <table class="it-review-inspection-results it-infrastructure-table">
+                        <thead><tr><th scope="col">Pemeriksaan</th><th scope="col">Hasil</th><th scope="col">Nilai / rincian</th><th scope="col">Catatan & temuan</th></tr></thead>
                         <tbody>
                             @foreach ($results as $result)
                                 <tr>

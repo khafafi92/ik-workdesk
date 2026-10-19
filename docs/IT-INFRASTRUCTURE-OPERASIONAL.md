@@ -194,3 +194,14 @@ Delivery gate, anti-slop selama implementasi dengan arah Filament/Internal 9, EN
 - **Craftsmanship PASS pada cakupan ini**: 30 test operasional / 465 assertions lulus, mencakup form, pemeriksaan, laporan, ekspor dan akses. Pint, sintaks PHP dan whitespace lulus. Browser membuka riwayat perangkat nyata tanpa menyimpan perubahan; padding sel terukur 6.4px/8px dan garis `#64748b`. Fokus Tab pada pengurutan master serta tab rekap terlihat. Lebar dokumen 375px pada viewport 390px dan 753px pada 768px, pada master maupun rekap; tabel lebar bergulir dalam region lokal. Viewport dipulihkan dan console tidak mencatat error pada pemeriksaan. Ini pemeriksaan perubahan tabel, bukan audit aksesibilitas seluruh aplikasi atau uji ponsel fisik.
 
 Bukti: `output/it-infrastructure-review/tabel-master-selaras-20261019.png` dan `tabel-rekap-selaras-20261019.png`.
+
+### Penyamaan tabel detail Ringkasan Pemeriksaan
+
+Halaman `/panel/it-inspection-summary` juga memakai class tabel bersama pada seluruh kelompok hasil. Penyesuaian 19 Oktober 2026 ini melengkapi perubahan sebelumnya yang baru mencakup daftar master dan tab rekap. Proporsi kolom 30/18/22/30, snapshot historis, angka kondisi dan akses baca tetap sama. Header diberi `scope="col"`; tidak ada perubahan query, database atau alur pemeriksaan.
+
+- **Hard Gate PASS**: tabel memakai garis, latar, teks dan kontras yang sudah diverifikasi pada perubahan sebelumnya. Tidak ada aset, kontrol, data atau klaim baru. Semua hasil final tetap berupa teks. Console browser tanpa error pada pemeriksaan.
+- **Purpose-Gate PASS**: class bersama membuat garis, header, latar sel dan padding detail mengikuti acuan Pengecekan Infrastruktur serta tabel rekap. Tidak menambah dekorasi.
+- **Liveliness PASS**: arah Filament/Internal 9, ENERGY 1 / RHYTHM 1 / MOTION 1 dipertahankan; fokus halaman tetap identitas pemeriksaan dan hasil setiap kelompok.
+- **Craftsmanship PASS pada perubahan ini**: dua test ringkasan / 42 assertions lulus, termasuk nilai historis, escaping HTML, hasil final dan akses department. Browser memverifikasi sembilan tabel dengan lebar kolom identik, isi putih, garis `#64748b` dan padding 6.4px/8px. Fokus Tab antarregion terlihat. Halaman selebar 375px pada viewport 390px dan 753px pada 768px; tabel ponsel selebar 544px bergulir dalam region 343px. Viewport dipulihkan. Whitespace lulus; tidak ada data percobaan disimpan.
+
+Bukti: `output/it-infrastructure-review/tabel-ringkasan-selaras-20261019.png`.
