@@ -18,8 +18,11 @@ use App\Models\Employee;
 use App\Models\ItDevice;
 use App\Models\ItInspection;
 use App\Rules\ItAssetNumber;
+use App\Services\ItInfrastructure\ItDeviceService;
 use BackedEnum;
 use Filament\Actions\Action;
+use Filament\Actions\ActionGroup;
+use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
@@ -30,6 +33,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
@@ -43,6 +47,7 @@ use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 use UnitEnum;
 
 class ItDeviceResource extends Resource
@@ -75,8 +80,8 @@ class ItDeviceResource extends Resource
                 Tab::make('Identitas')->columns(['md' => 2, 'xl' => 3])->schema([
                     TextInput::make('asset_number')->label('Nomor Aset')->readOnly(fn (?ItDevice $record) => ! $record?->exists)->placeholder('Dibuat otomatis saat disimpan')
                         ->helperText(fn (?ItDevice $record) => $record?->exists
-                            ? 'Dapat dikoreksi sesuai label aset. Format: 00035/APCA//IT/2025 atau 00037/KPMOG//IT/2025.'
-                            : 'Format otomatis: 00035/APCA//IT/2025 atau 00037/KPMOG//IT/2025.')
+                            ? 'Dapat dikoreksi sesuai label aset. Format: 00035/APCA/IT/2025 atau 00037/KPMOG/IT/2025.'
+                            : 'Format otomatis: 00035/APCA/IT/2025 atau 00037/KPMOG/IT/2025.')
                         ->mutateStateForValidationUsing(fn ($state, ?ItDevice $record) => ItAssetNumber::normalize($state, $record?->getRawOriginal('asset_number')))
                         ->dehydrateStateUsing(fn ($state, ?ItDevice $record) => ItAssetNumber::normalize($state, $record?->getRawOriginal('asset_number')))
                         ->rules(fn (?ItDevice $record) => [new ItAssetNumber($record?->getRawOriginal('asset_number'))])
@@ -169,7 +174,23 @@ class ItDeviceResource extends Resource
             SelectFilter::make('lifecycle_status')->label('Status Pemakaian')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
             TernaryFilter::make('is_active')->label('Aktif'),
         ])->recordActions([
-            EditAction::make()->label('Edit'),
+            ActionGroup::make([
+                EditAction::make()->label('Edit'),
+                DeleteAction::make()->label('Hapus')->authorize('delete')
+                    ->modalHeading(fn (ItDevice $record) => 'Hapus '.$record->name.'?')
+                    ->modalDescription('Perangkat akan dihapus permanen. Perangkat yang memiliki riwayat pemeriksaan atau masih menjadi induk perangkat lain tidak dapat dihapus.')
+                    ->modalSubmitActionLabel('Hapus perangkat')->modalCancelActionLabel('Batal')
+                    ->successNotificationTitle('Perangkat berhasil dihapus')->failureNotification(null)
+                    ->using(function (ItDevice $record): bool {
+                        try {
+                            return app(ItDeviceService::class)->delete(auth()->user(), $record);
+                        } catch (ValidationException $exception) {
+                            Notification::make()->title('Perangkat tidak dapat dihapus')->body(collect($exception->errors())->flatten()->first())->danger()->send();
+
+                            return false;
+                        }
+                    }),
+            ])->label('Aksi perangkat')->icon('heroicon-m-ellipsis-vertical')->iconButton()->tooltip('Edit atau hapus perangkat'),
             ViewAction::make()->label('Lihat')->hidden(fn (ItDevice $record) => Gate::allows('update', $record)),
             Action::make('inspect')->label('Periksa')->url(fn (ItDevice $record) => ItInspectionPage::getUrl(['device' => $record->id]))->visible(fn (ItDevice $record) => Gate::allows('inspectDevice', [ItInspection::class, $record])),
         ])->defaultSort('name')->emptyStateHeading('Belum ada perangkat')->emptyStateDescription('Klik Tambah Perangkat untuk mendaftarkan laptop, server, perangkat jaringan, atau ruang server.');

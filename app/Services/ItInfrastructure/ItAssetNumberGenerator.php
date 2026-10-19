@@ -17,13 +17,13 @@ class ItAssetNumberGenerator
             $number = $sequence->last_number + 1;
             DB::table('it_asset_number_sequences')->where('id', 1)->update(['last_number' => $number]);
 
-            return sprintf('%05d/%s//IT/%04d', $number, $company, $year);
+            return sprintf('%05d/%s/IT/%04d', $number, $company, $year);
         });
     }
 
     public function reserve(string $number): void
     {
-        if (! preg_match('~\A([0-9]{5})/[A-Z][A-Z0-9]*//IT/[0-9]{4}\z~', $number, $parts)) {
+        if (! preg_match('~\A([0-9]{5})/[A-Z][A-Z0-9]*/{1,2}IT/[0-9]{4}\z~', $number, $parts)) {
             return;
         }
         DB::transaction(function () use ($parts): void {

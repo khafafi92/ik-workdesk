@@ -182,9 +182,9 @@ class ItInfrastructureSchemaTest extends ItInfrastructureTestCase
         $this->device(attributes: ['asset_number' => '', 'serial_number' => 'UNKNOWN']);
         $this->device(attributes: ['asset_number' => null, 'serial_number' => 'UNKNOWN']);
         $this->assertSame(2, ItDevice::query()->whereNull('asset_number')->count());
-        $this->device(attributes: ['asset_number' => '00001/APCA//IT/2025']);
+        $this->device(attributes: ['asset_number' => '00001/APCA/IT/2025']);
         $this->expectException(QueryException::class);
-        $this->device(attributes: ['asset_number' => '00001/APCA//IT/2025']);
+        $this->device(attributes: ['asset_number' => '00001/APCA/IT/2025']);
     }
 
     public function test_database_rejects_cross_template_result_even_without_model_events(): void

@@ -36,7 +36,7 @@ class ItDevicePolicy
 
     public function delete(User $user, ItDevice $device): bool
     {
-        return false;
+        return $this->update($user, $device);
     }
 
     public function deleteAny(User $user): bool

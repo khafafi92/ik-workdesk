@@ -109,7 +109,7 @@ class ItInfrastructureAccessTest extends ItInfrastructureTestCase
         $other = Department::query()->create(['code' => 'OTHER', 'name' => 'Other']);
         $device = $this->device(attributes: ['managing_department_id' => $other->id]);
         $this->assertTrue(Gate::forUser($this->inspector)->allows('update', $device));
-        $this->assertFalse(Gate::forUser($this->inspector)->allows('delete', $device));
+        $this->assertTrue(Gate::forUser($this->inspector)->allows('delete', $device));
     }
 
     public function test_follow_up_scope_uses_parent_inspection_department(): void

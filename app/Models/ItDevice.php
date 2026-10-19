@@ -85,7 +85,14 @@ class ItDevice extends Model
             }
         });
 
-        static::deleting(fn () => throw ValidationException::withMessages(['device' => 'Nonaktifkan objek untuk mempertahankan riwayat.']));
+        static::deleting(function (self $device): void {
+            if ($device->inspections()->exists()) {
+                throw ValidationException::withMessages(['device' => 'Perangkat memiliki riwayat pemeriksaan dan tidak dapat dihapus. Nonaktifkan perangkat untuk mempertahankan riwayat.']);
+            }
+            if ($device->childDevices()->exists()) {
+                throw ValidationException::withMessages(['device' => 'Perangkat masih menjadi induk perangkat lain. Lepaskan relasi induk sebelum menghapus.']);
+            }
+        });
     }
 
     public function scopeAccessibleTo(Builder $query, ?User $user): Builder

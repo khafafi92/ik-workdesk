@@ -21,6 +21,17 @@ use Illuminate\Validation\ValidationException;
 
 class ItDeviceService
 {
+    public function delete(User $actor, ItDevice $device): bool
+    {
+        return DB::transaction(function () use ($actor, $device): bool {
+            $device = ItDevice::query()->lockForUpdate()->findOrFail($device->id);
+            Gate::forUser($actor)->authorize('delete', $device);
+            $device->computerDetail()->delete();
+
+            return (bool) $device->delete();
+        });
+    }
+
     public function save(User $actor, array $data, ?ItDevice $device = null): ItDevice
     {
         try {
@@ -50,7 +61,15 @@ class ItDeviceService
                     'managing_department_id' => ['required', 'integer', Rule::exists('departments', 'id')],
                     'work_location_id' => ['nullable', 'integer', Rule::exists('work_locations', 'id')],
                     'location_name' => [$room && ! $device->work_location_id ? 'required' : 'nullable', Rule::enum(ItDeviceLocation::class)],
-                    'asset_number' => ['nullable', 'string', 'max:255', new ItAssetNumber($device->getRawOriginal('asset_number')), Rule::unique('it_devices', 'asset_number')->ignore($device->id)],
+                    'asset_number' => ['nullable', 'string', 'max:255', new ItAssetNumber($device->getRawOriginal('asset_number')), Rule::unique('it_devices', 'asset_number')->ignore($device->id), function (string $attribute, mixed $value, \Closure $fail) use ($device): void {
+                        if (! is_string($value) || $value === $device->getRawOriginal('asset_number') || ! preg_match('~/IT/~', $value)) {
+                            return;
+                        }
+                        $legacy = str_replace('/IT/', '//IT/', $value);
+                        if (ItDevice::query()->where('asset_number', $legacy)->where('id', '!=', $device->id ?? 0)->exists()) {
+                            $fail('Nomor Aset sudah digunakan oleh perangkat lain.');
+                        }
+                    }],
                     'asset_company' => [$generateAssetNumber ? 'required' : 'nullable', 'in:APCA,KPMOG'],
                     'asset_year' => [$generateAssetNumber ? 'required' : 'nullable', 'integer', 'between:1000,9999'],
                     'serial_number' => ['nullable', 'string', 'max:255'],
