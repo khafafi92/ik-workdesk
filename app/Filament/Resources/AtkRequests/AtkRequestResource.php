@@ -30,6 +30,7 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class AtkRequestResource extends Resource
 {
@@ -263,7 +264,7 @@ class AtkRequestResource extends Resource
                         app(AtkWarehouseStockService::class)->issue(
                             static::requestItem($record, $data['request_item_id']),
                             (float) $data['quantity'],
-                            auth()->user(),
+                            Auth::user(),
                         );
                         static::success('Penyerahan barang tercatat.');
                     }),
@@ -282,7 +283,7 @@ class AtkRequestResource extends Resource
                     ->action(function (AtkRequest $record, array $data): void {
                         app(AtkDepartmentStockService::class)->receive(
                             static::requestItem($record, $data['request_item_id']),
-                            auth()->user(),
+                            Auth::user(),
                         );
                         static::success('Penerimaan dan saldo departemen telah diperbarui.');
                     }),
@@ -292,7 +293,7 @@ class AtkRequestResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery()->with(['requester', 'department', 'company', 'items.item']);
-        $user = auth()->user();
+        $user = Auth::user();
 
         if (! $user) {
             return $query->whereRaw('1 = 0');
@@ -303,29 +304,29 @@ class AtkRequestResource extends Resource
 
     public static function canViewAny(): bool
     {
-        return auth()->user()?->hasPermission('atk.requests') === true
-            || auth()->user()?->hasPermission('atk.request') === true;
+        return Auth::user()?->hasPermission('atk.requests') === true
+            || Auth::user()?->hasPermission('atk.request') === true;
     }
 
     public static function shouldRegisterNavigation(): bool
     {
-        return auth()->user()?->hasPermission('atk.requests') === true;
+        return Auth::user()?->hasPermission('atk.requests') === true;
     }
 
     public static function canCreate(): bool
     {
         return static::canViewAny()
-            && auth()->user()?->hasPermission('atk.request') === true;
+            && Auth::user()?->hasPermission('atk.request') === true;
     }
 
     public static function canManage(): bool
     {
-        return auth()->user()?->hasPermission('atk.manage') === true;
+        return Auth::user()?->hasPermission('atk.manage') === true;
     }
 
     public static function canChooseRequesterDepartment(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $user?->loadMissing('employee');
 
         return $user?->employee?->department_id === null
@@ -334,7 +335,7 @@ class AtkRequestResource extends Resource
 
     public static function hasMissingEmployeeDepartment(): bool
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $user?->loadMissing('employee');
 
         return $user?->employee?->department_id === null
@@ -390,7 +391,7 @@ class AtkRequestResource extends Resource
 
     private static function canConfirmReceipt(AtkRequest $record): bool
     {
-        return (int) $record->requester_id === (int) auth()->id()
+        return (int) $record->requester_id === (int) Auth::id()
             && $record->items()->get()->contains(
                 fn (AtkRequestItem $item): bool => $item->awaitingReceipt() > 0
             );

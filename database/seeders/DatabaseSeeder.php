@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
             AccessControlSeeder::class,
             AdminUserSeeder::class,
             MeetingRoomSeeder::class,
+            ItInfrastructureChecklistSeeder::class,
         ]);
     }
 }

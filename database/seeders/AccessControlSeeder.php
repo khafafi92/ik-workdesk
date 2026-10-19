@@ -369,6 +369,8 @@ class AccessControlSeeder extends Seeder
                 );
             }
 
+            $this->call(ItInfrastructurePermissionSeeder::class);
+
             /*
             |--------------------------------------------------------------------------
             | Roles

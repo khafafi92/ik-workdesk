@@ -8,6 +8,14 @@ use App\Models\User;
 class UserAdditionalAccessService
 {
     private const MENU_ITEMS = [
+        'it-devices-view' => ['label' => 'Lihat Master Perangkat', 'access' => 'it-devices-view'],
+        'it-devices-manage' => ['label' => 'Kelola Master Perangkat', 'access' => 'it-devices-manage'],
+        'it-inspections-view' => ['label' => 'Lihat Pengecekan', 'access' => 'it-inspections-view'],
+        'it-inspections-create' => ['label' => 'Isi Pengecekan', 'access' => 'it-inspections-create'],
+        'it-inspections-manage' => ['label' => 'Kelola Pengecekan', 'access' => 'it-inspections-manage'],
+        'it-followups-manage' => ['label' => 'Kelola Tindak Lanjut', 'access' => 'it-followups-manage'],
+        'it-reports-view' => ['label' => 'Lihat Rekap & Laporan', 'access' => 'it-reports-view'],
+        'it-reports-export' => ['label' => 'Ekspor Laporan Excel', 'access' => 'it-reports-export'],
         'subject-categories' => ['label' => 'Subject Categories', 'access' => 'master-subject-categories'],
         'permit-kbli' => ['label' => 'Permit & KBLI', 'access' => 'master-permit-kbli'],
         'projects' => ['label' => 'Projects', 'access' => 'master-projects'],
@@ -60,6 +68,14 @@ class UserAdditionalAccessService
     ];
 
     private const ACCESS_GROUPS = [
+        'it-devices-view' => ['it.devices.view'],
+        'it-devices-manage' => ['it.devices.manage'],
+        'it-inspections-view' => ['it.inspections.view'],
+        'it-inspections-create' => ['it.inspections.create'],
+        'it-inspections-manage' => ['it.inspections.manage'],
+        'it-followups-manage' => ['it.follow-ups.manage'],
+        'it-reports-view' => ['it.reports.view'],
+        'it-reports-export' => ['it.reports.export'],
         'master-subject-categories' => ['master.subject-categories.manage'],
         'master-permit-kbli' => ['master.permit-kbli.manage'],
         'master-projects' => ['master.projects.manage'],
@@ -188,6 +204,14 @@ class UserAdditionalAccessService
     public function options(): array
     {
         return [
+            'it-devices-view' => 'Infrastruktur IT - Lihat Master Perangkat',
+            'it-devices-manage' => 'Infrastruktur IT - Kelola Master Perangkat',
+            'it-inspections-view' => 'Infrastruktur IT - Lihat Pengecekan',
+            'it-inspections-create' => 'Infrastruktur IT - Isi Pengecekan',
+            'it-inspections-manage' => 'Infrastruktur IT - Kelola Pengecekan',
+            'it-followups-manage' => 'Infrastruktur IT - Kelola Tindak Lanjut',
+            'it-reports-view' => 'Infrastruktur IT - Lihat Rekap & Laporan',
+            'it-reports-export' => 'Infrastruktur IT - Ekspor Excel',
             'master-data' => 'Kelola seluruh Master Data',
             'attendance-report' => 'Lihat Attendance Report dan Report Results',
             'attendance-management' => 'Attendance Reports — Upload dan Kelola',
@@ -246,6 +270,11 @@ class UserAdditionalAccessService
     public function menuGroups(): array
     {
         return [
+            'it_infrastructure' => [
+                'label' => 'Infrastruktur IT',
+                'description' => 'Pilih kemampuan petugas IT. Cakupan data tetap mengikuti department pengelola yang dapat diakses pengguna.',
+                'items' => ['it-devices-view', 'it-devices-manage', 'it-inspections-view', 'it-inspections-create', 'it-inspections-manage', 'it-followups-manage', 'it-reports-view', 'it-reports-export'],
+            ],
             'master_data' => [
                 'label' => 'Master Data',
                 'description' => 'Pilih menu Master Data yang diperlukan.',
