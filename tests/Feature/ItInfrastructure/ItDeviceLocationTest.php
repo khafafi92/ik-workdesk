@@ -68,10 +68,10 @@ class ItDeviceLocationTest extends ItInfrastructureTestCase
         $this->assertSame($before, $inspection->fresh()->getRawOriginal());
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])->assertFormSet(['location_name' => 'Site'])->call('saveDraft')->assertForbidden();
         $details = new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id));
-        $this->assertSame('Site', $details->map($details->query()->first())[8]);
+        $this->assertSame('Site', $details->map($details->query()->first())[4]);
         $page = Livewire::test(ItInfrastructureReportPage::class)->instance();
         $sheet = new ItDeviceSummarySheet($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery());
-        $this->assertSame('Office Alamanda', $sheet->map($sheet->query()->sole())[7]);
+        $this->assertSame('Office Alamanda', $sheet->map($sheet->query()->sole())[4]);
     }
 
     public function test_old_office_snapshot_is_preserved_until_draft_location_is_explicitly_changed(): void

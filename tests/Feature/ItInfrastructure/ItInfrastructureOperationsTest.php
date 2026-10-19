@@ -279,11 +279,14 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])->assertSee('LT 3');
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])->assertSee('LT 2')->assertDontSee('LT 3');
         $details = new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id));
-        $this->assertStringContainsString('Office HO / LT 2', $details->map($details->query()->first())[8]);
+        $this->assertSame('Office HO', $details->map($details->query()->first())[4]);
+        $this->assertSame('LT 2', $details->map($details->query()->first())[5]);
         $page = Livewire::test(ItInfrastructureReportPage::class)->instance();
         [$summary, $findings] = (new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()))->sheets();
-        $this->assertStringContainsString('Office HO / LT 3', $summary->map($summary->query()->sole())[7]);
-        $this->assertStringContainsString('Office HO / LT 2', $findings->map($findings->query()->sole())[8]);
+        $this->assertSame('Office HO', $summary->map($summary->query()->sole())[4]);
+        $this->assertSame('LT 3', $summary->map($summary->query()->sole())[5]);
+        $this->assertSame('Office HO', $findings->map($findings->query()->sole())[4]);
+        $this->assertSame('LT 2', $findings->map($findings->query()->sole())[5]);
     }
 
     public function test_switch_floor_accepts_only_the_requested_floors_and_clears_when_type_changes(): void
@@ -691,9 +694,9 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             $workbook = IOFactory::load($file);
             $sheet = $workbook->getActiveSheet();
             $this->assertSame(19, $sheet->getHighestDataRow());
-            $this->assertSame($inspection->inspection_number, $sheet->getCell('A2')->getValue());
-            $this->assertSame('=1+1', $sheet->getCell('E2')->getValue());
-            $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('E2')->getDataType());
+            $this->assertSame($inspection->inspection_number, $sheet->getCell('AA2')->getValue());
+            $this->assertSame('=1+1', $sheet->getCell('B2')->getValue());
+            $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('B2')->getDataType());
             $workbook->disconnectWorksheets();
         } finally {
             unlink($file);
@@ -753,24 +756,27 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             $summary = $workbook->getSheet(0);
             $this->assertSame(3, $summary->getHighestDataRow());
             $rows = $summary->toArray(null, true, false);
+            $columns = array_flip($rows[0]);
             $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $device->asset_number);
             $this->assertSame('=1+1', $row[1]);
-            $this->assertSame(2, $row[11]);
-            $this->assertSame($latest->inspection_number, $row[12]);
-            $this->assertSame('Normal', $row[15]);
-            $this->assertSame([0, 1, 1, 1], array_slice($row, 16));
+            $this->assertSame(2, $row[$columns['Jumlah pemeriksaan final dalam filter']]);
+            $this->assertSame($latest->inspection_number, $row[$columns['Nomor pemeriksaan terakhir dalam filter']]);
+            $this->assertSame('Normal', $row[$columns['Kondisi terakhir dalam filter']]);
+            $this->assertSame([0, 1, 1, 1], array_slice($row, $columns['Temuan terbuka']));
             $untested = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $other->asset_number);
-            $this->assertSame(0, $untested[11]);
-            $this->assertSame('Belum Diperiksa', $untested[15]);
+            $this->assertSame(0, $untested[$columns['Jumlah pemeriksaan final dalam filter']]);
+            $this->assertSame('Belum Diperiksa', $untested[$columns['Kondisi terakhir dalam filter']]);
             $this->assertSame(DataType::TYPE_STRING, $summary->getCell('B2')->getDataType());
-            $this->assertSame(DataType::TYPE_NUMERIC, $summary->getCell('L2')->getDataType());
+            $this->assertSame(DataType::TYPE_NUMERIC, $summary->getCell([$columns['Jumlah pemeriksaan final dalam filter'] + 1, 2])->getDataType());
             $details = $workbook->getSheet(1);
             $this->assertSame(3, $details->getHighestDataRow());
-            $this->assertSame('=Perawatan', $details->getCell('N2')->getValue());
-            $this->assertSame(DataType::TYPE_STRING, $details->getCell('N2')->getDataType());
-            $this->assertSame('Selesai', $details->getCell('Q2')->getValue());
-            $this->assertSame('Sudah diperbaiki', $details->getCell('R2')->getValue());
-            $this->assertSame('Dalam Proses', $details->getCell('Q3')->getValue());
+            $detailRows = $details->toArray(null, true, false);
+            $detailColumns = array_flip($detailRows[0]);
+            $this->assertSame('=Perawatan', $detailRows[1][$detailColumns['Rencana perawatan / tindak lanjut']]);
+            $this->assertSame(DataType::TYPE_STRING, $details->getCell([$detailColumns['Rencana perawatan / tindak lanjut'] + 1, 2])->getDataType());
+            $this->assertSame('Selesai', $detailRows[1][$detailColumns['Status tindak lanjut saat ekspor']]);
+            $this->assertSame('Sudah diperbaiki', $detailRows[1][$detailColumns['Catatan penyelesaian']]);
+            $this->assertSame('Dalam Proses', $detailRows[2][$detailColumns['Status tindak lanjut saat ekspor']]);
             $workbook->disconnectWorksheets();
         } finally {
             unlink($file);

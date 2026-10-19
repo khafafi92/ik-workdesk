@@ -3,7 +3,6 @@
 namespace App\Exports;
 
 use App\Enums\ItInspectionCondition;
-use App\Enums\ItObjectKind;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -30,7 +29,7 @@ class ItDeviceSummarySheet extends StringValueBinder implements FromQuery, Shoul
     {
         $inspectionIds = (clone $this->inspections)->select('it_inspections.id');
         $query = (clone $this->devices)->with([
-            'managingDepartment', 'location',
+            'managingDepartment', 'computerDetail', 'assignedEmployee.department', 'assignedEmployee.user',
             'inspections' => fn ($query) => $query->whereIn('id', clone $inspectionIds)->orderByDesc('checked_at')->orderByDesc('id')->limit(1),
         ])->withCount(['inspections as final_inspections_count' => fn ($query) => $query->whereIn('id', clone $inspectionIds)]);
 
@@ -46,7 +45,7 @@ class ItDeviceSummarySheet extends StringValueBinder implements FromQuery, Shoul
 
     public function headings(): array
     {
-        return ['Nomor aset', 'Nama Perangkat', 'Kategori', 'Jenis', 'Bentuk objek', 'Serial number', 'Department pengelola saat ini', 'Lokasi master saat ini', 'Status Pemakaian saat ini', 'Status register', 'Nama user saat ini', 'Jumlah pemeriksaan final dalam filter', 'Nomor pemeriksaan terakhir dalam filter', 'Tanggal pemeriksaan terakhir dalam filter', 'Petugas pemeriksaan terakhir', 'Kondisi terakhir dalam filter', 'Temuan terbuka', 'Temuan dalam proses', 'Temuan selesai', 'Total temuan belum selesai'];
+        return [...ItDeviceExportFields::headings(), 'Jumlah pemeriksaan final dalam filter', 'Nomor pemeriksaan terakhir dalam filter', 'Tanggal pemeriksaan terakhir dalam filter', 'Petugas pemeriksaan terakhir', 'Kondisi terakhir dalam filter', 'Temuan terbuka', 'Temuan dalam proses', 'Temuan selesai', 'Total temuan belum selesai'];
     }
 
     public function map($device): array
@@ -54,13 +53,7 @@ class ItDeviceSummarySheet extends StringValueBinder implements FromQuery, Shoul
         $last = $device->inspections->first();
 
         return [
-            $device->asset_number, $device->name, $device->category->label(), $device->device_type->label(),
-            match ($device->object_kind) {
-                ItObjectKind::Room => 'Ruang', ItObjectKind::Virtual => 'Virtual', ItObjectKind::Physical => 'Fisik',
-            },
-            $device->serial_number, $device->managingDepartment?->name,
-            collect([$device->location_name?->value ?? $device->location?->gps_name, $device->location_detail, $device->floor?->label()])->filter()->implode(' / '),
-            $device->lifecycle_status?->label() ?? 'Tidak Berlaku', $device->is_active ? 'Aktif' : 'Nonaktif', $device->assigned_user_name,
+            ...ItDeviceExportFields::forDevice($device),
             (int) $device->final_inspections_count, $last?->inspection_number, $last?->checked_at?->format('Y-m-d H:i'),
             $last?->inspector_snapshot['name'] ?? '', $last?->overall_condition?->label() ?? ItInspectionCondition::Unchecked->label(),
             (int) $device->open_findings_count, (int) $device->in_progress_findings_count, (int) $device->resolved_findings_count,

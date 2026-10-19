@@ -174,7 +174,7 @@ class ItDevice extends Model
 
         return [
             'location_name' => $this->location_name?->value,
-            ...$this->only(['id', 'code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'floor', 'lifecycle_status', 'notes']),
+            ...$this->only(['id', 'code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'floor', 'lifecycle_status', 'is_active', 'disposed_at', 'disposal_reason', 'notes']),
             'managing_department' => $this->managingDepartment?->only(['id', 'code', 'name']),
             'assigned_employee' => $this->assignedEmployee ? [...$this->assignedEmployee->only(['id', 'employee_no', 'name', 'department_id', 'position']), 'division' => $this->assignedEmployee->department?->name] : null,
             'assigned_user_name' => $this->assigned_user_name,

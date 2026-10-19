@@ -2,18 +2,21 @@
 
 namespace App\Exports;
 
-use App\Enums\ItSwitchFloor;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithStrictNullComparison;
 use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 
-class ItInspectionExport extends StringValueBinder implements FromQuery, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping
+class ItInspectionExport extends StringValueBinder implements FromQuery, ShouldAutoSize, WithCustomValueBinder, WithHeadings, WithMapping, WithStrictNullComparison
 {
-    public function __construct(private Builder $results) {}
+    public function __construct(private Builder $results)
+    {
+        $this->setNumericConversion(false);
+    }
 
     public function query(): Builder
     {
@@ -22,19 +25,17 @@ class ItInspectionExport extends StringValueBinder implements FromQuery, ShouldA
 
     public function headings(): array
     {
-        return ['Nomor pemeriksaan', 'Tanggal', 'Petugas', 'Nomor aset', 'Nama Perangkat', 'Jenis', 'Serial number', 'Department pengelola', 'Lokasi', 'Kelompok', 'Pemeriksaan', 'Hasil', 'Nilai / rincian', 'Catatan', 'Temuan', 'Tindak lanjut', 'Penanggung jawab', 'Status tindak lanjut', 'Catatan penyelesaian', 'Diselesaikan oleh', 'Waktu penyelesaian'];
+        return [...ItDeviceExportFields::headings(), 'Nomor pemeriksaan', 'Tanggal pemeriksaan', 'Petugas', 'Kelompok', 'Pemeriksaan', 'Hasil', 'Nilai / rincian', 'Catatan', 'Temuan', 'Tindak lanjut', 'Penanggung jawab', 'Status tindak lanjut', 'Catatan penyelesaian', 'Diselesaikan oleh', 'Waktu penyelesaian'];
     }
 
     public function map($result): array
     {
         $inspection = $result->inspection;
-        $device = $inspection->device_snapshot;
         $followUp = $result->followUp;
 
         return [
+            ...ItDeviceExportFields::forInspection($inspection),
             $inspection->inspection_number, $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
-            $device['asset_number'] ?? '', $device['name'], $device['device_type'], $device['serial_number'] ?? '',
-            $device['managing_department']['name'] ?? '', collect([$inspection->location_snapshot['location']['gps_name'] ?? $inspection->location_snapshot['detail'] ?? '', ItSwitchFloor::tryFrom($device['floor'] ?? '')?->label()])->filter()->implode(' / '),
             $result->item_snapshot['section'], $result->item_snapshot['label'], $result->condition->label(),
             $result->measured_value['value'] ?? ($result->measured_value ? json_encode($result->measured_value, JSON_UNESCAPED_UNICODE) : ''),
             $result->notes, $result->finding, $followUp?->action_plan, $followUp?->assignee?->name, $followUp?->status?->label(),

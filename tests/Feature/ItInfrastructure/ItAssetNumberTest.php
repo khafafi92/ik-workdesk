@@ -125,7 +125,7 @@ class ItAssetNumberTest extends ItInfrastructureTestCase
         try {
             file_put_contents($file, $bytes);
             $workbook = IOFactory::load($file);
-            $cell = $workbook->getActiveSheet()->getCell('D2');
+            $cell = $workbook->getActiveSheet()->getCell('A2');
             $this->assertSame('00035/APCA/IT/2025', $cell->getValue());
             $this->assertSame(DataType::TYPE_STRING, $cell->getDataType());
             $workbook->disconnectWorksheets();
