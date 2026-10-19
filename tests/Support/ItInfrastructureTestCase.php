@@ -66,6 +66,7 @@ abstract class ItInfrastructureTestCase extends TestCase
             '2026_10_19_010000_add_location_name_to_it_devices_and_inspections.php',
             '2026_10_19_020000_create_it_asset_number_sequences_table.php',
             '2026_10_19_030000_sync_it_asset_sequence_number_formats.php',
+            '2026_10_19_040000_normalize_it_device_asset_number_separator.php',
         ];
         foreach ($migrations as $migration) {
             (require database_path('migrations/'.$migration))->up();

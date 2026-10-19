@@ -247,6 +247,48 @@ class ItAssetNumberTest extends ItInfrastructureTestCase
         $this->assertSame(1, ItDevice::query()->count());
     }
 
+    public function test_separator_migration_corrects_master_only_and_preserves_history_and_serial(): void
+    {
+        $device = $this->device(attributes: ['serial_number' => 'PF-34GZ60']);
+        DB::table('it_devices')->where('id', $device->id)->update(['asset_number' => '00035/KPMOG//IT/2024']);
+        $inspection = $this->inspection($device->refresh());
+        $this->fillRemainingResults($inspection);
+        $this->finalize($inspection);
+        $before = $device->fresh()->getRawOriginal();
+        $history = $inspection->fresh()->getRawOriginal();
+        $blank = $this->device();
+        $legacy = $this->device();
+        DB::table('it_devices')->where('id', $legacy->id)->update(['asset_number' => 'ASSET-LAMA']);
+        $counter = DB::table('it_asset_number_sequences')->value('last_number');
+        $migration = require database_path('migrations/2026_10_19_040000_normalize_it_device_asset_number_separator.php');
+        $migration->up();
+        $migration->up();
+        $this->assertSame([...$before, 'asset_number' => '00035/KPMOG/IT/2024'], $device->fresh()->getRawOriginal());
+        $this->assertSame($history, $inspection->fresh()->getRawOriginal());
+        $this->assertNull($blank->fresh()->asset_number);
+        $this->assertSame('ASSET-LAMA', $legacy->fresh()->asset_number);
+        $this->assertSame($counter, DB::table('it_asset_number_sequences')->value('last_number'));
+    }
+
+    public function test_separator_migration_rolls_back_all_corrections_if_numbers_conflict(): void
+    {
+        $first = $this->device();
+        $conflict = $this->device();
+        $canonical = $this->device(attributes: ['asset_number' => '00036/KPMOG/IT/2025']);
+        DB::table('it_devices')->where('id', $first->id)->update(['asset_number' => '00035/APCA//IT/2025']);
+        DB::table('it_devices')->where('id', $conflict->id)->update(['asset_number' => '00036/KPMOG//IT/2025']);
+        try {
+            (require database_path('migrations/2026_10_19_040000_normalize_it_device_asset_number_separator.php'))->up();
+            $this->fail('Conflicting numbers were normalized.');
+        } catch (\RuntimeException $exception) {
+            $this->assertStringContainsString('Koreksi separator dibatalkan', $exception->getMessage());
+        }
+        $this->assertSame('00035/APCA//IT/2025', $first->fresh()->asset_number);
+        $this->assertSame('00036/KPMOG//IT/2025', $conflict->fresh()->asset_number);
+        $this->assertSame('00036/KPMOG/IT/2025', $canonical->fresh()->asset_number);
+        $this->assertSame(3, ItDevice::query()->count());
+    }
+
     public function test_counter_reconciliation_reads_both_formats_without_changing_inventory_or_lowering_counter(): void
     {
         $device = $this->device();
