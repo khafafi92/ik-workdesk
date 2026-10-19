@@ -228,3 +228,20 @@ Delivery gate, anti-slop selama implementasi; arah formulir operasional Filament
 - **Craftsmanship PASS pada cakupan yang diperiksa**: browser memverifikasi pergantian jenis master, tab OS/Pemakaian, pemilihan user dan fokus Tab ke Clear selection. Pemilihan Thinkpad pada pengecekan menghasilkan 18 pilihan hasil pada enam kelompok, tanpa delapan butir yang dihapus atau Hardware PC. Rekap hanya memiliki lima filter: Kategori, Kondisi terakhir, Dari tanggal, Sampai tanggal dan Petugas. Halaman ponsel selebar 375px pada viewport 390px, tabel checklist 960px berada dalam region 343px; pada tablet halaman 753px dalam viewport 768px. Viewport dipulihkan; tidak ada error console pada pemeriksaan akhir. Form browser tidak disimpan menjadi perangkat atau pemeriksaan percobaan.
 
 Bukti: `output/it-infrastructure-review/pemakaian-user-jabatan-divisi-20261019.png`, `os-versi-lisensi-20261019.png` dan `checklist-laptop-18-mobile-20261019.png`.
+
+### Koreksi jenis PC dan Laptop pada master existing
+
+Pada 19 Oktober 2026, aturan yang mengunci jenis setelah detail komputer dibuat diperbaiki agar salah klasifikasi PC/Laptop dapat dikoreksi melalui Edit. Perangkat komputer dengan detail atau pemeriksaan existing hanya menawarkan Laptop dan PC. Perangkat terpakai tidak dapat dipindahkan ke kategori server, jaringan atau ruangan. Aturan pilihan dan validasi model memakai `editableDeviceTypes()` yang sama; policy edit dan batas department tetap berlaku.
+
+Koreksi mempertahankan detail OS/lisensi, RAM, HDD/SSD, pemakai dan status pemakaian. Perubahan jenis tidak lagi otomatis mereset status menjadi Tidak Digunakan. Draft dan hasil final existing tetap menggunakan template serta snapshot jenis semula; pemeriksaan baru memakai jenis master yang sudah dikoreksi. Tidak ada migration atau konversi otomatis atas record perangkat.
+
+Lokasi dijelaskan sebagai kantor/cabang tempat perangkat berada, dengan placeholder Pilih lokasi perangkat. Pilihannya berasal dari Work Locations. Detail ruang/rack menyimpan posisi lebih spesifik. Lokasi bersifat opsional untuk Laptop/PC dan tetap wajib untuk Ruang Server.
+
+Validasi: 79 tests / 1258 assertions SQLite dan 79 tests / 1416 assertions PostgreSQL 18.4 lulus. Dua test baru menyimpan koreksi PC ke Laptop lalu kembali ke PC, memeriksa inventaris dan status tetap sama, draft/final lama tidak berubah, serta checklist baru sesuai jenis. Perubahan lintas kategori melalui service ditolak dan transaksi dibatalkan. Database uji PostgreSQL dibersihkan; fingerprint schema, migration dan jumlah record tabel bisnis utama tetap sama. Pint, sintaks dan whitespace lulus. Log: `output/it-infrastructure-review/computer-type-correction-postgres-20261019.log`.
+
+Delivery gate, anti-slop selama implementasi; Filament/Internal 9, ENERGY 1 / RHYTHM 1 / MOTION 1:
+
+- **Hard Gate PASS pada perubahan ini**: pilihan jenis pada komputer existing aktif dan hanya memuat Laptop/PC. Petunjuk lokasi dan koreksi berasal dari aturan aplikasi yang diuji; tidak menambah aset, menu atau klaim buatan. Warna, kontras, error/loading dan empty state existing dipertahankan.
+- **Purpose-Gate PASS**: membuka pilihan yang dapat dikoreksi tanpa mengubah struktur inventaris. Petunjuk di bawah field menjelaskan arti lokasi serta akibat koreksi terhadap riwayat. Tidak ada dekorasi atau kontrol baru.
+- **Liveliness PASS**: form bertab, tipografi, aksen dan hierarki panel dipertahankan dengan arah dan dials yang sama.
+- **Craftsmanship PASS pada cakupan ini**: browser memilih PC lalu Laptop pada master existing tanpa menyimpan perubahan percobaan; status tetap Digunakan. Simpan dua arah dan penolakan lintas kategori diuji di database terisolasi. Tab menuju Department pengelola menunjukkan outline biru. Halaman selebar 375px pada viewport 390px dan 753px pada 768px; petunjuk membungkus tanpa keluar form. Viewport dipulihkan dan console tidak mencatat error.

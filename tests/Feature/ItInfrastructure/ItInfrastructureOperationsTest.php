@@ -210,6 +210,52 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             ->assertDontSee('Hardware PC')->assertSet('data.results.cpu_usage.measured_value', '15');
     }
 
+    public function test_computer_type_can_be_corrected_both_ways_without_changing_inventory_or_old_inspections(): void
+    {
+        $this->asAdministrator();
+        $device = $this->register(['device_type' => 'pc', 'operating_system' => 'Ubuntu', 'windows_version' => '24.04']);
+        $detail = $device->computerDetail->getRawOriginal();
+        $service = app(ItInspectionService::class);
+        $final = $service->save($this->inspector, $device->id, null, $this->inspectionData($device), true);
+        $draft = $service->save($this->inspector, $device->id, null, $this->inspectionData($device), false);
+        $history = collect([$final, $draft])->map(fn ($inspection) => [$inspection->getRawOriginal(), $inspection->results()->get()->map->getRawOriginal()->all()])->all();
+
+        Livewire::test(EditItDevice::class, ['record' => $device->id])->set('data.device_type', 'laptop')
+            ->assertSet('data.lifecycle_status', 'in_use')->call('save')->assertHasNoFormErrors();
+        $this->assertSame('laptop', $device->refresh()->device_type->value);
+        $this->assertSame($detail, $device->computerDetail->getRawOriginal());
+        Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])
+            ->assertSee('Baterai laptop')->assertDontSee('Hardware PC');
+        Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $draft->id])
+            ->assertSee('Hardware PC')->assertDontSee('Baterai laptop');
+
+        Livewire::test(EditItDevice::class, ['record' => $device->id])->set('data.device_type', 'pc')
+            ->assertSet('data.lifecycle_status', 'in_use')->call('save')->assertHasNoFormErrors();
+        $this->assertSame('pc', $device->refresh()->device_type->value);
+        $this->assertSame($detail, $device->computerDetail->getRawOriginal());
+        foreach ([$final, $draft] as $index => $inspection) {
+            $this->assertSame($history[$index], [$inspection->fresh()->getRawOriginal(), $inspection->results()->get()->map->getRawOriginal()->all()]);
+        }
+    }
+
+    public function test_used_devices_reject_type_changes_outside_laptop_and_pc(): void
+    {
+        $this->asAdministrator();
+        foreach (['pc' => 'server', 'server' => 'laptop'] as $original => $requested) {
+            $device = $this->register(['device_type' => $original]);
+            $this->inspection($device);
+            $before = $device->getRawOriginal();
+            $this->assertSame($original === 'pc' ? ['laptop', 'pc'] : ['server'], array_column($device->editableDeviceTypes(), 'value'));
+            try {
+                app(ItDeviceService::class)->save($this->inspector, $this->deviceData(['device_type' => $requested, 'name' => 'Perubahan yang harus dibatalkan']), $device);
+                $this->fail('Perubahan lintas kategori pada perangkat terpakai diterima.');
+            } catch (ValidationException $exception) {
+                $this->assertArrayHasKey('data.device_type', $exception->errors());
+            }
+            $this->assertSame($before, $device->fresh()->getRawOriginal());
+        }
+    }
+
     public function test_real_master_rejects_duplicate_asset_and_invalid_license_without_partial_write(): void
     {
         $this->asAdministrator();

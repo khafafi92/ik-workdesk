@@ -74,17 +74,17 @@ class ItDeviceResource extends Resource
                 Tab::make('Identitas')->columns(['md' => 2, 'xl' => 3])->schema([
                     TextInput::make('code')->label('Kode register')->default(fn () => 'IT-'.strtoupper(Str::random(10)))->required()->maxLength(80)->unique(ignoreRecord: true),
                     TextInput::make('name')->label('Nama device / objek')->required()->maxLength(255),
-                    Select::make('device_type')->label('Jenis perangkat / objek')->default('laptop')->options(collect(ItDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->label()])->all())->required()->disabled(fn (?ItDevice $record) => $record && ($record->computerDetail()->exists() || $record->inspections()->exists()))->dehydrated()->live()->afterStateUpdated(function ($state, Set $set): void {
+                    Select::make('device_type')->label('Jenis perangkat / objek')->default('laptop')->options(fn (?ItDevice $record) => collect($record?->editableDeviceTypes() ?? ItDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->label()])->all())->required()->disabled(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 1)->helperText(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 2 ? 'Laptop dan PC dapat dikoreksi. Riwayat pemeriksaan tetap memakai jenis saat diperiksa.' : null)->dehydrated()->live()->afterStateUpdated(function ($state, Set $set, Get $get): void {
                         if ($state === 'server_room') {
                             foreach (['asset_number', 'serial_number', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name'] as $field) {
                                 $set($field, null);
                             }
-                        } else {
+                        } elseif (blank($get('lifecycle_status'))) {
                             $set('lifecycle_status', 'unused');
                         }
                     }),
                     Select::make('managing_department_id')->label('Department pengelola')->options(fn () => Department::query()->whereIn('id', auth()->user()->accessibleDepartmentIds())->orderBy('name')->pluck('name', 'id'))->default(fn () => auth()->user()->employee?->department_id)->searchable()->required(),
-                    Select::make('work_location_id')->label('Lokasi')->options(fn () => WorkLocation::query()->orderBy('gps_name')->pluck('gps_name', 'id'))->searchable()->required($isRoom),
+                    Select::make('work_location_id')->label('Lokasi')->placeholder('Pilih lokasi perangkat')->helperText('Kantor/cabang tempat perangkat berada.')->options(fn () => WorkLocation::query()->orderBy('gps_name')->pluck('gps_name', 'id'))->searchable()->required($isRoom),
                     TextInput::make('location_detail')->label('Detail ruang / rack'),
                     TextInput::make('asset_number')->label('Nomor Asset')->maxLength(255)->unique(ignoreRecord: true)->hidden($isRoom),
                     TextInput::make('serial_number')->label('Serial Number')->maxLength(255)->hidden($isRoom),

@@ -59,7 +59,7 @@ class ItDevice extends Model
                 throw ValidationException::withMessages(['disposed_at' => 'Informasi penghapusan hanya berlaku untuk aset Dihapuskan.']);
             }
 
-            if ($device->exists && $device->isDirty(['device_type', 'category', 'object_kind']) && ($device->inspections()->exists() || $device->computerDetail()->exists())) {
+            if ($device->exists && $device->isDirty(['device_type', 'category', 'object_kind']) && ! in_array($device->device_type, $device->editableDeviceTypes(), true)) {
                 throw ValidationException::withMessages(['device_type' => 'Jenis objek yang sudah memiliki detail atau pemeriksaan tidak dapat diubah.']);
             }
 
@@ -80,6 +80,19 @@ class ItDevice extends Model
     public function scopeAccessibleTo(Builder $query, ?User $user): Builder
     {
         return ItInfrastructureAccess::scope($query, $user, 'it_devices.managing_department_id', ItPermission::DevicesView, ItPermission::DevicesManage);
+    }
+
+    public function editableDeviceTypes(): array
+    {
+        if (! $this->exists || (! $this->inspections()->exists() && ! $this->computerDetail()->exists())) {
+            return ItDeviceType::cases();
+        }
+
+        $original = ItDeviceType::from($this->getRawOriginal('device_type'));
+
+        return in_array($original, [ItDeviceType::Laptop, ItDeviceType::Pc], true)
+            ? [ItDeviceType::Laptop, ItDeviceType::Pc]
+            : [$original];
     }
 
     public function scopeAssets(Builder $query): Builder
