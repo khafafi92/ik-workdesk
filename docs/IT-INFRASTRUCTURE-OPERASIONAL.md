@@ -245,3 +245,22 @@ Delivery gate, anti-slop selama implementasi; Filament/Internal 9, ENERGY 1 / RH
 - **Purpose-Gate PASS**: membuka pilihan yang dapat dikoreksi tanpa mengubah struktur inventaris. Petunjuk di bawah field menjelaskan arti lokasi serta akibat koreksi terhadap riwayat. Tidak ada dekorasi atau kontrol baru.
 - **Liveliness PASS**: form bertab, tipografi, aksen dan hierarki panel dipertahankan dengan arah dan dials yang sama.
 - **Craftsmanship PASS pada cakupan ini**: browser memilih PC lalu Laptop pada master existing tanpa menyimpan perubahan percobaan; status tetap Digunakan. Simpan dua arah dan penolakan lintas kategori diuji di database terisolasi. Tab menuju Department pengelola menunjukkan outline biru. Halaman selebar 375px pada viewport 390px dan 753px pada 768px; petunjuk membungkus tanpa keluar form. Viewport dipulihkan dan console tidak mencatat error.
+
+### Label ringkas dan LT untuk Switch
+
+Revisi 19 Oktober 2026 menyamakan nama field dan kolom menjadi Nama Perangkat serta Status Pemakaian. Tambahan `/ ruang` di label pemilih pemeriksaan, ringkasan dan judul ekspor dihapus. Ruang Server tetap didukung sebagai jenis perangkat; aturan validasi dan akses tidak berubah.
+
+Master Switch memiliki pilihan opsional LT (Lantai): B2, Lobi, LT 2, LT 3, LT 5, LT 6, LT 7, LT 8, LT 9 dan LT 10. Jenis lain tidak menampilkan LT; mengganti jenis Switch yang belum digunakan ke jenis lain membersihkan nilainya. Model menolak lantai pada jenis selain Switch dan service membatasi nilainya ke daftar tersebut. Kolom LT tampil pada daftar master.
+
+Migration `2026_10_19_000000_add_floor_to_it_devices` menambahkan kolom `floor` nullable tanpa mengisi ulang data existing. Snapshot pemeriksaan baru mencatat lantai master saat dibuat. Pengecekan dan Ringkasan Pemeriksaan menampilkan lantai dari snapshot, sehingga perubahan lantai pada master tidak mengubah hasil historis. Ekspor ringkasan menambahkan LT ke lokasi master saat ini; ekspor temuan dan rincian menggunakan LT historis pada lokasi pemeriksaan. Jumlah serta urutan kolom workbook tetap sama.
+
+Verifikasi: 82 tests / 1367 assertions SQLite dan 82 tests / 1531 assertions PostgreSQL 18.4 lulus. Test tambahan memeriksa migration pada perangkat/hasil existing, seluruh pilihan lantai, penolakan LT 4/B1/11, simpan/buka/edit Switch, pembersihan LT ketika jenis berubah, riwayat LT 2 setelah master pindah LT 3, serta lokasi dalam ketiga ekspor. Database PostgreSQL sementara dibersihkan dan fingerprint database aplikasi tidak berubah selama suite. Aktivasi migration lokal juga membandingkan seluruh field lama perangkat, inventaris, checklist, pemeriksaan/hasil/tindak lanjut/event, user dan akses: identik sebelum/sesudah, selain kolom nullable serta catatan migration baru. Pint, sintaks dan whitespace lulus. Log: `output/it-infrastructure-review/switch-floor-postgres-20261019.log`.
+
+Delivery gate, anti-slop selama implementasi; arah Filament/Internal 9 dengan ENERGY 1 / RHYTHM 1 / MOTION 1:
+
+- **Hard Gate PASS pada cakupan ini**: LT merupakan select nyata dengan sepuluh pilihan yang diminta; browser memilih LT 2 dan Lobi, kemudian berpindah ke Laptop dan LT tersembunyi. Loading tampak selama pergantian jenis. Simpan, validasi pilihan tidak sah, snapshot dan ekspor diuji di database terisolasi. Tidak ada aset, menu atau data perangkat contoh baru. Warna dan kontras mengikuti kontrol serta teks existing.
+- **Purpose-Gate PASS**: label ringkas mengikuti permintaan pengguna; LT berada di samping Lokasi agar kantor dan lantai dibaca bersama. LT di daftar serta lokasi ekspor membantu membedakan posisi Switch tanpa mengubah struktur tabel lain.
+- **Liveliness PASS**: tipografi, aksen, tab, hierarki form dan tabel bergaris existing dipertahankan, dengan arah dan dials yang sama. Tidak ada dekorasi atau animasi tambahan.
+- **Craftsmanship PASS pada cakupan ini**: browser mengonfirmasi label Nama Perangkat dan Status Pemakaian, seluruh opsi LT, pemilihan Lobi dan fokus Tab menuju Detail ruang/rack. Halaman ponsel selebar 375px pada viewport 390px dan tablet 753px pada 768px; form Switch menumpuk satu kolom pada ponsel. Viewport dipulihkan, console tanpa error, dan form browser tidak disimpan sebagai data percobaan.
+
+Bukti: `output/it-infrastructure-review/switch-lantai-20261019.png`.

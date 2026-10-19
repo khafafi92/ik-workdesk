@@ -130,7 +130,7 @@ class ItInspectionPage extends ItInfrastructurePage
     public function deviceSelector(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('deviceId')->id('it-inspection-device')->label('Perangkat / ruang yang diperiksa')
+            Select::make('deviceId')->id('it-inspection-device')->label('Nama Perangkat')
                 ->options(function (): array {
                     $options = $this->deviceSearchResults();
 
@@ -163,7 +163,7 @@ class ItInspectionPage extends ItInfrastructurePage
             return [...$snapshot, 'managing_department' => $snapshot['managing_department']['name'] ?? ''];
         }
 
-        return ['id' => $this->deviceId, 'name' => $this->selectedDevice->name, 'device_type' => $this->selectedDevice->device_type->value, 'managing_department' => $this->selectedDevice->managingDepartment->name];
+        return ['id' => $this->deviceId, 'name' => $this->selectedDevice->name, 'device_type' => $this->selectedDevice->device_type->value, 'floor' => $this->selectedDevice->floor?->value, 'managing_department' => $this->selectedDevice->managingDepartment->name];
     }
 
     public function isFinalized(): bool

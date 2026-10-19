@@ -5,10 +5,11 @@
         <section aria-label="Informasi pemeriksaan">
             <h2>{{ $inspection->inspection_number }}</h2>
             <dl class="it-review-inspection-meta">
-                <div><dt>Perangkat / ruang</dt><dd>{{ $inspection->device_snapshot['code'] }}<br>{{ $inspection->device_snapshot['name'] }}</dd></div>
+                <div><dt>Nama Perangkat</dt><dd>{{ $inspection->device_snapshot['code'] }}<br>{{ $inspection->device_snapshot['name'] }}</dd></div>
                 <div><dt>Waktu pemeriksaan</dt><dd>{{ $inspection->checked_at->format('d/m/Y H:i') }}</dd></div>
                 <div><dt>Petugas</dt><dd>{{ $inspection->inspector_snapshot['name'] }}</dd></div>
                 <div><dt>Lokasi / rack</dt><dd>{{ $inspection->location_snapshot['location']['gps_name'] ?? 'Tidak dicatat' }}@if (filled($inspection->location_snapshot['detail'] ?? null))<br>{{ $inspection->location_snapshot['detail'] }}@endif</dd></div>
+                @if ($floor = \App\Enums\ItSwitchFloor::tryFrom($inspection->device_snapshot['floor'] ?? ''))<div><dt>LT (Lantai)</dt><dd>{{ $floor->label() }}</dd></div>@endif
                 <div><dt>Status dokumen</dt><dd>{{ $inspection->status->label() }}</dd></div>
                 <div><dt>Kondisi keseluruhan</dt><dd><span class="it-review-status" data-condition="{{ $inspection->overall_condition->value }}">{{ $inspection->overall_condition->label() }}</span></dd></div>
             </dl>

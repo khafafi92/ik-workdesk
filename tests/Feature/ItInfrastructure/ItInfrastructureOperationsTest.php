@@ -4,6 +4,7 @@ namespace Tests\Feature\ItInfrastructure;
 
 use App\Enums\ItInspectionStatus;
 use App\Enums\ItPermission;
+use App\Enums\ItSwitchFloor;
 use App\Exports\ItInspectionExport;
 use App\Exports\ItMaintenanceSummaryExport;
 use App\Filament\Pages\ItInfrastructureReportPage;
@@ -254,6 +255,55 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             }
             $this->assertSame($before, $device->fresh()->getRawOriginal());
         }
+    }
+
+    public function test_switch_floor_is_saved_and_keeps_its_historical_value_in_reports_and_exports(): void
+    {
+        $this->asAdministrator();
+        Livewire::test(CreateItDevice::class)->fillForm(['name' => 'Switch distribusi', 'device_type' => 'switch', 'floor' => '2'])
+            ->call('create')->assertHasNoFormErrors();
+        $device = ItDevice::query()->sole();
+        $this->assertSame(ItSwitchFloor::Floor2, $device->floor);
+        Livewire::test(EditItDevice::class, ['record' => $device->id])->assertFormSet(['floor' => '2']);
+        Livewire::test(ListItDevices::class)->assertSee('Nama Perangkat')->assertSee('LT 2');
+        $data = $this->inspectionData($device);
+        $code = array_key_first($data['results']);
+        $data['results'][$code] = [...$data['results'][$code], 'condition' => 'warning', 'finding' => 'Port perlu diperiksa', 'action_plan' => 'Periksa koneksi', 'assigned_to' => $this->inspector->id];
+        $inspection = app(ItInspectionService::class)->save($this->inspector, $device->id, null, $data, true);
+        $before = $inspection->getRawOriginal();
+        Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['floor' => '3'])->call('save')->assertHasNoFormErrors();
+        $this->assertSame(ItSwitchFloor::Floor3, $device->fresh()->floor);
+        $this->assertSame($before, $inspection->fresh()->getRawOriginal());
+        Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => (string) $inspection->id])->assertSee('LT 2')->assertDontSee('LT 3');
+        Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])->assertSee('LT 3');
+        Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])->assertSee('LT 2')->assertDontSee('LT 3');
+        $details = new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id));
+        $this->assertStringContainsString('LT 2', $details->map($details->query()->first())[9]);
+        $page = Livewire::test(ItInfrastructureReportPage::class)->instance();
+        [$summary, $findings] = (new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()))->sheets();
+        $this->assertStringContainsString('LT 3', $summary->map($summary->query()->sole())[8]);
+        $this->assertStringContainsString('LT 2', $findings->map($findings->query()->sole())[9]);
+    }
+
+    public function test_switch_floor_accepts_only_the_requested_floors_and_clears_when_type_changes(): void
+    {
+        $this->asAdministrator();
+        $device = $this->register(['device_type' => 'switch']);
+        $this->assertNull($device->floor);
+        foreach (ItSwitchFloor::cases() as $floor) {
+            Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['floor' => $floor->value])->call('save')->assertHasNoFormErrors();
+            $this->assertSame($floor, $device->fresh()->floor);
+        }
+        foreach (['4', 'B1', '11'] as $floor) {
+            Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['floor' => $floor])->call('save')->assertHasFormErrors(['floor']);
+            $this->assertSame(ItSwitchFloor::Floor10, $device->fresh()->floor);
+        }
+        app(ItDeviceService::class)->save($this->inspector, $this->deviceData(['code' => $device->code, 'device_type' => 'switch', 'floor' => '']), $device);
+        $this->assertNull($device->fresh()->floor);
+        Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm(['floor' => '2'])->set('data.device_type', 'access_point')
+            ->assertSet('data.floor', null)->call('save')->assertHasNoFormErrors();
+        $this->assertSame('access_point', $device->fresh()->device_type->value);
+        $this->assertNull($device->fresh()->floor);
     }
 
     public function test_real_master_rejects_duplicate_asset_and_invalid_license_without_partial_write(): void

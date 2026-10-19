@@ -35,6 +35,24 @@ class ItInfrastructureSchemaTest extends ItInfrastructureTestCase
         }
     }
 
+    public function test_floor_migration_preserves_existing_devices_and_results(): void
+    {
+        $migration = require database_path('migrations/2026_10_19_000000_add_floor_to_it_devices.php');
+        $migration->down();
+        $device = $this->device(ItDeviceType::Switch);
+        $inspection = $this->inspection($device);
+        $this->fillRemainingResults($inspection);
+        $this->finalize($inspection);
+        $before = $device->fresh()->getRawOriginal();
+        $snapshot = $inspection->fresh()->getRawOriginal();
+        $results = $inspection->results()->get()->map->getRawOriginal()->all();
+        $migration->up();
+        $this->assertSame($before, collect($device->fresh()->getRawOriginal())->except('floor')->all());
+        $this->assertNull($device->fresh()->floor);
+        $this->assertSame($snapshot, $inspection->fresh()->getRawOriginal());
+        $this->assertSame($results, $inspection->results()->get()->map->getRawOriginal()->all());
+    }
+
     public function test_catalog_is_complete_distinct_idempotent_and_does_not_reactivate_templates(): void
     {
         $this->assertSame(count(ItDeviceType::cases()), ItChecklistTemplate::query()->count());

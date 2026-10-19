@@ -5,6 +5,7 @@ namespace App\Services\ItInfrastructure;
 use App\Enums\ItAssetLifecycle;
 use App\Enums\ItDeviceType;
 use App\Enums\ItLicenseStatus;
+use App\Enums\ItSwitchFloor;
 use App\Models\Employee;
 use App\Models\ItDevice;
 use App\Models\User;
@@ -39,6 +40,7 @@ class ItDeviceService
                     'specifications' => ['nullable', 'string', 'max:6000'],
                     'notes' => ['nullable', 'string', 'max:3000'],
                     'location_detail' => ['nullable', 'string', 'max:255'],
+                    'floor' => ['nullable', Rule::enum(ItSwitchFloor::class)],
                     'assigned_user_name' => ['nullable', 'string', 'max:255'],
                     'assigned_employee_id' => ['nullable', 'integer', Rule::exists('employees', 'id')],
                     'disposed_at' => ['nullable', 'date', 'before_or_equal:today'],
@@ -61,6 +63,11 @@ class ItDeviceService
                 }
                 $validated = Validator::make($data, $rules)->validate();
                 Gate::forUser($actor)->authorize('assignDepartment', [ItDevice::class, (int) $validated['managing_department_id']]);
+                if ($type !== ItDeviceType::Switch) {
+                    $validated['floor'] = null;
+                } elseif (array_key_exists('floor', $validated) && blank($validated['floor'])) {
+                    $validated['floor'] = null;
+                }
                 if ($room) {
                     foreach (['asset_number', 'serial_number', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name', 'disposed_at', 'disposal_reason'] as $field) {
                         $validated[$field] = null;
@@ -72,7 +79,7 @@ class ItDeviceService
                     }
                     $validated['assigned_user_name'] = $employee->user?->name ?? $employee->name;
                 }
-                $device->fill(Arr::only($validated, ['code', 'name', 'device_type', 'managing_department_id', 'work_location_id', 'location_detail', 'asset_number', 'serial_number', 'specifications', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name', 'is_active', 'notes', 'disposed_at', 'disposal_reason']));
+                $device->fill(Arr::only($validated, ['code', 'name', 'device_type', 'managing_department_id', 'work_location_id', 'location_detail', 'floor', 'asset_number', 'serial_number', 'specifications', 'lifecycle_status', 'assigned_employee_id', 'assigned_user_name', 'is_active', 'notes', 'disposed_at', 'disposal_reason']));
                 $device->category = $type->category();
                 $device->object_kind = $type->kind();
                 $device->created_by ??= $actor->id;

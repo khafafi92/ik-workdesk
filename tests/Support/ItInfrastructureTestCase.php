@@ -62,6 +62,7 @@ abstract class ItInfrastructureTestCase extends TestCase
             '2026_08_11_170000_add_per_user_optional_access.php',
             '2026_10_16_000000_create_it_infrastructure_tables.php',
             '2026_10_16_000100_add_it_infrastructure_permissions.php',
+            '2026_10_19_000000_add_floor_to_it_devices.php',
         ];
         foreach ($migrations as $migration) {
             (require database_path('migrations/'.$migration))->up();

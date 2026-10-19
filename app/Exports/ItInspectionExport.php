@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Enums\ItSwitchFloor;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
@@ -21,7 +22,7 @@ class ItInspectionExport extends StringValueBinder implements FromQuery, ShouldA
 
     public function headings(): array
     {
-        return ['Nomor pemeriksaan', 'Tanggal', 'Petugas', 'Kode perangkat', 'Nama perangkat', 'Jenis', 'Nomor aset', 'Serial number', 'Department pengelola', 'Lokasi', 'Kelompok', 'Pemeriksaan', 'Hasil', 'Nilai / rincian', 'Catatan', 'Temuan', 'Tindak lanjut', 'Penanggung jawab', 'Status tindak lanjut', 'Catatan penyelesaian', 'Diselesaikan oleh', 'Waktu penyelesaian'];
+        return ['Nomor pemeriksaan', 'Tanggal', 'Petugas', 'Kode perangkat', 'Nama Perangkat', 'Jenis', 'Nomor aset', 'Serial number', 'Department pengelola', 'Lokasi', 'Kelompok', 'Pemeriksaan', 'Hasil', 'Nilai / rincian', 'Catatan', 'Temuan', 'Tindak lanjut', 'Penanggung jawab', 'Status tindak lanjut', 'Catatan penyelesaian', 'Diselesaikan oleh', 'Waktu penyelesaian'];
     }
 
     public function map($result): array
@@ -33,7 +34,7 @@ class ItInspectionExport extends StringValueBinder implements FromQuery, ShouldA
         return [
             $inspection->inspection_number, $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
             $device['code'], $device['name'], $device['device_type'], $device['asset_number'] ?? '', $device['serial_number'] ?? '',
-            $device['managing_department']['name'] ?? '', $inspection->location_snapshot['location']['gps_name'] ?? $inspection->location_snapshot['detail'] ?? '',
+            $device['managing_department']['name'] ?? '', collect([$inspection->location_snapshot['location']['gps_name'] ?? $inspection->location_snapshot['detail'] ?? '', ItSwitchFloor::tryFrom($device['floor'] ?? '')?->label()])->filter()->implode(' / '),
             $result->item_snapshot['section'], $result->item_snapshot['label'], $result->condition->label(),
             $result->measured_value['value'] ?? ($result->measured_value ? json_encode($result->measured_value, JSON_UNESCAPED_UNICODE) : ''),
             $result->notes, $result->finding, $followUp?->action_plan, $followUp?->assignee?->name, $followUp?->status?->label(),
