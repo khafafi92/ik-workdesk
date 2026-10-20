@@ -181,4 +181,28 @@ class ItDevice extends Model
             'computer_detail' => $this->computerDetail?->toArray(),
         ];
     }
+
+    public function assigneeLabel(): string
+    {
+        return self::assigneeLabelFor([
+            'assigned_user_name' => filled($this->assigned_user_name) ? $this->assigned_user_name : $this->assignedEmployee?->name,
+            'object_kind' => $this->object_kind->value,
+            'lifecycle_status' => $this->lifecycle_status?->value,
+        ]);
+    }
+
+    public static function assigneeLabelFor(array $snapshot): string
+    {
+        foreach ([$snapshot['assigned_user_name'] ?? null, $snapshot['assigned_employee']['name'] ?? null] as $name) {
+            if (filled($name)) {
+                return $name;
+            }
+        }
+
+        return match (true) {
+            ($snapshot['object_kind'] ?? null) === 'room' => 'Tidak berlaku',
+            ($snapshot['lifecycle_status'] ?? null) === 'unused' => 'Stok (belum dialokasikan)',
+            default => 'Belum ditetapkan',
+        };
+    }
 }

@@ -153,7 +153,7 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
         abort_unless($this->canViewReports(), 403);
         $latest = $this->inspectionQuery()->where('status', 'finalized')->whereColumn('it_device_id', 'it_devices.id')->orderByDesc('checked_at')->orderByDesc('id')->limit(1);
         $condition = (clone $latest)->select('overall_condition');
-        $query = $this->deviceQuery()->select('it_devices.*')->addSelect([
+        $query = $this->deviceQuery()->with('assignedEmployee')->select('it_devices.*')->addSelect([
             'last_condition' => $condition,
             'last_inspection_id' => (clone $latest)->select('id'),
             'last_number' => (clone $latest)->select('inspection_number'),

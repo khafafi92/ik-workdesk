@@ -17,7 +17,7 @@ enum ItAssetLifecycle: string
             self::InUse => 'Digunakan',
             self::Spare => 'Cadangan',
             self::UnderRepair => 'Dalam Perbaikan',
-            self::Unused => 'Tidak Digunakan',
+            self::Unused => 'Stok / Belum Digunakan',
             self::Damaged => 'Rusak',
             self::Disposed => 'Dihapuskan',
         };

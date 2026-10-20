@@ -7,6 +7,7 @@
             <dl class="it-review-inspection-meta">
                 <div><dt>Nomor Aset</dt><dd>{{ $inspection->device_snapshot['asset_number'] ?? 'Belum diisi' }}</dd></div>
                 <div><dt>Nama Perangkat</dt><dd>{{ $inspection->device_snapshot['name'] }}</dd></div>
+                <div><dt>Pemilik / pemakai unit</dt><dd>{{ $inspection->assigneeLabel() }}</dd></div>
                 <div><dt>Waktu pemeriksaan</dt><dd>{{ $inspection->checked_at->format('d/m/Y H:i') }}</dd></div>
                 <div><dt>Petugas</dt><dd>{{ $inspection->inspector_snapshot['name'] }}</dd></div>
                 <div><dt>Lokasi / rack</dt><dd>{{ $inspection->location_snapshot['location']['gps_name'] ?? 'Tidak dicatat' }}@if (filled($inspection->location_snapshot['detail'] ?? null))<br>{{ $inspection->location_snapshot['detail'] }}@endif</dd></div>

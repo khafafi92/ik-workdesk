@@ -35,11 +35,11 @@
             @php($records = $this->latestDevices())
             <section class="it-review-section" aria-label="Kondisi terakhir setiap objek">
                 <div class="it-review-table-wrap" role="region" aria-label="Kondisi terakhir" tabindex="0">
-                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Objek</th><th scope="col">Kondisi terakhir</th><th scope="col">Pemeriksaan final terakhir</th><th scope="col">Waktu</th></tr></thead>
+                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Objek</th><th scope="col">Pemilik / pemakai unit</th><th scope="col">Kondisi terakhir</th><th scope="col">Pemeriksaan final terakhir</th><th scope="col">Waktu</th></tr></thead>
                         <tbody>@forelse ($records as $device)
                             @php($condition = $device->last_condition ?? 'unchecked')
-                            <tr><td>@if (filled($device->asset_number)){{ $device->asset_number }}<br>@endif{{ $device->name }}</td><td><span class="it-review-status" data-condition="{{ $condition }}">{{ \App\Enums\ItInspectionCondition::from($condition)->label() }}</span></td><td>@if ($device->last_inspection_id)<a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $device->last_inspection_id]) }}">{{ \App\Models\ItInspection::formatReferenceNumber($device->last_inspection_id) }}</a>@else Belum ada pemeriksaan final @endif</td><td>{{ $device->last_checked_at ?? 'Belum diperiksa' }}</td></tr>
-                        @empty<tr><td colspan="4">Tidak ada perangkat yang cocok. Tambahkan master atau ubah filter.</td></tr>@endforelse</tbody>
+                            <tr><td>@if (filled($device->asset_number)){{ $device->asset_number }}<br>@endif{{ $device->name }}</td><td>{{ $device->assigneeLabel() }}</td><td><span class="it-review-status" data-condition="{{ $condition }}">{{ \App\Enums\ItInspectionCondition::from($condition)->label() }}</span></td><td>@if ($device->last_inspection_id)<a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $device->last_inspection_id]) }}">{{ \App\Models\ItInspection::formatReferenceNumber($device->last_inspection_id) }}</a>@else Belum ada pemeriksaan final @endif</td><td>{{ $device->last_checked_at ?? 'Belum diperiksa' }}</td></tr>
+                        @empty<tr><td colspan="5">Tidak ada perangkat yang cocok. Tambahkan master atau ubah filter.</td></tr>@endforelse</tbody>
                     </table>
                 </div>
                 <x-filament::pagination :paginator="$records" />
@@ -48,10 +48,10 @@
             @php($records = $this->inspections())
             <section class="it-review-section" aria-label="Riwayat pemeriksaan">
                 <div class="it-review-table-wrap" role="region" aria-label="Pemeriksaan" tabindex="0">
-                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Nomor</th><th scope="col">Nama Perangkat</th><th scope="col">Waktu / petugas</th><th scope="col">Dokumen</th><th scope="col">Kondisi</th><th scope="col">Pengecekan baru</th></tr></thead>
+                    <table class="it-infrastructure-table"><thead><tr><th scope="col">Nomor</th><th scope="col">Nama Perangkat</th><th scope="col">Pemilik / pemakai unit</th><th scope="col">Waktu / petugas</th><th scope="col">Dokumen</th><th scope="col">Kondisi</th><th scope="col">Pengecekan baru</th></tr></thead>
                         <tbody>@forelse ($records as $inspection)
-                            <tr><td><a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $inspection->id]) }}">{{ $inspection->referenceNumber() }}</a></td><td>{{ $inspection->device_snapshot['name'] }}</td><td>{{ $inspection->checked_at->format('d/m/Y H:i') }}<br>{{ $inspection->inspector_snapshot['name'] }}</td><td>{{ $inspection->status->label() }}</td><td>{{ $inspection->overall_condition->label() }}</td><td>@can('inspectDevice', [\App\Models\ItInspection::class, $inspection->device])<a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionPage::getUrl(['device' => $inspection->it_device_id]) }}">Periksa lagi</a>@endcan</td></tr>
-                        @empty<tr><td colspan="6">Belum ada pemeriksaan untuk pilihan ini.</td></tr>@endforelse</tbody>
+                            <tr><td><a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionSummaryPage::getUrl(['inspection' => $inspection->id]) }}">{{ $inspection->referenceNumber() }}</a></td><td>{{ $inspection->device_snapshot['name'] }}</td><td>{{ $inspection->assigneeLabel() }}</td><td>{{ $inspection->checked_at->format('d/m/Y H:i') }}<br>{{ $inspection->inspector_snapshot['name'] }}</td><td>{{ $inspection->status->label() }}</td><td>{{ $inspection->overall_condition->label() }}</td><td>@can('inspectDevice', [\App\Models\ItInspection::class, $inspection->device])<a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionPage::getUrl(['device' => $inspection->it_device_id]) }}">Periksa lagi</a>@endcan</td></tr>
+                        @empty<tr><td colspan="7">Belum ada pemeriksaan untuk pilihan ini.</td></tr>@endforelse</tbody>
                     </table>
                 </div>
                 <x-filament::pagination :paginator="$records" />

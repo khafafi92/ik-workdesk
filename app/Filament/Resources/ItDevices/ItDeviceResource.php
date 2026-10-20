@@ -128,11 +128,11 @@ class ItDeviceResource extends Resource
                     Select::make('assigned_employee_id')->label('User terdaftar')->options(fn (?ItDevice $record): array => Employee::query()
                         ->where(fn (Builder $query) => $query->where(fn (Builder $query) => $query->where('is_active', true)->whereHas('user'))->orWhere('id', $record?->assigned_employee_id))
                         ->with('user')->orderBy('name')->get()->mapWithKeys(fn (Employee $employee) => [$employee->id => $employee->user?->name ?? $employee->name])->all())
-                        ->searchable()->live()->hidden($isRoom)->afterStateUpdated(fn ($state, Set $set) => $set('assigned_user_name', Employee::query()->with('user')->find($state)?->user?->name)),
+                        ->searchable()->live()->hidden($isRoom)->helperText('Opsional. Kosongkan untuk aset stok atau unit yang belum dialokasikan.')->afterStateUpdated(fn ($state, Set $set) => $set('assigned_user_name', Employee::query()->with('user')->find($state)?->user?->name)),
                     TextEntry::make('assigned_position')->label('Jabatan')->state(fn (Get $get) => self::assignedEmployee($get)?->position)->placeholder('Belum tercatat')->hidden($isRoom),
                     TextEntry::make('assigned_division')->label('Divisi')->state(fn (Get $get) => self::assignedEmployee($get)?->department?->name)->placeholder('Belum tercatat')->hidden($isRoom),
-                    TextInput::make('assigned_user_name')->label('Nama User')->maxLength(255)->hidden(fn (Get $get) => $isRoom($get) || filled($get('assigned_employee_id'))),
-                    Select::make('lifecycle_status')->label('Status Pemakaian')->default('in_use')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all())->hidden($isRoom)->required(fn (Get $get) => $get('device_type') !== 'server_room')->live(),
+                    TextInput::make('assigned_user_name')->label('Nama User')->placeholder('Kosongkan jika belum ada pemakai')->maxLength(255)->hidden(fn (Get $get) => $isRoom($get) || filled($get('assigned_employee_id'))),
+                    Select::make('lifecycle_status')->label('Status Pemakaian')->default('in_use')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all())->hidden($isRoom)->required(fn (Get $get) => $get('device_type') !== 'server_room')->helperText('Pilih Stok / Belum Digunakan untuk aset yang belum dialokasikan. Aset stok yang aktif tetap dapat diperiksa.')->live(),
                     Toggle::make('is_active')->label('Aktif untuk pemeriksaan baru')->default(true)->required(),
                     DatePicker::make('disposed_at')->label('Tanggal penghapusan')->maxDate(today())->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
                     Textarea::make('disposal_reason')->label('Alasan penghapusan')->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
@@ -163,7 +163,7 @@ class ItDeviceResource extends Resource
             TextColumn::make('managingDepartment.name')->label('Pengelola')->sortable(),
             TextColumn::make('location_name')->label('Lokasi')->formatStateUsing(fn (ItDeviceLocation $state) => $state->value)->placeholder('Belum dipilih')->sortable(),
             TextColumn::make('floor')->label('LT')->formatStateUsing(fn (?ItSwitchFloor $state) => $state?->label())->sortable()->toggleable(),
-            TextColumn::make('assigned_user_name')->label('Nama User')->searchable(),
+            TextColumn::make('assigned_user_name')->label('Pemilik / pemakai unit')->placeholder(fn (ItDevice $record) => $record->assigneeLabel())->searchable(),
             TextColumn::make('lifecycle_status')->label('Status Pemakaian')->formatStateUsing(fn ($state) => $state?->label() ?? 'Objek ruangan'),
             TextColumn::make('is_active')->label('Aktif')->formatStateUsing(fn ($state) => $state ? 'Ya' : 'Tidak'),
         ])->filters([
@@ -196,7 +196,7 @@ class ItDeviceResource extends Resource
 
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->accessibleTo(auth()->user())->with(['location', 'managingDepartment']);
+        return parent::getEloquentQuery()->accessibleTo(auth()->user())->with(['location', 'managingDepartment', 'assignedEmployee']);
     }
 
     public static function getPages(): array

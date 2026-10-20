@@ -36,6 +36,11 @@ class ItInspection extends Model
         return self::formatReferenceNumber($this->id);
     }
 
+    public function assigneeLabel(): string
+    {
+        return ItDevice::assigneeLabelFor($this->device_snapshot);
+    }
+
     protected static function booted(): void
     {
         static::saving(function (self $inspection): void {
