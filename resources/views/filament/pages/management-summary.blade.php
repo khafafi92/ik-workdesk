@@ -34,7 +34,7 @@
                 @foreach ($kpis as $label => $value)
                     @php($tone = match ($label) { 'Overdue Tickets' => 'danger', 'Resolved Tickets', 'Closed Tickets' => 'success', 'Pending Tickets' => 'warning', default => 'default' })
                     <div class="ik-report-overview-metric ik-report-overview-metric--{{ $tone }}">
-                        <dt>{{ $label }}</dt><dd>{{ $value }}</dd>
+                        <dt>{{ $label }}</dt><dd @class(['ik-report-overview-metric-text' => ! is_numeric($value)])>{{ $value }}</dd>
                     </div>
                 @endforeach
             </dl>
