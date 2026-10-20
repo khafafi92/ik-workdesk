@@ -26,6 +26,16 @@ class ItInspection extends Model
         return ['checked_at' => 'datetime', 'finalized_at' => 'datetime', 'location_name' => ItDeviceLocation::class, 'status' => ItInspectionStatus::class, 'overall_condition' => ItInspectionCondition::class, 'condition_counts' => 'array', 'device_snapshot' => 'array', 'inspector_snapshot' => 'array', 'location_snapshot' => 'array'];
     }
 
+    public static function formatReferenceNumber(int $id): string
+    {
+        return sprintf('PK-%06d', $id);
+    }
+
+    public function referenceNumber(): string
+    {
+        return self::formatReferenceNumber($this->id);
+    }
+
     protected static function booted(): void
     {
         static::saving(function (self $inspection): void {

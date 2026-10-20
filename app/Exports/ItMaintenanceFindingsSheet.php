@@ -40,7 +40,7 @@ class ItMaintenanceFindingsSheet extends StringValueBinder implements FromQuery,
 
         return [
             ...ItDeviceExportFields::forInspection($inspection),
-            $inspection->inspection_number, $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
+            $inspection->referenceNumber(), $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
             $finding->result->item_snapshot['section'], $finding->result->item_snapshot['label'], $finding->result->condition->label(),
             $finding->result->finding, $finding->action_plan, $finding->assignee?->name, $finding->due_at?->format('Y-m-d H:i'),
             $finding->status->label(), $finding->resolution_notes, $finding->resolver?->name, $finding->resolved_at?->format('Y-m-d H:i'),

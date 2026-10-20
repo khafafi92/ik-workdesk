@@ -35,7 +35,7 @@ class ItInspectionExport extends StringValueBinder implements FromQuery, ShouldA
 
         return [
             ...ItDeviceExportFields::forInspection($inspection),
-            $inspection->inspection_number, $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
+            $inspection->referenceNumber(), $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
             $result->item_snapshot['section'], $result->item_snapshot['label'], $result->condition->label(),
             $result->measured_value['value'] ?? ($result->measured_value ? json_encode($result->measured_value, JSON_UNESCAPED_UNICODE) : ''),
             $result->notes, $result->finding, $followUp?->action_plan, $followUp?->assignee?->name, $followUp?->status?->label(),

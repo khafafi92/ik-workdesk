@@ -48,7 +48,7 @@ class ItDeviceSummarySheet extends StringValueBinder implements FromQuery, Shoul
     {
         return [
             ...ItDeviceExportFields::forDevice($inspection->device),
-            $inspection->inspection_number, $inspection->checked_at->format('Y-m-d H:i'),
+            $inspection->referenceNumber(), $inspection->checked_at->format('Y-m-d H:i'),
             $inspection->inspector_snapshot['name'], $inspection->overall_condition->label(),
             (int) $inspection->open_findings_count, (int) $inspection->in_progress_findings_count, (int) $inspection->resolved_findings_count,
             (int) $inspection->open_findings_count + (int) $inspection->in_progress_findings_count,

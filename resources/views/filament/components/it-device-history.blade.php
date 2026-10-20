@@ -4,7 +4,7 @@
         <tbody>
             @forelse ($this->inspectionHistory() as $inspection)
                 <tr>
-                    <td><a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionPage::getUrl(['inspection' => $inspection->id]) }}">{{ $inspection->inspection_number }}</a></td>
+                    <td><a class="it-review-link" href="{{ \App\Filament\Pages\ItInspectionPage::getUrl(['inspection' => $inspection->id]) }}">{{ $inspection->referenceNumber() }}</a></td>
                     <td>{{ $inspection->checked_at->format('d/m/Y H:i') }}</td><td>{{ $inspection->inspector_snapshot['name'] }}</td><td>{{ $inspection->status->label() }}</td>
                     <td><span class="it-review-status" data-condition="{{ $inspection->overall_condition->value }}">{{ $inspection->overall_condition->label() }}</span></td>
                 </tr>

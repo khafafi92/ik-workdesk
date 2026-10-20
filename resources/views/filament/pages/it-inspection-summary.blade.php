@@ -3,7 +3,7 @@
         @include('filament.components.it-review-notice')
         @php($inspection = $this->inspection)
         <section aria-label="Informasi pemeriksaan">
-            <h2>{{ $inspection->inspection_number }}</h2>
+            <h2>{{ $inspection->referenceNumber() }}</h2>
             <dl class="it-review-inspection-meta">
                 <div><dt>Nomor Aset</dt><dd>{{ $inspection->device_snapshot['asset_number'] ?? 'Belum diisi' }}</dd></div>
                 <div><dt>Nama Perangkat</dt><dd>{{ $inspection->device_snapshot['name'] }}</dd></div>

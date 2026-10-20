@@ -63,7 +63,7 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
         $this->assertSame($beforeResults, $first->results()->get()->map->getRawOriginal()->all());
 
         $page = Livewire::test(ItInfrastructureReportPage::class)->assertSet('reportTab', 'history')
-            ->assertSee($first->inspection_number)->assertSee(ItInspection::query()->findOrFail($form->get('inspectionId'))->inspection_number);
+            ->assertSee($first->referenceNumber())->assertSee(ItInspection::query()->findOrFail($form->get('inspectionId'))->referenceNumber());
         $this->assertSame(2, $page->instance()->inspections()->total());
         $page->set('conditionFilter', 'critical');
         $this->assertSame(1, $page->instance()->inspections()->total());
@@ -98,7 +98,7 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
         $this->finalize($inspection);
         app(ItDeviceService::class)->delete($this->inspector, $device);
         $this->assertFalse(Gate::forUser($this->inspector)->allows('inspectDevice', [ItInspection::class, $device->fresh()]));
-        $page = Livewire::test(ItInfrastructureReportPage::class)->assertSee($inspection->inspection_number)->assertDontSee('Periksa lagi');
+        $page = Livewire::test(ItInfrastructureReportPage::class)->assertSee($inspection->referenceNumber())->assertDontSee('Periksa lagi');
         $this->assertArrayHasKey($device->id, $page->instance()->deviceOptions);
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])
             ->assertSee('Critical')->assertDontSee('Pengecekan berikutnya');

@@ -472,7 +472,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             ->set('reportTab', 'history')->assertSeeHtml($url)
             ->set('reportTab', 'findings')->assertSeeHtml($url);
         $component = Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => (string) $inspection->id])
-            ->assertSee($inspection->inspection_number)->assertSee('Nama saat diperiksa')->assertDontSee('Nama sekarang')
+            ->assertSee($inspection->referenceNumber())->assertSee('Nama saat diperiksa')->assertDontSee('Nama sekarang')
             ->assertSee('Engsel longgar')->assertSee('Perbaiki engsel')->assertSee($this->inspector->name)
             ->assertSee('SSD normal')->assertSee('HDD normal')->assertSeeText('0 %')
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)->assertDontSeeHtml('<script>alert(1)</script>')
@@ -497,7 +497,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $reader = $this->userIn($this->department);
         $this->grant($reader, ItPermission::ReportsView);
         $this->actingAs($reader);
-        Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => (string) $final->id])->assertSee($final->inspection_number)->assertDontSee('Lanjutkan draft');
+        Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => (string) $final->id])->assertSee($final->referenceNumber())->assertDontSee('Lanjutkan draft');
         foreach ([(string) $draft->id, (string) $foreignInspection->id, 'invalid', '0', null] as $id) {
             Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => $id])->assertNotFound();
         }
@@ -694,7 +694,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             $workbook = IOFactory::load($file);
             $sheet = $workbook->getActiveSheet();
             $this->assertSame(19, $sheet->getHighestDataRow());
-            $this->assertSame($inspection->inspection_number, $sheet->getCell('Y2')->getValue());
+            $this->assertSame($inspection->referenceNumber(), $sheet->getCell('Y2')->getValue());
             $this->assertSame('=1+1', $sheet->getCell('B2')->getValue());
             $this->assertSame(DataType::TYPE_STRING, $sheet->getCell('B2')->getDataType());
             $workbook->disconnectWorksheets();
@@ -757,11 +757,11 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             $this->assertSame(3, $summary->getHighestDataRow());
             $rows = $summary->toArray(null, true, false);
             $columns = array_flip($rows[0]);
-            $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Nomor pemeriksaan']] === $latest->inspection_number);
+            $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Nomor pemeriksaan']] === $latest->referenceNumber());
             $this->assertSame('=1+1', $row[1]);
             $this->assertSame('Normal', $row[$columns['Kondisi']]);
             $this->assertSame([0, 0, 0, 0], array_slice($row, $columns['Temuan terbuka']));
-            $oldRow = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Nomor pemeriksaan']] === $old->inspection_number);
+            $oldRow = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Nomor pemeriksaan']] === $old->referenceNumber());
             $this->assertSame($device->asset_number, $oldRow[0]);
             $this->assertSame('Warning', $oldRow[$columns['Kondisi']]);
             $this->assertSame([0, 1, 1, 1], array_slice($oldRow, $columns['Temuan terbuka']));
