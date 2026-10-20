@@ -2725,7 +2725,17 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     outline-offset: -2px;
 }
 
-@media (max-width: 767px) {
+.it-device-transfer-modal .fi-input-wrp {
+    border-color: #64748b !important;
+}
+
+.it-device-transfer-modal .fi-input-wrp:focus-within {
+    border-color: #0068d9 !important;
+    outline: 2px solid #0068d9;
+    outline-offset: 2px;
+}
+
+@media (max-width: 767px), (pointer: coarse) {
     .it-device-transfer-modal :is(.fi-input-wrp, .fi-select-input-btn, .fi-btn, .fi-modal-close-btn, input:not([type="hidden"]), select) {
         min-height: 44px !important;
     }
