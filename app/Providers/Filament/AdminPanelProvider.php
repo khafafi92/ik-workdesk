@@ -109,6 +109,10 @@ class AdminPanelProvider extends PanelProvider
                     '<link rel="stylesheet" href="'.
                     asset('css/filament/admin/global-chat.css').
                     '?v='.filemtime(public_path('css/filament/admin/global-chat.css')).
+                    '">'.
+                    '<link rel="stylesheet" href="'.
+                    asset('css/filament/admin/it-daily-monitoring.css').
+                    '?v='.filemtime(public_path('css/filament/admin/it-daily-monitoring.css')).
                     '">',
             )
             ->renderHook(
