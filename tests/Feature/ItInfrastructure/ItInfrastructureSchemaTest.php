@@ -22,7 +22,8 @@ class ItInfrastructureSchemaTest extends ItInfrastructureTestCase
     public function test_schema_has_only_module_and_allowlisted_parent_tables_without_ticket_integration(): void
     {
         $tables = collect(Schema::getTables())->pluck('name');
-        $this->assertCount(9, $tables->filter(fn (string $name): bool => str_starts_with($name, 'it_')));
+        $this->assertCount(10, $tables->filter(fn (string $name): bool => str_starts_with($name, 'it_')));
+        $this->assertTrue(Schema::hasColumns('it_device_transfers', ['it_device_id', 'from_snapshot', 'to_snapshot', 'actor_snapshot', 'transferred_on', 'notes', 'created_at']));
         $this->assertFalse(Schema::hasTable('tickets'));
         $this->assertFalse(Schema::hasTable('ltro_assets'));
         $this->assertFalse(Schema::hasTable('atk_items'));

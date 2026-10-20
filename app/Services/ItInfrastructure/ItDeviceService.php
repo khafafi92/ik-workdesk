@@ -9,6 +9,7 @@ use App\Enums\ItLicenseStatus;
 use App\Enums\ItSwitchFloor;
 use App\Models\Employee;
 use App\Models\ItDevice;
+use App\Models\ItDeviceTransfer;
 use App\Models\User;
 use App\Rules\ItAssetNumber;
 use Illuminate\Support\Arr;
@@ -21,6 +22,64 @@ use Illuminate\Validation\ValidationException;
 
 class ItDeviceService
 {
+    public function transfer(User $actor, ItDevice $device, array $data): ItDevice
+    {
+        return DB::transaction(function () use ($actor, $device, $data): ItDevice {
+            $actor = User::query()->findOrFail($actor->id);
+            $device = ItDevice::query()->lockForUpdate()->findOrFail($device->id);
+            Gate::forUser($actor)->authorize('transfer', $device);
+            $latestDate = $device->transfers()->max('transferred_on') ?? $device->created_at->format('Y-m-d');
+            $validated = Validator::make($data, [
+                'destination' => ['required', 'in:user,stock'],
+                'assigned_employee_id' => ['required_if:destination,user', 'nullable', 'integer', 'exists:employees,id'],
+                'assignment_version' => ['required', 'string', 'size:64'],
+                'transferred_on' => ['required', 'date_format:Y-m-d', 'before_or_equal:today', 'after_or_equal:'.$latestDate],
+                'notes' => ['required', 'string', 'max:2000', 'regex:/\S/u'],
+            ])->validate();
+            $this->assertAssignmentVersion($device, $validated['assignment_version']);
+            $before = $device->assignmentSnapshot();
+            $employee = null;
+            if ($validated['destination'] === 'user') {
+                $employee = Employee::query()->with('user')->lockForUpdate()->findOrFail($validated['assigned_employee_id']);
+                if (! $employee->is_active || ! $employee->user?->isActiveForAccess()) {
+                    throw ValidationException::withMessages(['assigned_employee_id' => 'Pilih user terdaftar dengan data karyawan aktif.']);
+                }
+                if ((int) $device->assigned_employee_id === $employee->id) {
+                    throw ValidationException::withMessages(['assigned_employee_id' => 'User tersebut sudah menjadi pemakai perangkat ini.']);
+                }
+            } elseif (! $device->assigned_employee_id && blank($device->assigned_user_name) && $device->lifecycle_status === ItAssetLifecycle::Unused) {
+                throw ValidationException::withMessages(['destination' => 'Perangkat ini sudah berada di stok tanpa pemakai.']);
+            }
+            $device->fill([
+                'assigned_employee_id' => $employee?->id,
+                'assigned_user_name' => $employee?->user->name,
+                'lifecycle_status' => $employee ? ItAssetLifecycle::InUse : ItAssetLifecycle::Unused,
+                'updated_by' => $actor->id,
+            ])->save();
+            $device->unsetRelation('assignedEmployee');
+            $this->recordTransfer($actor, $device, $before, $validated['transferred_on'], trim($validated['notes']));
+
+            return $device->refresh();
+        }, 3);
+    }
+
+    private function assertAssignmentVersion(ItDevice $device, string $version): void
+    {
+        if (! hash_equals($device->assignmentVersion(), $version)) {
+            throw ValidationException::withMessages(['assigned_employee_id' => 'Pemakaian perangkat sudah berubah. Muat ulang perangkat sebelum menyimpan.']);
+        }
+    }
+
+    private function recordTransfer(User $actor, ItDevice $device, array $before, string $date, string $notes): void
+    {
+        ItDeviceTransfer::query()->create([
+            'it_device_id' => $device->id, 'actor_id' => $actor->id,
+            'from_snapshot' => $before, 'to_snapshot' => $device->assignmentSnapshot(),
+            'actor_snapshot' => ['id' => $actor->id, 'name' => $actor->name],
+            'transferred_on' => $date, 'notes' => $notes,
+        ]);
+    }
+
     public function delete(User $actor, ItDevice $device): bool
     {
         return DB::transaction(function () use ($actor, $device): bool {
@@ -37,6 +96,12 @@ class ItDeviceService
             return DB::transaction(function () use ($actor, $data, $device): ItDevice {
                 $device = $device ? ItDevice::query()->lockForUpdate()->findOrFail($device->id) : new ItDevice;
                 Gate::forUser($actor)->authorize($device->exists ? 'update' : 'create', $device->exists ? $device : ItDevice::class);
+                $beforeAssignment = $device->exists ? $device->assignmentSnapshot() : null;
+                $beforeEmployeeId = $device->assigned_employee_id;
+                $beforeUserName = trim($device->assigned_user_name ?? '');
+                if ($device->exists && filled($data['assignment_version'] ?? null)) {
+                    $this->assertAssignmentVersion($device, (string) $data['assignment_version']);
+                }
                 $data['code'] ??= $device->code ?? 'IT-'.Str::ulid();
                 if (array_key_exists('asset_number', $data)) {
                     $data['asset_number'] = ItAssetNumber::normalize($data['asset_number'], $device->getRawOriginal('asset_number'));
@@ -126,6 +191,12 @@ class ItDeviceService
                 $device->created_by ??= $actor->id;
                 $device->updated_by = $actor->id;
                 $device->save();
+                $device->unsetRelation('assignedEmployee');
+                $assigneeChanged = (int) $beforeEmployeeId !== (int) $device->assigned_employee_id
+                    || (! $beforeEmployeeId && ! $device->assigned_employee_id && $beforeUserName !== trim($device->assigned_user_name ?? ''));
+                if ($beforeAssignment !== null && $assigneeChanged) {
+                    $this->recordTransfer($actor, $device, $beforeAssignment, today()->format('Y-m-d'), 'Perubahan pemakai melalui edit perangkat.');
+                }
                 if ($computer) {
                     $detail = $device->computerDetail()->firstOrNew();
                     $detail->fill(Arr::only($validated, ['operating_system', 'windows_version', 'office_version', 'ram_gb', 'storage_devices']));

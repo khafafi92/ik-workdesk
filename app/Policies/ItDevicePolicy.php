@@ -2,6 +2,8 @@
 
 namespace App\Policies;
 
+use App\Enums\ItAssetLifecycle;
+use App\Enums\ItObjectKind;
 use App\Enums\ItPermission;
 use App\Models\ItDevice;
 use App\Models\User;
@@ -32,6 +34,13 @@ class ItDevicePolicy
     public function assignDepartment(User $user, int $departmentId): bool
     {
         return ItInfrastructureAccess::allows($user, $departmentId, ItPermission::DevicesManage);
+    }
+
+    public function transfer(User $user, ItDevice $device): bool
+    {
+        return $this->update($user, $device) && $device->is_active
+            && $device->object_kind !== ItObjectKind::Room
+            && $device->lifecycle_status !== ItAssetLifecycle::Disposed;
     }
 
     public function delete(User $user, ItDevice $device): bool

@@ -2725,6 +2725,16 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     outline-offset: -2px;
 }
 
+@media (max-width: 767px) {
+    .it-device-transfer-modal :is(.fi-input-wrp, .fi-select-input-btn, .fi-btn, .fi-modal-close-btn, input:not([type="hidden"]), select) {
+        min-height: 44px !important;
+    }
+
+    .it-device-transfer-modal .fi-modal-close-btn {
+        min-width: 44px;
+    }
+}
+
 @media (max-width: 640px) {
     .it-infrastructure-table .fi-ta-table :is(a, button) {
         min-height: 2.75rem;

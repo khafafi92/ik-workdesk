@@ -38,7 +38,7 @@ class ItDeviceDeletionTest extends ItInfrastructureTestCase
             ->assertTableActionVisible('edit', $device)->assertTableActionVisible('delete', $device);
         $group = $page->instance()->getTable()->getRecordActions()[0];
         $this->assertInstanceOf(ActionGroup::class, $group);
-        $this->assertSame(['edit', 'delete'], array_keys($group->getFlatActions()));
+        $this->assertSame(['edit', 'transferDevice', 'delete'], array_keys($group->getFlatActions()));
         $page->mountTableAction('delete', $device)->assertActionMounted(TestAction::make('delete')->table($device));
         $this->assertSame('Hapus '.$device->name.'?', $page->instance()->getMountedAction()->getModalHeading());
         $this->assertNotNull($device->fresh());

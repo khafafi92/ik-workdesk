@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ItDevices\Pages;
 
+use App\Filament\Actions\TransferItDeviceAction;
 use App\Filament\Pages\ItInspectionPage;
 use App\Filament\Resources\ItDevices\ItDeviceResource;
 use App\Models\ItInspection;
@@ -24,8 +25,16 @@ class EditItDevice extends EditRecord
         return app(ItDeviceService::class)->save(auth()->user(), $data, $record);
     }
 
+    protected function afterSave(): void
+    {
+        $this->data['assignment_version'] = $this->getRecord()->refresh()->assignmentVersion();
+    }
+
     protected function getHeaderActions(): array
     {
-        return [Action::make('inspect')->label('Periksa perangkat ini')->url(fn () => ItInspectionPage::getUrl(['device' => $this->getRecord()->id]))->visible(fn () => Gate::allows('inspectDevice', [ItInspection::class, $this->getRecord()]))];
+        return [
+            TransferItDeviceAction::make()->record(fn () => $this->getRecord()),
+            Action::make('inspect')->label('Periksa perangkat ini')->url(fn () => ItInspectionPage::getUrl(['device' => $this->getRecord()->id]))->visible(fn () => Gate::allows('inspectDevice', [ItInspection::class, $this->getRecord()])),
+        ];
     }
 }

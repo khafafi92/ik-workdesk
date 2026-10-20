@@ -8,6 +8,7 @@ use App\Enums\ItDeviceLocation;
 use App\Enums\ItDeviceType;
 use App\Enums\ItLicenseStatus;
 use App\Enums\ItSwitchFloor;
+use App\Filament\Actions\TransferItDeviceAction;
 use App\Filament\Pages\ItInspectionPage;
 use App\Filament\Resources\ItDevices\Pages\CreateItDevice;
 use App\Filament\Resources\ItDevices\Pages\EditItDevice;
@@ -26,6 +27,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Repeater\TableColumn;
 use Filament\Forms\Components\Select;
@@ -76,6 +78,7 @@ class ItDeviceResource extends Resource
         $isComputer = fn (Get $get): bool => in_array($get('device_type'), ['laptop', 'pc'], true);
 
         return $schema->components([
+            Hidden::make('assignment_version'),
             Tabs::make('Data perangkat')->tabs([
                 Tab::make('Identitas')->columns(['md' => 2, 'xl' => 3])->schema([
                     TextInput::make('asset_number')->label('Nomor Aset')->readOnly(fn (?ItDevice $record) => ! $record?->exists)->placeholder('Dibuat otomatis saat disimpan')
@@ -174,6 +177,7 @@ class ItDeviceResource extends Resource
         ])->recordActions([
             ActionGroup::make([
                 EditAction::make()->label('Edit'),
+                TransferItDeviceAction::make(),
                 DeleteAction::make()->label('Hapus')->authorize('delete')
                     ->modalHeading(fn (ItDevice $record) => 'Hapus '.$record->name.'?')
                     ->modalDescription('Perangkat akan dihapus dari Master Perangkat dan pilihan pengecekan baru, termasuk jika memiliki hasil Critical. Riwayat pemeriksaan dan tindak lanjut tetap tersimpan.')
@@ -188,7 +192,7 @@ class ItDeviceResource extends Resource
                             return false;
                         }
                     }),
-            ])->label('Aksi perangkat')->icon('heroicon-m-ellipsis-vertical')->iconButton()->tooltip('Edit atau hapus perangkat'),
+            ])->label('Aksi perangkat')->icon('heroicon-m-ellipsis-vertical')->iconButton()->tooltip('Aksi perangkat'),
             ViewAction::make()->label('Lihat')->hidden(fn (ItDevice $record) => Gate::allows('update', $record)),
             Action::make('inspect')->label('Periksa')->url(fn (ItDevice $record) => ItInspectionPage::getUrl(['device' => $record->id]))->visible(fn (ItDevice $record) => Gate::allows('inspectDevice', [ItInspection::class, $record])),
         ])->defaultSort('name')->emptyStateHeading('Belum ada perangkat')->emptyStateDescription('Klik Tambah Perangkat untuk mendaftarkan laptop, server, perangkat jaringan, atau ruang server.');

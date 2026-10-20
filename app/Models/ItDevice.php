@@ -153,6 +153,28 @@ class ItDevice extends Model
         return $this->hasMany(ItInspection::class);
     }
 
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(ItDeviceTransfer::class);
+    }
+
+    public function assignmentSnapshot(): array
+    {
+        return [
+            'employee_id' => $this->assigned_employee_id,
+            'name' => $this->assigneeLabel(),
+            'lifecycle_status' => $this->lifecycle_status?->value,
+        ];
+    }
+
+    public function assignmentVersion(): string
+    {
+        return hash('sha256', json_encode([
+            $this->assigned_employee_id, $this->assigned_user_name,
+            $this->lifecycle_status?->value, $this->transfers()->max('id'),
+        ], JSON_THROW_ON_ERROR));
+    }
+
     public function latestFinalizedInspection(): HasOne
     {
         return $this->hasOne(ItInspection::class)->ofMany(['checked_at' => 'max', 'id' => 'max'], fn (Builder $query) => $query->where('status', 'finalized'));

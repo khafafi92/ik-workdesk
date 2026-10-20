@@ -4,15 +4,26 @@ namespace App\Filament\Resources\ItDevices\Pages;
 
 use App\Services\ItInfrastructure\ItInspectionService;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Gate;
+use Livewire\WithPagination;
 
 trait InteractsWithItDeviceRecord
 {
+    use WithPagination;
+
     protected function mutateFormDataBeforeFill(array $data): array
     {
-        return [...$data, ...Arr::only($this->getRecord()->computerDetail?->attributesToArray() ?? [], [
+        return [...$data, 'assignment_version' => $this->getRecord()->assignmentVersion(), ...Arr::only($this->getRecord()->computerDetail?->attributesToArray() ?? [], [
             'operating_system', 'windows_version', 'office_version', 'windows_license_status',
             'office_license_status', 'ram_gb', 'storage_devices',
         ])];
+    }
+
+    public function transferHistory()
+    {
+        Gate::authorize('view', $this->getRecord());
+
+        return $this->getRecord()->transfers()->orderByDesc('transferred_on')->orderByDesc('id')->paginate(10, ['*'], 'transfersPage');
     }
 
     public function inspectionHistory()
