@@ -70,7 +70,7 @@ class LtroMttrRecordResource extends Resource
             Section::make('Shutdown event')->schema([
                 TextInput::make('sequence_no')->numeric()->minValue(1),
                 Select::make('ltro_unit_id')->label('Unit')->relationship('unit', 'name')->searchable()->preload()->required(),
-                Select::make('ltro_category_id')->label('Category')->relationship('category', 'name')->searchable()->preload(),
+                Select::make('ltro_category_id')->label('Category')->relationship('categoryMaster', 'name')->searchable()->preload(),
                 TextInput::make('rental_period')->maxLength(255),
                 DatePicker::make('shutdown_month')->label('Report month')->native(false),
                 DateTimePicker::make('shutdown_datetime')->label('Shutdown at')->seconds(false)->required(),
@@ -92,14 +92,14 @@ class LtroMttrRecordResource extends Resource
         return $table->columns([
             TextColumn::make('sequence_no')->label('No.')->sortable(),
             TextColumn::make('unit.name')->label('Unit')->sortable()->searchable(),
-            TextColumn::make('category.name')->label('Category')->badge()->placeholder('-'),
+            TextColumn::make('categoryMaster.name')->label('Category')->badge()->placeholder('-'),
             TextColumn::make('shutdown_datetime')->label('Shutdown')->dateTime('d M Y H:i')->sortable(),
             TextColumn::make('running_datetime')->label('Running')->dateTime('d M Y H:i')->placeholder('-'),
             TextColumn::make('downtime_minutes')->label('Downtime')->suffix(' min')->sortable(),
             TextColumn::make('immediate_cause')->label('Immediate cause')->limit(60)->tooltip(fn (LtroMttrRecord $record): ?string => $record->immediate_cause),
         ])->filters([
             SelectFilter::make('ltro_unit_id')->label('Unit')->relationship('unit', 'name'),
-            SelectFilter::make('ltro_category_id')->label('Category')->relationship('category', 'name'),
+            SelectFilter::make('ltro_category_id')->label('Category')->relationship('categoryMaster', 'name'),
         ])->defaultSort('shutdown_datetime', 'desc');
     }
 

@@ -3,6 +3,8 @@
 namespace App\Notifications;
 
 use App\Models\Ticket;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification as FilamentNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -18,16 +20,29 @@ class TicketCreatedNotification extends Notification implements ShouldQueue
      */
     public function __construct(
         public readonly Ticket $ticket,
-        string $mailerName = 'log',
+        public readonly string $mailerName = 'log',
         public readonly array $from = [],
     ) {
-        // Set mailer agar Notification menggunakan SMTP yang tepat
-        $this->mailer = $mailerName;
+        $this->afterCommit();
+        $this->onQueue('service-desk-notifications');
     }
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return filled($notifiable->routeNotificationFor('mail')) ? ['mail'] : [];
+    }
+
+    public function toDatabase(object $notifiable): array
+    {
+        return FilamentNotification::make()
+            ->title("Permintaan baru: {$this->ticket->ticket_no}")
+            ->body(e($this->ticket->subject))
+            ->icon('heroicon-o-inbox')->info()
+            ->actions([
+                Action::make('open')->label('Buka permintaan')->button()
+                    ->url(route('filament.admin.resources.service-desk.view', ['record' => $this->ticket->id]))
+                    ->markAsRead(),
+            ])->getDatabaseMessage();
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -45,6 +60,7 @@ class TicketCreatedNotification extends Notification implements ShouldQueue
         };
 
         return (new MailMessage)
+            ->mailer($this->mailerName)
             ->from($fromAddress, $fromName)
             ->subject("[IK WorkDesk] Ticket Baru: {$ticket->ticket_no}")
             ->greeting("Halo, {$notifiable->name}!")

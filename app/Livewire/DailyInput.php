@@ -119,10 +119,11 @@ class DailyInput extends Component
         ]);
 
         // Ambil report berdasarkan kombinasi unit + tanggal. Jika belum ada, buat object baru.
-        $report = DailyReport::firstOrNew([
-            'unit_code' => $this->selectedUnit,
-            'report_date' => $this->report_date,
-        ]);
+        $report = DailyReport::query()->where('unit_code', $this->selectedUnit)
+            ->whereDate('report_date', $this->report_date)->firstOrNew([], [
+                'unit_code' => $this->selectedUnit,
+                'report_date' => $this->report_date,
+            ]);
         $isNewReport = ! $report->exists;
 
         // Mapping field form ke kolom database daily_reports.

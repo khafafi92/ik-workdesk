@@ -12,7 +12,7 @@ use Maatwebsite\Excel\Concerns\WithStyles;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class ReportExport implements FromQuery, WithHeadings, WithMapping, WithStyles, WithColumnFormatting
+class ReportExport implements FromQuery, WithColumnFormatting, WithHeadings, WithMapping, WithStyles
 {
     /** @param array<int, string> $headings */
     public function __construct(

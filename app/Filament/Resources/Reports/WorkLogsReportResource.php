@@ -16,16 +16,31 @@ use Illuminate\Database\Eloquent\Builder;
 class WorkLogsReportResource extends ReportResource
 {
     protected static ?string $menuPermissionCode = 'report.work-logs';
+
     protected static ?string $model = WorkTask::class;
+
     protected static ?string $slug = 'reports/work-logs';
+
     protected static ?string $navigationLabel = 'Work Logs';
+
     protected static ?string $modelLabel = 'Work Logs Report';
+
     protected static ?string $pluralModelLabel = 'Work Logs Report';
 
-    public static function getNavigationGroup(): ?string { return 'Reports'; }
-    public static function getNavigationSort(): ?int { return 4; }
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Reports';
+    }
 
-    public static function getEloquentQuery(): Builder { return app(ReportQueryService::class)->workLogs(); }
+    public static function getNavigationSort(): ?int
+    {
+        return 4;
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return app(ReportQueryService::class)->workLogs();
+    }
 
     public static function table(Table $table): Table
     {
@@ -61,7 +76,13 @@ class WorkLogsReportResource extends ReportResource
         ], ['A', 'I', 'J']);
     }
 
-    public static function duration(int $minutes): string { return intdiv($minutes, 60).' h '.($minutes % 60).' m'; }
+    public static function duration(int $minutes): string
+    {
+        return intdiv($minutes, 60).' h '.($minutes % 60).' m';
+    }
 
-    public static function getPages(): array { return ['index' => ListWorkLogsReports::route('/')]; }
+    public static function getPages(): array
+    {
+        return ['index' => ListWorkLogsReports::route('/')];
+    }
 }

@@ -54,6 +54,11 @@ class TicketResource extends Resource
 
     public static function shouldRegisterNavigation(): bool
     {
+        return static::canViewAny();
+    }
+
+    public static function canViewAny(): bool
+    {
         $user = auth()->user();
 
         return $user !== null

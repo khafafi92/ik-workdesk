@@ -2,7 +2,10 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\DailyActivity;
 use App\Models\Department;
+use App\Models\Employee;
+use App\Models\TicketCategory;
 use App\Services\Reports\ReportQueryService;
 use BackedEnum;
 use Filament\Pages\Page;
@@ -13,15 +16,23 @@ use Illuminate\Database\Eloquent\Builder;
 class ManagementSummary extends Page
 {
     protected static string $routePath = 'reports/management-summary';
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBarSquare;
+
     protected string $view = 'filament.pages.management-summary';
 
     public string $startDate;
+
     public string $endDate;
+
     public ?int $departmentId = null;
+
     public ?string $categoryId = null;
+
     public ?string $priority = null;
+
     public ?string $status = null;
+
     public ?string $assigneeId = null;
 
     public function mount(): void
@@ -41,14 +52,45 @@ class ManagementSummary extends Page
         $this->assigneeId = null;
     }
 
-    public static function canAccess(): bool { return auth()->user()?->hasPermission('report.overview') === true; }
-    public static function shouldRegisterNavigation(): bool { return static::canAccess(); }
-    public static function getNavigationGroup(): ?string { return 'Reports'; }
-    public static function getNavigationSort(): ?int { return 1; }
-    public static function getNavigationLabel(): string { return 'Overview'; }
-    public function getTitle(): string|Htmlable { return 'Report Overview'; }
-    public function getHeading(): string|Htmlable { return 'Report Overview'; }
-    public function getSubheading(): ?string { return 'Cross-department activity for the selected period.'; }
+    public static function canAccess(): bool
+    {
+        return auth()->user()?->hasPermission('report.overview') === true;
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canAccess();
+    }
+
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Reports';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 1;
+    }
+
+    public static function getNavigationLabel(): string
+    {
+        return 'Overview';
+    }
+
+    public function getTitle(): string|Htmlable
+    {
+        return 'Report Overview';
+    }
+
+    public function getHeading(): string|Htmlable
+    {
+        return 'Report Overview';
+    }
+
+    public function getSubheading(): ?string
+    {
+        return 'Cross-department activity for the selected period.';
+    }
 
     protected function getViewData(): array
     {
@@ -69,7 +111,7 @@ class ManagementSummary extends Page
         $ticketCount = (clone $query)->count();
         $ticketIds = (clone $query)->reorder()->select('tickets.id');
         $workLogs = $service->workLogs()->whereIn('ticket_id', $ticketIds);
-        $totalWorkMinutes = (int) \App\Models\DailyActivity::query()
+        $totalWorkMinutes = (int) DailyActivity::query()
             ->whereIn('work_task_id', (clone $workLogs)->select('work_tasks.id'))
             ->sum('duration_minutes');
         $overdue = (clone $query)->whereNotIn('status', ['resolved', 'closed', 'cancel', 'cancelled'])
@@ -83,8 +125,8 @@ class ManagementSummary extends Page
 
         return [
             'departments' => Department::query()->orderBy('name')->pluck('name', 'id'),
-            'categories' => \App\Models\TicketCategory::query()->orderBy('name')->pluck('name', 'id'),
-            'employees' => \App\Models\Employee::query()->orderBy('name')->pluck('name', 'id'),
+            'categories' => TicketCategory::query()->orderBy('name')->pluck('name', 'id'),
+            'employees' => Employee::query()->orderBy('name')->pluck('name', 'id'),
             'kpis' => [
                 'Total Tickets' => $ticketCount,
                 'Open Tickets' => (int) ($statusCounts['open'] ?? 0),

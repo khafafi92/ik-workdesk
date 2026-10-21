@@ -19,6 +19,10 @@ class DepartmentResource extends Resource
 {
     use AdminOnlyResource;
 
+    protected static ?string $menuPermissionCode = 'master.departments.manage';
+
+    protected static bool $acceptsLegacyMasterDataAccess = true;
+
     protected static ?string $model = Department::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;

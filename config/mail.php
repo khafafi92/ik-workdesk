@@ -61,6 +61,10 @@ return [
             'port' => env('MAIL_KPMOG_PORT', 465),
             'username' => env('MAIL_KPMOG_USERNAME'),
             'password' => env('MAIL_KPMOG_PASSWORD'),
+            'from' => [
+                'address' => env('MAIL_KPMOG_FROM_ADDRESS', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
+                'name' => env('MAIL_KPMOG_FROM_NAME', env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel'))),
+            ],
             'timeout' => null,
         ],
 
@@ -76,6 +80,10 @@ return [
             'port' => env('MAIL_APCA_PORT', 465),
             'username' => env('MAIL_APCA_USERNAME'),
             'password' => env('MAIL_APCA_PASSWORD'),
+            'from' => [
+                'address' => env('MAIL_APCA_FROM_ADDRESS', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
+                'name' => env('MAIL_APCA_FROM_NAME', env('MAIL_FROM_NAME', env('APP_NAME', 'Laravel'))),
+            ],
             'timeout' => null,
         ],
 

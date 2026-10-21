@@ -52,6 +52,11 @@ class ItDailyMonitoring extends Model
         return $this->belongsTo(Department::class, 'managing_department_id');
     }
 
+    public function formatVersion(): int
+    {
+        return (int) ($this->checks[0]['_version'] ?? 1);
+    }
+
     public function inspector(): BelongsTo
     {
         return $this->belongsTo(User::class, 'inspector_id');

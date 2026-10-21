@@ -115,7 +115,7 @@ class TicketForm
 
                 Select::make('ticket_category_id')
                     ->label('Request Category')
-                    ->options(function (Get $get): array {
+                    ->options(function (Get $get, ?Ticket $record): array {
                         $handlerDepartmentId = $get('handler_department_id');
 
                         if (blank($handlerDepartmentId)) {
@@ -127,7 +127,12 @@ class TicketForm
                                 'handler_department_id',
                                 $handlerDepartmentId
                             )
-                            ->where('is_active', true)
+                            ->where(function (Builder $query) use ($record, $handlerDepartmentId): void {
+                                $query->where('is_active', true);
+                                if ($record && filled($record->manpower_details) && (int) $record->handler_department_id === (int) $handlerDepartmentId) {
+                                    $query->orWhereKey($record->ticket_category_id);
+                                }
+                            })
                             ->orderBy('name')
                             ->pluck('name', 'id')
                             ->toArray();
@@ -361,13 +366,15 @@ class TicketForm
                 TextInput::make('subject')
                     ->label('Subject')
                     ->required(
-                        fn (Get $get, ?Ticket $record): bool => ! self::isLegalDestination($get, $record)
-                            || ($record !== null && blank($record->legal_subject_category_id))
+                        fn (Get $get, ?Ticket $record): bool => ! ManpowerRequestFields::isVisible($get, $record)
+                            && (! self::isLegalDestination($get, $record)
+                                || ($record !== null && blank($record->legal_subject_category_id)))
                     )
                     ->maxLength(255)
                     ->visible(
-                        fn (Get $get, ?Ticket $record): bool => ! self::isLegalDestination($get, $record)
-                            || ($record !== null && blank($record->legal_subject_category_id))
+                        fn (Get $get, ?Ticket $record): bool => ! ManpowerRequestFields::isVisible($get, $record)
+                            && (! self::isLegalDestination($get, $record)
+                                || ($record !== null && blank($record->legal_subject_category_id)))
                     )
                     ->columnSpanFull(),
 
@@ -393,6 +400,7 @@ class TicketForm
                     ->columnSpanFull(),
 
                 Textarea::make('description')
+                    ->visible(fn (Get $get, ?Ticket $record): bool => ! ManpowerRequestFields::isVisible($get, $record))
                     ->label(
                         fn (Get $get, ?Ticket $record): string => self::isLegalDestination($get, $record)
                             ? 'Nama Proyek / Kegiatan / Transaksi'
@@ -403,6 +411,8 @@ class TicketForm
                         fn (Get $get, ?Ticket $record): bool => self::isLegalDestination($get, $record)
                     )
                     ->columnSpanFull(),
+
+                ManpowerRequestFields::section(),
 
                 Section::make('Detail Permintaan Legal')
                     ->description('Informasi ini wajib dilengkapi untuk permintaan yang ditujukan ke Legal.')

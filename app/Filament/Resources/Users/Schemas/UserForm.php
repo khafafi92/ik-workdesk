@@ -189,6 +189,7 @@ class UserForm
                                     ->schema([
                                         CheckboxList::make("menu_access.{$key}")
                                             ->label('Submenu')
+                                            ->extraAttributes(['class' => 'menu-access-checklist'])
                                             ->options(fn (): array => app(UserAdditionalAccessService::class)
                                                 ->menuOptionsForModule($module))
                                             ->bulkToggleable()

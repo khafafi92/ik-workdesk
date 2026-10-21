@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\DocumentNumberGenerator;
+use App\Services\ManpowerRequestDetails;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -27,6 +28,7 @@ class Ticket extends Model
         'legal_objective',
         'legal_desired_scheme',
         'legal_document_types',
+        'manpower_details',
         'attachments',
         'priority',
         'status',
@@ -44,12 +46,15 @@ class Ticket extends Model
         'resolved_at' => 'datetime',
         'attachments' => 'array',
         'legal_document_types' => 'array',
+        'manpower_details' => 'array',
         'permit_kbli_unavailable' => 'boolean',
     ];
 
     protected static function booted(): void
     {
         static::saving(function (Ticket $ticket): void {
+            ManpowerRequestDetails::prepare($ticket);
+
             $isLegalDestination = $ticket->handler_department_id
                 && Department::query()->find($ticket->handler_department_id)?->isLegal();
 

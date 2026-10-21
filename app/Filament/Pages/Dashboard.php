@@ -22,6 +22,7 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Notifications\Notification;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Database\Eloquent\Builder;
 
 class Dashboard extends BaseDashboard
 {
@@ -313,7 +314,7 @@ class Dashboard extends BaseDashboard
     }
 
     private function getReminderCounts(
-        \Illuminate\Database\Eloquent\Builder $query,
+        Builder $query,
         CarbonInterface $todayStart,
         CarbonInterface $todayEnd,
     ): array {
@@ -338,7 +339,7 @@ class Dashboard extends BaseDashboard
     }
 
     private function getTicketCounts(
-        \Illuminate\Database\Eloquent\Builder $query,
+        Builder $query,
         CarbonInterface $now,
         array $openStatuses,
     ): object {
@@ -365,7 +366,7 @@ class Dashboard extends BaseDashboard
     }
 
     private function getWorkTaskCounts(
-        \Illuminate\Database\Eloquent\Builder $query,
+        Builder $query,
         CarbonInterface $now,
         array $openStatuses,
     ): object {

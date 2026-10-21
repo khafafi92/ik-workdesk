@@ -38,6 +38,10 @@ class TicketCategoriesTable
                 IconColumn::make('requires_permit')
                     ->label('Permit & KBLI')
                     ->boolean(),
+
+                IconColumn::make('requires_manpower')
+                    ->label('Form manpower')
+                    ->boolean(),
             ])
             ->defaultSort('handler_department_id')
             ->recordActions([

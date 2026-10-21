@@ -205,11 +205,12 @@ class DailyActivityTest extends TestCase
 
     private function grantDailyAccess(User $user): void
     {
-        $permission = Permission::query()->updateOrCreate(
-            ['code' => 'worklogs.view'],
-            ['name' => 'View Work Logs', 'is_active' => true],
-        );
-
-        $user->directPermissions()->syncWithoutDetaching([$permission->id]);
+        foreach (['worklogs.view', 'daily-activities.manage', 'report.daily-activities'] as $code) {
+            $permission = Permission::query()->updateOrCreate(
+                ['code' => $code],
+                ['name' => $code, 'is_active' => true],
+            );
+            $user->directPermissions()->syncWithoutDetaching([$permission->id]);
+        }
     }
 }

@@ -13,6 +13,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class TicketCategoryResource extends Resource
 {
@@ -70,12 +71,35 @@ class TicketCategoryResource extends Resource
             || auth()->user()?->hasPermission('master-data.manage') === true;
     }
 
-    public static function shouldRegisterNavigation(): bool { return static::currentUserCanManageRequestCategories(); }
-    public static function canViewAny(): bool { return static::currentUserCanManageRequestCategories(); }
-    public static function canCreate(): bool { return static::currentUserCanManageRequestCategories(); }
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool { return static::currentUserCanManageRequestCategories(); }
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool { return static::currentUserCanManageRequestCategories(); }
-    public static function canDeleteAny(): bool { return static::currentUserCanManageRequestCategories(); }
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::currentUserCanManageRequestCategories();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::currentUserCanManageRequestCategories();
+    }
+
+    public static function canCreate(): bool
+    {
+        return static::currentUserCanManageRequestCategories();
+    }
+
+    public static function canEdit(Model $record): bool
+    {
+        return static::currentUserCanManageRequestCategories();
+    }
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::currentUserCanManageRequestCategories();
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return static::currentUserCanManageRequestCategories();
+    }
 
     public static function getPages(): array
     {

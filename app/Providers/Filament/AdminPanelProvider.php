@@ -43,7 +43,6 @@ class AdminPanelProvider extends PanelProvider
             ->sidebarCollapsibleOnDesktop()
             ->sidebarWidth('17.5rem')
             ->collapsedSidebarWidth('5.25rem')
-            ->font('Inter')
             ->darkMode(false)
             ->databaseNotifications()
             ->databaseNotificationsPolling('30s')

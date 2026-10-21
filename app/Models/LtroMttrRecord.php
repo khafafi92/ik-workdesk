@@ -30,7 +30,7 @@ class LtroMttrRecord extends Model
         return $this->belongsTo(LtroUnit::class, 'ltro_unit_id');
     }
 
-    public function category(): BelongsTo
+    public function categoryMaster(): BelongsTo
     {
         return $this->belongsTo(LtroCategory::class, 'ltro_category_id');
     }

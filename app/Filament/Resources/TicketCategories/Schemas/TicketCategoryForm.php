@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\TicketCategories\Schemas;
 
+use App\Models\Department;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -35,6 +36,12 @@ class TicketCategoryForm
                     ->relationship('handlerDepartment', 'name')
                     ->searchable()
                     ->preload()
+                    ->live()
+                    ->afterStateUpdated(function ($state, Set $set): void {
+                        if (! Department::query()->find($state)?->isHumanResources()) {
+                            $set('requires_manpower', false);
+                        }
+                    })
                     ->required(),
 
                 TextInput::make('name')
@@ -49,6 +56,12 @@ class TicketCategoryForm
                 Toggle::make('requires_permit')
                     ->label('Requires Permit & KBLI')
                     ->helperText('Jika aktif, form Permit Company dan KBLI muncul dan wajib dilengkapi pada Service Desk kategori ini.')
+                    ->default(false),
+
+                Toggle::make('requires_manpower')
+                    ->label('Gunakan form kebutuhan manpower')
+                    ->helperText('Menampilkan tujuan kebutuhan, lokasi, tanggal, serta rincian beberapa posisi dan jumlah orang pada Service Desk ke HR.')
+                    ->visible(fn (Get $get): bool => Department::query()->find($get('handler_department_id'))?->isHumanResources() === true)
                     ->default(false),
 
                 Select::make('reviewerDepartments')

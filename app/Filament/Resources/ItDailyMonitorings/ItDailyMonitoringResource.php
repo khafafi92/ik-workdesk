@@ -77,19 +77,20 @@ class ItDailyMonitoringResource extends Resource
         return $schema->components([Group::make([
             View::make('filament.components.it-review-notice'),
             Hidden::make('revision')->default(1),
+            Hidden::make('format_version')->default(2),
             Hidden::make('finalize')->default(false)->formatStateUsing(fn ($state): bool => (bool) $state),
             Section::make('Informasi pemeriksaan')->description(fn (?ItDailyMonitoring $record): string => $readOnly ? 'Pengelola: IT' : 'Pengelola: IT · Petugas: '.($record?->inspector_name ?? auth()->user()->name))->columns(['md' => 2, 'xl' => 3])->schema($readOnly ? static::readOnlyMetadata() : [
                 ToggleButtons::make('monitoring_type')->label('Jenis monitoring')->options(ItMonitoringType::options())->required()->inline()->live()->columnSpanFull()
                     ->disabled(fn (?ItDailyMonitoring $record): bool => $record !== null)->dehydrated()
-                    ->afterStateUpdated(function (?string $state, Set $set, Component $livewire): void {
-                        $set('checks', [ItMonitoringType::tryFrom((string) $state)?->emptyCheck() ?? []]);
+                    ->afterStateUpdated(function (?string $state, Get $get, Set $set, Component $livewire): void {
+                        $set('checks', [ItMonitoringType::tryFrom((string) $state)?->emptyCheck(static::selectedVersion($get)) ?? []]);
                         $livewire->resetValidation();
                     }),
                 TextInput::make('source_name')->label(fn (Get $get): string => match ($get('monitoring_type')) {
-                    'firewall' => 'Nama firewall', 'synology' => 'Nama Synology', 'vsphere' => 'Nama vCenter / host', default => 'Nama sistem / perangkat',
+                    'internet' => 'Nama koneksi / ISP', 'firewall' => 'Nama firewall', 'server_room' => 'Nama ruang server', 'synology' => 'Nama Synology', 'vsphere' => 'Nama vCenter / host', default => 'Nama sistem / perangkat',
                 })->required()->maxLength(255),
                 DateTimePicker::make('checked_at')->label('Waktu pengecekan')->seconds(false)->required()->default(now())->maxDate(now()),
-                DatePicker::make('backup_date')->label('Tanggal backup yang diperiksa')->default(today())->required()->visible(fn (Get $get): bool => $get('monitoring_type') === 'synology')
+                DatePicker::make('backup_date')->label('Tanggal backup yang diperiksa')->default(today())->required()->visible(fn (Get $get): bool => static::selectedVersion($get) === 1 && $get('monitoring_type') === 'synology')
                     ->helperText('Jadwal backup setiap hari pukul 00.01 WIB. Waktu pengecekan adalah saat petugas memeriksa hasilnya.'),
                 Section::make('Lokasi & catatan (opsional)')->compact()->collapsible()
                     ->collapsed(fn (Get $get): bool => blank($get('location')) && blank($get('notes')))->columns(['md' => 2])->schema([
@@ -99,22 +100,26 @@ class ItDailyMonitoringResource extends Resource
                 TextEntry::make('inspector_name')->label('Petugas pencatat')->visible(fn (?ItDailyMonitoring $record): bool => $record !== null),
                 TextEntry::make('status')->label('Status catatan')->formatStateUsing(fn (ItInspectionStatus $state): string => $state->label())->visible(fn (?ItDailyMonitoring $record): bool => $record !== null),
             ])->columnSpanFull(),
-            Section::make(fn (Get $get): string => match (static::selectedType($get)) {
+            Section::make(fn (Get $get): string => static::selectedVersion($get) === 2 ? match (static::selectedType($get)) {
+                ItMonitoringType::Internet => 'Internet status', ItMonitoringType::Firewall => 'FortiView & quarantine', ItMonitoringType::ServerRoom => 'Suhu ruang server', ItMonitoringType::Synology => 'Pemeriksaan File Station', ItMonitoringType::Vsphere => 'Patch & update VM', default => 'Hasil pengecekan',
+            } : match (static::selectedType($get)) {
                 ItMonitoringType::Firewall => 'Koneksi internet per link', ItMonitoringType::Synology => 'Hasil backup per job', ItMonitoringType::Vsphere => 'Pemeriksaan setiap VM', default => 'Hasil pengecekan',
             })->description(fn (Get $get): string => collect($get('checks') ?? [])->filter(fn (array $row): bool => filled($row['status'] ?? null) && $row['status'] !== 'unchecked')->count().' dari '.count($get('checks') ?? []).' hasil sudah dipilih.')
                 ->visible(fn (Get $get): bool => filled($get('monitoring_type')))->extraAttributes(['class' => 'it-monitoring-checklist'])->schema([
-                    Repeater::make('checks')->label('Rincian pengecekan')->hiddenLabel()->minItems(1)->maxItems(500)->defaultItems(1)->required()->reorderable(false)
+                    Repeater::make('checks')->label('Rincian pengecekan')->hiddenLabel()->minItems(1)->maxItems(500)->defaultItems(1)->required()->reorderable(false)->live()
+                        ->addable(fn (Get $get): bool => static::selectedVersion($get) === 1 || static::selectedType($get)?->fixedCheckName() === null)
+                        ->deletable(fn (Get $get): bool => static::selectedVersion($get) === 1 || static::selectedType($get)?->fixedCheckName() === null)
                         ->extraAttributes(['class' => $readOnly ? 'it-review-worksheet it-monitoring-worksheet' : 'it-monitoring-entry'])
                         ->table($readOnly ? [TableColumn::make('Pemeriksaan')->width('24%'), TableColumn::make('Hasil')->width('18%'), TableColumn::make('Nilai / rincian')->width('30%'), TableColumn::make('Catatan & tindak lanjut')->width('28%')] : null)
                         ->columns(['md' => 2, 'xl' => 3])->collapsible(! $readOnly)
                         ->itemLabel(fn (array $state, Get $get): string => (($state['name'] ?? null) ?: match (static::selectedType($get)) {
-                            ItMonitoringType::Firewall => 'Link internet baru', ItMonitoringType::Synology => 'Job backup baru', default => 'VM baru',
-                        }).' · '.(static::selectedType($get)?->statuses()[$state['status'] ?? 'unchecked'] ?? 'Belum diperiksa'))
+                            ItMonitoringType::Firewall => 'Link internet baru', ItMonitoringType::Synology => static::selectedVersion($get) === 2 ? 'File Station baru' : 'Job backup baru', default => 'VM baru',
+                        }).' · '.(static::selectedType($get)?->statuses(static::selectedVersion($get))[$state['status'] ?? 'unchecked'] ?? 'Belum diperiksa'))
                         ->collapseAction(fn (Action $action) => $action->label('Tutup rincian'))
                         ->expandAction(fn (Action $action) => $action->label('Buka rincian'))
                         ->collapseAllAction(fn (Action $action) => $action->label('Tutup semua rincian'))
                         ->expandAllAction(fn (Action $action) => $action->label('Buka semua rincian'))
-                        ->addActionLabel(fn (Get $get): string => match (static::selectedType($get)) {
+                        ->addActionLabel(fn (Get $get): string => static::selectedVersion($get) === 2 ? (static::selectedType($get) === ItMonitoringType::Synology ? 'Tambah File Station' : 'Tambah VM') : match (static::selectedType($get)) {
                             ItMonitoringType::Firewall => 'Tambah link internet', ItMonitoringType::Synology => 'Tambah job backup', default => 'Tambah VM',
                         })->deleteAction(fn (Action $action) => $action->label('Hapus baris')->requiresConfirmation()
                         ->modalHeading('Hapus baris pengecekan?')->modalDescription('Baris ini akan dihapus dari isian yang sedang dikerjakan.')
@@ -133,27 +138,38 @@ class ItDailyMonitoringResource extends Resource
                                 $added = 0;
                                 foreach ($names as $name) {
                                     if (! $checks->contains(fn (array $row): bool => mb_strtolower(trim($row['name'])) === mb_strtolower(trim($name)))) {
-                                        $checks->push([...ItMonitoringType::Vsphere->emptyCheck(), 'name' => $name]);
+                                        $checks->push([...ItMonitoringType::Vsphere->emptyCheck(static::selectedVersion($get)), 'name' => $name]);
                                         $added++;
                                     }
                                 }
-                                $set('checks', $checks->isEmpty() ? [ItMonitoringType::Vsphere->emptyCheck()] : $checks->values()->all());
+                                $set('checks', $checks->isEmpty() ? [ItMonitoringType::Vsphere->emptyCheck(static::selectedVersion($get))] : $checks->values()->all());
                                 Notification::make()->title($added > 0 ? $added.' nama VM ditambahkan' : 'Nama VM dari master sudah ada pada daftar')
                                     ->body('Periksa setiap VM dan isi hasil pemeriksaannya.')->info()->send();
                             }))
-                        ->helperText(fn (Get $get): ?string => $readOnly ? null : match ($get('monitoring_type')) {
+                        ->helperText(fn (Get $get): ?string => $readOnly ? null : (static::selectedVersion($get) === 2 ? match ($get('monitoring_type')) {
+                            'internet' => 'Isi status koneksi, keterangan, serta tanggal dan jam pemeriksaan.',
+                            'firewall' => 'Isi hasil FortiView. Quarantine mencatat IP yang diblokir; kosongkan jika tidak ada.',
+                            'server_room' => 'Masukkan suhu dalam derajat Celsius, keterangan, serta tanggal dan jam pengukuran.',
+                            'synology' => 'Tambahkan satu baris untuk setiap File Station yang diperiksa.',
+                            'vsphere' => 'Buka rincian setiap VM. Pilih Update jika belum up to date dan isi keterangan versi updatenya.',
+                            default => null,
+                        } : match ($get('monitoring_type')) {
                             'firewall' => 'Satu baris untuk setiap link internet. Catat masalah dan tindak lanjut jika koneksi terganggu.',
                             'synology' => 'Periksa hasil job dan data backup secara terpisah. Catat masalah dan tindak lanjut jika backup gagal atau data belum terverifikasi.',
                             'vsphere' => 'Periksa seluruh VM pada vSphere. Tambahkan VM yang belum terdaftar di master dan catat masalah atau alarm yang ditemukan.',
                             default => null,
-                        })
-                        ->schema(fn (Get $get): array => $readOnly ? static::readOnlyCheckFields(static::selectedType($get)) : static::checkFields(static::selectedType($get))),
+                        }))
+                        ->schema(fn (Get $get): array => $readOnly ? static::readOnlyCheckFields(static::selectedType($get), static::selectedVersion($get)) : static::checkFields(static::selectedType($get), static::selectedVersion($get))),
                 ])->columnSpanFull(),
         ])->extraAttributes(['class' => 'it-review'])->columnSpanFull()])->columns(1);
     }
 
-    private static function checkFields(?ItMonitoringType $type): array
+    private static function checkFields(?ItMonitoringType $type, int $version = 1): array
     {
+        if ($version === 2) {
+            return static::currentCheckFields($type);
+        }
+
         $fields = [
             TextInput::make('name')->label(match ($type) {
                 ItMonitoringType::Firewall => 'Nama ISP / link', ItMonitoringType::Synology => 'Nama job backup', default => 'Nama VM'
@@ -204,17 +220,75 @@ class ItDailyMonitoringResource extends Resource
             ->extraAttributes(['class' => 'it-monitoring-measurements']);
     }
 
+    private static function currentCheckFields(?ItMonitoringType $type): array
+    {
+        $fields = [
+            TextInput::make('name')->label(match ($type) {
+                ItMonitoringType::Synology => 'Nama File Station', ItMonitoringType::Vsphere => 'Nama VM', default => 'Pemeriksaan',
+            })->default($type?->fixedCheckName())->readOnly($type?->fixedCheckName() !== null)
+                ->required()->maxLength(255)->live(onBlur: true),
+        ];
+        if ($type === ItMonitoringType::ServerRoom) {
+            $fields[] = Hidden::make('status')->default('unchecked');
+            $fields[] = TextInput::make('temperature_c')->label('Suhu')->suffix('°C')->numeric()->minValue(-273.15)
+                ->live(onBlur: true)->afterStateUpdated(fn ($state, Set $set) => $set('status', filled($state) ? 'recorded' : 'unchecked'));
+        } else {
+            $fields[] = Select::make('status')->label($type === ItMonitoringType::Vsphere ? 'Patch & update' : 'Status')
+                ->options($type?->statuses(2) ?? [])->default('unchecked')->required()->native()->live();
+        }
+        if ($type === ItMonitoringType::Firewall) {
+            $fields[] = Textarea::make('quarantine_ips')->label('Quarantine (IP yang diblokir)')->rows(3)->autosize()->maxLength(4000)
+                ->helperText('Satu alamat IP per baris. Kosongkan jika tidak ada IP yang diblokir.');
+        }
+        if ($type === ItMonitoringType::Vsphere) {
+            $fields[] = TextInput::make('update_version')->label('Keterangan versi update')->maxLength(1000)
+                ->visible(fn (Get $get): bool => $get('status') === 'update')->required(fn (Get $get): bool => $get('status') === 'update');
+        }
+        $fields[] = DateTimePicker::make('checked_at')->label('Tanggal dan jam')->seconds(false)->maxDate(now())
+            ->required(fn (Get $get): bool => $type === ItMonitoringType::ServerRoom ? filled($get('temperature_c')) : $get('status') !== 'unchecked');
+        $fields[] = Textarea::make('notes')->label('Keterangan')->rows(2)->autosize()->maxLength(3000)->columnSpanFull()
+            ->required(fn (Get $get): bool => $get('status') === 'issue');
+
+        return $fields;
+    }
+
+    private static function currentReadOnlyFields(?ItMonitoringType $type): array
+    {
+        $entry = fn (string $field, string $label) => TextEntry::make($field)->label($label)
+            ->state(fn (TextEntry $component) => data_get($component->getLivewire(), $component->getStatePath()))->placeholder('Tidak dicatat');
+        $details = [$entry('checked_at', 'Tanggal dan jam')->formatStateUsing(fn ($state) => filled($state) ? Carbon::parse($state)->format('d/m/Y H:i') : null)];
+        if ($type === ItMonitoringType::Firewall) {
+            array_unshift($details, $entry('quarantine_ips', 'Quarantine (IP yang diblokir)')->placeholder('Tidak ada IP yang dicatat')
+                ->formatStateUsing(fn (?string $state) => static::formatNotes($state)));
+        }
+        if ($type === ItMonitoringType::Vsphere) {
+            array_unshift($details, $entry('update_version', 'Keterangan versi update'));
+        }
+
+        return [
+            $entry('name', match ($type) {
+                ItMonitoringType::Synology => 'Nama File Station', ItMonitoringType::Vsphere => 'Nama VM', default => 'Pemeriksaan',
+            }),
+            $type === ItMonitoringType::ServerRoom
+                ? $entry('temperature_c', 'Suhu')->suffix(' °C')
+                : $entry('status', $type === ItMonitoringType::Vsphere ? 'Patch & update' : 'Status')->formatStateUsing(fn ($state) => $type?->statuses(2)[$state] ?? $state),
+            Group::make($details)->columns(1),
+            $entry('notes', 'Keterangan')->placeholder('Tidak ada catatan')->formatStateUsing(fn (?string $state) => static::formatNotes($state))
+                ->extraAttributes(['class' => 'it-monitoring-read-value']),
+        ];
+    }
+
     private static function readOnlyMetadata(): array
     {
         return [
-            TextEntry::make('monitoring_type')->label('Jenis monitoring')->formatStateUsing(fn (ItMonitoringType|string $state): string => ($state instanceof ItMonitoringType ? $state : ItMonitoringType::from($state))->label()),
+            TextEntry::make('monitoring_type')->label('Jenis monitoring')->formatStateUsing(fn (ItMonitoringType|string $state, ?ItDailyMonitoring $record): string => ($state instanceof ItMonitoringType ? $state : ItMonitoringType::from($state))->label($record?->formatVersion() ?? 2)),
             TextEntry::make('source_name')->label(fn (Get $get): string => match (static::selectedType($get)) {
                 ItMonitoringType::Firewall => 'Nama firewall', ItMonitoringType::Synology => 'Nama Synology', ItMonitoringType::Vsphere => 'Nama vCenter / host', default => 'Nama sistem / perangkat',
             }),
             TextEntry::make('location')->label('Lokasi')->placeholder('Tidak dicatat'),
             TextEntry::make('checked_at')->label('Waktu pengecekan')->dateTime('d/m/Y H:i'),
             TextEntry::make('notes')->label('Catatan pemeriksaan')->placeholder('Tidak ada catatan')->formatStateUsing(fn (?string $state) => static::formatNotes($state))->extraAttributes(['class' => 'it-monitoring-read-value']),
-            TextEntry::make('backup_date')->label('Tanggal backup')->date('d/m/Y')->visible(fn (Get $get): bool => static::selectedType($get) === ItMonitoringType::Synology),
+            TextEntry::make('backup_date')->label('Tanggal backup')->date('d/m/Y')->visible(fn (Get $get): bool => static::selectedVersion($get) === 1 && static::selectedType($get) === ItMonitoringType::Synology),
             TextEntry::make('inspector_name')->label('Petugas pencatat'),
             TextEntry::make('status')->label('Status catatan')->formatStateUsing(fn (ItInspectionStatus|string $state): string => ($state instanceof ItInspectionStatus ? $state : ItInspectionStatus::from($state))->label()),
         ];
@@ -227,8 +301,17 @@ class ItDailyMonitoringResource extends Resource
         return $state instanceof ItMonitoringType ? $state : ItMonitoringType::tryFrom((string) $state);
     }
 
-    private static function readOnlyCheckFields(?ItMonitoringType $type): array
+    private static function selectedVersion(Get $get): int
     {
+        return (int) ($get('format_version') ?? 2);
+    }
+
+    private static function readOnlyCheckFields(?ItMonitoringType $type, int $version = 1): array
+    {
+        if ($version === 2) {
+            return static::currentReadOnlyFields($type);
+        }
+
         $entry = fn (string $field, string $label) => TextEntry::make($field)->label($label)
             ->state(fn (TextEntry $component) => data_get($component->getLivewire(), $component->getStatePath()))->placeholder('Tidak dicatat');
         $details = match ($type) {
@@ -270,7 +353,7 @@ class ItDailyMonitoringResource extends Resource
     {
         return $table->columns([
             TextColumn::make('checked_at')->label('Waktu pengecekan')->dateTime('d/m/Y H:i')->sortable(),
-            TextColumn::make('monitoring_type')->label('Monitoring')->formatStateUsing(fn (ItMonitoringType $state): string => $state->label())->wrap(),
+            TextColumn::make('monitoring_type')->label('Monitoring')->formatStateUsing(fn (ItMonitoringType $state, ItDailyMonitoring $record): string => $state->label($record->formatVersion()))->wrap(),
             TextColumn::make('source_name')->label('Sistem / perangkat')->searchable()->wrap(),
             TextColumn::make('checked_count')->label('Diperiksa')->state(fn (ItDailyMonitoring $record): string => collect($record->checks)->where('status', '!=', 'unchecked')->count().' / '.count($record->checks)),
             TextColumn::make('backup_date')->label('Tanggal backup')->date('d/m/Y')->placeholder('-')->toggleable(isToggledHiddenByDefault: true),
@@ -295,7 +378,7 @@ class ItDailyMonitoringResource extends Resource
                 ->url(fn (ItDailyMonitoring $record): string => static::getUrl('create', ['repeat' => $record->getKey()])),
         ])->emptyStateHeading('Belum ada catatan monitoring pada daftar ini')
             ->emptyStateDescription(fn (): string => static::canCreate()
-                ? 'Tambahkan hasil pengecekan firewall, backup Synology, atau VM vSphere. Jika memakai filter, periksa kembali periode dan jenis monitoring.'
+                ? 'Tambahkan hasil pengecekan internet, firewall, ruang server, backup, atau VM. Jika memakai filter, periksa kembali periode dan jenis monitoring.'
                 : 'Belum ada hasil pemeriksaan yang dapat ditampilkan. Periksa kembali periode dan jenis monitoring yang dipilih.');
     }
 

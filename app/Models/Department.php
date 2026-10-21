@@ -40,6 +40,12 @@ class Department extends Model
         return $this->requires_cbo_approval === true;
     }
 
+    public function isHumanResources(): bool
+    {
+        return in_array(strtolower(trim((string) $this->code)), ['hr', 'hrd', 'hc'], true)
+            || in_array(strtolower(trim((string) $this->name)), ['hr', 'hrd', 'human resource', 'human resources', 'human capital', 'personalia'], true);
+    }
+
     public function employees()
     {
         return $this->hasMany(Employee::class);

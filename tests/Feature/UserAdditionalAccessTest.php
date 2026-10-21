@@ -52,7 +52,7 @@ class UserAdditionalAccessTest extends TestCase
         $this->assertTrue($user->hasPermission('report.export'));
         $this->assertFalse($user->hasPermission('vehicle-bookings.view'));
         $this->assertEqualsCanonicalizing(
-            ['meeting-room', 'attendance-report', 'reports'],
+            ['meeting-room', 'attendance-report', 'reports', 'report-export'],
             $service->stateFor($user)
         );
 

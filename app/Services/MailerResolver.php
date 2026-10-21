@@ -26,21 +26,6 @@ class MailerResolver
     ];
 
     /**
-     * FROM address per mailer.
-     * Diambil dari .env agar mudah diganti tanpa ubah kode.
-     */
-    private const FROM_MAP = [
-        'kpmog' => [
-            'address' => 'MAIL_KPMOG_FROM_ADDRESS',
-            'name' => 'MAIL_KPMOG_FROM_NAME',
-        ],
-        'apca' => [
-            'address' => 'MAIL_APCA_FROM_ADDRESS',
-            'name' => 'MAIL_APCA_FROM_NAME',
-        ],
-    ];
-
-    /**
      * Deteksi domain email penerima, kembalikan mailer yang sesuai.
      * Jika domain tidak dikenal, gunakan mailer default Laravel.
      *
@@ -72,18 +57,9 @@ class MailerResolver
      */
     public static function fromAddress(string $mailerName): array
     {
-        if (! isset(self::FROM_MAP[$mailerName])) {
-            return [
-                'address' => config('mail.from.address'),
-                'name' => config('mail.from.name'),
-            ];
-        }
-
-        $map = self::FROM_MAP[$mailerName];
-
         return [
-            'address' => env($map['address'], config('mail.from.address')),
-            'name' => env($map['name'], config('mail.from.name')),
+            'address' => config("mail.mailers.{$mailerName}.from.address", config('mail.from.address')),
+            'name' => config("mail.mailers.{$mailerName}.from.name", config('mail.from.name')),
         ];
     }
 }

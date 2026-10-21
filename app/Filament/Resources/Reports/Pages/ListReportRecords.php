@@ -5,7 +5,6 @@ namespace App\Filament\Resources\Reports\Pages;
 use App\Filament\Resources\Reports\ReportResource;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\ListRecords;
-use Illuminate\Support\Facades\Date;
 use Maatwebsite\Excel\Facades\Excel;
 
 abstract class ListReportRecords extends ListRecords

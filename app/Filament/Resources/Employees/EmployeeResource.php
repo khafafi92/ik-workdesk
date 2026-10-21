@@ -19,6 +19,10 @@ class EmployeeResource extends Resource
 {
     use AdminOnlyResource;
 
+    protected static ?string $menuPermissionCode = 'master.employees.manage';
+
+    protected static bool $acceptsLegacyMasterDataAccess = true;
+
     protected static ?string $model = Employee::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;

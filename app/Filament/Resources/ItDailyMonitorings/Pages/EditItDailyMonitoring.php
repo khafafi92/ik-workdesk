@@ -19,6 +19,11 @@ class EditItDailyMonitoring extends EditRecord
         return 'Ubah draft';
     }
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        return [...$data, 'format_version' => $this->getRecord()->formatVersion()];
+    }
+
     protected function getSaveFormAction(): Action
     {
         return parent::getSaveFormAction()->label('Simpan Draft')->color('gray');

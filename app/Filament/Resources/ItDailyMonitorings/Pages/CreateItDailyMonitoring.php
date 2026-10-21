@@ -33,6 +33,7 @@ class CreateItDailyMonitoring extends CreateRecord
             $this->repeatedFromSource = $source->source_name;
             $this->form->fill([
                 'revision' => 1,
+                'format_version' => $source->formatVersion(),
                 'finalize' => false,
                 'monitoring_type' => $type->value,
                 'source_name' => $source->source_name,
@@ -40,13 +41,13 @@ class CreateItDailyMonitoring extends CreateRecord
                 'checked_at' => now(),
                 'backup_date' => $type === ItMonitoringType::Synology ? today() : null,
                 'checks' => collect($source->checks)->map(fn (array $row): array => [
-                    ...$type->emptyCheck(),
+                    ...$type->emptyCheck($source->formatVersion()),
                     'name' => $row['name'],
-                    ...match ($type) {
+                    ...($source->formatVersion() === 1 ? match ($type) {
                         ItMonitoringType::Firewall => ['test_target' => $row['test_target'] ?? null],
                         ItMonitoringType::Vsphere => ['expected_power_state' => $row['expected_power_state'] ?? 'powered_on'],
                         default => [],
-                    },
+                    } : []),
                 ])->all(),
             ]);
 
@@ -58,11 +59,12 @@ class CreateItDailyMonitoring extends CreateRecord
         if ($type !== null) {
             $this->form->fill([
                 'revision' => 1,
+                'format_version' => 2,
                 'finalize' => false,
                 'monitoring_type' => $type->value,
                 'checked_at' => now(),
                 'backup_date' => $type === ItMonitoringType::Synology ? today() : null,
-                'checks' => [$type->emptyCheck()],
+                'checks' => [$type->emptyCheck(2)],
             ]);
         }
     }
@@ -77,7 +79,9 @@ class CreateItDailyMonitoring extends CreateRecord
     public function getTitle(): string
     {
         return match ($this->data['monitoring_type'] ?? null) {
-            'firewall' => 'Cek koneksi internet',
+            'internet' => 'Cek internet',
+            'firewall' => ($this->data['format_version'] ?? 2) === 1 ? 'Cek koneksi internet' : 'Cek firewall',
+            'server_room' => 'Cek ruang server',
             'synology' => 'Cek backup Synology',
             'vsphere' => 'Cek VM vSphere',
             default => 'Tambah catatan monitoring',

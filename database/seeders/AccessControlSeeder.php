@@ -370,6 +370,7 @@ class AccessControlSeeder extends Seeder
             }
 
             $this->call(ItInfrastructurePermissionSeeder::class);
+            $this->call(MenuAccessPermissionSeeder::class);
 
             /*
             |--------------------------------------------------------------------------

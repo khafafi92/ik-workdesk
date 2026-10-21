@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             MeetingRoomSeeder::class,
             ItInfrastructureChecklistSeeder::class,
+            ManpowerRequestCategorySeeder::class,
         ]);
     }
 }

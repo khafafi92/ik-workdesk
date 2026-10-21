@@ -10,8 +10,10 @@ trait AdminOnlyResource
     {
         $permissionCode = static::$menuPermissionCode ?? 'master-data.manage';
 
-        return auth()->user()
-            ?->hasPermission($permissionCode) === true;
+        $user = auth()->user();
+
+        return $user !== null && ($user->hasPermission($permissionCode)
+            || ((static::$acceptsLegacyMasterDataAccess ?? false) && $user->hasPermission('master-data.manage')));
     }
 
     public static function shouldRegisterNavigation(): bool

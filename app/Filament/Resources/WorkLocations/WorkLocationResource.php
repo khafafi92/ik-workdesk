@@ -19,6 +19,10 @@ class WorkLocationResource extends Resource
 {
     use AdminOnlyResource;
 
+    protected static ?string $menuPermissionCode = 'master.work-locations.manage';
+
+    protected static bool $acceptsLegacyMasterDataAccess = true;
+
     protected static ?string $model = WorkLocation::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedMapPin;

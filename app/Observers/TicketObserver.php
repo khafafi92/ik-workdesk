@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\TicketCreatedNotification;
 use App\Notifications\TicketResolvedNotification;
 use App\Services\MailerResolver;
+use Illuminate\Support\Facades\Notification;
 
 class TicketObserver
 {
@@ -33,40 +34,26 @@ class TicketObserver
         }
 
         $recipients = User::query()
+            ->with(['roles.permissions', 'directPermissions'])
             ->whereHas(
                 'employee',
                 fn ($q) => $q
                     ->where('department_id', $ticket->handler_department_id)
                     ->where('is_active', true)
             )
-            ->where(function ($query): void {
-                $query
-                    ->where('is_admin', true)
-                    ->orWhereHas(
-                        'roles',
-                        fn ($roleQuery) => $roleQuery
-                            ->where('roles.is_active', true)
-                            ->whereHas(
-                                'permissions',
-                                fn ($permissionQuery) => $permissionQuery
-                                    ->where('permissions.is_active', true)
-                                    ->whereIn('permissions.code', [
-                                        'tickets.view',
-                                        'tickets.manage',
-                                    ])
-                            )
-                    );
-            })
-            ->whereNotNull('email')
-            ->get();
+            ->get()
+            ->filter(fn (User $user): bool => $user->hasPermission('tickets.view') || $user->hasPermission('tickets.manage'));
 
         foreach ($recipients as $user) {
             $mailerName = MailerResolver::resolveMailerName($user->email);
             $from = MailerResolver::fromAddress($mailerName);
 
-            $user->notify(
-                new TicketCreatedNotification($ticket, $mailerName, $from)
-            );
+            $notification = new TicketCreatedNotification($ticket, $mailerName, $from);
+            Notification::sendNow($user, $notification, ['database']);
+
+            if (filled($user->email)) {
+                $user->notify($notification);
+            }
         }
     }
 

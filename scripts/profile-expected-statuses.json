@@ -1,0 +1,10 @@
+{
+    "/panel/location-reports": {"status": 403, "reason": "Legacy resource: canViewAny() returns false."},
+    "/panel/location-reports/create": {"status": 403, "reason": "Legacy resource: canCreate() returns false."},
+    "/panel/roles": {"status": 403, "reason": "Retired role management: canViewAny() returns false."},
+    "/panel/roles/create": {"status": 403, "reason": "Retired role management: canCreate() returns false."},
+    "/panel/work-hour-imports": {"status": 403, "reason": "Legacy resource: canViewAny() returns false."},
+    "/panel/work-hour-imports/create": {"status": 403, "reason": "Legacy resource: canCreate() returns false."},
+    "/panel/work-hour-records": {"status": 403, "reason": "Legacy resource: canViewAny() returns false."},
+    "/panel/it-inspection-summary": {"status": 404, "reason": "An existing inspection ID is required in the inspection query parameter."}
+}

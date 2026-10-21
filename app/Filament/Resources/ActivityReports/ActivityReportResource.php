@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 class ActivityReportResource extends ReportResource
 {
     protected static ?string $menuPermissionCode = 'report.daily-activities';
+
     protected static ?string $model = DailyActivity::class;
 
     protected static ?string $slug = 'activity-reports';

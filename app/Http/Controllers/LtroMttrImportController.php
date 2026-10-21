@@ -64,6 +64,12 @@ class LtroMttrImportController
                     ? Carbon::parse($runningDate->toDateString().' '.$runningTime)
                     : $shutdown->copy()->addMinutes($downtime);
 
+                if ($downtime < 0 || $running->lt($shutdown)) {
+                    $notes[] = "Baris {$rowNumber}: Waktu running sebelum shutdown atau downtime negatif.";
+
+                    continue;
+                }
+
                 $values = [
                     'sequence_no' => is_numeric($value('no')) ? (int) $value('no') : null,
                     'ltro_unit_id' => $unit->id,

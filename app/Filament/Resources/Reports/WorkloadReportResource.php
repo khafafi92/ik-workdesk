@@ -14,14 +14,26 @@ use Illuminate\Database\Eloquent\Builder;
 class WorkloadReportResource extends ReportResource
 {
     protected static ?string $menuPermissionCode = 'report.workload';
+
     protected static ?string $model = Employee::class;
+
     protected static ?string $slug = 'reports/workload';
+
     protected static ?string $navigationLabel = 'Workload';
+
     protected static ?string $modelLabel = 'Workload Report';
+
     protected static ?string $pluralModelLabel = 'Workload Report';
 
-    public static function getNavigationGroup(): ?string { return 'Reports'; }
-    public static function getNavigationSort(): ?int { return 6; }
+    public static function getNavigationGroup(): ?string
+    {
+        return 'Reports';
+    }
+
+    public static function getNavigationSort(): ?int
+    {
+        return 6;
+    }
 
     public static function getEloquentQuery(): Builder
     {
@@ -36,8 +48,13 @@ class WorkloadReportResource extends ReportResource
             ->selectSub(WorkTask::query()->selectRaw('COUNT(DISTINCT ticket_id)')->whereColumn('work_tasks.employee_id', 'employees.id')->whereNotNull('ticket_id'), 'assigned_tickets')
             ->selectSub(WorkTask::query()->selectRaw('COALESCE(SUM(daily_activities.duration_minutes), 0)')->join('daily_activities', 'daily_activities.work_task_id', '=', 'work_tasks.id')->whereColumn('work_tasks.employee_id', 'employees.id'), 'work_duration_minutes');
 
-        if (! $user) return $query->whereRaw('1 = 0');
-        if ($user->is_admin || $user->hasRole('system-admin')) return $query;
+        if (! $user) {
+            return $query->whereRaw('1 = 0');
+        }
+        if ($user->is_admin || $user->hasRole('system-admin')) {
+            return $query;
+        }
+
         return $query->whereIn('department_id', $user->accessibleDepartmentIds());
     }
 
@@ -64,5 +81,8 @@ class WorkloadReportResource extends ReportResource
         return new ReportExport($query, ['Employee', 'Department', 'Assigned Tickets', 'Open', 'In Progress', 'Pending', 'Resolved', 'Closed', 'Total Work Logs', 'Total Work Duration (Minutes)'], fn (Employee $employee) => [$employee->name, $employee->department?->name, $employee->assigned_tickets, $employee->open_tickets, $employee->in_progress_count, $employee->pending_count, $employee->resolved_count, $employee->closed_count, $employee->total_work_logs, (int) $employee->work_duration_minutes]);
     }
 
-    public static function getPages(): array { return ['index' => ListWorkloadReports::route('/')]; }
+    public static function getPages(): array
+    {
+        return ['index' => ListWorkloadReports::route('/')];
+    }
 }

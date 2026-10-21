@@ -7,6 +7,7 @@ use App\Enums\ItMonitoringType;
 use App\Models\Department;
 use App\Models\ItDailyMonitoring;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -54,7 +55,11 @@ class ItDailyMonitoringService
             $record = $id ? ItDailyMonitoring::query()->lockForUpdate()->findOrFail($id) : new ItDailyMonitoring;
             Gate::forUser($actor)->authorize($id ? 'update' : 'create', $id ? $record : ItDailyMonitoring::class);
             $data['managing_department_id'] = self::departmentId();
-            $validated = $this->validate($data);
+            $version = $id ? $record->formatVersion() : (int) ($data['format_version'] ?? 1);
+            if (in_array($data['monitoring_type'] ?? null, ['internet', 'server_room'], true)) {
+                $version = 2;
+            }
+            $validated = $version === 2 ? $this->validateCurrent($data) : $this->validate($data);
             abort_unless($actor->canAccessDepartment((int) $validated['managing_department_id']), 403);
             if ($id && ((int) ($data['revision'] ?? 0) !== $record->revision)) {
                 throw ValidationException::withMessages(['data.source_name' => 'Catatan sudah diperbarui. Muat ulang halaman sebelum menyimpan.']);
@@ -79,6 +84,110 @@ class ItDailyMonitoringService
 
             return $record->refresh();
         });
+    }
+
+    private function validateCurrent(array $data): array
+    {
+        $type = ItMonitoringType::tryFrom((string) ($data['monitoring_type'] ?? ''));
+        if (is_array($data['checks'] ?? null)) {
+            foreach ($data['checks'] as &$check) {
+                if (! is_array($check)) {
+                    continue;
+                }
+                if ($type?->fixedCheckName() !== null) {
+                    $check['name'] = $type->fixedCheckName();
+                } elseif (is_string($check['name'] ?? null)) {
+                    $check['name'] = trim($check['name']);
+                }
+                if ($type === ItMonitoringType::ServerRoom) {
+                    $check['status'] = filled($check['temperature_c'] ?? null) ? 'recorded' : 'unchecked';
+                }
+            }
+            unset($check);
+        }
+        $fields = match ($type) {
+            ItMonitoringType::Firewall => ['quarantine_ips' => ['nullable', 'string', 'max:4000']],
+            ItMonitoringType::ServerRoom => ['temperature_c' => ['nullable', 'numeric', 'min:-273.15']],
+            ItMonitoringType::Vsphere => ['update_version' => ['required_if:checks.*.status,update', 'nullable', 'string', 'max:1000']],
+            default => [],
+        };
+        $rules = [
+            'managing_department_id' => ['required', 'integer', 'exists:departments,id'],
+            'monitoring_type' => ['required', Rule::enum(ItMonitoringType::class)],
+            'source_name' => ['required', 'string', 'max:255'],
+            'location' => ['nullable', 'string', 'max:255'],
+            'checked_at' => ['required', 'date', 'before_or_equal:now'],
+            'notes' => ['nullable', 'string', 'max:3000'],
+            'finalize' => ['sometimes', 'boolean'],
+            'checks' => ['required', 'array', 'min:1', 'max:'.($type?->fixedCheckName() !== null ? 1 : 500)],
+            'checks.*' => ['required', 'array'],
+            'checks.*.name' => ['required', 'string', 'max:255', 'distinct:ignore_case'],
+            'checks.*.status' => ['required', Rule::in(array_keys($type?->statuses(2) ?? []))],
+            'checks.*.notes' => ['nullable', 'string', 'max:3000'],
+            'checks.*.checked_at' => ['required_unless:checks.*.status,unchecked', 'nullable', 'date', 'before_or_equal:now'],
+        ];
+        foreach ($fields as $field => $definition) {
+            $rules['checks.*.'.$field] = $definition;
+        }
+        $validator = Validator::make($data, $rules, [
+            ...static::validationMessages(),
+            'required_if' => ':attribute wajib diisi untuk hasil yang dipilih.',
+            'checks.*.checked_at.before_or_equal' => 'Tanggal dan jam pemeriksaan tidak boleh melebihi waktu sekarang.',
+            'checks.*.name.distinct' => 'Nama File Station atau VM tidak boleh berulang dalam satu catatan.',
+        ], [
+            'managing_department_id' => 'Department IT', 'monitoring_type' => 'Jenis monitoring',
+            'source_name' => 'Nama sistem / perangkat', 'location' => 'Lokasi', 'checked_at' => 'Waktu pengecekan',
+            'notes' => 'Catatan pemeriksaan', 'checks' => 'Pemeriksaan',
+            'checks.*.name' => $type === ItMonitoringType::Synology ? 'Nama File Station' : 'Nama pemeriksaan / VM',
+            'checks.*.status' => 'Status', 'checks.*.notes' => 'Keterangan', 'checks.*.checked_at' => 'Tanggal dan jam',
+            'checks.*.temperature_c' => 'Suhu', 'checks.*.quarantine_ips' => 'IP quarantine', 'checks.*.update_version' => 'Keterangan versi update',
+        ]);
+        $validator->after(function ($validator) use ($data, $type): void {
+            if (! $type || ! is_array($data['checks'] ?? null)) {
+                return;
+            }
+            foreach ($data['checks'] as $key => $check) {
+                if (! is_array($check)) {
+                    continue;
+                }
+                if (($data['finalize'] ?? false) && ($check['status'] ?? 'unchecked') === 'unchecked') {
+                    $field = $type === ItMonitoringType::ServerRoom ? 'temperature_c' : 'status';
+                    $validator->errors()->add('checks.'.$key.'.'.$field, 'Isi hasil pemeriksaan sebelum finalisasi.');
+                }
+                if (($check['status'] ?? null) === 'issue' && blank($check['notes'] ?? null)) {
+                    $validator->errors()->add('checks.'.$key.'.notes', 'Jelaskan gangguan pada kolom keterangan.');
+                }
+                if ($type === ItMonitoringType::Firewall && is_string($check['quarantine_ips'] ?? null)) {
+                    $ips = preg_split('/[\s,;]+/', trim($check['quarantine_ips']), flags: PREG_SPLIT_NO_EMPTY);
+                    foreach ($ips as $ip) {
+                        if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
+                            $validator->errors()->add('checks.'.$key.'.quarantine_ips', 'Isi alamat IP yang valid, satu per baris.');
+                            break;
+                        }
+                    }
+                }
+            }
+        });
+        try {
+            $validated = $validator->validate();
+        } catch (ValidationException $exception) {
+            throw ValidationException::withMessages(collect($exception->errors())->mapWithKeys(fn ($messages, $key): array => ['data.'.$key => $messages])->all());
+        }
+        $allowed = ['name', 'status', 'notes', 'checked_at', ...array_keys($fields)];
+        $validated['checks'] = array_values(array_map(function (array $check) use ($allowed, $type): array {
+            $check = ['_version' => 2, ...collect($check)->only($allowed)->all()];
+            if (filled($check['checked_at'] ?? null)) {
+                $check['checked_at'] = Carbon::parse($check['checked_at'])->timezone(config('app.timezone'))->toDateTimeString();
+            }
+            if ($type === ItMonitoringType::Vsphere && $check['status'] !== 'update') {
+                $check['update_version'] = null;
+            }
+
+            return $check;
+        }, $validated['checks']));
+        $validated['backup_date'] = null;
+
+        return $validated;
     }
 
     private function validate(array $data): array

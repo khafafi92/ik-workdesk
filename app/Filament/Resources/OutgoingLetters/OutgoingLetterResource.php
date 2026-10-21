@@ -32,7 +32,6 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
-use Illuminate\Validation\ValidationException;
 use Throwable;
 
 class OutgoingLetterResource extends Resource

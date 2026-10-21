@@ -2,7 +2,9 @@
 
 Menu: **Infrastruktur IT > Monitoring Harian IT**, URL `/panel/it-daily-monitoring`.
 
-Modul mencatat hasil pemeriksaan manual petugas. Menu memiliki tiga jenis pencatatan dengan struktur baris berbeda. Modul ini tidak menjalankan backup, menarik telemetri, atau mengubah konfigurasi firewall, Synology, maupun vSphere.
+Modul mencatat hasil pemeriksaan manual petugas. Format awal memiliki tiga jenis pencatatan dengan struktur baris berbeda. Modul ini tidak menjalankan backup, menarik telemetri, atau mengubah konfigurasi firewall, Synology, maupun vSphere.
+
+Mulai perubahan 21 Oktober 2026, form baru menyediakan lima pemeriksaan: internet, firewall, ruang server, File Station backup, dan patch/update VM. Lihat [format terbaru dan hasil pengujian](MONITORING-HARIAN-IT-2026-10-21.md). Bagian berikut mendokumentasikan format sebelumnya dan riwayat pengembangannya; data lama tetap didukung.
 
 ## Pengisian
 

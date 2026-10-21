@@ -10,7 +10,19 @@ use Symfony\Component\Process\Process;
 $root = dirname(__DIR__);
 $app = require $root.'/bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
-$source = DB::connection();
+if (is_file($root.'/.env.database-admin')) {
+    $admin = Dotenv\Dotenv::parse(file_get_contents($root.'/.env.database-admin'));
+    $runtime = config('database.connections.pgsql');
+    if (($admin['DB_DATABASE'] ?? null) !== $runtime['database'] || ($admin['DB_HOST'] ?? null) !== $runtime['host']) {
+        throw new RuntimeException('Target kredensial admin berbeda dari database aplikasi.');
+    }
+    config(['database.connections.it_test_admin' => [
+        ...$runtime, 'url' => null, 'username' => $admin['DB_USERNAME'], 'password' => $admin['DB_PASSWORD'],
+    ]]);
+    $source = DB::connection('it_test_admin');
+} else {
+    $source = DB::connection();
+}
 
 if ($source->getDriverName() !== 'pgsql') {
     throw new RuntimeException('Koneksi aplikasi harus PostgreSQL untuk runner ini.');

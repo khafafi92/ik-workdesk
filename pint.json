@@ -1,0 +1,12 @@
+{
+    "preset": "laravel",
+    "exclude": [
+        ".agents",
+        "bootstrap/cache",
+        "deployment",
+        "ik-workdesk-ui-polish",
+        "output",
+        "storage",
+        "tmp"
+    ]
+}

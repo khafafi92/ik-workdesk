@@ -75,7 +75,7 @@ return new class extends Migration
                 ->first();
 
             if ($canonicalTemplate === null) {
-                throw new \RuntimeException("No department-independent APCA template exists for document type {$departmentTemplate->document_type_id}.");
+                throw new RuntimeException("No department-independent APCA template exists for document type {$departmentTemplate->document_type_id}.");
             }
 
             $sequences = DB::table('document_number_sequences')

@@ -38,6 +38,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         return array_replace([
             'managing_department_id' => $this->department->id,
             'monitoring_type' => $type,
+            'format_version' => in_array($type, ['internet', 'server_room'], true) ? 2 : 1,
             'source_name' => 'Perangkat uji',
             'checked_at' => now()->subMinute()->format('Y-m-d H:i:s'),
             'backup_date' => today()->toDateString(),
@@ -46,6 +47,8 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
                 'firewall' => ['name' => 'Link uji', 'status' => 'up', 'test_target' => 'gateway uji', 'latency_ms' => 5, 'packet_loss_percent' => 0],
                 'synology' => ['name' => 'Job uji', 'status' => 'success', 'data_present' => 'yes', 'started_at' => today()->setTime(0, 1)->format('Y-m-d H:i:s'), 'completed_at' => today()->setTime(0, 15)->format('Y-m-d H:i:s'), 'data_path' => '/backup/job-uji'],
                 'vsphere' => ['name' => 'VM uji', 'status' => 'powered_on', 'expected_power_state' => 'powered_on', 'health' => 'normal', 'cpu_percent' => 10, 'ram_percent' => 20, 'disk_free_percent' => 50],
+                'internet' => ['name' => 'Internet status', 'status' => 'normal', 'checked_at' => now()->subMinute()->toDateTimeString()],
+                'server_room' => ['name' => 'Suhu ruang server', 'status' => 'recorded', 'temperature_c' => 22.5, 'checked_at' => now()->subMinute()->toDateTimeString()],
             }],
             'finalize' => false,
         ], $overrides);
@@ -325,7 +328,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
             $this->assertSame(ItInspectionStatus::Finalized, $source->fresh()->status);
             $this->assertSame($data['checks'][0]['status'], $source->fresh()->checks[0]['status']);
         }
-        $this->assertSame(6, ItDailyMonitoring::query()->count());
+        $this->assertSame(10, ItDailyMonitoring::query()->count());
     }
 
     public function test_repeat_does_not_expose_inaccessible_records_or_bypass_creation_permission(): void

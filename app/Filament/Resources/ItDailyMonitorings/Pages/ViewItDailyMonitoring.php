@@ -18,6 +18,11 @@ class ViewItDailyMonitoring extends ViewRecord
         return 'Rincian';
     }
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        return [...$data, 'format_version' => $this->getRecord()->formatVersion()];
+    }
+
     protected function getHeaderActions(): array
     {
         return [EditAction::make()->label('Ubah draft'), Action::make('repeat')->label('Periksa lagi')

@@ -65,18 +65,17 @@ class AvailabilityLtro1b extends Component
 
         $rowNo = 1;
         foreach (CarbonPeriod::create($periodStart, $periodEnd) as $date) {
-            AvailabilityLtro1bRecord::query()->firstOrCreate(
-                [
+            AvailabilityLtro1bRecord::query()
+                ->whereDate('period_start', $periodStart->toDateString())
+                ->whereDate('report_date', $date->toDateString())
+                ->firstOrCreate([], [
                     'period_start' => $periodStart->toDateString(),
                     'report_date' => $date->toDateString(),
-                ],
-                [
                     'period_end' => $periodEnd->toDateString(),
                     'row_no' => $rowNo,
                     'day_name' => $date->format('l'),
                     'total_required_hours' => 72,
-                ]
-            );
+                ]);
 
             $rowNo++;
         }
@@ -90,6 +89,18 @@ class AvailabilityLtro1b extends Component
 
     public function save(): void
     {
+        $rules = [];
+        foreach ($this->numericFields as $field) {
+            $rules['rows.*.'.$field] = 'nullable|numeric';
+            foreach ($this->rows as &$row) {
+                if (isset($row[$field]) && is_string($row[$field])) {
+                    $row[$field] = str_replace(',', '', $row[$field]);
+                }
+            }
+            unset($row);
+        }
+        $this->validate($rules);
+
         foreach ($this->rows as $row) {
             $record = AvailabilityLtro1bRecord::query()->find($row['id']);
 

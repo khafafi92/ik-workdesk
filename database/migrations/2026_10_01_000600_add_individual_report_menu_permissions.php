@@ -26,8 +26,10 @@ return new class extends Migration
         if ($legacyId) {
             $userIds = DB::table('permission_user')->where('permission_id', $legacyId)->pluck('user_id');
             $permissionIds = DB::table('permissions')->whereIn('code', $codes)->pluck('id');
-            foreach ($userIds as $userId) foreach ($permissionIds as $permissionId) {
-                DB::table('permission_user')->updateOrInsert(['user_id' => $userId, 'permission_id' => $permissionId], ['created_at' => $now, 'updated_at' => $now]);
+            foreach ($userIds as $userId) {
+                foreach ($permissionIds as $permissionId) {
+                    DB::table('permission_user')->updateOrInsert(['user_id' => $userId, 'permission_id' => $permissionId], ['created_at' => $now, 'updated_at' => $now]);
+                }
             }
         }
     }

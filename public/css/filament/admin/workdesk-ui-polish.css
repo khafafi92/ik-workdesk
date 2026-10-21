@@ -2745,6 +2745,39 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     }
 }
 
+.manpower-request-form .fi-input-wrp {
+    border-color: #64748b !important;
+}
+
+.manpower-request-form .fi-input-wrp:focus-within {
+    border-color: #0068d9 !important;
+    outline: 2px solid #0068d9 !important;
+    outline-offset: 2px;
+}
+
+.manpower-request-form :is(button, a):focus-visible {
+    outline: 2px solid #0068d9 !important;
+    outline-offset: 2px;
+}
+
+.manpower-request-form .fi-fo-field-wrp-error-message {
+    color: #b91c1c;
+}
+
+.menu-access-checklist label {
+    min-height: 44px;
+    align-items: center;
+}
+
+.menu-access-checklist input[type="checkbox"] {
+    border-color: #64748b;
+}
+
+.menu-access-checklist input[type="checkbox"]:focus-visible {
+    outline: 2px solid #0068d9 !important;
+    outline-offset: 2px;
+}
+
 @media (max-width: 640px) {
     .it-infrastructure-table .fi-ta-table :is(a, button) {
         min-height: 2.75rem;
