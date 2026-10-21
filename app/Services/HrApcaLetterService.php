@@ -222,6 +222,16 @@ class HrApcaLetterService
             return $kind;
         }
 
+        $code = trim($subject);
+
+        if ($code !== 'BPJS' && $this->isValidCode($code)) {
+            return $code;
+        }
+
+        if (preg_match('/^\s*(SK[A-Z0-9]{1,18})(?:\s*[-:]\s*|\s+|$)/i', $subject, $matches)) {
+            return strtoupper($matches[1]);
+        }
+
         if (preg_match('/\b(SKK|SKET)\b/i', $subject, $matches)) {
             return strtoupper($matches[1]);
         }

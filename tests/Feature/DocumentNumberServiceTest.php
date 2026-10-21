@@ -485,6 +485,50 @@ class DocumentNumberServiceTest extends TestCase
         $this->assertSame('001/ATE-HR/SKET/X/2026', $service->previewNumber($letter, 'MCU - Pemeriksaan kesehatan', '2026-10-21'));
     }
 
+    public function test_hr_apca_uses_unbracketed_codes_in_preview_save_and_issue_without_allocating_another_number(): void
+    {
+        $this->company('APCA');
+        Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        $user = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $service = app(HrApcaLetterService::class);
+        $letter = $service->createDraft($user, '2026-10-21', 'SKET');
+
+        foreach ([
+            ['SKIK', 'SKIK'],
+            ['SKIT', 'SKIT'],
+            [' skik ', 'SKIK'],
+            ['SKIK - Surat Keterangan Kerja untuk BPJS', 'SKIK'],
+            ['SKING Keterangan BPJS SKET', 'SKING'],
+            ['ABC123', 'ABC123'],
+            ['BPJS', 'SKET'],
+            ['bpjs', 'SKET'],
+        ] as [$subject, $code]) {
+            $before = $letter->getRawOriginal();
+            $typeCount = DocumentType::count();
+            $number = '001/ATE-HR/'.$code.'/X/2026';
+            $this->assertSame($number, $service->previewNumber($letter, $subject, '2026-10-21'));
+            $this->assertSame($typeCount, DocumentType::count());
+            $this->assertSame($before, $letter->fresh()->getRawOriginal());
+
+            Livewire::test(EditHrApcaLetter::class, ['record' => $letter->id])
+                ->fillForm(['subject' => $subject])->call('save')->assertHasNoFormErrors();
+            $letter->refresh();
+            $this->assertSame($number, $letter->document_number);
+            $this->assertSame($code, $letter->documentType->code);
+            $this->assertSame('002', $service->nextNumber());
+        }
+
+        $letter->update($service->prepareDraftData($letter, ['subject' => 'SKIK']));
+        $letter = $service->refreshNumber($letter);
+        $letter = app(DocumentNumberService::class)->issue($letter, $user);
+        $this->assertSame('issued', $letter->status);
+        $this->assertSame('001/ATE-HR/SKIK/X/2026', $letter->document_number);
+        $this->assertSame('001/ATE-HR/SKIK/X/2026', $service->previewNumber($letter, 'SKIT', '2026-10-21'));
+        $this->assertSame('002', $service->nextNumber());
+    }
+
     public function test_saving_hr_drafts_returns_to_their_respective_register(): void
     {
         $this->company('KPMOG');
