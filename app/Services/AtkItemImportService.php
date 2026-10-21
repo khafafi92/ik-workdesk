@@ -20,7 +20,7 @@ class AtkItemImportService
 {
     public function import(string|UploadedFile|TemporaryUploadedFile $path, User $actor): array
     {
-        $resolvedPath = $this->resolveImportPath($path);
+        $resolvedPath = $path instanceof UploadedFile ? $path : $this->resolveImportPath($path);
 
         $reader = new AtkItemRowsImport;
         Excel::import($reader, $resolvedPath);

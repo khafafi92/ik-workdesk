@@ -544,11 +544,13 @@ class AtkManagementTest extends TestCase
     public function test_atk_import_accepts_uploaded_file_instances_from_filament(): void
     {
         $ga = User::factory()->create(['is_admin' => true]);
+        Storage::fake('local');
 
-        $file = UploadedFile::fake()->createWithContent('items.csv', implode("\n", [
+        Storage::disk('local')->put('uploaded-items', implode("\n", [
             'code,name,category,unit,minimum_stock,current_stock,is_active',
             'ATK-IMPORT,Pulpen Biru,Alat Tulis,pcs,10,25,1',
         ]));
+        $file = new UploadedFile(Storage::disk('local')->path('uploaded-items'), 'items.csv', 'text/csv', null, true);
 
         $result = app(AtkItemImportService::class)->import($file, $ga);
 
