@@ -94,11 +94,17 @@ class HrApcaLetterService
             return $letter->document_number ?? '-';
         }
 
+        try {
+            $kind = $this->kindFromSubject($subject, $letter->documentType?->code);
+        } catch (ValidationException) {
+            return $letter->document_number ?? '-';
+        }
+
         $preview = clone $letter;
         $preview->document_date = $date;
         $preview->setRelation('department', new Department(['code' => 'HR']));
         $preview->setRelation('documentType', new DocumentType([
-            'code' => $this->kindFromSubject($subject, $letter->documentType?->code),
+            'code' => $kind,
         ]));
 
         return app(DocumentNumberService::class)->format($letter->numberingTemplate, $preview, $letter->running_number);
@@ -113,7 +119,7 @@ class HrApcaLetterService
         $letter->load('documentType');
         $documentCode = $letter->documentType?->code;
 
-        if (! array_key_exists($documentCode ?? '', $this->kinds())) {
+        if (! $this->isValidCode($documentCode)) {
             throw ValidationException::withMessages(['subject' => 'Lengkapi dan simpan keterangan surat untuk membentuk nomor HR APCA.']);
         }
 
@@ -193,18 +199,29 @@ class HrApcaLetterService
 
     private function typeFor(string $kind): DocumentType
     {
-        if (! array_key_exists($kind, $this->kinds())) {
-            throw ValidationException::withMessages(['letter_kind' => 'Jenis surat HR APCA tidak valid.']);
+        $kind = strtoupper(trim($kind));
+
+        if (! $this->isValidCode($kind)) {
+            throw ValidationException::withMessages(['subject' => 'Kode surat harus berisi 1 sampai 20 huruf atau angka, dimulai dengan huruf. Contoh: [SKC] Surat keterangan kerja.']);
         }
 
-        return DocumentType::query()->firstOrCreate(
-            ['code' => $kind],
-            ['name' => $this->kinds()[$kind], 'is_active' => true],
+        return DocumentType::query()->where('code', $kind)->first() ?? DocumentType::query()->firstOrCreate(
+            ['name' => $this->kinds()[$kind] ?? 'HR APCA - '.$kind],
+            ['code' => $kind, 'is_active' => true],
         );
     }
 
     private function kindFromSubject(string $subject, ?string $existingKind = null): string
     {
+        if (str_starts_with(ltrim($subject), '[')) {
+            if (! preg_match('/^\s*\[([^\]\r\n]*)\]/', $subject, $matches)
+                || ! $this->isValidCode($kind = strtoupper(trim($matches[1])))) {
+                throw ValidationException::withMessages(['subject' => 'Tulis kode dalam [ ], berisi 1 sampai 20 huruf atau angka, dimulai dengan huruf. Contoh: [SKC] Surat keterangan kerja.']);
+            }
+
+            return $kind;
+        }
+
         if (preg_match('/\b(SKK|SKET)\b/i', $subject, $matches)) {
             return strtoupper($matches[1]);
         }
@@ -217,7 +234,12 @@ class HrApcaLetterService
             return 'SKET';
         }
 
-        return array_key_exists($existingKind ?? '', $this->kinds()) ? $existingKind : 'SKET';
+        return $this->isValidCode($existingKind) ? $existingKind : 'SKET';
+    }
+
+    private function isValidCode(?string $code): bool
+    {
+        return $code !== null && preg_match('/\A[A-Z][A-Z0-9]{0,19}\z/', $code) === 1;
     }
 
     private function department(): Department

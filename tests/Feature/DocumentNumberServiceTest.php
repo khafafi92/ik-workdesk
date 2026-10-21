@@ -419,9 +419,70 @@ class DocumentNumberServiceTest extends TestCase
         $letter = app(DocumentNumberService::class)->issue($letter, $user);
         $before = $letter->getRawOriginal();
 
-        $this->assertSame('001/ATE-HC/SKK/X/2026', $service->previewNumber($letter, 'Nonaktif BPJS', '2027-01-01'));
+        $this->assertSame('001/ATE-HC/SKK/X/2026', $service->previewNumber($letter, '[SKING] Nonaktif BPJS', '2027-01-01'));
         $this->assertSame($before, $service->refreshNumber($letter)->getRawOriginal());
         $this->assertSame($before, $letter->fresh()->getRawOriginal());
+    }
+
+    public function test_hr_apca_accepts_free_codes_without_consuming_numbers_or_changing_shared_types(): void
+    {
+        $this->company('APCA');
+        Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        $user = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $service = app(HrApcaLetterService::class);
+        $letter = $service->createDraft($user, '2026-10-21', 'SKK');
+        $sharedType = DocumentType::create(['name' => 'Kode bersama', 'code' => 'SKC', 'is_active' => false]);
+        $sharedBefore = $sharedType->refresh()->getRawOriginal();
+
+        foreach (['SKC', 'SKING', 'ABC123'] as $code) {
+            $subject = '['.strtolower($code).'] Surat Keterangan Kerja SKK untuk BPJS';
+            $number = '001/ATE-HR/'.$code.'/X/2026';
+            $typesBefore = DocumentType::count();
+            $letterBefore = $letter->getRawOriginal();
+            $this->assertSame($number, $service->previewNumber($letter, $subject, '2026-10-21'));
+            $this->assertSame($typesBefore, DocumentType::count());
+            $this->assertSame($letterBefore, $letter->fresh()->getRawOriginal());
+
+            Livewire::test(EditHrApcaLetter::class, ['record' => $letter->id])
+                ->assertFormFieldDoesNotExist('document_type_id')
+                ->fillForm(['subject' => $subject])->call('save')->assertHasNoFormErrors();
+            $letter->refresh();
+            $this->assertSame($number, $letter->document_number);
+            $this->assertSame($code, $letter->documentType->code);
+            $this->assertSame('002', $service->nextNumber());
+        }
+
+        $this->assertSame($sharedBefore, $sharedType->fresh()->getRawOriginal());
+        $this->assertSame('001/ATE-HR/ABC123/X/2026', $service->previewNumber($letter, 'Administrasi karyawan', '2026-10-21'));
+        $second = $service->createDraft($user, '2027-01-01', 'sking');
+        $this->assertSame('002/ATE-HR/SKING/I/2027', $second->document_number);
+        $this->assertSame('003', $service->nextNumber());
+    }
+
+    public function test_hr_apca_rejects_malformed_explicit_codes_without_writing_records(): void
+    {
+        $this->company('APCA');
+        Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        $user = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $service = app(HrApcaLetterService::class);
+        $letter = $service->createDraft($user, '2026-10-21');
+        $before = $letter->getRawOriginal();
+        $typesBefore = DocumentType::count();
+
+        foreach (['[] Surat', '[SK/C] Surat', '[SK C] Surat', '[123] Surat', '['.str_repeat('A', 21).'] Surat', '[SKC Surat'] as $subject) {
+            $this->assertSame('001', $service->previewNumber($letter, $subject, '2026-10-21'));
+            Livewire::test(EditHrApcaLetter::class, ['record' => $letter->id])
+                ->fillForm(['subject' => $subject])->call('save')->assertHasFormErrors(['subject']);
+            $this->assertSame($before, $letter->fresh()->getRawOriginal());
+            $this->assertSame($typesBefore, DocumentType::count());
+            $this->assertSame('002', $service->nextNumber());
+        }
+
+        $this->assertSame('001/ATE-HR/SKET/X/2026', $service->previewNumber($letter, 'MCU - Pemeriksaan kesehatan', '2026-10-21'));
     }
 
     public function test_saving_hr_drafts_returns_to_their_respective_register(): void

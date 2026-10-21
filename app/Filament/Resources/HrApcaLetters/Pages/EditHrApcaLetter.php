@@ -7,6 +7,7 @@ use App\Services\HrApcaLetterService;
 use Filament\Actions\Action;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Contracts\Support\Htmlable;
+use Illuminate\Validation\ValidationException;
 
 class EditHrApcaLetter extends EditRecord
 {
@@ -44,7 +45,17 @@ class EditHrApcaLetter extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        return app(HrApcaLetterService::class)->prepareDraftData($this->record, $data);
+        try {
+            return app(HrApcaLetterService::class)->prepareDraftData($this->record, $data);
+        } catch (ValidationException $exception) {
+            if (isset($exception->errors()['subject'])) {
+                throw ValidationException::withMessages([
+                    $this->form->getStatePath().'.subject' => $exception->errors()['subject'],
+                ]);
+            }
+
+            throw $exception;
+        }
     }
 
     protected function getRedirectUrl(): string

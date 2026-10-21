@@ -68,7 +68,7 @@ class HrApcaLetterResource extends Resource
                 ->schema([
                     TextInput::make('subject')
                         ->label('Keterangan surat')
-                        ->helperText('SKK atau Keterangan Kerja memakai ATE-HR/SKK. SKET atau BPJS memakai ATE-HR/SKET. Keterangan lain pada draft baru memakai SKET.')
+                        ->helperText('Kode bebas: awali dengan [SKC] atau [SKING], lalu keterangan surat. Gunakan 1 sampai 20 huruf/angka, dimulai dengan huruf. Tanpa [kode], Keterangan Kerja memakai SKK dan BPJS memakai SKET; keterangan lain memakai kode draft atau SKET untuk draft baru.')
                         ->live(onBlur: true)
                         ->required()
                         ->maxLength(255)
@@ -120,7 +120,7 @@ class HrApcaLetterResource extends Resource
                             ->extraInputAttributes(['class' => 'hr-letter-input']),
                     ])
                     ->modalHeading(fn (): string => 'Gunakan nomor '.app(HrApcaLetterService::class)->nextNumber())
-                    ->modalDescription('Pilih tanggal surat. Sistem mencadangkan nomor urut; format ATE-HR/SKK atau ATE-HR/SKET mengikuti keterangan saat draft dilengkapi.')
+                    ->modalDescription('Pilih tanggal surat. Sistem mencadangkan nomor urut. Saat melengkapi draft, tulis [kode] di awal keterangan untuk menentukan kode setelah ATE-HR.')
                     ->modalSubmitActionLabel('Gunakan nomor dan buat draft')
                     ->visible(fn (): bool => static::canCreate())
                     ->action(function (array $data): void {
