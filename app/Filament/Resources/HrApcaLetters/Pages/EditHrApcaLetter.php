@@ -24,7 +24,7 @@ class EditHrApcaLetter extends EditRecord
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Isi data surat, lalu simpan draft. Nomor surat sudah dicadangkan dan tidak dapat diubah.';
+        return 'Isi data surat, lalu simpan draft. Nomor urut sudah dicadangkan; format lengkap memakai ATE-HR sesuai keterangan surat.';
     }
 
     protected function getSaveFormAction(): Action
@@ -40,6 +40,11 @@ class EditHrApcaLetter extends EditRecord
     protected function afterSave(): void
     {
         $this->record = app(HrApcaLetterService::class)->refreshNumber($this->record);
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return app(HrApcaLetterService::class)->prepareDraftData($this->record, $data);
     }
 
     protected function getRedirectUrl(): string

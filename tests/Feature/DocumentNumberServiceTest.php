@@ -7,6 +7,7 @@ use App\Filament\Resources\AteGeneralLetters\Pages\EditAteGeneralLetter;
 use App\Filament\Resources\AteGeneralLetters\Pages\ListAteGeneralLetters;
 use App\Filament\Resources\HrApcaLetters\HrApcaLetterResource;
 use App\Filament\Resources\HrApcaLetters\Pages\EditHrApcaLetter;
+use App\Filament\Resources\HrApcaLetters\Pages\ListHrApcaLetters;
 use App\Filament\Resources\HrKpmogLetters\HrKpmogLetterResource;
 use App\Filament\Resources\HrKpmogLetters\Pages\EditHrKpmogLetter;
 use App\Filament\Resources\KpmogProjectLetters\KpmogProjectLetterResource;
@@ -322,12 +323,12 @@ class DocumentNumberServiceTest extends TestCase
         $first = $service->createDraft($issuer, '2024-09-30', 'SKK');
         $second = $service->createDraft($issuer, '2025-10-01', 'SKET');
 
-        $this->assertSame('001/ATE-HC/SKK/IX/2024', $first->document_number);
+        $this->assertSame('001/ATE-HR/SKK/IX/2024', $first->document_number);
         $this->assertSame('002/ATE-HR/SKET/X/2025', $second->document_number);
         $this->assertSame('003', $service->nextNumber());
     }
 
-    public function test_hr_apca_draft_requires_a_letter_type_and_reserves_a_complete_number(): void
+    public function test_hr_apca_draft_with_an_explicit_kind_reserves_a_complete_number(): void
     {
         $this->company('KPMOG');
         $this->company('APCA');
@@ -338,9 +339,89 @@ class DocumentNumberServiceTest extends TestCase
         app(HrKpmogLetterService::class)->createDraft($issuer);
         $letter = app(HrApcaLetterService::class)->createDraft($issuer, '2025-09-18', 'SKK');
 
-        $this->assertSame('001/ATE-HC/SKK/IX/2025', $letter->document_number);
+        $this->assertSame('001/ATE-HR/SKK/IX/2025', $letter->document_number);
         $this->assertNotNull($letter->document_type_id);
         $this->assertSame('draft', $letter->status);
+    }
+
+    public function test_hr_apca_reserves_and_completes_drafts_without_a_letter_kind_field(): void
+    {
+        $this->company('APCA');
+        $hr = Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        $user = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $service = app(HrApcaLetterService::class);
+
+        foreach ([
+            ['2026-10-21', 'Surat Keterangan Kerja', 'SKK', '001/ATE-HR/SKK/X/2026'],
+            ['2027-01-01', 'Nonaktif BPJS', 'SKET', '002/ATE-HR/SKET/I/2027'],
+        ] as [$date, $subject, $kind, $number]) {
+            Livewire::test(ListHrApcaLetters::class)
+                ->callTableAction('use_next_number', data: ['document_date' => $date])
+                ->assertHasNoTableActionErrors();
+            $letter = OutgoingLetter::query()->latest('id')->firstOrFail();
+            $this->assertNull($letter->document_type_id);
+            $this->assertSame(str_pad((string) $letter->running_number, 3, '0', STR_PAD_LEFT), $letter->document_number);
+            $next = $service->nextNumber();
+            $before = $letter->getRawOriginal();
+            $this->assertSame($number, $service->previewNumber($letter, $subject, $date));
+            $this->assertSame($letter->document_number, $service->previewNumber($letter, $subject, '2026-02-30'));
+            $this->assertSame($before, $letter->getRawOriginal());
+            $this->assertSame($next, $service->nextNumber());
+
+            Livewire::test(EditHrApcaLetter::class, ['record' => $letter->id])
+                ->assertFormFieldDoesNotExist('document_type_id')
+                ->fillForm(['subject' => $subject, 'recipient' => 'Karyawan pengujian / HO', 'description' => 'Administrasi karyawan'])
+                ->call('save')->assertHasNoFormErrors()
+                ->assertRedirect(HrApcaLetterResource::getUrl('index'));
+            $letter->refresh();
+            $this->assertSame($number, $letter->document_number);
+            $this->assertSame($hr->id, $letter->department_id);
+            $this->assertSame($kind, $letter->documentType->code);
+            $this->assertSame('Karyawan pengujian / HO', $letter->recipient);
+            $this->assertSame('Administrasi karyawan', $letter->description);
+            $this->assertSame($next, $service->nextNumber());
+        }
+
+        $this->assertDatabaseCount('outgoing_letters', 2);
+        $this->assertSame('003', $service->nextNumber());
+    }
+
+    public function test_hr_apca_can_change_the_code_in_the_description_without_consuming_another_number(): void
+    {
+        $this->company('APCA');
+        Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        $user = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($user);
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+        $service = app(HrApcaLetterService::class);
+        $letter = $service->createDraft($user, '2026-10-21', 'SKK');
+
+        Livewire::test(EditHrApcaLetter::class, ['record' => $letter->id])
+            ->fillForm(['subject' => 'SKET - Surat Keterangan Kerja untuk BPJS'])
+            ->call('save')->assertHasNoFormErrors();
+
+        $this->assertSame('001/ATE-HR/SKET/X/2026', $letter->fresh()->document_number);
+        $this->assertSame('SKET', $letter->fresh()->documentType->code);
+        $this->assertSame('002', $service->nextNumber());
+    }
+
+    public function test_hr_apca_keeps_issued_historical_hc_numbers_unchanged(): void
+    {
+        $this->company('APCA');
+        Department::create(['code' => 'HR', 'name' => 'Human Resources', 'is_active' => true]);
+        $hc = Department::create(['code' => 'HC', 'name' => 'Human Capital', 'is_active' => true]);
+        $user = User::factory()->create(['is_admin' => true]);
+        $service = app(HrApcaLetterService::class);
+        $letter = $service->createDraft($user, '2026-10-21', 'SKK');
+        $letter->update(['subject' => 'Surat Keterangan Kerja', 'department_id' => $hc->id, 'document_number' => '001/ATE-HC/SKK/X/2026']);
+        $letter = app(DocumentNumberService::class)->issue($letter, $user);
+        $before = $letter->getRawOriginal();
+
+        $this->assertSame('001/ATE-HC/SKK/X/2026', $service->previewNumber($letter, 'Nonaktif BPJS', '2027-01-01'));
+        $this->assertSame($before, $service->refreshNumber($letter)->getRawOriginal());
+        $this->assertSame($before, $letter->fresh()->getRawOriginal());
     }
 
     public function test_saving_hr_drafts_returns_to_their_respective_register(): void
@@ -355,15 +436,28 @@ class DocumentNumberServiceTest extends TestCase
 
         $kpmogLetter = app(HrKpmogLetterService::class)->createDraft($user);
         $apcaLetter = app(HrApcaLetterService::class)->createDraft($user, '2025-09-18', 'SKK');
+        $reservedApcaNumber = $apcaLetter->document_number;
 
         Livewire::test(EditHrKpmogLetter::class, ['record' => $kpmogLetter->id])
             ->fillForm(['subject' => 'Surat Pengantar MCU'])
             ->call('save')
             ->assertRedirect(HrKpmogLetterResource::getUrl('index'));
         Livewire::test(EditHrApcaLetter::class, ['record' => $apcaLetter->id])
-            ->fillForm(['subject' => 'Surat undangan'])
+            ->fillForm([
+                'subject' => 'Surat Keterangan Kerja',
+                'recipient' => 'Karyawan pengujian / HO',
+                'description' => 'Administrasi karyawan',
+            ])
             ->call('save')
+            ->assertHasNoFormErrors()
             ->assertRedirect(HrApcaLetterResource::getUrl('index'));
+
+        $apcaLetter->refresh();
+        $this->assertSame('Karyawan pengujian / HO', $apcaLetter->recipient);
+        $this->assertSame('Administrasi karyawan', $apcaLetter->description);
+        $this->assertSame($reservedApcaNumber, $apcaLetter->document_number);
+        $this->assertNull($kpmogLetter->fresh()->recipient);
+        $this->assertNull($kpmogLetter->fresh()->description);
     }
 
     public function test_kpmog_project_and_bd_letters_share_one_yearly_number_sequence(): void

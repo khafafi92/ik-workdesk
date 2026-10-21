@@ -43,6 +43,7 @@ class HrKpmogLetterResource extends Resource
     {
         return $schema->components([
             Section::make('Nomor surat HR KPMOG')
+                ->extraAttributes(['class' => 'hr-letter-form'])
                 ->description('Nomor sudah dicadangkan saat draft dibuat. Nomor tidak berubah ketika data surat dilengkapi.')
                 ->columns(3)
                 ->schema([
@@ -57,6 +58,7 @@ class HrKpmogLetterResource extends Resource
                         ->required(),
                 ]),
             Section::make('Isi surat')
+                ->extraAttributes(['class' => 'hr-letter-form'])
                 ->description('Lengkapi isi ini, lalu klik simpan draft. Surat dapat diterbitkan setelah data sudah benar.')
                 ->columns(2)
                 ->schema([
@@ -109,7 +111,8 @@ class HrKpmogLetterResource extends Resource
                     ->icon(Heroicon::OutlinedDocumentPlus)
                     ->color('primary')
                     ->form([
-                        DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required(),
+                        DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required()
+                            ->extraInputAttributes(['class' => 'hr-letter-input']),
                     ])
                     ->modalHeading(fn (): string => 'Gunakan nomor '.app(HrKpmogLetterService::class)->nextNumber())
                     ->modalDescription('Pilih tanggal surat. Sistem membuat draft kosong dan mencadangkan nomor berikutnya.')

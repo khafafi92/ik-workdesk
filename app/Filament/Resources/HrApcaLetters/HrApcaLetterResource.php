@@ -12,11 +12,12 @@ use Filament\Actions\Action;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -43,33 +44,41 @@ class HrApcaLetterResource extends Resource
     {
         return $schema->components([
             Section::make('Nomor surat HR APCA')
-                ->description('Nomor urut sudah dicadangkan saat draft dibuat. Format mengikuti jenis dan tanggal surat.')
+                ->extraAttributes(['class' => 'hr-letter-form'])
+                ->description('Nomor urut sudah dicadangkan. Format lengkap mengikuti keterangan dan tanggal surat dengan kode ATE-HR.')
                 ->columns(3)
                 ->schema([
                     Placeholder::make('document_number')
                         ->label('Nomor surat')
-                        ->content(fn (?OutgoingLetter $record): string => $record?->document_number ?? '-'),
+                        ->content(fn (Get $get, ?OutgoingLetter $record): string => $record
+                            ? app(HrApcaLetterService::class)->previewNumber($record, $get('subject'), $get('document_date'))
+                            : '-'),
                     Placeholder::make('status_label')
                         ->label('Status')
                         ->content(fn (?OutgoingLetter $record): string => $record?->status === 'draft' ? 'Draft' : 'Terbit'),
                     DatePicker::make('document_date')
                         ->label('Tanggal surat')
+                        ->live()
                         ->required(),
                 ]),
             Section::make('Isi surat')
+                ->extraAttributes(['class' => 'hr-letter-form'])
                 ->description('Lengkapi isi ini, lalu klik simpan draft. Surat dapat diterbitkan setelah data sudah benar.')
                 ->columns(2)
                 ->schema([
-                    Select::make('document_type_id')
-                        ->label('Jenis surat')
-                        ->options(fn (): array => app(HrApcaLetterService::class)->typeOptions())
-                        ->required(),
                     TextInput::make('subject')
                         ->label('Keterangan surat')
-                        ->helperText('Contoh: Surat Keterangan Kerja - Rizaldy.')
+                        ->helperText('SKK atau Keterangan Kerja memakai ATE-HR/SKK. SKET atau BPJS memakai ATE-HR/SKET. Keterangan lain pada draft baru memakai SKET.')
+                        ->live(onBlur: true)
                         ->required()
                         ->maxLength(255)
                         ->columnSpanFull(),
+                    TextInput::make('recipient')
+                        ->label('Nama & Project/HO')
+                        ->maxLength(255),
+                    Textarea::make('description')
+                        ->label('Kebutuhan')
+                        ->maxLength(4000),
                 ]),
         ]);
     }
@@ -81,6 +90,8 @@ class HrApcaLetterResource extends Resource
                 TextColumn::make('document_date')->label('Tanggal')->date('d M Y')->sortable(),
                 TextColumn::make('document_number')->label('Nomor surat')->searchable()->sortable()->wrap(),
                 TextColumn::make('subject')->label('Keterangan surat')->placeholder('Perlu dilengkapi')->searchable()->wrap(),
+                TextColumn::make('recipient')->label('Nama & Project/HO')->placeholder('-')->searchable()->wrap(),
+                TextColumn::make('description')->label('Kebutuhan')->placeholder('-')->limit(40)->wrap(),
                 TextColumn::make('status')->label('Status')->badge()
                     ->formatStateUsing(fn (string $state): string => $state === 'issued' ? 'Terbit' : ($state === 'cancelled' ? 'Dibatalkan' : 'Draft'))
                     ->color(fn (string $state): string => match ($state) {
@@ -105,26 +116,22 @@ class HrApcaLetterResource extends Resource
                     ->icon(Heroicon::OutlinedDocumentPlus)
                     ->color('primary')
                     ->form([
-                        DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required(),
-                        Select::make('letter_kind')
-                            ->label('Jenis surat')
-                            ->options(app(HrApcaLetterService::class)->kinds())
-                            ->required(),
+                        DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required()
+                            ->extraInputAttributes(['class' => 'hr-letter-input']),
                     ])
                     ->modalHeading(fn (): string => 'Gunakan nomor '.app(HrApcaLetterService::class)->nextNumber())
-                    ->modalDescription('Pilih tanggal surat. Sistem membuat draft kosong dan mencadangkan nomor berikutnya.')
+                    ->modalDescription('Pilih tanggal surat. Sistem mencadangkan nomor urut; format ATE-HR/SKK atau ATE-HR/SKET mengikuti keterangan saat draft dilengkapi.')
                     ->modalSubmitActionLabel('Gunakan nomor dan buat draft')
                     ->visible(fn (): bool => static::canCreate())
                     ->action(function (array $data): void {
                         $letter = app(HrApcaLetterService::class)->createDraft(
                             auth()->user(),
                             $data['document_date'],
-                            $data['letter_kind'],
                         );
 
                         Notification::make()
-                            ->title('Draft '.$letter->document_number.' sudah dibuat.')
-                            ->body('Lengkapi keterangan surat, lalu simpan draft sebelum menerbitkannya.')
+                            ->title('Draft dengan nomor '.$letter->document_number.' sudah dibuat.')
+                            ->body('Lengkapi data surat, lalu simpan draft sebelum menerbitkannya.')
                             ->success()
                             ->send();
                     }),

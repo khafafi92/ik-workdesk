@@ -9,6 +9,7 @@ use App\Models\LetterProfile;
 use App\Models\OutgoingLetter;
 use App\Models\PermitCompany;
 use App\Models\User;
+use DateTimeImmutable;
 use Illuminate\Validation\ValidationException;
 
 class HrApcaLetterService
@@ -46,17 +47,17 @@ class HrApcaLetterService
         return str_pad((string) ($lastNumber + 1), 3, '0', STR_PAD_LEFT);
     }
 
-    public function createDraft(User $user, string $date, string $kind): OutgoingLetter
+    public function createDraft(User $user, string $date, ?string $kind = null): OutgoingLetter
     {
         [$profile] = $this->ensureConfiguration();
-        $type = $this->typeFor($kind);
-        $department = $this->departmentFor($type->code);
+        $type = $kind === null ? null : $this->typeFor($kind);
+        $department = $this->department();
 
         $letter = OutgoingLetter::create([
             'letter_profile_id' => $profile->id,
             'permit_company_id' => $profile->permit_company_id,
             'department_id' => $department->id,
-            'document_type_id' => $type->id,
+            'document_type_id' => $type?->id,
             'document_date' => $date,
             'subject' => 'Belum diisi',
             'status' => 'draft',
@@ -64,7 +65,43 @@ class HrApcaLetterService
             'updated_by' => $user->id,
         ]);
 
-        return app(DocumentNumberService::class)->reserve($letter);
+        return app(DocumentNumberService::class)->reserve(
+            $letter,
+            $kind === null ? fn ($template, $draft, int $number): string => str_pad((string) $number, 3, '0', STR_PAD_LEFT) : null,
+        );
+    }
+
+    public function prepareDraftData(OutgoingLetter $letter, array $data): array
+    {
+        $kind = $this->kindFromSubject($data['subject'], $letter->documentType?->code);
+
+        return [
+            ...$data,
+            'document_type_id' => $this->typeFor($kind)->id,
+            'department_id' => $this->department()->id,
+        ];
+    }
+
+    public function previewNumber(OutgoingLetter $letter, ?string $subject, ?string $date): string
+    {
+        if ($letter->status !== 'draft' || blank($letter->running_number) || blank($subject)
+            || $subject === 'Belum diisi' || blank($date) || $letter->numberingTemplate === null) {
+            return $letter->document_number ?? '-';
+        }
+
+        $previewDate = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        if (! $previewDate || $previewDate->format('Y-m-d') !== $date) {
+            return $letter->document_number ?? '-';
+        }
+
+        $preview = clone $letter;
+        $preview->document_date = $date;
+        $preview->setRelation('department', new Department(['code' => 'HR']));
+        $preview->setRelation('documentType', new DocumentType([
+            'code' => $this->kindFromSubject($subject, $letter->documentType?->code),
+        ]));
+
+        return app(DocumentNumberService::class)->format($letter->numberingTemplate, $preview, $letter->running_number);
     }
 
     public function refreshNumber(OutgoingLetter $letter): OutgoingLetter
@@ -73,14 +110,14 @@ class HrApcaLetterService
             return $letter;
         }
 
-        $letter->loadMissing('documentType');
+        $letter->load('documentType');
         $documentCode = $letter->documentType?->code;
 
-        if (! array_key_exists($documentCode, $this->kinds())) {
-            throw ValidationException::withMessages(['document_type_id' => 'Pilih jenis surat HR APCA yang valid.']);
+        if (! array_key_exists($documentCode ?? '', $this->kinds())) {
+            throw ValidationException::withMessages(['subject' => 'Lengkapi dan simpan keterangan surat untuk membentuk nomor HR APCA.']);
         }
 
-        $letter->update(['department_id' => $this->departmentFor($documentCode)->id, 'updated_by' => auth()->id()]);
+        $letter->update(['department_id' => $this->department()->id, 'updated_by' => auth()->id()]);
         $letter->refresh();
 
         $template = $letter->numberingTemplate;
@@ -166,14 +203,30 @@ class HrApcaLetterService
         );
     }
 
-    private function departmentFor(string $documentCode): Department
+    private function kindFromSubject(string $subject, ?string $existingKind = null): string
     {
-        $departmentCode = $documentCode === 'SKK' ? 'HC' : 'HR';
-        $department = Department::query()->where('code', $departmentCode)->where('is_active', true)->first();
+        if (preg_match('/\b(SKK|SKET)\b/i', $subject, $matches)) {
+            return strtoupper($matches[1]);
+        }
+
+        if (preg_match('/\bketerangan\s+kerja\b/i', $subject)) {
+            return 'SKK';
+        }
+
+        if (preg_match('/\bbpjs\b|\bsurat\s+keterangan\b/i', $subject)) {
+            return 'SKET';
+        }
+
+        return array_key_exists($existingKind ?? '', $this->kinds()) ? $existingKind : 'SKET';
+    }
+
+    private function department(): Department
+    {
+        $department = Department::query()->where('code', 'HR')->where('is_active', true)->first();
 
         if ($department === null) {
             throw ValidationException::withMessages([
-                'department_id' => "Departemen {$departmentCode} yang aktif belum tersedia pada master data.",
+                'department_id' => 'Departemen HR yang aktif belum tersedia pada master data.',
             ]);
         }
 
