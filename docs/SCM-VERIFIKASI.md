@@ -1,6 +1,6 @@
 # Status verifikasi SCM
 
-22 Oktober 2026. Implementasi dan data demo berada di lingkungan lokal. Tidak ada push atau deployment server.
+22 Oktober 2026. Implementasi dan data demo diuji di lokal. Setelah persetujuan pengguna, modul diterapkan ke project IK WorkDesk yang sama di `10.1.20.97:8093`. Data demo tidak dipindahkan ke server. Catatan penerapan: [rilis SCM](SCM-PENERAPAN-2026-10-22.md).
 
 ## Hasil yang sudah diverifikasi
 
@@ -33,7 +33,7 @@ Pemilihan file lewat ekstensi masih ditolak pada Edge dan kedua profil Chrome, t
 
 Halaman cetak CBE sudah dibuka dan datanya cocok dengan snapshot, tetapi penyimpanan PDF melalui dialog cetak sistem belum diverifikasi. Zoom browser 200% dan keyboard virtual perangkat nyata belum diverifikasi; shortcut zoom yang dikirim alat tidak mengubah viewport atau rasio piksel. Fokus keyboard, Tab, Enter, rincian audit, serta dialog konfirmasi sudah diperiksa pada jalur yang dicatat, tetapi belum menjadi audit keyboard lengkap untuk setiap kontrol. Panel memang menggunakan `darkMode(false)` dan tidak memiliki toggle tema, sehingga pergantian tema tidak ditambahkan.
 
-Gate UI akhir belum dinyatakan lulus menyeluruh. Modul belum dinyatakan siap rilis dan tidak ada deployment.
+Gate UI akhir belum dinyatakan lulus menyeluruh; cakupan yang belum terverifikasi tetap seperti di atas. Penerapan server kemudian dilakukan atas permintaan pengguna. Menu, akses akun Khafafi, halaman permintaan/antrean/vendor/pengaturan, stylesheet, serta batas unggah 2 MB sudah diperiksa di server. Alur transaksi baru di server tidak diisi otomatis.
 
 ## Arah UI dan alasan implementasi
 

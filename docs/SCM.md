@@ -66,4 +66,6 @@ npm run build
 
 PHPUnit utama menggunakan SQLite `:memory:` dan cache pengujian terpisah. Runner PostgreSQL hanya menerima target lokal, membuat database acak `ik_scm_test_*` dengan kredensial admin lokal yang sudah tersedia, menguji dua proses bersamaan, memverifikasi jumlah record database aplikasi, lalu membersihkan database uji. Jangan menjalankan file pengujian PostgreSQL langsung terhadap database aplikasi.
 
-Penerapan server dan push tidak dilakukan otomatis. Untuk penerapan nanti, cadangkan database dan dokumen terlebih dahulu, jalankan migrasi/seeder awal secara terkontrol, bangun aset, dan bangun ulang cache konfigurasi/route. Hasil pengujian aktual dan status QA browser tercatat pada [SCM-VERIFIKASI.md](SCM-VERIFIKASI.md).
+Pada 22 Oktober 2026, modul diterapkan atas persetujuan pengguna ke project IK WorkDesk yang sama di `http://10.1.20.97:8093`, direktori `/var/www/ik-workdesk`. Menu **SCM > Pengadaan PR/SR** aktif untuk akun Khafafi melalui tiga izin eksplisit. Data demo lokal tidak dimasukkan. Batas unggah SCM server diatur `SCM_UPLOAD_MAX_KB=2048` mengikuti batas PHP 2 MB. Isi kategori dan persyaratan melalui tab Pengaturan sebelum mulai membuat permintaan. Backup, verifikasi data lama, dan hasil penerapan tercatat pada [rilis SCM](SCM-PENERAPAN-2026-10-22.md).
+
+Untuk penerapan berikutnya, cadangkan database dan dokumen terlebih dahulu, jalankan migrasi/seeder awal secara terkontrol, bangun aset, dan bangun ulang cache konfigurasi/route. Hasil pengujian aktual dan batas QA browser tercatat pada [SCM-VERIFIKASI.md](SCM-VERIFIKASI.md).
