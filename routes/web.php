@@ -7,6 +7,7 @@ use App\Http\Controllers\FindingAttachmentDownloadController;
 use App\Http\Controllers\GlobalChatAttachmentDownloadController;
 use App\Http\Controllers\LtroMttrImportController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ScmDocumentController;
 use App\Http\Controllers\TicketAttachmentDownloadController;
 use App\Http\Controllers\TicketCommentAttachmentDownloadController;
 use App\Http\Controllers\WorkTaskPermitResultDownloadController;
@@ -102,3 +103,8 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void {
+    Route::get('/lampiran/{attachment}', [ScmDocumentController::class, 'download'])->name('download');
+    Route::get('/cbe/{cbe}/cetak', [ScmDocumentController::class, 'print'])->name('print');
+});

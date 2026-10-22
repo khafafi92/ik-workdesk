@@ -1,0 +1,14 @@
+<section class="scm-panel"><h2>Pengaturan master SCM</h2><p>NPWP, NIB, dan SBU tersedia sebagai jenis dokumen. Kewajiban ditentukan per kategori, bukan otomatis untuk semua vendor. Mengubah master tidak mengubah checklist yang sudah dimulai.</p>
+<form wire:submit="saveMaster"><div class="scm-grid">
+    <x-scm.select model="master.kind" label="Master yang dikelola" :options="['category'=>'Kategori pengadaan','type'=>'Jenis dokumen','requirement'=>'Persyaratan kategori']" :live="true" required />
+    @if($master['kind'] === 'requirement')
+        <x-scm.select model="master.category_id" label="Kategori persyaratan" :options="$categories->pluck('name','id')" required /><x-scm.select model="master.document_type_id" label="Jenis dokumen persyaratan" :options="$types->pluck('name','id')" required /><x-scm.check model="master.is_required" label="Wajib pada kategori ini" />
+    @else
+        <x-scm.field model="master.name" label="Nama master" required /><x-scm.check model="master.is_active" label="Master aktif" />
+        @if($master['kind'] === 'type')<x-scm.field model="master.code" label="Kode jenis dokumen" required /><x-scm.field model="master.description" label="Deskripsi dokumen" multiline /><x-scm.check model="master.has_expiry" label="Tanggal kedaluwarsa relevan" />@endif
+    @endif
+</div><p>{{ empty($master['id']) ? 'Membuat master atau menyimpan konfigurasi kategori.' : 'Mengedit master #'.$master['id'] }}</p><x-filament::button type="submit">Simpan pengaturan</x-filament::button></form>
+<div class="scm-grid"><section class="scm-item"><h3>Kategori pengadaan</h3>@forelse($categories as $category)<p>{{ $category->name }} · {{ $category->is_active ? 'Aktif' : 'Nonaktif' }} <button type="button" wire:click="editMaster('category',{{ $category->id }})">Edit kategori</button></p>@empty<p>Belum ada kategori. Buat kategori sebelum pemohon mengirim PR/SR.</p>@endforelse</section>
+<section class="scm-item"><h3>Jenis dokumen</h3>@foreach($types as $type)<p>{{ $type->code }} · {{ $type->name }} · {{ $type->is_active ? 'Aktif' : 'Nonaktif' }} <button type="button" wire:click="editMaster('type',{{ $type->id }})">Edit jenis dokumen</button></p>@endforeach</section>
+<section class="scm-item"><h3>Persyaratan kategori</h3>@forelse($requirements as $requirement)<p>{{ $categories->firstWhere('id',$requirement->category_id)?->name }} · {{ $requirement->documentType->name }} · {{ $requirement->is_required ? 'Wajib' : 'Opsional' }} <button type="button" wire:click="editMaster('requirement',{{ $requirement->id }})">Edit persyaratan</button></p>@empty<p>Belum ada konfigurasi. Tambahkan persyaratan yang sesuai kebutuhan organisasi.</p>@endforelse</section></div>
+</section>

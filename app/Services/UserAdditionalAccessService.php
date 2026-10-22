@@ -8,6 +8,9 @@ use App\Models\User;
 class UserAdditionalAccessService
 {
     private const MENU_ITEMS = [
+        'scm-requests' => ['label' => 'Pengadaan PR/SR', 'access' => 'scm-requests'],
+        'scm-process' => ['label' => 'Proses Pengadaan SCM', 'access' => 'scm-process'],
+        'scm-configure' => ['label' => 'Pengaturan SCM', 'access' => 'scm-configure'],
         'it-devices-view' => ['label' => 'Lihat Master Perangkat', 'access' => 'it-devices-view'],
         'it-devices-manage' => ['label' => 'Kelola Master Perangkat', 'access' => 'it-devices-manage'],
         'it-inspections-view' => ['label' => 'Lihat Pengecekan', 'access' => 'it-inspections-view'],
@@ -76,6 +79,9 @@ class UserAdditionalAccessService
     ];
 
     private const ACCESS_GROUPS = [
+        'scm-requests' => ['scm.request'],
+        'scm-process' => ['scm.process'],
+        'scm-configure' => ['scm.configure'],
         'it-devices-view' => ['it.devices.view'],
         'it-devices-manage' => ['it.devices.manage'],
         'it-inspections-view' => ['it.inspections.view'],
@@ -220,6 +226,9 @@ class UserAdditionalAccessService
     public function options(): array
     {
         return [
+            'scm-requests' => 'SCM - Pengadaan PR/SR sendiri',
+            'scm-process' => 'SCM - Proses pengadaan',
+            'scm-configure' => 'SCM - Pengaturan master',
             'it-devices-view' => 'Infrastruktur IT - Lihat Master Perangkat',
             'it-devices-manage' => 'Infrastruktur IT - Kelola Master Perangkat',
             'it-inspections-view' => 'Infrastruktur IT - Lihat Pengecekan',
@@ -294,6 +303,7 @@ class UserAdditionalAccessService
     public function menuGroups(): array
     {
         return [
+            'scm' => ['label' => 'SCM', 'description' => 'Pisahkan izin pemohon, pelaksana SCM, dan pengaturan master.', 'items' => ['scm-requests', 'scm-process', 'scm-configure']],
             'it_infrastructure' => [
                 'label' => 'Infrastruktur IT',
                 'description' => 'Pilih kemampuan petugas IT. Cakupan data tetap mengikuti department pengelola yang dapat diakses pengguna.',

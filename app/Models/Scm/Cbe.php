@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Models\Scm;
+
+class Cbe extends Record
+{
+    protected $table = 'scm_cbes';
+
+    protected function casts(): array
+    {
+        return ['quotation_ids' => 'array', 'snapshot' => 'array', 'date' => 'date', 'finalized_at' => 'datetime'];
+    }
+
+    protected static function booted(): void
+    {
+        static::updating(function (self $record): void {
+            if ($record->getRawOriginal('status') === 'final') {
+                throw new \LogicException('CBE final terkunci.');
+            }
+        });
+        static::deleting(fn () => throw new \LogicException('CBE historis tidak dapat dihapus.'));
+    }
+}

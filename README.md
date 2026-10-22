@@ -74,6 +74,8 @@ Route legacy `/admin/departments` hanya tersedia untuk superadmin. Resource Fila
 
 ## Deployment
 
+Panduan modul SCM (PR/SR, CBE, dan legalitas vendor), migrasi tambahan, izin eksplisit, data demo fiktif, serta pengujian Windows PowerShell tersedia di [docs/SCM.md](docs/SCM.md). Modul ini menggunakan storage privat terpisah di `storage/app/scm-private`.
+
 ```bash
 composer install --no-dev --optimize-autoloader
 npm ci

@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             MeetingRoomSeeder::class,
             ItInfrastructureChecklistSeeder::class,
             ManpowerRequestCategorySeeder::class,
+            ScmSeeder::class,
         ]);
     }
 }

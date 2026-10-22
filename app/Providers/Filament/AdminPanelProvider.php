@@ -62,6 +62,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('LTRO Management'),
                 NavigationGroup::make()->label('ATK'),
                 NavigationGroup::make()->label('Infrastruktur IT'),
+                NavigationGroup::make()->label('SCM'),
                 NavigationGroup::make()->label('Meeting Room')->collapsed(),
                 NavigationGroup::make()->label('Vehicle Booking')->collapsed(),
                 NavigationGroup::make()->label('Notifications')->collapsed(),
@@ -112,7 +113,7 @@ class AdminPanelProvider extends PanelProvider
                     '<link rel="stylesheet" href="'.
                     asset('css/filament/admin/it-daily-monitoring.css').
                     '?v='.filemtime(public_path('css/filament/admin/it-daily-monitoring.css')).
-                    '">',
+                    '">'.app(Vite::class)(['resources/css/scm.css'])->toHtml(),
             )
             ->renderHook(
                 PanelsRenderHook::SCRIPTS_AFTER,
