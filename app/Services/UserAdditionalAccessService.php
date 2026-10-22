@@ -8,7 +8,7 @@ use App\Models\User;
 class UserAdditionalAccessService
 {
     private const MENU_ITEMS = [
-        'scm-requests' => ['label' => 'Pengadaan PR/SR', 'access' => 'scm-requests'],
+        'scm-requests' => ['label' => 'PR dan SR', 'access' => 'scm-requests'],
         'scm-process' => ['label' => 'Proses Pengadaan SCM', 'access' => 'scm-process'],
         'scm-configure' => ['label' => 'Pengaturan SCM', 'access' => 'scm-configure'],
         'it-devices-view' => ['label' => 'Lihat Master Perangkat', 'access' => 'it-devices-view'],
@@ -226,7 +226,7 @@ class UserAdditionalAccessService
     public function options(): array
     {
         return [
-            'scm-requests' => 'SCM - Pengadaan PR/SR sendiri',
+            'scm-requests' => 'Permintaan - PR dan SR sendiri',
             'scm-process' => 'SCM - Proses pengadaan',
             'scm-configure' => 'SCM - Pengaturan master',
             'it-devices-view' => 'Infrastruktur IT - Lihat Master Perangkat',
@@ -303,7 +303,8 @@ class UserAdditionalAccessService
     public function menuGroups(): array
     {
         return [
-            'scm' => ['label' => 'SCM', 'description' => 'Pisahkan izin pemohon, pelaksana SCM, dan pengaturan master.', 'items' => ['scm-requests', 'scm-process', 'scm-configure']],
+            'procurement_requests' => ['label' => 'Permintaan', 'description' => 'Menu PR dan SR untuk membuat serta memantau permintaan sendiri.', 'items' => ['scm-requests']],
+            'scm' => ['label' => 'SCM', 'description' => 'Penerimaan permintaan, pencarian vendor, CBE, legalitas, dan pengaturan master.', 'items' => ['scm-process', 'scm-configure']],
             'it_infrastructure' => [
                 'label' => 'Infrastruktur IT',
                 'description' => 'Pilih kemampuan petugas IT. Cakupan data tetap mengikuti department pengelola yang dapat diakses pengguna.',

@@ -1,0 +1,45 @@
+# Pemisahan menu PR, SR, dan SCM
+
+22 Oktober 2026. Perubahan mengikuti arahan pengguna: PR dan SR adalah menu user; tim SCM menerima permintaan sebelum mencari vendor dan menyusun CBE.
+
+| Menu | URL | Penggunaan |
+| --- | --- | --- |
+| PR | `/panel/permintaan/pr` | Membuat dan memantau PR sendiri |
+| SR | `/panel/permintaan/sr` | Membuat dan memantau SR sendiri |
+| SCM | `/panel/scm/pengadaan` | Antrean permintaan terkirim, vendor, CBE, legalitas, pengaturan |
+
+Menu PR dan SR memakai izin `scm.request` yang sudah ada. Pemrosesan tetap memakai `scm.process` dan cakupan departemen; pengaturan memakai `scm.configure`. Checklist hak akses menyediakan satu pilihan PR dan SR karena izin pemohon tetap sama. Tidak ada pemberian izin baru atau bypass administrator.
+
+Form user tidak meminta lokasi atau kategori. Jenis mengikuti menu PR atau SR dan divalidasi kembali di server. Kategori dipilih SCM saat menerima permintaan, harus aktif, dicatat dalam audit, dan tetap menentukan snapshot persyaratan legalitas. Data kategori/lokasi lama dipertahankan ketika draft diedit. Migrasi hanya mengizinkan `scm_requests.category_id` kosong sebelum penerimaan, tanpa menghapus foreign key atau record.
+
+Form Excel pengguna dibaca sebagai referensi, tanpa diubah. Identitas/tanggal/departemen dan rincian item sesuai kelompok data form. Kolom Delivery Point pada referensi menjelaskan fungsi lokasi yang kemudian dihapus atas permintaan pengguna. Format nomor, rantai tanda tangan, atau kolom tambahan tidak diubah oleh penyesuaian menu ini.
+
+## Verifikasi lokal
+
+- 33 tes SCM, katalog menu, dan hak akses lulus dengan 407 assertion. Termasuk kedua form tanpa kategori/lokasi, pemisahan jenis/pemilik, penolakan pemalsuan jenis, penerimaan kategori aktif, audit, pelestarian data historis, dan seeder demo idempotent.
+- Runner PostgreSQL terpisah lulus: satu tes, 11 assertion. Migrasi nullable dan penerimaan kategori digunakan bersama pengujian nomor unik/finalisasi CBE bersamaan; jumlah record database utama tidak berubah.
+- PR dan SR fiktif masing-masing dibuat, disimpan, dikirim, dan diterima SCM melalui browser Chrome lokal. Setelah penerimaan muncul langkah tiga kandidat vendor. Data ini hanya di lokal.
+- Form SR diperiksa pada 320 dan 768 px. Lebar scroll dokumen tidak melebihi viewport; kontrol yang diukur memiliki tinggi minimal 44 px. Override viewport dikembalikan setelah pengujian.
+- Penyimpanan draft serta penerimaan SCM diuji dengan Enter. Konsol browser pada pemeriksaan akhir tidak memuat error/warning.
+
+Bukti berada di `output/scm-browser-20261022/`: `sr-menu-terpisah-320.jpg`, `penerimaan-kategori-menu-terpisah.jpg`, dan `sr-menu-terpisah-pencarian-vendor.jpg`.
+
+## Gate UI untuk perubahan ini
+
+Arah tetap mengikuti IK WorkDesk: ENERGY 1 / RHYTHM 1 / MOTION 1. Tidak ada perubahan warna, tipografi, aset, animasi, atau tema. Bukti kontras dan pengujian komponen yang tidak berubah menggunakan verifikasi SCM sebelumnya.
+
+| Pemeriksaan | Status dan bukti |
+| --- | --- |
+| R-02, R-16, R-36 | PASS: label PR, SR, SCM dan petunjuk kategori menyatakan fungsi nyata; tidak menambah klaim atau tanda pisah dekoratif |
+| R-03 | PASS: form yang berubah diuji pada 320/768 px; tidak ada overflow dokumen, kontrol minimal 44 px |
+| R-17, R-18, R-38 | PASS: ringkasan berasal dari query sesuai akses; transaksi browser diberi penanda DEMO dan hanya disimpan di lokal |
+| R-23, R-24 | PASS: pemisahan navigasi diminta pengguna; ketiga tautan dibuka dan seluruh tujuan terdaftar dalam katalog hak akses |
+| R-25, R-29 | PASS: tidak mengubah token warna; delapan pasangan warna komponen sebelumnya memiliki rasio 4,83:1 sampai 17,74:1 |
+| R-26, R-27, R-35 | PASS: kedua form menyimpan, mengirim dan diterima SCM; kategori kosong/inaktif ditolak tes, status loading/error/empty dipakai ulang |
+| R-32 | PASS: simpan draft dan penerimaan dijalankan dengan Enter; fokus terlihat pada form sempit; memakai kontrol native dengan label |
+| R-33, R-34 | PASS: perubahan ditulis di sumber Blade/PHP; panel tetap memakai tema terang yang sudah ditetapkan |
+| Purpose gate | PASS: tidak menambah efek/dekorasi; kelompok Permintaan memisahkan pekerjaan user dari pengolahan SCM |
+| R-37 dan liveliness | PASS: dials 1/1/1 dipertahankan; judul PR/SR dan tombol buat menjadi fokus, struktur form mengikuti identitas dan item |
+| C-1 sampai C-5, quality locks | PASS: memakai shell/komponen yang sama; otorisasi, data historis, format angka, dan proses CBE/legalitas tercakup regresi |
+
+Gate ini mencakup perubahan menu/form. Batas QA modul yang sudah dicatat, seperti unggah file melalui ekstensi, simpan PDF dan zoom 200%, tetap tercantum pada [status verifikasi SCM](SCM-VERIFIKASI.md).

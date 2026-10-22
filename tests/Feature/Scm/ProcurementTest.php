@@ -2,7 +2,9 @@
 
 namespace Tests\Feature\Scm;
 
+use App\Filament\Pages\PurchaseRequests;
 use App\Filament\Pages\ScmProcurement;
+use App\Filament\Pages\ServiceRequests;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
@@ -19,6 +21,7 @@ use App\Services\Scm\Access;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\Validation;
 use App\Services\Scm\Workflow;
+use Database\Seeders\ScmDemoSeeder;
 use Database\Seeders\ScmSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -75,7 +78,7 @@ class ProcurementTest extends TestCase
     private function draft(string $kind = 'PR'): Procurement
     {
         return $this->flow->saveDraft($this->requester, ['kind' => $kind, 'date' => today()->toDateString(),
-            'department_id' => $this->department->id, 'category_id' => $this->category->id,
+            'department_id' => $this->department->id,
             'title' => 'Pengadaan uji '.$kind, 'reason' => 'Pengujian kebutuhan operasional', 'items' => [
                 ['name' => 'Item satu', 'specification' => 'Spesifikasi satu', 'quantity' => '1,5', 'unit' => 'unit'],
                 ['name' => 'Item dua', 'specification' => 'Spesifikasi dua', 'quantity' => '2', 'unit' => 'paket'],
@@ -87,7 +90,7 @@ class ProcurementTest extends TestCase
         $r = $this->draft($kind);
         $r = $this->flow->submit($this->requester, $r->id, $r->version);
 
-        return $this->flow->receive($this->scm, $r->id, $r->version);
+        return $this->flow->receive($this->scm, $r->id, $r->version, $this->category->id);
     }
 
     private function vendors(Procurement $r): Procurement
@@ -153,12 +156,12 @@ class ProcurementTest extends TestCase
         return [['PR'], ['SR']];
     }
 
-    public function test_livewire_empty_optional_fields_are_stored_as_null(): void
+    #[DataProvider('kinds')]
+    public function test_livewire_empty_optional_fields_are_stored_as_null(string $kind): void
     {
         $this->actingAs($this->requester);
-        Livewire::test(ScmProcurement::class)
+        Livewire::test($kind === 'PR' ? PurchaseRequests::class : ServiceRequests::class)
             ->call('newDraft')
-            ->set('draft.category_id', $this->category->id)
             ->set('draft.title', 'Draft dengan tanggal opsional kosong')
             ->set('draft.reason', 'Regresi formulir browser SCM')
             ->set('draft.items.0.name', 'Barang uji')
@@ -168,8 +171,10 @@ class ProcurementTest extends TestCase
             ->assertHasNoErrors();
 
         $request = Procurement::sole();
+        $this->assertSame($kind, $request->kind);
         $this->assertNull($request->getRawOriginal('needed_at'));
         $this->assertNull($request->getRawOriginal('location'));
+        $this->assertNull($request->category_id);
         $this->assertNull($request->items->sole()->getRawOriginal('notes'));
 
         $this->assertSame(['date' => null, 'id' => null, 'nested' => ['notes' => null, 'zero' => '0', 'active' => false]],
@@ -177,6 +182,91 @@ class ProcurementTest extends TestCase
                 ['date' => '', 'id' => '', 'nested' => ['notes' => '', 'zero' => '0', 'active' => false]],
                 ['date' => 'nullable|date', 'id' => 'nullable|integer', 'nested' => 'array'],
             )->validate());
+    }
+
+    public function test_editing_a_draft_preserves_its_historical_location_without_a_location_field(): void
+    {
+        $request = $this->draft();
+        $request->update(['location' => 'Gudang lama', 'category_id' => $this->category->id]);
+        $this->actingAs($this->requester);
+
+        Livewire::test(PurchaseRequests::class)
+            ->call('open', $request->id)
+            ->call('editDraft')
+            ->assertSet('draft.location', null)
+            ->assertSet('draft.category_id', null)
+            ->set('draft.category_id', 999999)
+            ->set('draft.title', 'Kebutuhan diperbarui')
+            ->call('saveDraft')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Gudang lama', $request->fresh()->location);
+        $this->assertSame('Kebutuhan diperbarui', $request->fresh()->title);
+        $this->assertEquals($this->category->id, $request->fresh()->category_id);
+    }
+
+    public function test_request_menus_separate_kinds_and_owners_from_the_scm_queue(): void
+    {
+        $pr = $this->draft('PR');
+        $sr = $this->draft('SR');
+        $other = $this->user('scm.request');
+        $foreign = $this->flow->saveDraft($other, ['kind' => 'PR', 'date' => today()->toDateString(),
+            'department_id' => $this->department->id, 'title' => 'Permintaan user lain', 'reason' => 'Kebutuhan user lain',
+            'items' => [['name' => 'Barang', 'specification' => 'Spesifikasi', 'quantity' => '1', 'unit' => 'unit']]]);
+
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)
+            ->assertSee($pr->number)->assertDontSee($sr->number)->assertDontSee($foreign->number)
+            ->assertDontSee('Antrean SCM');
+        Livewire::actingAs($this->requester)->test(ServiceRequests::class)
+            ->assertSee($sr->number)->assertDontSee($pr->number);
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('open', $sr->id)->assertForbidden();
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('open', $foreign->id)->assertForbidden();
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)
+            ->assertDontSee($pr->number)->assertDontSee($sr->number)->assertDontSee('Buat PR');
+        $this->actingAs($this->requester)->get('/panel/permintaan/pr')->assertOk();
+        $this->get('/panel/permintaan/sr')->assertOk();
+        $this->get('/panel/scm/pengadaan')->assertForbidden();
+        $this->actingAs($this->scm)->get('/panel/permintaan/pr')->assertForbidden();
+    }
+
+    public function test_request_kind_cannot_be_changed_through_a_different_menu(): void
+    {
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('newDraft')
+            ->set('draft.kind', 'SR')->call('saveDraft')->assertForbidden();
+        $this->assertSame(0, Procurement::count());
+        Livewire::actingAs($this->requester)->test(ServiceRequests::class)->call('newDraft')
+            ->assertSet('draft.kind', 'SR')->call('switchSection', 'queue')->assertForbidden();
+    }
+
+    public function test_demo_seeder_assigns_categories_during_scm_receipt_and_remains_idempotent(): void
+    {
+        $this->seed(ScmDemoSeeder::class);
+        $requests = Procurement::where('title', 'like', 'DEMO % sampai legalitas lengkap')->get();
+        $this->assertCount(2, $requests);
+        $this->assertEqualsCanonicalizing(['PR', 'SR'], $requests->pluck('kind')->all());
+        $this->assertTrue($requests->every(fn ($request) => $request->status === 'completed' && $request->category_id !== null));
+        $this->seed(ScmDemoSeeder::class);
+        $this->assertSame(2, Procurement::where('title', 'like', 'DEMO % sampai legalitas lengkap')->count());
+    }
+
+    public function test_scm_assigns_an_active_category_only_when_receiving_a_submitted_request(): void
+    {
+        $request = $this->draft();
+        $this->assertNull($request->category_id);
+        $request = $this->flow->submit($this->requester, $request->id, $request->version);
+        $this->rejects(fn () => $this->flow->receive($this->scm, $request->id, $request->version));
+        $this->category->update(['is_active' => false]);
+        $this->rejects(fn () => $this->flow->receive($this->scm, $request->id, $request->version, $this->category->id));
+        $this->assertSame('submitted', $request->fresh()->status);
+        $this->assertNull($request->fresh()->category_id);
+        $this->category->update(['is_active' => true]);
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)
+            ->set('receivingCategoryId', (string) $this->category->id)->call('receiveRequest')->assertHasNoErrors();
+        $this->assertSame('sourcing', $request->fresh()->status);
+        $this->assertEquals($this->category->id, $request->fresh()->category_id);
+        $audit = Audit::where('request_id', $request->id)->where('action', 'perubahan_proses')->latest('id')->firstOrFail();
+        $this->assertNull($audit->changes['before']['category_id']);
+        $this->assertEquals($this->category->id, $audit->changes['after']['category_id']);
     }
 
     #[DataProvider('kinds')]
@@ -246,7 +336,7 @@ class ProcurementTest extends TestCase
         $this->rejects(fn () => $this->flow->submit($this->requester, $r->id, $r->version + 1));
         $r = $this->flow->submit($this->requester, $r->id, $r->version);
         $this->rejects(fn () => $this->flow->startLegal($this->scm, $r->id, $r->version));
-        $r = $this->flow->receive($this->scm, $r->id, $r->version);
+        $r = $this->flow->receive($this->scm, $r->id, $r->version, $this->category->id);
         $r = $this->vendors($r);
         $this->rejects(fn () => $this->flow->addCandidate($this->scm, $r->id, $r->version, ['vendor_id' => $r->candidates->first()->vendor_id, 'followup_status' => 'diminta']));
         $this->rejects(fn () => $this->flow->saveCbe($this->scm, $r->id, $r->version, ['date' => today()->toDateString(), 'quotation_ids' => [], 'selected_vendor_id' => null], true));
@@ -310,7 +400,9 @@ class ProcurementTest extends TestCase
     public function test_livewire_pages_and_requester_payload_hide_commercial_data(): void
     {
         $r = $this->finalized();
-        Livewire::actingAs($this->requester)->test(ScmProcurement::class)->call('open', $r->id)
+        $this->requester->directPermissions()->attach(Permission::where('code', 'scm.process')->firstOrFail());
+        $this->requester->unsetRelation('directPermissions');
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('open', $r->id)
             ->assertSet('cbeForm', [])->assertSet('legal', [])->assertSee($r->number)->assertDontSee('Harga akhir:');
         $page = Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('switchSection', 'queue')->assertSee($r->number)
             ->call('open', $r->id)->call('showTab', 'cbe')->assertSee('CBE final terkunci');

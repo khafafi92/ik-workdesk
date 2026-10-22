@@ -63,7 +63,7 @@ class MenuAccessCatalogTest extends TestCase
             AiAssistantSettingsPage::class => 'System administrator only',
             UserResource::class => 'Administrator access level',
         ];
-        $aliases = ['Infrastruktur IT' => [
+        $aliases = ['Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
             'Master Perangkat' => 'Lihat Master Perangkat',
             'Pengecekan Infrastruktur' => 'Lihat Pengecekan',
             'Monitoring Harian IT' => 'Lihat Pengecekan',

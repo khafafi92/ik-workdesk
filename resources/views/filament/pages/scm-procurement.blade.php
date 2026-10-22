@@ -1,12 +1,12 @@
 <x-filament-panels::page>
 <div class="scm-workspace">
-    <nav class="scm-actions" aria-label="Bagian pengadaan">
-        @foreach(['mine' => 'Permintaan saya', 'queue' => 'Antrean SCM', 'vendors' => 'Vendor & dokumen', 'settings' => 'Pengaturan'] as $key => $label)
-            @if($key === 'mine' || (in_array($key, ['queue', 'vendors']) && $isScm) || ($key === 'settings' && $configure))
+    @if(!$requestKind)<nav class="scm-actions" aria-label="Bagian pengadaan">
+        @foreach(['queue' => 'Antrean SCM', 'vendors' => 'Vendor & dokumen', 'settings' => 'Pengaturan'] as $key => $label)
+            @if((in_array($key, ['queue', 'vendors']) && $isScm) || ($key === 'settings' && $configure))
             <button type="button" wire:click="switchSection('{{ $key }}')" @if($section === $key) aria-current="page" @endif>{{ $label }}</button>
             @endif
         @endforeach
-    </nav>
+    </nav>@endif
     <p role="status" wire:loading>Memproses data pengadaan. Mohon tunggu...</p>
     @if($errors->any())<div class="scm-error" role="alert"><h2>Periksa data berikut</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
@@ -18,11 +18,11 @@
         </section>
         @if(!$selected && !$editing)
         <section class="scm-panel">
-            <header class="scm-heading"><h2>{{ $section === 'queue' ? 'Antrean pengadaan SCM' : 'Permintaan saya' }}</h2>@if($canRequest)<x-filament::button wire:click="newDraft">Buat PR/SR</x-filament::button>@endif</header>
+            <header class="scm-heading"><h2>{{ $section === 'queue' ? 'Antrean pengadaan SCM' : $requestKind.' saya' }}</h2>@if($canRequest)<x-filament::button wire:click="newDraft">Buat {{ $requestKind }}</x-filament::button>@endif</header>
             <div class="scm-grid">
                 <x-scm.field model="search" label="Cari nomor atau judul" :live="true" />
                 <x-scm.select model="statusFilter" label="Status" :options="$statuses" :live="true" />
-                <x-scm.select model="kindFilter" label="Jenis" :options="['PR' => 'PR barang', 'SR' => 'SR jasa']" :live="true" />
+                @if(!$requestKind)<x-scm.select model="kindFilter" label="Jenis" :options="['PR' => 'PR', 'SR' => 'SR']" :live="true" />@endif
                 <x-scm.select model="departmentFilter" label="Departemen" :options="$departments" :live="true" />
                 @if($isScm)<x-scm.select model="picFilter" label="PIC SCM" :options="$pics" :live="true" />@endif
                 <x-scm.field model="dateFrom" label="Dari tanggal" type="date" :live="true" />
@@ -30,21 +30,19 @@
             </div>
             <div class="scm-scroll" role="region" aria-label="Daftar permintaan" tabindex="0"><table><thead><tr><th>Permintaan</th><th>Departemen</th><th>Tanggal</th><th>Tahap</th><th>Tindak lanjut</th></tr></thead><tbody>
             @forelse($records as $r)<tr><td>{{ $r->number }}<br>{{ $r->title }}</td><td>{{ $r->department->name }}</td><td>{{ $r->date->format('d/m/Y') }}</td><td>{{ $statuses[$r->status] }}</td><td><button type="button" wire:click="open({{ $r->id }})">Buka permintaan</button></td></tr>
-            @empty<tr><td colspan="5">Belum ada permintaan sesuai filter. @if($canRequest)Gunakan Buat PR/SR untuk mengajukan barang atau jasa.@else Permintaan yang dikirim dan sesuai akses departemen akan tampil di sini.@endif</td></tr>@endforelse
+            @empty<tr><td colspan="5">Belum ada permintaan sesuai filter. @if($canRequest)Gunakan Buat {{ $requestKind }} untuk mengajukan permintaan.@else Permintaan yang dikirim dan sesuai akses departemen akan tampil di sini.@endif</td></tr>@endforelse
             </tbody></table></div>{{ $records->links() }}
         </section>
         @endif
 
         @if($editing)
-        <form class="scm-panel" wire:submit="saveDraft"><h2>{{ $selected ? 'Edit draft PR/SR' : 'Draft PR/SR baru' }}</h2>
+        <form class="scm-panel" wire:submit="saveDraft"><h2>{{ $selected ? 'Edit draft '.$requestKind : 'Draft '.$requestKind.' baru' }}</h2>
             <fieldset wire:loading.attr="disabled"><legend>Identitas permintaan</legend><div class="scm-grid">
-                <x-scm.select model="draft.kind" label="Jenis permintaan" :options="['PR' => 'PR barang', 'SR' => 'SR jasa']" required />
+                <p>Jenis permintaan: <strong>{{ $requestKind }}</strong></p>
                 <x-scm.field model="draft.date" label="Tanggal" type="date" required />
                 <x-scm.select model="draft.department_id" label="Departemen" :options="$departments" required />
-                <x-scm.select model="draft.category_id" label="Kategori pengadaan" :options="$categories->where('is_active', true)->pluck('name', 'id')" required />
                 <x-scm.field model="draft.title" label="Judul kebutuhan" required />
                 <x-scm.field model="draft.needed_at" label="Tanggal dibutuhkan" type="date" />
-                <x-scm.field model="draft.location" label="Lokasi" />
                 <x-scm.field model="draft.reason" label="Alasan kebutuhan" multiline required />
                 <x-scm.field model="draft.notes" label="Catatan permintaan" multiline />
             </div></fieldset>
@@ -69,10 +67,15 @@
             @if($key === 'request' || $canManage)<button type="button" wire:click="showTab('{{ $key }}')" @if($tab === $key) aria-current="page" @endif>{{ $label }}</button>@endif
             @endforeach</nav>
             @if($tab === 'request')
-                <dl class="scm-details"><div><dt>Pemohon</dt><dd>{{ $record->requester->name }}</dd></div><div><dt>Departemen</dt><dd>{{ $record->department->name }}</dd></div><div><dt>Alasan kebutuhan</dt><dd>{{ $record->reason }}</dd></div><div><dt>Dibutuhkan</dt><dd>{{ $record->needed_at?->format('d/m/Y') ?? 'Belum ditentukan' }}</dd></div><div><dt>Lokasi</dt><dd>{{ $record->location ?: 'Belum diisi' }}</dd></div><div><dt>Catatan</dt><dd>{{ $record->notes ?: 'Tidak ada catatan' }}</dd></div></dl>
+                <dl class="scm-details"><div><dt>Pemohon</dt><dd>{{ $record->requester->name }}</dd></div><div><dt>Departemen</dt><dd>{{ $record->department->name }}</dd></div><div><dt>Alasan kebutuhan</dt><dd>{{ $record->reason }}</dd></div><div><dt>Dibutuhkan</dt><dd>{{ $record->needed_at?->format('d/m/Y') ?? 'Belum ditentukan' }}</dd></div>@if($record->location)<div><dt>Lokasi</dt><dd>{{ $record->location }}</dd></div>@endif<div><dt>Catatan</dt><dd>{{ $record->notes ?: 'Tidak ada catatan' }}</dd></div></dl>
                 @foreach($record->items as $item)<section class="scm-item"><h3>{{ $item->position }}. {{ $item->name }}</h3><p>{{ \App\Services\Scm\Decimal::input($item->quantity_milli, 3) }} {{ $item->unit }}</p><p>{{ $item->specification }}</p>@if($item->notes)<p>{{ $item->notes }}</p>@endif</section>@endforeach
                 <div class="scm-actions">@if($record->status === 'draft' && (int)$record->requester_id === (int)auth()->id() && $canRequest)<button type="button" wire:click="editDraft">Edit draft</button><x-filament::button wire:click="submitRequest" wire:confirm="Kirim ke SCM? Isi permintaan akan terkunci." wire:loading.attr="disabled">Kirim ke SCM</x-filament::button>@endif
-                @if($canManage && $record->status === 'submitted')<x-filament::button wire:click="receiveRequest" wire:loading.attr="disabled">Terima oleh SCM</x-filament::button>@endif</div>
+                </div>
+                @if($canManage && $record->status === 'submitted')
+                <form wire:submit="receiveRequest" class="scm-item"><h3>Penerimaan SCM</h3><div class="scm-grid">
+                    <x-scm.select model="receivingCategoryId" label="Kategori pengadaan" :options="$categories->where('is_active', true)->pluck('name', 'id')" required />
+                </div><p class="scm-help">Kategori menentukan checklist dokumen vendor untuk proses ini.</p><x-filament::button type="submit" wire:loading.attr="disabled">Terima oleh SCM</x-filament::button></form>
+                @endif
                 <h3>Lampiran permintaan</h3>@forelse($record->attachments as $file)<p><a href="{{ route('scm.download', $file) }}">Unduh {{ $file->original_name }}</a></p>@empty<p>Belum ada lampiran permintaan.</p>@endforelse
             @elseif($tab === 'quotes' && $canManage)
                 <h3>Tiga kandidat vendor</h3>

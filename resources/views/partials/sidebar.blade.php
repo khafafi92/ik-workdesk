@@ -34,12 +34,14 @@
             Daily Activity Report
         </a>
 
-        @if(\App\Filament\Pages\ScmProcurement::canAccess())
-        <a href="{{ route('filament.admin.pages.scm.pengadaan') }}"
-            class="ik-sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-white">
-            SCM - Pengadaan PR/SR
-        </a>
-        @endif
+        @foreach([\App\Filament\Pages\PurchaseRequests::class, \App\Filament\Pages\ServiceRequests::class, \App\Filament\Pages\ScmProcurement::class] as $procurementPage)
+            @if($procurementPage::canAccess())
+            <a href="{{ $procurementPage::getUrl() }}"
+                class="ik-sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-white">
+                {{ $procurementPage::getNavigationLabel() }}
+            </a>
+            @endif
+        @endforeach
 
         <a href="{{ url('/panel') }}"
             class="ik-sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-white">

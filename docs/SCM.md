@@ -1,6 +1,6 @@
 # Modul SCM: PR/SR, CBE, dan legalitas vendor
 
-Modul terintegrasi dengan pengguna, departemen, Filament, dan hak akses IK WorkDesk. Menu **SCM > Pengadaan PR/SR** memuat permintaan pribadi, antrean SCM, vendor/dokumen, serta pengaturan. Modul tidak menambahkan PO, kontrak, penerimaan, invoice, pembayaran, portal vendor, atau pesan otomatis.
+Modul terintegrasi dengan pengguna, departemen, Filament, dan hak akses IK WorkDesk. Sidebar menyediakan **Permintaan > PR** dan **Permintaan > SR** untuk permintaan user, serta **SCM > SCM** untuk penerimaan dan pemrosesan oleh tim SCM. Modul tidak menambahkan PO, kontrak, penerimaan barang, invoice, pembayaran, portal vendor, atau pesan otomatis.
 
 ## Menjalankan lokal di Windows PowerShell
 
@@ -8,6 +8,7 @@ Gunakan database lokal yang sudah dikonfigurasi. Jangan menjalankan reset atau `
 
 ```powershell
 php artisan migrate --path=database/migrations/2026_10_22_100000_create_scm_procurement_tables.php
+php artisan migrate --path=database/migrations/2026_10_22_150000_move_scm_category_to_receipt.php
 php artisan db:seed --class=ScmSeeder
 npm run build
 php artisan config:cache
@@ -16,7 +17,7 @@ php artisan filament:optimize-clear
 php artisan serve --host=127.0.0.1 --port=8000
 ```
 
-Migrasi hanya menambah tabel berawalan `scm_`. Tidak ada data modul lain yang dihapus. Seeder awal menambah permission dan jenis NPWP/NIB/SBU secara idempotent, tanpa menganggap semuanya wajib.
+Migrasi awal menambah tabel berawalan `scm_`. Migrasi berikutnya mengizinkan kategori permintaan kosong sampai diterima SCM, dengan foreign key tetap berlaku. Tidak ada record yang dihapus atau kategori lama yang dikosongkan. Seeder awal menambah permission dan jenis NPWP/NIB/SBU secara idempotent, tanpa menganggap semuanya wajib.
 
 Untuk data demo fiktif, hanya pada lingkungan `local` atau `testing`:
 
@@ -28,7 +29,7 @@ Akun pengembangan: `scm.pemohon@example.test` dan `scm.petugas@example.test`, ka
 
 ## Hak akses dan penggunaan
 
-Administrator mengatur izin melalui checklist menu Users, grup SCM:
+Administrator mengatur izin melalui checklist menu Users, grup Permintaan dan SCM:
 
 - `scm.request`: membuat/edit draft sendiri, mengirim ke SCM, melihat permintaan sendiri serta lampiran permintaan. Tidak membuka penawaran, CBE, atau legalitas vendor.
 - `scm.process`: menerima permintaan yang sudah dikirim dalam cakupan departemen yang diizinkan; mengelola vendor, penawaran, CBE dan legalitas. Draft pengguna lain tetap privat.
@@ -38,7 +39,9 @@ SCM menggunakan permission yang benar-benar diberikan melalui role aktif atau pe
 
 Pada 22 Oktober 2026, atas permintaan pengguna, akun utama Khafafi di lingkungan lokal diberi ketiga izin SCM secara eksplisit. Sidebar dashboard utama juga menyediakan tautan **SCM - Pengadaan PR/SR** sesuai hak akses. Aktivasi ini khusus lokal, bukan perubahan default izin administrator atau penerapan ke server. Bukti tersedia di [catatan aktivasi menu lokal](../output/scm-browser-20261022/AKTIVASI-MENU-LOKAL.md).
 
-Alur: Draft, Dikirim ke SCM, Pencarian vendor, Pengumpulan penawaran, Penyusunan CBE, Vendor terpilih, Pengumpulan legalitas, Selesai. SCM menerima dengan tombol Terima; memilih tiga vendor unik; memasukkan quotation; memilih satu versi dari setiap vendor; menyimpan draft atau memfinalkan CBE; lalu mengumpulkan legalitas dan menyelesaikan.
+User membuat draft pada menu PR atau SR sesuai jenisnya, lalu mengirim ke SCM. Jenis mengikuti menu dan tidak dapat diubah dari form. Lokasi dan kategori tidak diminta pada form user. Lokasi historis tetap tersimpan dan dapat dilihat pada detail jika pernah diisi.
+
+Alur: Draft, Dikirim ke SCM, Pencarian vendor, Pengumpulan penawaran, Penyusunan CBE, Vendor terpilih, Pengumpulan legalitas, Selesai. Draft tidak masuk antrean SCM. Saat menerima, SCM memilih kategori aktif untuk menentukan checklist dokumen vendor; kemudian memilih tiga vendor unik, memasukkan quotation, memilih satu versi dari setiap vendor, menyimpan draft atau memfinalkan CBE, lalu mengumpulkan legalitas dan menyelesaikan. User dapat memantau tahap permintaannya melalui menu asal, tanpa rincian komersial SCM.
 
 Semua peralihan divalidasi server dengan transaksi, row lock, dan versi permintaan. Jika ada perubahan bersamaan, muat ulang data sebelum mengulang tindakan. Nomor menggunakan ULID dan unique constraint. CBE final tidak dapat dibuka ulang. Revisi setelah final merupakan kebutuhan lanjutan, bukan fitur versi ini.
 
@@ -66,6 +69,6 @@ npm run build
 
 PHPUnit utama menggunakan SQLite `:memory:` dan cache pengujian terpisah. Runner PostgreSQL hanya menerima target lokal, membuat database acak `ik_scm_test_*` dengan kredensial admin lokal yang sudah tersedia, menguji dua proses bersamaan, memverifikasi jumlah record database aplikasi, lalu membersihkan database uji. Jangan menjalankan file pengujian PostgreSQL langsung terhadap database aplikasi.
 
-Pada 22 Oktober 2026, modul diterapkan atas persetujuan pengguna ke project IK WorkDesk yang sama di `http://10.1.20.97:8093`, direktori `/var/www/ik-workdesk`. Menu **SCM > Pengadaan PR/SR** aktif untuk akun Khafafi melalui tiga izin eksplisit. Data demo lokal tidak dimasukkan. Batas unggah SCM server diatur `SCM_UPLOAD_MAX_KB=2048` mengikuti batas PHP 2 MB. Isi kategori dan persyaratan melalui tab Pengaturan sebelum mulai membuat permintaan. Backup, verifikasi data lama, dan hasil penerapan tercatat pada [rilis SCM](SCM-PENERAPAN-2026-10-22.md).
+Pada 22 Oktober 2026, modul diterapkan atas persetujuan pengguna ke project IK WorkDesk yang sama di `http://10.1.20.97:8093`, direktori `/var/www/ik-workdesk`. Akun Khafafi memiliki tiga izin eksplisit. Data demo lokal tidak dimasukkan. Batas unggah SCM server diatur `SCM_UPLOAD_MAX_KB=2048` mengikuti batas PHP 2 MB. Kategori dan persyaratan diatur melalui Pengaturan SCM sebelum menerima permintaan; user dapat membuat PR/SR tanpa kategori. Backup, verifikasi data lama, dan hasil penerapan tercatat pada [rilis SCM](SCM-PENERAPAN-2026-10-22.md).
 
 Untuk penerapan berikutnya, cadangkan database dan dokumen terlebih dahulu, jalankan migrasi/seeder awal secara terkontrol, bangun aset, dan bangun ulang cache konfigurasi/route. Hasil pengujian aktual dan batas QA browser tercatat pada [SCM-VERIFIKASI.md](SCM-VERIFIKASI.md).

@@ -31,16 +31,18 @@ class ScmProcurement extends Page
 
     protected static ?string $slug = 'scm/pengadaan';
 
-    protected static ?string $navigationLabel = 'Pengadaan PR/SR';
+    protected static ?string $navigationLabel = 'SCM';
 
     protected static string|UnitEnum|null $navigationGroup = 'SCM';
 
     protected string $view = 'filament.pages.scm-procurement';
 
-    protected static ?string $title = 'Pengadaan PR/SR';
+    protected static ?string $title = 'SCM';
+
+    protected static ?string $requestKind = null;
 
     #[Url(as: 'bagian')]
-    public string $section = 'mine';
+    public string $section = 'queue';
 
     #[Url(as: 'permintaan')]
     public int $selected = 0;
@@ -68,6 +70,8 @@ class ScmProcurement extends Page
     public bool $editing = false;
 
     public array $draft = [];
+
+    public string $receivingCategoryId = '';
 
     public array $vendor = [];
 
@@ -99,11 +103,18 @@ class ScmProcurement extends Page
 
     public static function canAccess(): bool
     {
-        return Access::has(auth()->user(), 'scm.request') || Access::manages(auth()->user()) || Access::has(auth()->user(), 'scm.configure');
+        return static::$requestKind !== null
+            ? Access::has(auth()->user(), 'scm.request')
+            : Access::manages(auth()->user()) || Access::has(auth()->user(), 'scm.configure');
     }
 
     public function mount(): void
     {
+        if (static::$requestKind !== null) {
+            $this->section = 'mine';
+        } elseif (! Access::manages(auth()->user()) && Access::has(auth()->user(), 'scm.configure')) {
+            $this->section = 'settings';
+        }
         if ($this->selected) {
             $this->open($this->selected);
         }
@@ -114,6 +125,7 @@ class ScmProcurement extends Page
     public function switchSection(string $section): void
     {
         abort_unless(in_array($section, ['mine', 'queue', 'vendors', 'settings']), 404);
+        abort_if(static::$requestKind !== null ? $section !== 'mine' : $section === 'mine', 403);
         abort_if(in_array($section, ['queue', 'vendors']) && ! Access::manages(auth()->user()), 403);
         abort_if($section === 'settings' && ! Access::has(auth()->user(), 'scm.configure'), 403);
         $this->section = $section;
@@ -126,14 +138,17 @@ class ScmProcurement extends Page
     public function open(int $id): void
     {
         $record = Procurement::with(['items', 'cbe', 'legalCase.items'])->findOrFail($id);
-        abort_unless(Access::views(auth()->user(), $record), 403);
+        abort_unless(static::$requestKind !== null
+            ? Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->kind === static::$requestKind
+            : Access::manages(auth()->user(), $record), 403);
         $this->selected = $id;
         $this->version = $record->version;
+        $this->receivingCategoryId = (string) ($record->category_id ?? '');
         $this->attachmentTarget = $record->status === 'draft' ? 'request' : 'quotation';
         $this->attachmentTargetId = 0;
         $this->editing = false;
         $this->tab = 'request';
-        $allowed = Access::manages(auth()->user(), $record);
+        $allowed = static::$requestKind === null && Access::manages(auth()->user(), $record);
         $this->cbeForm = $allowed ? ['date' => $record->cbe?->date?->format('Y-m-d') ?? now()->toDateString(), 'quotation_ids' => $record->cbe?->quotation_ids ?? [],
             'selected_vendor_id' => $record->cbe?->selected_vendor_id ?? '', 'selection_reason' => $record->cbe?->selection_reason ?? ''] : [];
         $this->legal = $allowed ? ($record->legalCase?->items->mapWithKeys(fn ($i) => [$i->id => ['status' => $i->status, 'vendor_document_id' => $i->vendor_document_id ?? '', 'correction_notes' => $i->correction_notes ?? '']])->all() ?? []) : [];
@@ -146,17 +161,17 @@ class ScmProcurement extends Page
         abort_unless(in_array($tab, ['request', 'quotes', 'cbe', 'legal', 'history']), 404);
         $request = Procurement::findOrFail($this->selected);
         abort_unless(Access::views(auth()->user(), $request), 403);
-        abort_if($tab !== 'request' && ! Access::manages(auth()->user(), $request), 403);
+        abort_if($tab !== 'request' && (static::$requestKind !== null || ! Access::manages(auth()->user(), $request)), 403);
         $this->tab = $tab;
     }
 
     public function newDraft(): void
     {
-        abort_unless(Access::has(auth()->user(), 'scm.request'), 403);
+        abort_unless(static::$requestKind !== null && Access::has(auth()->user(), 'scm.request'), 403);
         $this->selected = 0;
         $this->editing = true;
-        $this->draft = ['kind' => 'PR', 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
-            'category_id' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'location' => '', 'notes' => '', 'items' => []];
+        $this->draft = ['kind' => static::$requestKind, 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
+            'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'items' => []];
         $this->addItem();
         $this->resetValidation();
     }
@@ -164,8 +179,8 @@ class ScmProcurement extends Page
     public function editDraft(): void
     {
         $record = Procurement::with('items')->findOrFail($this->selected);
-        abort_unless(Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->status === 'draft', 403);
-        $this->draft = $record->only(['kind', 'department_id', 'category_id', 'title', 'reason', 'location', 'notes']);
+        abort_unless(static::$requestKind !== null && $record->kind === static::$requestKind && Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->status === 'draft', 403);
+        $this->draft = $record->only(['kind', 'department_id', 'title', 'reason', 'notes']);
         $this->draft['date'] = $record->date->format('Y-m-d');
         $this->draft['needed_at'] = $record->needed_at?->format('Y-m-d') ?? '';
         $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['name', 'specification', 'unit', 'notes']), 'quantity' => Decimal::input($i->quantity_milli, 3)])->all();
@@ -203,17 +218,21 @@ class ScmProcurement extends Page
 
     public function saveDraft(): void
     {
+        abort_unless(static::$requestKind !== null && ($this->draft['kind'] ?? null) === static::$requestKind, 403);
+        abort_if($this->selected && ! Procurement::whereKey($this->selected)->where('kind', static::$requestKind)->exists(), 403);
         $this->refreshed($this->workflow()->saveDraft(auth()->user(), $this->draft, $this->selected ?: null, $this->version), 'request');
     }
 
     public function submitRequest(): void
     {
+        abort_unless(static::$requestKind !== null, 403);
+        abort_unless(Procurement::whereKey($this->selected)->where('kind', static::$requestKind)->exists(), 403);
         $this->refreshed($this->workflow()->submit(auth()->user(), $this->selected, $this->version), 'request');
     }
 
     public function receiveRequest(): void
     {
-        $this->refreshed($this->workflow()->receive(auth()->user(), $this->selected, $this->version), 'quotes');
+        $this->refreshed($this->workflow()->receive(auth()->user(), $this->selected, $this->version, $this->receivingCategoryId !== '' ? (int) $this->receivingCategoryId : null), 'quotes');
     }
 
     public function addCandidate(): void
@@ -371,14 +390,19 @@ class ScmProcurement extends Page
 
     protected function getViewData(): array
     {
+        abort_unless(static::canAccess(), 403);
         $user = auth()->user();
-        $isScm = Access::manages($user);
-        $configure = Access::has($user, 'scm.configure');
+        $isScm = static::$requestKind === null && Access::manages($user);
+        $configure = static::$requestKind === null && Access::has($user, 'scm.configure');
+        abort_if(static::$requestKind !== null ? $this->section !== 'mine' : $this->section === 'mine', 403);
         abort_if(in_array($this->section, ['queue', 'vendors']) && ! $isScm, 403);
         abort_if($this->section === 'settings' && ! $configure, 403);
-        $query = Access::scope(Procurement::query(), $user);
+        $visible = static::$requestKind !== null
+            ? Procurement::where('requester_id', $user->id)->where('kind', static::$requestKind)
+            : Procurement::where('status', '!=', 'draft')->whereIn('department_id', $isScm ? $user->accessibleDepartmentIds() : []);
+        $query = clone $visible;
         $summary = (clone $query)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
-        $missingDocuments = $isScm ? LegalItem::whereIn('legal_case_id', LegalCase::whereNull('completed_at')->whereIn('request_id', Access::scope(Procurement::query(), $user)->select('id'))->select('id'))
+        $missingDocuments = $isScm ? LegalItem::whereIn('legal_case_id', LegalCase::whereNull('completed_at')->whereIn('request_id', (clone $visible)->select('id'))->select('id'))
             ->where('is_required', true)->where(fn ($q) => $q->where('status', '!=', 'diterima')->orWhereNull('vendor_document_id')
             ->orWhereHas('document', fn ($d) => $d->whereDate('expires_at', '<', today())))->count() : null;
         if ($this->section === 'mine') {
@@ -391,8 +415,8 @@ class ScmProcurement extends Page
             ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))->when($this->picFilter, fn ($q) => $q->where('scm_pic_id', $this->picFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
-        $record = $this->selected ? Access::scope(Procurement::query()->with(['items', 'requester', 'department', 'attachments']), $user)->findOrFail($this->selected) : null;
-        $canManage = $record && Access::manages($user, $record);
+        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'department', 'attachments'])->findOrFail($this->selected) : null;
+        $canManage = $isScm && $record && Access::manages($user, $record);
         if ($record && ! $canManage) {
             $this->tab = 'request';
             $this->cbeForm = [];
@@ -405,9 +429,13 @@ class ScmProcurement extends Page
         $quotes = $canManage ? $record->candidates->flatMap(fn ($c) => $c->quotations) : collect();
         $documents = $isScm ? VendorDocument::with(['documentType', 'attachments'])->when($record?->legalCase, fn ($q) => $q->where('vendor_id', $record->legalCase->vendor_id))->orderByDesc('id')->get() : collect();
         $duplicate = $isScm && filled($this->vendor['name'] ?? '') ? Vendor::where('id', '!=', $this->vendorId)->where(fn ($q) => $q->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($this->vendor['name']))])->when(filled($this->vendor['email'] ?? ''), fn ($q) => $q->orWhere('email', $this->vendor['email'])))->pluck('name') : collect();
+        $statuses = Workflow::STATUSES;
+        if (static::$requestKind === null) {
+            unset($statuses['draft']);
+        }
 
-        return ['isScm' => $isScm, 'configure' => $configure, 'canRequest' => Access::has($user, 'scm.request'), 'canManage' => $canManage,
-            'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => Workflow::STATUSES,
+        return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
+            'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses,
             'vendors' => $isScm ? Vendor::orderBy('name')->get() : collect(),
             'vendorRows' => $isScm ? Vendor::when($this->vendorSearch, fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$this->vendorSearch.'%')->orWhere('code', 'like', '%'.$this->vendorSearch.'%')))->orderBy('name')->paginate(15, ['*'], 'vendorPage') : null,
             'documents' => $documents, 'quotes' => $quotes, 'duplicateVendors' => $duplicate,

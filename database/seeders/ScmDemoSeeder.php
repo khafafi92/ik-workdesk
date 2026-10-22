@@ -49,12 +49,12 @@ class ScmDemoSeeder extends Seeder
             if (Procurement::where('requester_id', $actors['pemohon']->id)->where('title', 'DEMO '.$kind.' sampai legalitas lengkap')->exists()) {
                 continue;
             }
-            $r = $flow->saveDraft($actors['pemohon'], ['kind' => $kind, 'date' => today()->toDateString(), 'department_id' => $department->id, 'category_id' => $category->id,
+            $r = $flow->saveDraft($actors['pemohon'], ['kind' => $kind, 'date' => today()->toDateString(), 'department_id' => $department->id,
                 'title' => 'DEMO '.$kind.' sampai legalitas lengkap', 'reason' => 'Contoh fiktif untuk pengembangan, bukan kebutuhan pengadaan nyata.',
                 'items' => [['name' => $kind === 'PR' ? 'Barang demo' : 'Jasa demo', 'specification' => 'Spesifikasi fiktif untuk latihan', 'quantity' => '2', 'unit' => $kind === 'PR' ? 'unit' : 'paket'],
                     ['name' => 'Item pendukung demo', 'specification' => 'Cakupan tambahan fiktif', 'quantity' => '1', 'unit' => 'paket']]]);
             $r = $flow->submit($actors['pemohon'], $r->id, $r->version);
-            $r = $flow->receive($scm, $r->id, $r->version);
+            $r = $flow->receive($scm, $r->id, $r->version, $category->id);
             foreach ($vendors as $vendor) {
                 $r = $flow->addCandidate($scm, $r->id, $r->version, ['vendor_id' => $vendor->id, 'requested_at' => today()->toDateString(), 'followup_status' => 'diminta']);
             }

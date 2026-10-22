@@ -47,11 +47,11 @@ class Workflow
             abort_unless($scm ? Access::manages($actor, $request) : Access::views($actor, $request), 403);
             $this->reject($request->version !== $version, 'Data sudah berubah. Muat ulang sebelum melanjutkan.');
             $this->reject($request->status === 'completed', 'Pengadaan selesai terkunci.');
-            $before = $request->only(['status', 'version', 'scm_pic_id']);
+            $before = $request->only(['status', 'version', 'scm_pic_id', 'category_id']);
             $change($request);
             $request->version++;
             $request->save();
-            $this->audit($actor, $request, 'perubahan_proses', ['before' => $before, 'after' => $request->only(['status', 'version', 'scm_pic_id'])], $request->id);
+            $this->audit($actor, $request, 'perubahan_proses', ['before' => $before, 'after' => $request->only(['status', 'version', 'scm_pic_id', 'category_id'])], $request->id);
 
             return $request->fresh();
         }, 3);
@@ -63,7 +63,6 @@ class Workflow
         $validated = Validator::make($data, [
             'kind' => ['required', Rule::in(['PR', 'SR'])], 'date' => 'required|date',
             'department_id' => ['required', Rule::exists('departments', 'id')],
-            'category_id' => ['required', Rule::exists('scm_categories', 'id')->where('is_active', true)],
             'title' => 'required|string|max:255', 'reason' => 'required|string|max:10000', 'needed_at' => 'nullable|date',
             'location' => 'nullable|string|max:255', 'notes' => 'nullable|string|max:10000', 'items' => 'required|array|min:1|max:100',
             'items.*.name' => 'required|string|max:255', 'items.*.specification' => 'required|string|max:10000',
@@ -109,10 +108,14 @@ class Workflow
         }, false);
     }
 
-    public function receive(User $actor, int $id, int $version): Procurement
+    public function receive(User $actor, int $id, int $version, ?int $categoryId = null): Procurement
     {
-        return $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
+        return $this->mutate($actor, $id, $version, function ($request) use ($actor, $categoryId): void {
             $this->reject($request->status !== 'submitted', 'Hanya permintaan yang dikirim ke SCM yang dapat diterima.');
+            $data = Validator::make(['category_id' => $categoryId ?? $request->category_id], [
+                'category_id' => ['required', Rule::exists('scm_categories', 'id')->where('is_active', true)],
+            ])->validate();
+            $request->category_id = $data['category_id'];
             $request->status = 'sourcing';
             $request->received_at = now();
             $request->scm_pic_id = $actor->id;

@@ -95,7 +95,7 @@ class ScmConcurrencyTest extends TestCase
         $actor->directPermissions()->attach(Permission::whereIn('code', ['scm.request', 'scm.process'])->pluck('id'));
         $department = Department::create(['name' => 'SCM test', 'code' => 'SCM-T', 'is_active' => true]);
         $category = Category::create(['name' => 'Kategori uji bersamaan']);
-        $data = ['kind' => 'PR', 'date' => today()->toDateString(), 'department_id' => $department->id, 'category_id' => $category->id,
+        $data = ['kind' => 'PR', 'date' => today()->toDateString(), 'department_id' => $department->id,
             'title' => 'PR uji bersamaan', 'reason' => 'Data uji fiktif', 'needed_at' => '', 'items' => [['name' => 'Barang uji', 'specification' => 'Spesifikasi uji', 'quantity' => '1', 'unit' => 'unit']]];
         $created = $this->workers(['mode' => 'create', 'actor_id' => $actor->id, 'data' => $data]);
         $this->assertCount(2, array_unique(array_column($created, 'number')));
@@ -103,7 +103,9 @@ class ScmConcurrencyTest extends TestCase
         $r = Procurement::firstOrFail();
         $this->assertNull($r->getRawOriginal('needed_at'));
         $r = $flow->submit($actor, $r->id, $r->version);
-        $r = $flow->receive($actor, $r->id, $r->version);
+        $this->assertNull($r->category_id);
+        $r = $flow->receive($actor, $r->id, $r->version, $category->id);
+        $this->assertEquals($category->id, $r->category_id);
         for ($i = 0; $i < 3; $i++) {
             $vendor = $flow->saveVendor($actor, ['code' => 'V'.$i, 'name' => 'Vendor uji '.$i, 'provider_type' => 'barang', 'is_active' => true]);
             $r = $flow->addCandidate($actor, $r->id, $r->version, ['vendor_id' => $vendor->id, 'followup_status' => 'diminta', 'requested_at' => '']);

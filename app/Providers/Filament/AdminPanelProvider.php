@@ -62,6 +62,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('LTRO Management'),
                 NavigationGroup::make()->label('ATK'),
                 NavigationGroup::make()->label('Infrastruktur IT'),
+                NavigationGroup::make()->label('Permintaan'),
                 NavigationGroup::make()->label('SCM'),
                 NavigationGroup::make()->label('Meeting Room')->collapsed(),
                 NavigationGroup::make()->label('Vehicle Booking')->collapsed(),
