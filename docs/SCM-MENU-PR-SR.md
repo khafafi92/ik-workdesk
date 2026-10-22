@@ -1,5 +1,7 @@
 # Pemisahan menu PR, SR, dan SCM
 
+Pembaruan berikutnya mengubah penomoran, tampilan status sebelum penerimaan, dan menghapus pilihan kategori saat menerima. Perilaku terbaru ada pada [nomor dan penerimaan PR/SR](SCM-NOMOR-DAN-PENERIMAAN.md); catatan di bawah mempertahankan hasil rilis pemisahan menu sebelumnya.
+
 22 Oktober 2026. Perubahan mengikuti arahan pengguna: PR dan SR adalah menu user; tim SCM menerima permintaan sebelum mencari vendor dan menyusun CBE.
 
 | Menu | URL | Penggunaan |

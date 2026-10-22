@@ -99,13 +99,19 @@ class ScmConcurrencyTest extends TestCase
             'title' => 'PR uji bersamaan', 'reason' => 'Data uji fiktif', 'needed_at' => '', 'items' => [['name' => 'Barang uji', 'specification' => 'Spesifikasi uji', 'quantity' => '1', 'unit' => 'unit']]];
         $created = $this->workers(['mode' => 'create', 'actor_id' => $actor->id, 'data' => $data]);
         $this->assertCount(2, array_unique(array_column($created, 'number')));
+        $numbers = array_column($created, 'number');
+        sort($numbers);
+        $this->assertStringStartsWith('001/APCA-HO/PR/', $numbers[0]);
+        $this->assertStringStartsWith('002/APCA-HO/PR/', $numbers[1]);
         $flow = app(Workflow::class);
         $r = Procurement::firstOrFail();
         $this->assertNull($r->getRawOriginal('needed_at'));
         $r = $flow->submit($actor, $r->id, $r->version);
         $this->assertNull($r->category_id);
-        $r = $flow->receive($actor, $r->id, $r->version, $category->id);
-        $this->assertEquals($category->id, $r->category_id);
+        $number = $r->number;
+        $r = $flow->receive($actor, $r->id, $r->version);
+        $this->assertNull($r->category_id);
+        $this->assertSame($number, $r->number);
         for ($i = 0; $i < 3; $i++) {
             $vendor = $flow->saveVendor($actor, ['code' => 'V'.$i, 'name' => 'Vendor uji '.$i, 'provider_type' => 'barang', 'is_active' => true]);
             $r = $flow->addCandidate($actor, $r->id, $r->version, ['vendor_id' => $vendor->id, 'followup_status' => 'diminta', 'requested_at' => '']);

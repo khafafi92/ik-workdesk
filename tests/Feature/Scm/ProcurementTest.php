@@ -13,12 +13,14 @@ use App\Models\Scm\Category;
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\Quotation;
+use App\Models\Scm\RequestNumber;
 use App\Models\Scm\Requirement;
 use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
 use App\Models\User;
 use App\Services\Scm\Access;
 use App\Services\Scm\Decimal;
+use App\Services\Scm\RequestNumbering;
 use App\Services\Scm\Validation;
 use App\Services\Scm\Workflow;
 use Database\Seeders\ScmDemoSeeder;
@@ -30,6 +32,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class ProcurementTest extends TestCase
@@ -77,12 +80,17 @@ class ProcurementTest extends TestCase
 
     private function draft(string $kind = 'PR'): Procurement
     {
-        return $this->flow->saveDraft($this->requester, ['kind' => $kind, 'date' => today()->toDateString(),
+        return $this->flow->saveDraft($this->requester, $this->draftData($kind));
+    }
+
+    private function draftData(string $kind = 'PR'): array
+    {
+        return ['kind' => $kind, 'date' => today()->toDateString(),
             'department_id' => $this->department->id,
             'title' => 'Pengadaan uji '.$kind, 'reason' => 'Pengujian kebutuhan operasional', 'items' => [
                 ['name' => 'Item satu', 'specification' => 'Spesifikasi satu', 'quantity' => '1,5', 'unit' => 'unit'],
                 ['name' => 'Item dua', 'specification' => 'Spesifikasi dua', 'quantity' => '2', 'unit' => 'paket'],
-            ]]);
+            ]];
     }
 
     private function sourcing(string $kind = 'PR'): Procurement
@@ -202,6 +210,7 @@ class ProcurementTest extends TestCase
 
         $this->assertSame('Gudang lama', $request->fresh()->location);
         $this->assertSame('Kebutuhan diperbarui', $request->fresh()->title);
+        $this->assertSame($request->number, $request->fresh()->number);
         $this->assertEquals($this->category->id, $request->fresh()->category_id);
     }
 
@@ -249,24 +258,112 @@ class ProcurementTest extends TestCase
         $this->assertSame(2, Procurement::where('title', 'like', 'DEMO % sampai legalitas lengkap')->count());
     }
 
-    public function test_scm_assigns_an_active_category_only_when_receiving_a_submitted_request(): void
+    public function test_scm_receives_a_submitted_request_without_any_category_choice(): void
     {
         $request = $this->draft();
         $this->assertNull($request->category_id);
         $request = $this->flow->submit($this->requester, $request->id, $request->version);
-        $this->rejects(fn () => $this->flow->receive($this->scm, $request->id, $request->version));
         $this->category->update(['is_active' => false]);
-        $this->rejects(fn () => $this->flow->receive($this->scm, $request->id, $request->version, $this->category->id));
         $this->assertSame('submitted', $request->fresh()->status);
         $this->assertNull($request->fresh()->category_id);
-        $this->category->update(['is_active' => true]);
         Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)
-            ->set('receivingCategoryId', (string) $this->category->id)->call('receiveRequest')->assertHasNoErrors();
+            ->assertDontSee('Kategori pengadaan')->call('receiveRequest')->assertHasNoErrors()->assertSee('Diterima SCM');
         $this->assertSame('sourcing', $request->fresh()->status);
-        $this->assertEquals($this->category->id, $request->fresh()->category_id);
+        $this->assertNull($request->fresh()->category_id);
+        $this->assertSame($request->number, $request->fresh()->number);
         $audit = Audit::where('request_id', $request->id)->where('action', 'perubahan_proses')->latest('id')->firstOrFail();
         $this->assertNull($audit->changes['before']['category_id']);
-        $this->assertEquals($this->category->id, $audit->changes['after']['category_id']);
+        $this->assertNull($audit->changes['after']['category_id']);
+    }
+
+    public function test_request_numbers_start_at_one_and_continue_across_months_with_a_new_year_series(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 22));
+        $this->assertSame('001/APCA-HO/PR/X/2026', $this->draft()->number);
+        $this->assertSame('002/APCA-HO/PR/X/2026', $this->draft()->number);
+        $this->assertSame('001/APCA-HO/SR/X/2026', $this->draft('SR')->number);
+        $this->travelTo(now()->setDate(2026, 11, 1));
+        $this->assertSame('003/APCA-HO/PR/XI/2026', $this->draft()->number);
+        $this->travelTo(now()->setDate(2027, 1, 1));
+        $this->assertSame('001/APCA-HO/PR/I/2027', $this->draft()->number);
+        $this->travelBack();
+    }
+
+    public function test_reserved_number_is_not_reused_and_cannot_create_two_requests(): void
+    {
+        $numbering = app(RequestNumbering::class);
+        $unused = $numbering->reserve($this->requester, 'PR');
+        $number = $numbering->reserve($this->requester, 'PR');
+        $this->assertNotSame($unused->number, $number->number);
+        $request = $this->flow->saveDraft($this->requester, $this->draftData(), numberId: $number->id);
+        $this->assertSame($number->number, $request->number);
+        $this->rejects(fn () => $this->flow->saveDraft($this->requester, $this->draftData(), numberId: $number->id));
+        $this->assertSame(1, Procurement::count());
+        $this->assertNull($unused->fresh()->request_id);
+    }
+
+    public function test_a_requester_cannot_claim_another_users_reserved_number(): void
+    {
+        $number = app(RequestNumbering::class)->reserve($this->requester, 'PR');
+        try {
+            $this->flow->saveDraft($this->user('scm.request'), $this->draftData(), numberId: $number->id);
+            $this->fail('Nomor pemohon lain seharusnya ditolak.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+        $this->assertSame(0, Procurement::count());
+        $this->assertNull($number->fresh()->request_id);
+    }
+
+    public function test_invalid_direct_send_keeps_the_reserved_number_available_for_correction(): void
+    {
+        $data = $this->draftData();
+        $data['items'][0]['quantity'] = '0';
+        $page = Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('newDraft');
+        $number = $page->get('requestNumber');
+        $page->set('draft', $data)->call('saveAndSubmit')->assertHasErrors();
+        $this->assertSame(0, Procurement::count());
+        $this->assertNull(RequestNumber::sole()->request_id);
+        $page->set('draft.items.0.quantity', '1')->call('saveAndSubmit')->assertHasNoErrors();
+        $this->assertSame($number, Procurement::sole()->number);
+        $this->assertNotNull(Procurement::sole()->submitted_at);
+    }
+
+    #[DataProvider('kinds')]
+    public function test_number_appears_in_the_new_form_and_remains_through_direct_send_and_receipt(string $kind): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 22));
+        $page = Livewire::actingAs($this->requester)->test($kind === 'PR' ? PurchaseRequests::class : ServiceRequests::class)
+            ->call('newDraft')->assertSet('requestNumber', '001/APCA-HO/'.$kind.'/X/2026')
+            ->assertSee('001/APCA-HO/'.$kind.'/X/2026')->assertDontSee('Kategori pengadaan');
+        $this->assertSame(0, Procurement::count());
+        $number = $page->get('requestNumber');
+        $page->set('draft', $this->draftData($kind))->call('saveAndSubmit')->assertHasNoErrors()
+            ->assertSee('Menunggu penerimaan SCM.');
+        $request = Procurement::sole();
+        $this->assertSame($number, $request->number);
+        $this->assertSame('Draft', Workflow::STATUSES[$request->status]);
+        $this->assertNotNull($request->submitted_at);
+        $this->assertEquals($request->id, RequestNumber::sole()->request_id);
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)
+            ->call('receiveRequest')->assertHasNoErrors()->assertSee('Diterima SCM');
+        $this->assertSame($number, $request->fresh()->number);
+        $this->assertNotNull($request->fresh()->received_at);
+        $this->travelBack();
+    }
+
+    public function test_pending_and_unsent_drafts_share_one_draft_filter_without_exposing_unsent_drafts_to_scm(): void
+    {
+        $unsent = $this->draft();
+        $pending = $this->draft();
+        $this->flow->submit($this->requester, $pending->id, $pending->version);
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->set('statusFilter', 'draft')
+            ->assertSee($unsent->number)->assertSee($pending->number)
+            ->assertViewHas('summary', fn ($summary) => $summary['draft'] === 2)
+            ->assertViewHas('statusOptions', fn ($options) => count(array_keys($options, 'Draft')) === 1);
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->set('statusFilter', 'draft')
+            ->assertSee($pending->number)->assertDontSee($unsent->number)
+            ->assertViewHas('summary', fn ($summary) => $summary['draft'] === 1);
     }
 
     #[DataProvider('kinds')]

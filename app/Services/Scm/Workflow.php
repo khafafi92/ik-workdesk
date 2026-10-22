@@ -9,6 +9,7 @@ use App\Models\Scm\DocumentType;
 use App\Models\Scm\LegalCase;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\Quotation;
+use App\Models\Scm\RequestNumber;
 use App\Models\Scm\Requirement;
 use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
@@ -25,7 +26,7 @@ use Illuminate\Validation\ValidationException;
 
 class Workflow
 {
-    public const STATUSES = ['draft' => 'Draft', 'submitted' => 'Dikirim ke SCM', 'sourcing' => 'Pencarian vendor', 'quotations' => 'Pengumpulan penawaran', 'evaluation' => 'Penyusunan CBE', 'selected' => 'Vendor terpilih', 'legal' => 'Pengumpulan legalitas', 'completed' => 'Selesai'];
+    public const STATUSES = ['draft' => 'Draft', 'submitted' => 'Draft', 'sourcing' => 'Diterima SCM', 'quotations' => 'Pengumpulan penawaran', 'evaluation' => 'Penyusunan CBE', 'selected' => 'Vendor terpilih', 'legal' => 'Pengumpulan legalitas', 'completed' => 'Selesai'];
 
     private function reject(bool $condition, string $message): void
     {
@@ -57,7 +58,7 @@ class Workflow
         }, 3);
     }
 
-    public function saveDraft(User $actor, array $data, ?int $id = null, ?int $version = null): Procurement
+    public function saveDraft(User $actor, array $data, ?int $id = null, ?int $version = null, ?int $numberId = null): Procurement
     {
         abort_unless(Access::has($actor, 'scm.request'), 403);
         $validated = Validator::make($data, [
@@ -70,7 +71,7 @@ class Workflow
         ], [], ['kind' => 'jenis permintaan', 'items' => 'item', 'title' => 'judul', 'reason' => 'alasan kebutuhan'])->validate();
         abort_unless($actor->canAccessDepartment((int) $validated['department_id']), 403);
 
-        return DB::transaction(function () use ($actor, $validated, $id, $version): Procurement {
+        return DB::transaction(function () use ($actor, $validated, $id, $version, $numberId): Procurement {
             $items = $validated['items'];
             unset($validated['items']);
             if ($id) {
@@ -78,13 +79,17 @@ class Workflow
                 abort_unless((int) $request->requester_id === (int) $actor->id, 403);
                 $this->reject($request->status !== 'draft' || $request->version !== $version, 'Hanya draft terbaru milik sendiri yang dapat diedit.');
                 $validated['version'] = $request->version + 1;
-                if ($validated['kind'] !== $request->kind) {
-                    $validated['number'] = $validated['kind'].'-'.now()->format('Ymd').'-'.Str::ulid();
-                }
+                $this->reject($validated['kind'] !== $request->kind, 'Jenis permintaan tidak dapat diubah setelah nomor diterbitkan.');
                 $request->update($validated);
                 $request->items()->delete();
             } else {
-                $request = Procurement::create([...$validated, 'number' => $validated['kind'].'-'.now()->format('Ymd').'-'.Str::ulid(), 'requester_id' => $actor->id, 'status' => 'draft']);
+                $number = $numberId
+                    ? RequestNumber::query()->lockForUpdate()->findOrFail($numberId)
+                    : app(RequestNumbering::class)->reserve($actor, $validated['kind']);
+                abort_unless((int) $number->requester_id === (int) $actor->id && $number->kind === $validated['kind'], 403);
+                $this->reject($number->request_id !== null, 'Nomor sudah digunakan. Muat ulang permintaan.');
+                $request = Procurement::create([...$validated, 'number' => $number->number, 'requester_id' => $actor->id, 'status' => 'draft']);
+                $number->update(['request_id' => $request->id]);
             }
             foreach (array_values($items) as $index => $item) {
                 $quantity = Decimal::parse($item['quantity'], 3);
@@ -95,7 +100,7 @@ class Workflow
             $this->audit($actor, $request, 'simpan_draft', ['header' => $validated, 'items' => $request->items->toArray()], $request->id);
 
             return $request->fresh();
-        });
+        }, 3);
     }
 
     public function submit(User $actor, int $id, int $version): Procurement
@@ -112,10 +117,12 @@ class Workflow
     {
         return $this->mutate($actor, $id, $version, function ($request) use ($actor, $categoryId): void {
             $this->reject($request->status !== 'submitted', 'Hanya permintaan yang dikirim ke SCM yang dapat diterima.');
-            $data = Validator::make(['category_id' => $categoryId ?? $request->category_id], [
-                'category_id' => ['required', Rule::exists('scm_categories', 'id')->where('is_active', true)],
-            ])->validate();
-            $request->category_id = $data['category_id'];
+            if ($categoryId !== null) {
+                $data = Validator::make(['category_id' => $categoryId], [
+                    'category_id' => ['required', Rule::exists('scm_categories', 'id')->where('is_active', true)],
+                ])->validate();
+                $request->category_id = $data['category_id'];
+            }
             $request->status = 'sourcing';
             $request->received_at = now();
             $request->scm_pic_id = $actor->id;

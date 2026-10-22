@@ -14,12 +14,14 @@ use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
 use App\Services\Scm\Access;
 use App\Services\Scm\Decimal;
+use App\Services\Scm\RequestNumbering;
 use App\Services\Scm\Validation as Validator;
 use App\Services\Scm\Workflow;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
@@ -71,7 +73,11 @@ class ScmProcurement extends Page
 
     public array $draft = [];
 
-    public string $receivingCategoryId = '';
+    #[Locked]
+    public int $requestNumberId = 0;
+
+    #[Locked]
+    public string $requestNumber = '';
 
     public array $vendor = [];
 
@@ -143,7 +149,7 @@ class ScmProcurement extends Page
             : Access::manages(auth()->user(), $record), 403);
         $this->selected = $id;
         $this->version = $record->version;
-        $this->receivingCategoryId = (string) ($record->category_id ?? '');
+        $this->requestNumber = $record->number;
         $this->attachmentTarget = $record->status === 'draft' ? 'request' : 'quotation';
         $this->attachmentTargetId = 0;
         $this->editing = false;
@@ -168,6 +174,9 @@ class ScmProcurement extends Page
     public function newDraft(): void
     {
         abort_unless(static::$requestKind !== null && Access::has(auth()->user(), 'scm.request'), 403);
+        $number = app(RequestNumbering::class)->reserve(auth()->user(), static::$requestKind);
+        $this->requestNumberId = $number->id;
+        $this->requestNumber = $number->number;
         $this->selected = 0;
         $this->editing = true;
         $this->draft = ['kind' => static::$requestKind, 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
@@ -181,6 +190,7 @@ class ScmProcurement extends Page
         $record = Procurement::with('items')->findOrFail($this->selected);
         abort_unless(static::$requestKind !== null && $record->kind === static::$requestKind && Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->status === 'draft', 403);
         $this->draft = $record->only(['kind', 'department_id', 'title', 'reason', 'notes']);
+        $this->requestNumber = $record->number;
         $this->draft['date'] = $record->date->format('Y-m-d');
         $this->draft['needed_at'] = $record->needed_at?->format('Y-m-d') ?? '';
         $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['name', 'specification', 'unit', 'notes']), 'quantity' => Decimal::input($i->quantity_milli, 3)])->all();
@@ -218,9 +228,24 @@ class ScmProcurement extends Page
 
     public function saveDraft(): void
     {
+        $this->persistDraft(false);
+    }
+
+    public function saveAndSubmit(): void
+    {
+        $this->persistDraft(true);
+    }
+
+    private function persistDraft(bool $submit): void
+    {
         abort_unless(static::$requestKind !== null && ($this->draft['kind'] ?? null) === static::$requestKind, 403);
         abort_if($this->selected && ! Procurement::whereKey($this->selected)->where('kind', static::$requestKind)->exists(), 403);
-        $this->refreshed($this->workflow()->saveDraft(auth()->user(), $this->draft, $this->selected ?: null, $this->version), 'request');
+        $request = DB::transaction(function () use ($submit): Procurement {
+            $request = $this->workflow()->saveDraft(auth()->user(), $this->draft, $this->selected ?: null, $this->version, $this->requestNumberId ?: null);
+
+            return $submit ? $this->workflow()->submit(auth()->user(), $request->id, $request->version) : $request;
+        }, 3);
+        $this->refreshed($request, 'request');
     }
 
     public function submitRequest(): void
@@ -232,7 +257,7 @@ class ScmProcurement extends Page
 
     public function receiveRequest(): void
     {
-        $this->refreshed($this->workflow()->receive(auth()->user(), $this->selected, $this->version, $this->receivingCategoryId !== '' ? (int) $this->receivingCategoryId : null), 'quotes');
+        $this->refreshed($this->workflow()->receive(auth()->user(), $this->selected, $this->version), 'quotes');
     }
 
     public function addCandidate(): void
@@ -402,6 +427,8 @@ class ScmProcurement extends Page
             : Procurement::where('status', '!=', 'draft')->whereIn('department_id', $isScm ? $user->accessibleDepartmentIds() : []);
         $query = clone $visible;
         $summary = (clone $query)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+        $summary['draft'] = ($summary['draft'] ?? 0) + ($summary['submitted'] ?? 0);
+        unset($summary['submitted']);
         $missingDocuments = $isScm ? LegalItem::whereIn('legal_case_id', LegalCase::whereNull('completed_at')->whereIn('request_id', (clone $visible)->select('id'))->select('id'))
             ->where('is_required', true)->where(fn ($q) => $q->where('status', '!=', 'diterima')->orWhereNull('vendor_document_id')
             ->orWhereHas('document', fn ($d) => $d->whereDate('expires_at', '<', today())))->count() : null;
@@ -412,7 +439,7 @@ class ScmProcurement extends Page
             $query->where('status', '!=', 'draft');
         }
         $query->when($this->search !== '', fn ($q) => $q->where(fn ($q) => $q->where('number', 'like', '%'.$this->search.'%')->orWhere('title', 'like', '%'.$this->search.'%')))
-            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
+            ->when($this->statusFilter, fn ($q) => $q->whereIn('status', $this->statusFilter === 'draft' ? ['draft', 'submitted'] : [$this->statusFilter]))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))->when($this->picFilter, fn ($q) => $q->where('scm_pic_id', $this->picFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
         $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'department', 'attachments'])->findOrFail($this->selected) : null;
@@ -430,12 +457,10 @@ class ScmProcurement extends Page
         $documents = $isScm ? VendorDocument::with(['documentType', 'attachments'])->when($record?->legalCase, fn ($q) => $q->where('vendor_id', $record->legalCase->vendor_id))->orderByDesc('id')->get() : collect();
         $duplicate = $isScm && filled($this->vendor['name'] ?? '') ? Vendor::where('id', '!=', $this->vendorId)->where(fn ($q) => $q->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($this->vendor['name']))])->when(filled($this->vendor['email'] ?? ''), fn ($q) => $q->orWhere('email', $this->vendor['email'])))->pluck('name') : collect();
         $statuses = Workflow::STATUSES;
-        if (static::$requestKind === null) {
-            unset($statuses['draft']);
-        }
+        $statusOptions = array_diff_key($statuses, ['submitted' => true]);
 
         return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
-            'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses,
+            'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses, 'statusOptions' => $statusOptions,
             'vendors' => $isScm ? Vendor::orderBy('name')->get() : collect(),
             'vendorRows' => $isScm ? Vendor::when($this->vendorSearch, fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$this->vendorSearch.'%')->orWhere('code', 'like', '%'.$this->vendorSearch.'%')))->orderBy('name')->paginate(15, ['*'], 'vendorPage') : null,
             'documents' => $documents, 'quotes' => $quotes, 'duplicateVendors' => $duplicate,

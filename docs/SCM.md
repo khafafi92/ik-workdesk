@@ -9,6 +9,7 @@ Gunakan database lokal yang sudah dikonfigurasi. Jangan menjalankan reset atau `
 ```powershell
 php artisan migrate --path=database/migrations/2026_10_22_100000_create_scm_procurement_tables.php
 php artisan migrate --path=database/migrations/2026_10_22_150000_move_scm_category_to_receipt.php
+php artisan migrate --path=database/migrations/2026_10_22_160000_create_scm_request_numbering.php
 php artisan db:seed --class=ScmSeeder
 npm run build
 php artisan config:cache
@@ -41,9 +42,11 @@ Pada 22 Oktober 2026, atas permintaan pengguna, akun utama Khafafi di lingkungan
 
 User membuat draft pada menu PR atau SR sesuai jenisnya, lalu mengirim ke SCM. Jenis mengikuti menu dan tidak dapat diubah dari form. Lokasi dan kategori tidak diminta pada form user. Lokasi historis tetap tersimpan dan dapat dilihat pada detail jika pernah diisi.
 
-Alur: Draft, Dikirim ke SCM, Pencarian vendor, Pengumpulan penawaran, Penyusunan CBE, Vendor terpilih, Pengumpulan legalitas, Selesai. Draft tidak masuk antrean SCM. Saat menerima, SCM memilih kategori aktif untuk menentukan checklist dokumen vendor; kemudian memilih tiga vendor unik, memasukkan quotation, memilih satu versi dari setiap vendor, menyimpan draft atau memfinalkan CBE, lalu mengumpulkan legalitas dan menyelesaikan. User dapat memantau tahap permintaannya melalui menu asal, tanpa rincian komersial SCM.
+Nomor tampil otomatis saat Buat PR/SR diklik, mulai `001/APCA-HO/PR/X/2026` untuk PR dan `001/APCA-HO/SR/X/2026` untuk SR pada trial Oktober 2026. Urutan terpisah per jenis dan tahun, tetap naik saat bulan berubah. Nomor dipertahankan ketika draft disimpan, dikirim dan diterima. Nomor lama tidak diubah.
 
-Semua peralihan divalidasi server dengan transaksi, row lock, dan versi permintaan. Jika ada perubahan bersamaan, muat ulang data sebelum mengulang tindakan. Nomor menggunakan ULID dan unique constraint. CBE final tidak dapat dibuka ulang. Revisi setelah final merupakan kebutuhan lanjutan, bukan fitur versi ini.
+Alur yang ditampilkan: Draft, Diterima SCM, Pengumpulan penawaran, Penyusunan CBE, Vendor terpilih, Pengumpulan legalitas, Selesai. User dapat langsung Kirim ke SCM dari form atau Simpan draft terlebih dahulu untuk menambah lampiran. PR/SR yang sudah dikirim tetap tampil sebagai Draft dengan keterangan menunggu penerimaan; isinya terkunci dan masuk antrean SCM. Draft yang belum dikirim tetap privat. SCM cukup klik Terima oleh SCM, tanpa memilih kategori, lalu melanjutkan tiga vendor, quotation, CBE, dan legalitas.
+
+Semua peralihan divalidasi server dengan transaksi, row lock, dan versi permintaan. Jika ada perubahan bersamaan, muat ulang data sebelum mengulang tindakan. Nomor PR/SR memakai counter terkunci dan unique constraint; nomor CBE tetap menggunakan ULID. CBE final tidak dapat dibuka ulang. Revisi setelah final merupakan kebutuhan lanjutan, bukan fitur versi ini.
 
 ## Angka, penawaran, dan snapshot
 
@@ -55,7 +58,7 @@ Finalisasi memerlukan tepat tiga vendor berbeda, mata uang yang sama, item lengk
 
 Disk `scm` menyimpan file di `storage/app/scm-private`, tanpa URL publik. Unduhan melalui route terautentikasi dengan otorisasi di setiap permintaan. PDF/JPG/PNG divalidasi ukuran, ekstensi, MIME, dan signature, memakai nama UUID. Batas default 10 MB; dapat diatur dengan `SCM_UPLOAD_MAX_KB=10240` pada environment. Batas unggahan PHP/web server juga harus mencukupi.
 
-Versi dokumen tidak ditimpa. Nomor dokumen berupa string agar nol awal tidak hilang. Versi existing dapat dipakai ulang pada checklist yang cocok vendor dan jenis dokumennya. Checklist menyalin persyaratan kategori saat pengumpulan dimulai. Perubahan pada proses aktif memerlukan alasan dan audit; transaksi selesai terkunci. Dokumen wajib tanpa file, berstatus belum diterima/perlu perbaikan, atau kedaluwarsa menghalangi penyelesaian. Kedaluwarsa setelah selesai tidak membuka ulang sejarah. Kelengkapan ini administratif internal, bukan verifikasi keaslian ke instansi.
+Versi dokumen tidak ditimpa. Nomor dokumen berupa string agar nol awal tidak hilang. Versi existing dapat dipakai ulang pada checklist yang cocok vendor dan jenis dokumennya. Kategori dan aturan historis tetap tersimpan. Checklist permintaan lama tetap menyalin persyaratan kategorinya saat pengumpulan dimulai; pada permintaan baru tanpa kategori, SCM menambahkan persyaratan per proses di tab Legalitas dengan alasan dan audit. Transaksi selesai terkunci. Dokumen wajib tanpa file, berstatus belum diterima/perlu perbaikan, atau kedaluwarsa menghalangi penyelesaian. Kedaluwarsa setelah selesai tidak membuka ulang sejarah. Kelengkapan ini administratif internal, bukan verifikasi keaslian ke instansi.
 
 ## Pengujian
 
@@ -69,6 +72,6 @@ npm run build
 
 PHPUnit utama menggunakan SQLite `:memory:` dan cache pengujian terpisah. Runner PostgreSQL hanya menerima target lokal, membuat database acak `ik_scm_test_*` dengan kredensial admin lokal yang sudah tersedia, menguji dua proses bersamaan, memverifikasi jumlah record database aplikasi, lalu membersihkan database uji. Jangan menjalankan file pengujian PostgreSQL langsung terhadap database aplikasi.
 
-Pada 22 Oktober 2026, modul diterapkan atas persetujuan pengguna ke project IK WorkDesk yang sama di `http://10.1.20.97:8093`, direktori `/var/www/ik-workdesk`. Akun Khafafi memiliki tiga izin eksplisit. Data demo lokal tidak dimasukkan. Batas unggah SCM server diatur `SCM_UPLOAD_MAX_KB=2048` mengikuti batas PHP 2 MB. Kategori dan persyaratan diatur melalui Pengaturan SCM sebelum menerima permintaan; user dapat membuat PR/SR tanpa kategori. Backup, verifikasi data lama, dan hasil penerapan tercatat pada [rilis SCM](SCM-PENERAPAN-2026-10-22.md).
+Pada 22 Oktober 2026, modul diterapkan atas persetujuan pengguna ke project IK WorkDesk yang sama di `http://10.1.20.97:8093`, direktori `/var/www/ik-workdesk`. Akun Khafafi memiliki tiga izin eksplisit. Data demo lokal tidak dimasukkan. Batas unggah SCM server diatur `SCM_UPLOAD_MAX_KB=2048` mengikuti batas PHP 2 MB. Pembuatan dan penerimaan PR/SR tidak memerlukan kategori. Backup, verifikasi data lama, dan hasil penerapan tercatat pada [rilis SCM](SCM-PENERAPAN-2026-10-22.md).
 
 Untuk penerapan berikutnya, cadangkan database dan dokumen terlebih dahulu, jalankan migrasi/seeder awal secara terkontrol, bangun aset, dan bangun ulang cache konfigurasi/route. Hasil pengujian aktual dan batas QA browser tercatat pada [SCM-VERIFIKASI.md](SCM-VERIFIKASI.md).
