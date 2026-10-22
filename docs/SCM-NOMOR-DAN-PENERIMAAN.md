@@ -36,3 +36,13 @@ Bukti berada di `output/scm-browser-20261022/`: `pr-nomor-001-menunggu-scm.jpg`,
 | C-1 sampai C-5, quality locks | PASS: komponen konsisten, nomor tahan konkurensi, akses dan snapshot lama tetap terlindungi tes |
 
 Batas QA modul yang tidak berubah, termasuk unggah file lewat ekstensi dan simpan PDF, tetap ada pada [status verifikasi SCM](SCM-VERIFIKASI.md).
+
+## Penerapan server
+
+Commit `50d8fe9df288e828cf28503e4b9d9671a6e81593` diterapkan ke IK WorkDesk `10.1.20.97:8093`. [CI commit aplikasi](https://github.com/khafafi92/ik-workdesk/actions/runs/39748420537) lulus: build, migrasi, Pint dan seluruh tes aplikasi.
+
+Backup privat kode, environment dan database PostgreSQL tersedia di `/home/r92/ik-workdesk-releases/20261022-153505-50d8fe9df288-scm-update/backup`; dump diperiksa dengan `pg_restore --list`. Isi 91 tabel lama, termasuk permintaan, audit, user, role dan permission, identik sebelum/sesudah penerapan. Dua tabel nomor baru ditambahkan tanpa mengubah dokumen lama. Pemeriksaan ini mengecualikan migration, cache, session dan antrean.
+
+Dashboard, PR, SR, antrean, vendor dan pengaturan merespons HTTP 200 dalam transaksi read-only. Worker aktif dan maintenance berakhir. Browser akun khafafi memverifikasi PR yang sudah dikirim tampil Draft, pesan menunggu penerimaan tersedia, dan tombol Terima oleh SCM tidak meminta kategori. Permintaan tersebut tidak diterima atau diubah oleh pengujian browser.
+
+Form PR baru dibuka terpisah dan menampilkan `001/APCA-HO/PR/X/2026` sebagai readonly. Nomor ini dicadangkan untuk trial pengguna; tidak ada permintaan fiktif yang disimpan/dikirim di server. Kedua halaman disediakan untuk pengguna melanjutkan. Konsol form baru tanpa error/warning. Bukti lokal: `output/scm-server-20261022/pr-nomor-001-form-server.jpg` dan `pr-pending-draft-tanpa-kategori-server.jpg`.

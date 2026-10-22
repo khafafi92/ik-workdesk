@@ -52,3 +52,7 @@ Bukti lokal: `output/scm-server-20261022/`, termasuk screenshot akun server, sna
 ## Pembaruan menu PR dan SR
 
 Setelah arahan lanjutan pengguna, menu user dipisah menjadi PR dan SR. Menu SCM khusus menerima permintaan, mencari vendor, CBE dan legalitas. Lokasi dihapus dari form; kategori dipilih SCM saat menerima. Pembaruan sudah diterapkan ke server dengan backup dan pemeriksaan bahwa isi 91 tabel, termasuk hak akses serta data SCM, tetap identik. Form PR/SR dan antrean SCM diperiksa pada akun khafafi tanpa menyimpan transaksi produksi. Commit, backup, CI dan rincian verifikasi ada di [catatan pemisahan menu](SCM-MENU-PR-SR.md).
+
+## Pembaruan nomor dan penerimaan
+
+Arahan berikutnya menerapkan nomor otomatis sesuai Excel, mulai 001 untuk trial; status tampil Draft sampai diterima SCM; dan penerimaan tidak lagi meminta kategori. Commit `50d8fe9df288e828cf28503e4b9d9671a6e81593` sudah diterapkan dan diperiksa di browser server. Isi 91 tabel lama tetap identik saat penerapan; nomor lama tidak diubah. Form PR baru dengan nomor `001/APCA-HO/PR/X/2026` dibuka untuk trial pengguna. Rincian ada pada [nomor dan penerimaan PR/SR](SCM-NOMOR-DAN-PENERIMAAN.md).
