@@ -48,3 +48,7 @@ Buka **SCM > Pengadaan PR/SR** pada aplikasi server. Akun khafafi dapat memakai 
 Pemeriksaan ini memastikan pemasangan dan akses menu. Batas pengujian UI lanjutan, termasuk unggah melalui alat browser, simpan PDF dan zoom 200%, tetap dicatat di [status verifikasi](SCM-VERIFIKASI.md); tidak dinyatakan lulus tanpa bukti.
 
 Bukti lokal: `output/scm-server-20261022/`, termasuk screenshot akun server, snapshot halaman, konsol, dan hasil verifikasi database. File bukti dan backup rahasia tidak dimasukkan ke Git.
+
+## Pembaruan menu PR dan SR
+
+Setelah arahan lanjutan pengguna, menu user dipisah menjadi PR dan SR. Menu SCM khusus menerima permintaan, mencari vendor, CBE dan legalitas. Lokasi dihapus dari form; kategori dipilih SCM saat menerima. Pembaruan sudah diterapkan ke server dengan backup dan pemeriksaan bahwa isi 91 tabel, termasuk hak akses serta data SCM, tetap identik. Form PR/SR dan antrean SCM diperiksa pada akun khafafi tanpa menyimpan transaksi produksi. Commit, backup, CI dan rincian verifikasi ada di [catatan pemisahan menu](SCM-MENU-PR-SR.md).

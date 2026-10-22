@@ -43,3 +43,13 @@ Arah tetap mengikuti IK WorkDesk: ENERGY 1 / RHYTHM 1 / MOTION 1. Tidak ada peru
 | C-1 sampai C-5, quality locks | PASS: memakai shell/komponen yang sama; otorisasi, data historis, format angka, dan proses CBE/legalitas tercakup regresi |
 
 Gate ini mencakup perubahan menu/form. Batas QA modul yang sudah dicatat, seperti unggah file melalui ekstensi, simpan PDF dan zoom 200%, tetap tercantum pada [status verifikasi SCM](SCM-VERIFIKASI.md).
+
+## Penerapan server
+
+Commit aplikasi `283f9f256a6748efab31a106b8564a60cfa6a206` diterapkan ke `/var/www/ik-workdesk` di `10.1.20.97:8093`. [CI untuk commit aplikasi](https://github.com/khafafi92/ik-workdesk/actions/runs/39744104449) lulus, termasuk build, migrasi, Pint dan seluruh tes aplikasi.
+
+Backup kode, environment dan dump PostgreSQL privat: `/home/r92/ik-workdesk-releases/20261022-145957-283f9f256a67-scm-menus/backup`. Daftar isi dump diperiksa dengan `pg_restore --list`. Jumlah record dan fingerprint seluruh isi 91 tabel identik sebelum/sesudah penerapan, termasuk tabel SCM, user, role dan permission. Pengecualian hanya migration, cache, session dan antrean. Kategori menjadi nullable; foreign key kategori tetap tersedia.
+
+Pemeriksaan halaman pertama dijalankan saat maintenance masih aktif sehingga menghasilkan 503. Setelah aplikasi aktif, keenam pemeriksaan diulang dalam transaksi read-only: dashboard, PR, SR, antrean SCM, vendor dan pengaturan semuanya HTTP 200. Script pemeriksaan diperbaiki agar exception mengembalikan exit code gagal secara eksplisit, dan pengecekan halaman dilakukan setelah maintenance berakhir. Worker antrean aktif setelah penerapan.
+
+Browser Chrome dengan akun server khafafi memperlihatkan PR/SR di kelompok Permintaan dan SCM secara terpisah. Form PR serta SR dibuka tanpa kategori/lokasi, dan antrean SCM dibuka melalui sidebar. Tidak ada transaksi uji yang disimpan di produksi. Bukti: `output/scm-server-20261022/pr-menu-terpisah-server.jpg`. Form PR server disediakan untuk trial pengguna.
