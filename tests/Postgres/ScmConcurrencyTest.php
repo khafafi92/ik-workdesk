@@ -121,6 +121,17 @@ class ScmConcurrencyTest extends TestCase
         ApprovalRoute::create(['company' => 'APCA', 'department_id' => $department->id,
             'acknowledger_id' => $actor->id, 'cbo_id' => $actor->id, 'cbo3_id' => $actor->id]);
         $r = $flow->submit($actor, $r->id, $r->version);
+        $crosscheck = $r->approvals()->where('role', 'crosschecked')->sole();
+        $this->assertSame('skipped', $crosscheck->status);
+        $this->assertSame('approved', app(Approvals::class)->next($r)->role);
+        $crosscheck->update(['status' => 'pending', 'acted_at' => null, 'notes' => null]);
+        $beforeRepairVersion = $r->version;
+        $repairs = $this->workers(['mode' => 'skip_manager_crosscheck', 'actor_id' => $actor->id, 'request_id' => $r->id]);
+        $this->assertEqualsCanonicalizing(['adjusted', 'unchanged'], array_column($repairs, 'result'));
+        $r->refresh();
+        $this->assertSame($beforeRepairVersion + 1, $r->version);
+        $this->assertSame(1, Audit::where('action', 'penyesuaian_crosscheck_manager')->count());
+        $this->assertSame('approved', app(Approvals::class)->next($r)->role);
         while ($step = app(Approvals::class)->next($r)) {
             $r = app(Approvals::class)->decide($actor, $r->id, $r->version, $step->id, $step->is_required ? 'sign' : 'skip');
         }

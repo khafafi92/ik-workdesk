@@ -19,6 +19,8 @@ class Approvals
 
     public const STATUSES = ['pending' => 'Menunggu', 'signed' => 'Ditandatangani', 'skipped' => 'Dilewati', 'returned' => 'Dikembalikan', 'cancelled' => 'Dibatalkan'];
 
+    private const MANAGER_CROSSCHECK_NOTE = 'Pengaju adalah atasan yang ditetapkan; pengajuan tidak memerlukan COO 3, sehingga Crosschecked by dilewati otomatis.';
+
     public function route(string $company, int $departmentId): ?ApprovalRoute
     {
         return ApprovalRoute::where('company', $company)->where('department_id', $departmentId)->first();
@@ -77,23 +79,27 @@ class Approvals
         $request->approval_round++;
         $request->status = 'approval';
         $request->submitted_at = null;
+        $managerRequest = (int) $route->acknowledger_id === (int) $actor->id;
         foreach ([
             ['requested', $actor->id, true], ['acknowledged', $route->acknowledger_id, true],
             ['crosschecked', $route->cbo_id, $high], ['approved', $high ? $route->cbo3_id : $route->cbo_id, true],
         ] as $position => [$role, $userId, $required]) {
-            $skip = $role === 'acknowledged' && (int) $userId === (int) $actor->id;
+            $skipAcknowledgment = $role === 'acknowledged' && $managerRequest;
+            $skipCrosscheck = $role === 'crosschecked' && $managerRequest && ! $high;
+            $skip = $skipAcknowledgment || $skipCrosscheck;
             $request->approvals()->create([
                 'round' => $request->approval_round, 'position' => $position, 'role' => $role, 'user_id' => $userId,
                 'is_required' => $required, 'status' => $position === 0 ? 'signed' : ($skip ? 'skipped' : 'pending'),
                 'signature_id' => $position === 0 ? $request->prepared_signature_id : null,
                 'signed_name' => $position === 0 ? $request->prepared_signed_name : null,
                 'acted_at' => $position === 0 ? $request->prepared_signed_at : ($skip ? now() : null),
-                'notes' => $skip ? 'Pengaju adalah atasan yang ditetapkan; Acknowledged by dilewati.' : null,
+                'notes' => $skipAcknowledgment ? 'Pengaju adalah atasan yang ditetapkan; Acknowledged by dilewati.' : ($skipCrosscheck ? self::MANAGER_CROSSCHECK_NOTE : null),
             ]);
         }
         app(Workflow::class)->audit($actor, $request, 'mulai_persetujuan_ho', [
             'round' => $request->approval_round, 'estimated_total_minor' => $request->estimated_total_minor,
             'requires_cbo3' => $high,
+            'manager_crosscheck_skipped' => $managerRequest && ! $high,
             'route_id' => $route->id, 'route_version' => $route->version,
         ], $request->id);
     }
@@ -108,6 +114,41 @@ class Approvals
         return $request->status === 'approval'
             ? $request->approvals()->where('round', $request->approval_round)->where('status', 'pending')->orderBy('position')->first()
             : null;
+    }
+
+    public function skipManagerCrosscheck(User $actor, int $id, bool $apply = false): bool
+    {
+        abort_unless($actor->isActiveForAccess() && ($actor->hasRole('system-admin') || Access::has($actor, 'scm.configure')), 403);
+
+        return DB::transaction(function () use ($actor, $id, $apply): bool {
+            $request = Procurement::lockForUpdate()->findOrFail($id);
+            if ($request->status !== 'approval' || $request->approval_scope !== 'HO' || $this->requiresCbo3($request)) {
+                return false;
+            }
+            $steps = $request->approvals()->where('round', $request->approval_round);
+            if (! (clone $steps)->where('role', 'acknowledged')->where('status', 'skipped')->where('user_id', $request->requester_id)->exists()) {
+                return false;
+            }
+            $step = $this->next($request);
+            if (! $step || $step->role !== 'crosschecked' || $step->is_required || $step->signature_id !== null || $step->signed_name !== null || $step->acted_at !== null) {
+                return false;
+            }
+            if (! (clone $steps)->where('role', 'approved')->where('status', 'pending')->where('user_id', $step->user_id)->exists()) {
+                return false;
+            }
+            if ($apply) {
+                $before = $step->only(['status', 'notes', 'acted_at']);
+                $step->update(['status' => 'skipped', 'acted_at' => now(), 'notes' => self::MANAGER_CROSSCHECK_NOTE]);
+                $request->version++;
+                $request->save();
+                app(Workflow::class)->audit($actor, $step, 'penyesuaian_crosscheck_manager', [
+                    'round' => $request->approval_round, 'before' => $before,
+                    'after' => $step->only(['status', 'notes', 'acted_at']), 'request_version' => $request->version,
+                ], $request->id, self::MANAGER_CROSSCHECK_NOTE);
+            }
+
+            return true;
+        });
     }
 
     public function decide(User $actor, int $id, int $version, int $stepId, string $decision, string $reason = ''): Procurement

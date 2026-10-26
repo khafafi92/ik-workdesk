@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Services\Scm\Approvals;
 use App\Services\Scm\Workflow;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +26,10 @@ while (! is_file($job['gate'])) {
 }
 $actor = User::findOrFail($job['actor_id']);
 try {
-    if ($job['mode'] === 'finalize') {
+    if ($job['mode'] === 'skip_manager_crosscheck') {
+        $adjusted = app(Approvals::class)->skipManagerCrosscheck($actor, $job['request_id'], true);
+        echo json_encode(['result' => $adjusted ? 'adjusted' : 'unchanged']), PHP_EOL;
+    } elseif ($job['mode'] === 'finalize') {
         $r = app(Workflow::class)->saveCbe($actor, $job['request_id'], $job['version'], $job['data'], true);
         echo json_encode(['result' => 'finalized', 'id' => $r->cbe->id]), PHP_EOL;
     } else {

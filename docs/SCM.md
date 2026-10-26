@@ -121,10 +121,13 @@ Dasar pemilihan pejabat pada form baru adalah pilihan **Pengajuan di atas Rp5 ju
 
 | Pilihan di atas Rp5 juta | Acknowledged by | Crosschecked by | Approved by |
 | --- | --- | --- | --- |
-| Tidak dicentang | Atasan | CBO, boleh ditandatangani atau dilewati oleh CBO | CBO |
-| Dicentang | Atasan | CBO, wajib | COO 3 |
+| Tidak dicentang, pengaju bukan atasan yang ditetapkan | Atasan | CBO, boleh ditandatangani atau dilewati oleh CBO | CBO |
+| Tidak dicentang, pengaju adalah atasan yang ditetapkan | Dilewati otomatis | Dilewati otomatis | CBO |
+| Dicentang | Atasan; dilewati jika pengaju adalah atasan yang ditetapkan | CBO, wajib | COO 3 |
 
-Jika pembuat adalah atasan yang ditetapkan pada perusahaan/departemennya, Acknowledged by otomatis dilewati dengan catatan audit. Tahap berikutnya hanya dapat diputuskan akun yang ditugaskan, mengikuti urutan. Pengaturan disalin menjadi penugasan pada tiap putaran pengajuan; penggantian pejabat dalam master tidak mengalihkan permintaan yang sedang berjalan.
+Jika pembuat adalah atasan yang ditetapkan pada perusahaan/departemennya, Acknowledged by otomatis dilewati dengan catatan audit. Jika pengajuan juga tidak memerlukan COO 3, Crosschecked by dilewati otomatis sehingga tahap berikutnya langsung Approved by oleh CBO pada rute tersebut. Keputusan Approved by tetap memerlukan tanda tangan CBO; nama pejabat tidak ditanam dalam kode. Tahap berikutnya hanya dapat diputuskan akun yang ditugaskan, mengikuti urutan. Pengaturan disalin menjadi penugasan pada tiap putaran pengajuan; penggantian pejabat dalam master tidak mengalihkan permintaan yang sedang berjalan.
+
+Untuk permintaan lama yang masih menunggu Crosschecked by, administrator aktif atau pemilik izin konfigurasi SCM dapat memeriksa `php artisan scm:skip-manager-crosschecks --actor=ID_ADMIN --request=ID_PR`. Tanpa `--apply`, perintah hanya memeriksa. Opsi `--apply` melewati tahap opsional yang masih tertunda jika snapshot Acknowledged by sudah dilewati karena pengaju adalah atasannya sendiri dan Approved by masih ditugaskan kepada CBO yang sama. Penyesuaian menambah versi permintaan dan audit atas nama administrator pelaksana. Permintaan yang memerlukan COO 3, pengaju lain, tahap yang sudah ditandatangani, dan putaran lama dipertahankan.
 
 Atasan dan CBO harus ditetapkan di **SCM > Pengaturan > Penandatangan PR/SR HO**. COO 3 boleh belum diisi sampai akunnya dibuat. Dalam kondisi itu pengajuan yang tidak dicentang tetap berjalan, sedangkan pengajuan yang dicentang ditahan sebagai draft sampai COO 3 ditetapkan. Penetapan dilakukan per perusahaan dan departemen; tidak ada nama pribadi yang ditanam dalam logika aplikasi. Budhy (COO III) telah ditetapkan sebagai penandatangan lanjutan pada pengaturan lokal departemen IT untuk APCA dan KPMOG, menggunakan akun yang dibuat pengguna.
 

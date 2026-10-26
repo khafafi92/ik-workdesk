@@ -170,18 +170,84 @@ class HoApprovalsTest extends TestCase
         $this->assertSame(3, Audit::where('request_id', $r->id)->where('action', 'keputusan_persetujuan_ho')->count());
     }
 
-    public function test_manager_request_skips_acknowledgment_and_low_value_cbo_may_sign_both_positions(): void
+    public function test_manager_request_skips_acknowledgment_and_optional_crosscheck_before_cbo_approval(): void
     {
         $r = $this->pending(requester: $this->manager);
         $ack = $r->approvals()->where('role', 'acknowledged')->sole();
         $this->assertSame('skipped', $ack->status);
-        $this->assertSame('crosschecked', $this->approvals->next($r)->role);
-        $r = $this->decide($r);
+        $cross = $r->approvals()->where('role', 'crosschecked')->sole();
+        $this->assertSame('skipped', $cross->status);
+        $this->assertNull($cross->signature_id);
+        $this->assertNotNull($cross->acted_at);
         $this->assertSame('approved', $this->approvals->next($r)->role);
         $this->assertSame($this->cbo->id, $this->approvals->next($r)->user_id);
         $r = $this->decide($r);
         $this->assertSame('submitted', $r->status);
-        $this->assertSame(2, $r->approvals()->where('user_id', $this->cbo->id)->where('status', 'signed')->count());
+        $this->assertSame(1, $r->approvals()->where('user_id', $this->cbo->id)->where('status', 'signed')->count());
+    }
+
+    #[DataProvider('routingChoices')]
+    public function test_manager_crosscheck_skip_follows_the_explicit_choice_for_each_company_and_request_kind(bool $high, ?string $amount, string $company, string $kind): void
+    {
+        $data = [...$this->data('1000', $company, $kind), 'estimated_total' => $amount, 'requires_cbo3' => $high];
+        $r = $this->flow->saveDraft($this->manager, $data);
+        $r = app(Signatures::class)->sign($this->manager, $r->id, $r->version);
+        $r = $this->flow->submit($this->manager, $r->id, $r->version);
+        $cross = $r->approvals()->where('role', 'crosschecked')->sole();
+        $this->assertSame($high ? 'pending' : 'skipped', $cross->status);
+        $this->assertSame($high, $cross->is_required);
+        $this->assertSame($high ? 'crosschecked' : 'approved', $this->approvals->next($r)->role);
+        $this->assertSame($this->cbo->id, $this->approvals->next($r)->user_id);
+        if ($high) {
+            $this->rejects(fn () => $this->decide($r, 'skip'));
+            $r = $this->decide($r);
+            $this->assertSame($this->cbo3->id, $this->approvals->next($r)->user_id);
+        }
+        $this->assertSame('submitted', $this->decide($r)->status);
+    }
+
+    public function test_pending_manager_crosscheck_repair_is_scoped_audited_idempotent_and_rejects_stale_decisions(): void
+    {
+        $r = $this->pending('4999999,99', requester: $this->manager);
+        $cross = $r->approvals()->where('role', 'crosschecked')->sole();
+        $cross->update(['status' => 'pending', 'acted_at' => null, 'notes' => null]);
+        $before = $r->fresh()->getAttributes();
+        $this->artisan('scm:skip-manager-crosschecks', ['--actor' => $this->scm->id, '--request' => [$r->id]])
+            ->expectsOutputToContain('Memenuhi aturan: 1')->assertSuccessful();
+        $this->assertSame($before, $r->fresh()->getAttributes());
+        $this->assertSame('pending', $cross->fresh()->status);
+        $this->rejects(fn () => $this->approvals->skipManagerCrosscheck($this->requester, $r->id, true));
+        $this->artisan('scm:skip-manager-crosschecks', ['--actor' => $this->scm->id, '--request' => [$r->id], '--apply' => true])
+            ->expectsOutputToContain('Disesuaikan: 1')->assertSuccessful();
+        $this->assertSame('skipped', $cross->fresh()->status);
+        $this->assertNull($cross->fresh()->signature_id);
+        $this->assertSame($r->version + 1, $r->fresh()->version);
+        $this->assertSame('approved', $this->approvals->next($r->fresh())->role);
+        $audit = Audit::where('request_id', $r->id)->where('action', 'penyesuaian_crosscheck_manager')->sole();
+        $this->assertSame($this->scm->id, $audit->actor_id);
+        $this->assertSame('pending', $audit->changes['before']['status']);
+        $this->assertFalse($this->approvals->skipManagerCrosscheck($this->scm, $r->id, true));
+        $this->rejects(fn () => $this->approvals->decide($this->cbo, $r->id, $r->version, $cross->id, 'sign'));
+        $this->assertSame('submitted', $this->decide($r->fresh())->status);
+    }
+
+    public function test_pending_crosscheck_repair_preserves_high_value_non_manager_and_signed_steps(): void
+    {
+        $high = $this->pending('5000000,01', requester: $this->manager);
+        $normal = $this->pending('1000');
+        $normal = $this->decide($normal);
+        $signed = $this->pending('1000', requester: $this->manager);
+        $cross = $signed->approvals()->where('role', 'crosschecked')->sole();
+        $cross->update(['status' => 'pending', 'acted_at' => null]);
+        $signed = $this->decide($signed);
+        $attributes = $cross->fresh()->getAttributes();
+        foreach ([$high, $normal, $signed] as $r) {
+            $this->assertFalse($this->approvals->skipManagerCrosscheck($this->scm, $r->id, true));
+        }
+        $this->assertSame($attributes, $cross->fresh()->getAttributes());
+        $this->assertSame('crosschecked', $this->approvals->next($high)->role);
+        $this->assertSame('crosschecked', $this->approvals->next($normal)->role);
+        $this->assertSame(0, Audit::where('action', 'penyesuaian_crosscheck_manager')->count());
     }
 
     public function test_only_the_next_assigned_person_can_decide_and_duplicate_or_stale_actions_fail(): void
