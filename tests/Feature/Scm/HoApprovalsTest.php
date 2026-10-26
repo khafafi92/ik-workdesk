@@ -9,6 +9,7 @@ use App\Filament\Pages\SignatureProfile;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Audit;
 use App\Models\Scm\Procurement;
@@ -257,6 +258,39 @@ class HoApprovalsTest extends TestCase
         Livewire::actingAs($this->cbo)->test(ScmApprovals::class)->call('open', $r->id)
             ->call('decide', $step->id, 'sign')->assertHasNoErrors()->assertDontSee('Giliran Anda:')->assertSee('Menunggu SCM');
         $this->assertSame('submitted', $r->fresh()->status);
+    }
+
+    public function test_system_admin_can_open_approval_menu_without_receiving_other_peoples_assignments(): void
+    {
+        $request = $this->pending();
+        $admin = $this->actor('DEMO Sysadmin');
+        $admin->roles()->attach(Role::firstOrCreate(['code' => 'system-admin'], ['name' => 'System Admin', 'is_active' => true]));
+
+        $this->actingAs($admin)->get(ScmApprovals::getUrl())->assertOk()
+            ->assertSee('Persetujuan PR/SR')
+            ->assertSee('Belum ada PR/SR yang ditugaskan kepada Anda.');
+        $this->assertTrue(ScmApprovals::canAccess());
+        $this->assertFalse(Access::approves($admin));
+        Livewire::actingAs($admin)->test(ScmApprovals::class)->call('open', $request->id)->assertStatus(404);
+        $step = $this->approvals->next($request);
+        $this->rejects(fn () => $this->approvals->decide($admin, $request->id, $request->version, $step->id, 'sign'));
+        $this->assertSame('pending', $step->fresh()->status);
+
+        $admin->employee->update(['is_active' => false]);
+        $this->actingAs($admin->fresh())->get(ScmApprovals::getUrl())->assertForbidden();
+    }
+
+    public function test_legacy_admin_can_open_approval_menu_but_inactive_admin_role_cannot(): void
+    {
+        $admin = $this->actor('DEMO Admin');
+        $admin->update(['is_admin' => true]);
+        $this->actingAs($admin)->get(ScmApprovals::getUrl())->assertOk();
+
+        $unassigned = $this->actor('DEMO Role nonaktif');
+        $role = Role::firstOrCreate(['code' => 'system-admin'], ['name' => 'System Admin', 'is_active' => true]);
+        $role->update(['is_active' => false]);
+        $unassigned->roles()->attach($role);
+        $this->actingAs($unassigned)->get(ScmApprovals::getUrl())->assertForbidden();
     }
 
     public function test_optional_estimate_is_validated_when_provided_and_legacy_submitted_requests_remain_receivable(): void

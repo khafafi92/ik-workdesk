@@ -37,7 +37,10 @@ class ScmApprovals extends Page
 
     public static function canAccess(): bool
     {
-        return Access::approves(auth()->user());
+        $user = auth()->user();
+
+        return $user && $user->isActiveForAccess()
+            && ($user->hasRole('system-admin') || Access::approves($user));
     }
 
     private function assigned()
