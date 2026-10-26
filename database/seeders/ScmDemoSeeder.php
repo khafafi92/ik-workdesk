@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
+use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Category;
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\Procurement;
@@ -13,7 +14,9 @@ use App\Models\Scm\Requirement;
 use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
 use App\Models\User;
+use App\Services\Scm\Approvals;
 use App\Services\Scm\Decimal;
+use App\Services\Scm\Signatures;
 use App\Services\Scm\Workflow;
 use Illuminate\Database\Seeder;
 use Illuminate\Http\UploadedFile;
@@ -39,7 +42,16 @@ class ScmDemoSeeder extends Seeder
             $actors[$name] = $user->fresh();
         }
         $flow = app(Workflow::class);
+        $signatures = app(Signatures::class);
+        if (! $signatures->current($actors['pemohon'])) {
+            $signatures->upload($actors['pemohon'], new UploadedFile(database_path('fixtures/scm-demo-signature.png'), 'DEMO-BUKAN-TTD.png', 'image/png', null, true));
+        }
         $scm = $actors['petugas'];
+        ApprovalRoute::firstOrCreate(['company' => 'APCA', 'department_id' => $department->id],
+            ['acknowledger_id' => $scm->id, 'cbo_id' => $scm->id, 'cbo3_id' => $scm->id]);
+        if (! $signatures->current($scm)) {
+            $signatures->upload($scm, new UploadedFile(database_path('fixtures/scm-demo-signature.png'), 'DEMO-BUKAN-TTD.png', 'image/png', null, true));
+        }
         $vendors = [];
         for ($i = 1; $i <= 3; $i++) {
             $vendor = Vendor::where('code', 'SCM-DEMO-V'.$i)->first();
@@ -49,11 +61,15 @@ class ScmDemoSeeder extends Seeder
             if (Procurement::where('requester_id', $actors['pemohon']->id)->where('title', 'DEMO '.$kind.' sampai legalitas lengkap')->exists()) {
                 continue;
             }
-            $r = $flow->saveDraft($actors['pemohon'], ['kind' => $kind, 'date' => today()->toDateString(), 'department_id' => $department->id,
+            $r = $flow->saveDraft($actors['pemohon'], ['kind' => $kind, 'date' => today()->toDateString(), 'department_id' => $department->id, 'estimated_total' => '1000000',
                 'title' => 'DEMO '.$kind.' sampai legalitas lengkap', 'reason' => 'Contoh fiktif untuk pengembangan, bukan kebutuhan pengadaan nyata.',
                 'items' => [['name' => $kind === 'PR' ? 'Barang demo' : 'Jasa demo', 'specification' => 'Spesifikasi fiktif untuk latihan', 'quantity' => '2', 'unit' => $kind === 'PR' ? 'unit' : 'paket'],
                     ['name' => 'Item pendukung demo', 'specification' => 'Cakupan tambahan fiktif', 'quantity' => '1', 'unit' => 'paket']]]);
+            $r = $signatures->sign($actors['pemohon'], $r->id, $r->version);
             $r = $flow->submit($actors['pemohon'], $r->id, $r->version);
+            while ($step = app(Approvals::class)->next($r)) {
+                $r = app(Approvals::class)->decide($scm, $r->id, $r->version, $step->id, $step->is_required ? 'sign' : 'skip');
+            }
             $r = $flow->receive($scm, $r->id, $r->version, $category->id);
             foreach ($vendors as $vendor) {
                 $r = $flow->addCandidate($scm, $r->id, $r->version, ['vendor_id' => $vendor->id, 'requested_at' => today()->toDateString(), 'followup_status' => 'diminta']);

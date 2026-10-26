@@ -4,7 +4,10 @@ namespace App\Providers\Filament;
 
 use App\Filament\GlobalSearch\ContextualGlobalSearchProvider;
 use App\Filament\Pages\Dashboard;
+use App\Filament\Pages\SignatureProfile;
 use App\Http\Middleware\AuthenticateFilament;
+use App\Services\Scm\Access;
+use Filament\Actions\Action;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
@@ -15,12 +18,12 @@ use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
 use Filament\Support\Enums\Width;
 use Filament\View\PanelsRenderHook;
+// untuk menampilkan menu ik dashboard
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+// end
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
-// untuk menampilkan menu ik dashboard
 use Illuminate\Foundation\Vite;
-// end
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Auth;
@@ -45,7 +48,13 @@ class AdminPanelProvider extends PanelProvider
             ->collapsedSidebarWidth('5.25rem')
             ->darkMode(false)
             ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
+            ->databaseNotificationsPolling(null)
+            ->userMenuItems([
+                Action::make('signature-profile')
+                    ->label('Tanda tangan profil')
+                    ->url(fn () => SignatureProfile::getUrl())
+                    ->visible(fn () => Access::signs(Auth::user())),
+            ])
             ->colors([
                 'primary' => Color::hex('#0073ea'),
                 'success' => Color::hex('#00c875'),

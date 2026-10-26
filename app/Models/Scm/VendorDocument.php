@@ -16,6 +16,11 @@ class VendorDocument extends Record
         return $this->belongsTo(DocumentType::class);
     }
 
+    public function vendor()
+    {
+        return $this->belongsTo(Vendor::class);
+    }
+
     public function attachments()
     {
         return $this->hasMany(Attachment::class);

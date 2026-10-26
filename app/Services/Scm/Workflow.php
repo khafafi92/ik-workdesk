@@ -26,7 +26,7 @@ use Illuminate\Validation\ValidationException;
 
 class Workflow
 {
-    public const STATUSES = ['draft' => 'Draft', 'submitted' => 'Draft', 'sourcing' => 'Diterima SCM', 'quotations' => 'Pengumpulan penawaran', 'evaluation' => 'Penyusunan CBE', 'selected' => 'Vendor terpilih', 'legal' => 'Pengumpulan legalitas', 'completed' => 'Selesai'];
+    public const STATUSES = ['draft' => 'Draft', 'approval' => 'Menunggu persetujuan', 'submitted' => 'Draft', 'sourcing' => 'Diterima SCM', 'quotations' => 'Pengumpulan penawaran', 'evaluation' => 'Penyusunan CBE', 'selected' => 'Vendor terpilih', 'legal' => 'Pengumpulan legalitas', 'completed' => 'Selesai'];
 
     private function reject(bool $condition, string $message): void
     {
@@ -61,15 +61,29 @@ class Workflow
     public function saveDraft(User $actor, array $data, ?int $id = null, ?int $version = null, ?int $numberId = null): Procurement
     {
         abort_unless(Access::has($actor, 'scm.request'), 403);
+        $data['company'] ??= 'APCA';
         $validated = Validator::make($data, [
+            'company' => ['required', Rule::in(array_keys(config('scm.companies')))],
+            'estimated_total' => 'nullable',
+            'requires_cbo3' => 'sometimes|boolean',
             'kind' => ['required', Rule::in(['PR', 'SR'])], 'date' => 'required|date',
             'department_id' => ['required', Rule::exists('departments', 'id')],
-            'title' => 'required|string|max:255', 'reason' => 'required|string|max:10000', 'needed_at' => 'nullable|date',
+            'title' => 'nullable|string|max:255', 'reason' => 'nullable|string|max:10000', 'needed_at' => 'nullable|date',
+            'customer_po' => 'nullable|string|max:255', 'job_order' => 'nullable|string|max:255',
+            'delivery_point' => 'nullable|string|max:255',
             'location' => 'nullable|string|max:255', 'notes' => 'nullable|string|max:10000', 'items' => 'required|array|min:1|max:100',
             'items.*.name' => 'required|string|max:255', 'items.*.specification' => 'required|string|max:10000',
+            'items.*.brand' => 'nullable|string|max:255', 'items.*.item_reference' => 'nullable|string|max:255',
+            'items.*.size' => 'nullable|string|max:255', 'items.*.model_part_number' => 'nullable|string|max:255',
             'items.*.quantity' => 'required', 'items.*.unit' => 'required|string|max:50', 'items.*.notes' => 'nullable|string|max:2000',
         ], [], ['kind' => 'jenis permintaan', 'items' => 'item', 'title' => 'judul', 'reason' => 'alasan kebutuhan'])->validate();
         abort_unless($actor->canAccessDepartment((int) $validated['department_id']), 403);
+        if (array_key_exists('estimated_total', $validated)) {
+            $validated['estimated_total_minor'] = filled($validated['estimated_total']) ? Decimal::parse($validated['estimated_total']) : null;
+            $this->reject($validated['estimated_total_minor'] !== null && $validated['estimated_total_minor'] <= 0, 'Estimasi total harus lebih dari nol.');
+        }
+        unset($validated['estimated_total']);
+        $validated['approval_scope'] = 'HO';
 
         return DB::transaction(function () use ($actor, $validated, $id, $version, $numberId): Procurement {
             $items = $validated['items'];
@@ -80,14 +94,21 @@ class Workflow
                 $this->reject($request->status !== 'draft' || $request->version !== $version, 'Hanya draft terbaru milik sendiri yang dapat diedit.');
                 $validated['version'] = $request->version + 1;
                 $this->reject($validated['kind'] !== $request->kind, 'Jenis permintaan tidak dapat diubah setelah nomor diterbitkan.');
+                $this->reject($validated['company'] !== $request->company, 'Perusahaan tidak dapat diubah setelah nomor diterbitkan. Buat permintaan baru untuk perusahaan lain.');
+                $validated['title'] = $validated['title'] ?? $request->title;
+                $validated['reason'] = $validated['reason'] ?? $request->reason;
+                $validated += ['prepared_signature_id' => null, 'prepared_signed_at' => null, 'prepared_signed_name' => null];
                 $request->update($validated);
                 $request->items()->delete();
             } else {
                 $number = $numberId
                     ? RequestNumber::query()->lockForUpdate()->findOrFail($numberId)
-                    : app(RequestNumbering::class)->reserve($actor, $validated['kind']);
+                    : app(RequestNumbering::class)->reserve($actor, $validated['kind'], $validated['company']);
                 abort_unless((int) $number->requester_id === (int) $actor->id && $number->kind === $validated['kind'], 403);
+                $this->reject($number->company !== $validated['company'], 'Perusahaan tidak sesuai dengan nomor permintaan yang dipilih.');
                 $this->reject($number->request_id !== null, 'Nomor sudah digunakan. Muat ulang permintaan.');
+                $validated['title'] ??= Str::limit(collect($items)->pluck('name')->implode(', '), 255, '');
+                $validated['reason'] ??= '';
                 $request = Procurement::create([...$validated, 'number' => $number->number, 'requester_id' => $actor->id, 'status' => 'draft']);
                 $number->update(['request_id' => $request->id]);
             }
@@ -108,8 +129,10 @@ class Workflow
         return $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
             abort_unless(Access::has($actor, 'scm.request') && (int) $request->requester_id === (int) $actor->id, 403);
             $this->reject($request->status !== 'draft' || ! $request->items()->exists(), 'Permintaan harus berupa draft dengan minimal satu item.');
-            $request->status = 'submitted';
-            $request->submitted_at = now();
+            $this->reject(! $request->prepared_signed_at || ! $request->prepared_signature_id
+                || ! $request->preparedSignature || ! Storage::disk('scm')->exists($request->preparedSignature->path),
+                'Tanda tangani bagian Requested by sebelum mengajukan persetujuan.');
+            app(Approvals::class)->start($actor, $request);
         }, false);
     }
 
@@ -160,13 +183,12 @@ class Workflow
             'followup_status' => ['required', Rule::in(['belum_diminta', 'diminta', 'diterima', 'ditindaklanjuti'])]])->validate();
 
         return $this->mutate($actor, $id, $version, function ($request) use ($actor, $data): void {
-            $this->reject(! in_array($request->status, ['sourcing', 'quotations']), 'Kandidat hanya dapat ditambah saat pencarian/pengumpulan penawaran.');
+            $this->reject(! in_array($request->status, ['sourcing', 'quotations', 'evaluation']), 'Kandidat hanya dapat ditambah sebelum CBE final.');
             $vendor = Vendor::findOrFail($data['vendor_id']);
             $this->reject(! $vendor->is_active || ! in_array($vendor->provider_type, [$request->kind === 'PR' ? 'barang' : 'jasa', 'keduanya']), 'Vendor tidak aktif atau jenis penyedianya tidak sesuai permintaan.');
             $this->reject($request->candidates()->where('vendor_id', $vendor->id)->exists(), 'Vendor sudah menjadi kandidat.');
-            $this->reject($request->candidates()->count() >= 3, 'Versi awal menggunakan tepat tiga kandidat vendor.');
             $candidate = $request->candidates()->create($data);
-            if ($request->candidates()->count() === 3) {
+            if ($request->status === 'sourcing' && $request->candidates()->count() >= 3) {
                 $request->status = 'quotations';
             }
             $this->audit($actor, $candidate, 'tambah_kandidat', $data, $request->id);
@@ -213,8 +235,10 @@ class Workflow
 
     public function saveCbe(User $actor, int $id, int $version, array $data, bool $finalize = false): Procurement
     {
-        $data = Validator::make($data, ['date' => 'required|date', 'quotation_ids' => 'present|array|max:3', 'quotation_ids.*' => 'integer|distinct',
-            'selected_vendor_id' => 'nullable|integer', 'selection_reason' => 'nullable|string|max:10000'])->validate();
+        $data = Validator::make($data, ['date' => 'required|date', 'quotation_ids' => 'present|array', 'quotation_ids.*' => 'integer|distinct',
+            'selected_vendor_id' => 'nullable|integer', 'selection_reason' => 'nullable|string|max:10000',
+            'commercial_terms' => 'sometimes|array|max:1000', 'commercial_terms.*' => 'array:non_pkp,discount',
+            'commercial_terms.*.non_pkp' => 'sometimes|boolean', 'commercial_terms.*.discount' => 'nullable'])->validate();
 
         return $this->mutate($actor, $id, $version, function ($request) use ($actor, $data, $finalize): void {
             $this->reject(! in_array($request->status, ['sourcing', 'quotations', 'evaluation']), 'CBE tidak dapat diubah pada tahap ini.');
@@ -222,11 +246,21 @@ class Workflow
             $this->reject($cbe && $cbe->status === 'final', 'CBE final tidak dapat diedit.');
             $quotes = Quotation::with(['candidate.vendor', 'lines'])->whereIn('id', $data['quotation_ids'])->get();
             $this->reject($quotes->count() !== count($data['quotation_ids']) || $quotes->contains(fn ($q) => (int) $q->candidate->request_id !== (int) $request->id), 'Referensi penawaran tidak sesuai permintaan.');
+            $vatPercent = $cbe?->vat_percent ?? (int) config('scm.cbe_vat_percent');
+            $this->reject($vatPercent < 0 || $vatPercent > 100, 'Master PPN CBE harus antara 0 dan 100 persen.');
+            $terms = [];
+            $evaluations = [];
+            foreach ($quotes as $quote) {
+                $input = $data['commercial_terms'][$quote->id] ?? $cbe?->commercial_terms[$quote->id] ?? [];
+                $input = ['non_pkp' => (bool) ($input['non_pkp'] ?? false), 'discount' => filled($input['discount'] ?? null) ? $input['discount'] : '0'];
+                $evaluations[$quote->id] = CbePricing::evaluate($quote->toArray(), $input, $vatPercent);
+                $terms[$quote->id] = ['non_pkp' => $input['non_pkp'], 'discount' => Decimal::input($evaluations[$quote->id]['additional_discount_minor'])];
+            }
             $snapshot = null;
             $winner = null;
             if ($finalize) {
-                $this->reject($quotes->count() !== 3 || $quotes->pluck('candidate.vendor_id')->unique()->count() !== 3 || $request->candidates()->count() !== 3, 'Finalisasi membutuhkan tepat tiga vendor berbeda.');
-                $this->reject($quotes->pluck('currency')->unique()->count() !== 1, 'Mata uang ketiga penawaran harus sama.');
+                $this->reject($quotes->count() < 3 || $quotes->pluck('candidate.vendor_id')->unique()->count() !== $quotes->count(), 'Finalisasi membutuhkan minimal tiga vendor berbeda, masing-masing satu versi penawaran.');
+                $this->reject($quotes->pluck('currency')->unique()->count() !== 1, 'Mata uang semua penawaran harus sama.');
                 foreach ($quotes as $quote) {
                     $this->reject(! $quote->candidate->vendor->is_active, 'Vendor kandidat harus aktif saat finalisasi.');
                     $this->reject($quote->lines->count() !== $request->items()->count(), 'Penawaran belum mencakup semua item permintaan.');
@@ -236,24 +270,28 @@ class Workflow
                     }
                 }
                 $winner = $quotes->first(fn ($q) => (int) $q->candidate->vendor_id === (int) ($data['selected_vendor_id'] ?? 0));
-                $this->reject(! $winner, 'Pilih satu pemenang dari tiga vendor dalam CBE.');
+                $this->reject(! $winner, 'Pilih satu pemenang dari vendor yang dibandingkan dalam CBE.');
                 $this->reject(mb_strlen(trim($data['selection_reason'] ?? '')) < 10, 'Isi alasan pemilihan minimal 10 karakter, termasuk pertimbangan bila bukan harga terendah.');
-                $snapshot = ['request' => $request->only(['number', 'kind', 'title', 'reason', 'department_id']), 'items' => $request->items->toArray(),
+                $snapshot = ['request' => [...$request->only(['number', 'kind', 'company', 'title', 'reason', 'department_id', 'approval_scope', 'estimated_total_minor', 'location', 'notes']),
+                    'department_name' => $request->department->name, 'needed_at' => $request->needed_at?->toDateString()],
+                    'prepared_by_name' => $actor->name, 'items' => $request->items->toArray(),
                     'quotes' => $quotes->map(fn ($q) => ['id' => $q->id, 'version' => $q->version, 'number' => $q->number, 'currency' => $q->currency,
                         'date' => $q->date?->toDateString(), 'valid_until' => $q->valid_until?->toDateString(), 'notes' => $q->notes,
                         'lead_time' => $q->lead_time, 'payment_terms' => $q->payment_terms, 'total_minor' => $q->total_minor, 'extra_minor' => $q->extra_minor,
-                        'vendor' => $q->candidate->vendor->toArray(), 'lines' => $q->lines->toArray()])->all()];
+                        'evaluation' => $evaluations[$q->id], 'vendor' => $q->candidate->vendor->toArray(), 'lines' => $q->lines->toArray()])->all()];
             }
             $values = [...$data, 'selected_vendor_id' => ($data['selected_vendor_id'] ?? null) ?: null, 'status' => $finalize ? 'final' : 'draft',
                 'prepared_by' => $actor->id, 'version' => $cbe ? $cbe->version + 1 : 1, 'snapshot' => $snapshot,
-                'final_minor' => $winner?->total_minor, 'finalized_at' => $finalize ? now() : null];
+                'vat_percent' => $vatPercent, 'commercial_terms' => $terms,
+                'final_minor' => $winner ? $evaluations[$winner->id]['total_minor'] : null, 'finalized_at' => $finalize ? now() : null];
             if ($cbe) {
                 $cbe->update($values);
             } else {
                 $cbe = Cbe::create([...$values, 'request_id' => $request->id, 'number' => 'CBE-'.Str::ulid()]);
             }
             $request->status = $finalize ? 'selected' : ($request->status === 'sourcing' ? 'sourcing' : 'evaluation');
-            $this->audit($actor, $cbe, $finalize ? 'finalisasi_cbe' : 'draft_cbe', ['quotation_ids' => $data['quotation_ids'], 'selected_vendor_id' => $values['selected_vendor_id'], 'final_minor' => $values['final_minor']], $request->id, $data['selection_reason'] ?? null);
+            $this->audit($actor, $cbe, $finalize ? 'finalisasi_cbe' : 'draft_cbe', ['quotation_ids' => $data['quotation_ids'], 'selected_vendor_id' => $values['selected_vendor_id'], 'final_minor' => $values['final_minor'],
+                'vat_percent' => $vatPercent, 'commercial_terms' => $terms], $request->id, $data['selection_reason'] ?? null);
         });
     }
 
@@ -275,6 +313,32 @@ class Workflow
         });
     }
 
+    public function useAlternativeDocuments(User $actor, int $id, int $version, string $reason): Procurement
+    {
+        $this->reject(mb_strlen(trim($reason)) < 10 || mb_strlen($reason) > 5000, 'Isi alasan penggunaan NPWP dan KTP antara 10 sampai 5.000 karakter.');
+
+        return $this->mutate($actor, $id, $version, function ($request) use ($actor, $reason): void {
+            $case = $request->legalCase;
+            $this->reject($request->status !== 'legal' || ! $case, 'Pengganti dokumen hanya dapat dipilih saat pengumpulan legalitas.');
+            $this->reject($case->document_basis === 'npwp_ktp', 'NPWP dan KTP sudah digunakan sebagai pengganti SBU/NIB.');
+            $types = DocumentType::whereIn('code', ['NPWP', 'KTP'])->where('is_active', true)->get();
+            $this->reject($types->count() !== 2, 'Jenis dokumen NPWP dan KTP harus tersedia dan aktif.');
+            $snapshot = ['required' => $types->pluck('id')->all(), 'substituted' => DocumentType::whereIn('code', ['SBU', 'NIB'])->pluck('id')->all()];
+            $before = $case->items()->get()->toArray();
+            $case->items()->whereIn('document_type_id', $snapshot['substituted'])->update(['is_required' => false]);
+            foreach ($types as $type) {
+                $item = $case->items()->firstOrNew(['document_type_id' => $type->id]);
+                if (! $item->exists) {
+                    $item->fill(['document_name' => $type->name, 'has_expiry' => $type->has_expiry, 'status' => 'belum_diminta']);
+                }
+                $item->is_required = true;
+                $item->save();
+            }
+            $case->update(['document_basis' => 'npwp_ktp', 'document_basis_snapshot' => $snapshot]);
+            $this->audit($actor, $case, 'pengganti_npwp_ktp', ['before' => $before, 'after' => $case->items()->get()->toArray(), 'basis' => $snapshot], $request->id, $reason);
+        });
+    }
+
     public function changeRequirement(User $actor, int $id, int $version, int $typeId, bool $required, string $reason): Procurement
     {
         $this->reject(mb_strlen(trim($reason)) < 10, 'Perubahan persyaratan membutuhkan alasan minimal 10 karakter.');
@@ -282,6 +346,11 @@ class Workflow
         return $this->mutate($actor, $id, $version, function ($request) use ($actor, $typeId, $required, $reason): void {
             $this->reject($request->status !== 'legal', 'Persyaratan hanya dapat diubah pada pengumpulan legalitas.');
             $type = DocumentType::where('is_active', true)->findOrFail($typeId);
+            if ($request->legalCase->document_basis === 'npwp_ktp') {
+                $basis = $request->legalCase->document_basis_snapshot;
+                $this->reject(! $required && in_array($typeId, $basis['required'] ?? [], true), 'NPWP dan KTP tetap wajib ketika digunakan sebagai pengganti SBU/NIB.');
+                $this->reject($required && in_array($typeId, $basis['substituted'] ?? [], true), 'SBU/NIB bersifat opsional karena pengadaan ini menggunakan NPWP dan KTP.');
+            }
             $item = $request->legalCase->items()->firstOrNew(['document_type_id' => $typeId]);
             $before = $item->getAttributes();
             if (! $item->exists) {
@@ -319,7 +388,16 @@ class Workflow
     {
         return $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
             $this->reject($request->status !== 'legal', 'Penyelesaian hanya dari tahap pengumpulan legalitas.');
-            foreach ($request->legalCase->items()->with('document.attachments')->get() as $item) {
+            $items = $request->legalCase->items()->with('document.attachments')->get();
+            $basis = $request->legalCase->document_basis === 'npwp_ktp' ? ($request->legalCase->document_basis_snapshot ?? []) : null;
+            if ($basis !== null) {
+                $required = array_unique($basis['required'] ?? []);
+                $this->reject(count($required) !== 2 || $items->whereIn('document_type_id', $required)->where('is_required', true)->count() !== 2, 'NPWP dan KTP wajib ada pada checklist pengganti SBU/NIB.');
+            }
+            foreach ($items as $item) {
+                if ($basis !== null && ! $item->is_required && in_array($item->document_type_id, $basis['substituted'] ?? [], true)) {
+                    continue;
+                }
                 $this->reject($item->status === 'perlu_perbaikan', $item->document_name.' masih perlu perbaikan.');
                 if (! $item->is_required) {
                     continue;
@@ -366,6 +444,9 @@ class Workflow
             if ($target === 'request') {
                 abort_unless((int) $request->requester_id === (int) $actor->id && Access::has($actor, 'scm.request'), 403);
                 $this->reject($request->status !== 'draft', 'Lampiran permintaan terkunci setelah dikirim.');
+                $request->prepared_signature_id = null;
+                $request->prepared_signed_at = null;
+                $request->prepared_signed_name = null;
                 $links = ['request_id' => $request->id];
             } else {
                 abort_unless(Access::manages($actor, $request), 403);

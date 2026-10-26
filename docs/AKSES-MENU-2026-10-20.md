@@ -2,6 +2,8 @@
 
 Pemeriksaan mencocokkan seluruh menu resource dan halaman yang terdaftar di panel dengan checklist User Management, izin aksi, dan aturan akses khususnya. Form manpower HR tetap berada di Service Desk, sehingga menggunakan izin Service Desk dan tidak membutuhkan menu baru.
 
+Pembaruan 26 Oktober: CBO dan COO menggunakan level Management; kewenangan Legal diberikan melalui checklist Approval Legal. Lihat [panduan Management](MANAGEMENT-ACCESS-2026-10-26.md).
+
 ## Pilihan yang dilengkapi
 
 | Kelompok | Pilihan baru | Izin |

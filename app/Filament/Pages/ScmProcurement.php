@@ -3,19 +3,26 @@
 namespace App\Filament\Pages;
 
 use App\Models\Department;
+use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Attachment;
 use App\Models\Scm\Category;
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\LegalCase;
 use App\Models\Scm\LegalItem;
 use App\Models\Scm\Procurement;
+use App\Models\Scm\Quotation;
 use App\Models\Scm\Requirement;
 use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
+use App\Models\Scm\VendorRegistration;
+use App\Models\User;
 use App\Services\Scm\Access;
+use App\Services\Scm\Approvals;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\RequestNumbering;
+use App\Services\Scm\Signatures;
 use App\Services\Scm\Validation as Validator;
+use App\Services\Scm\VendorEnrollment;
 use App\Services\Scm\Workflow;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -55,6 +62,8 @@ class ScmProcurement extends Page
 
     public string $vendorSearch = '';
 
+    public string $documentVendorFilter = '';
+
     public string $statusFilter = '';
 
     public string $kindFilter = '';
@@ -85,6 +94,11 @@ class ScmProcurement extends Page
 
     public int $vendorVersion = 0;
 
+    #[Locked]
+    public string $vendorPortalUrl = '';
+
+    public array $portalInvitation = ['company' => 'KPMOG', 'is_construction' => false, 'amount' => '', 'duration_months' => ''];
+
     public array $document = [];
 
     public $documentFile;
@@ -105,6 +119,12 @@ class ScmProcurement extends Page
 
     public array $requirementChange = ['document_type_id' => '', 'is_required' => true, 'reason' => ''];
 
+    public string $alternativeDocumentReason = '';
+
+    public bool $choosingCompany = false;
+
+    public array $approvalRoute = ['company' => 'APCA', 'department_id' => '', 'acknowledger_id' => '', 'cbo_id' => '', 'cbo3_id' => '', 'version' => 0];
+
     public array $master = ['id' => '', 'kind' => 'category', 'code' => '', 'name' => '', 'description' => '', 'has_expiry' => false, 'is_active' => true, 'category_id' => '', 'document_type_id' => '', 'is_required' => true];
 
     public static function canAccess(): bool
@@ -124,7 +144,7 @@ class ScmProcurement extends Page
         if ($this->selected) {
             $this->open($this->selected);
         }
-        $this->newVendor();
+        $this->newVendor(false);
         $this->document = ['vendor_id' => '', 'document_type_id' => '', 'number' => '', 'title' => '', 'issued_at' => '', 'expires_at' => '', 'notes' => ''];
     }
 
@@ -137,8 +157,15 @@ class ScmProcurement extends Page
         $this->section = $section;
         $this->selected = 0;
         $this->editing = false;
+        $this->choosingCompany = false;
         $this->resetPage();
         $this->resetValidation();
+    }
+
+    public function clearFilters(): void
+    {
+        $this->reset('search', 'statusFilter', 'kindFilter', 'departmentFilter', 'picFilter', 'dateFrom', 'dateUntil');
+        $this->resetPage();
     }
 
     public function open(int $id): void
@@ -148,6 +175,7 @@ class ScmProcurement extends Page
             ? Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->kind === static::$requestKind
             : Access::manages(auth()->user(), $record), 403);
         $this->selected = $id;
+        $this->choosingCompany = false;
         $this->version = $record->version;
         $this->requestNumber = $record->number;
         $this->attachmentTarget = $record->status === 'draft' ? 'request' : 'quotation';
@@ -156,9 +184,12 @@ class ScmProcurement extends Page
         $this->tab = 'request';
         $allowed = static::$requestKind === null && Access::manages(auth()->user(), $record);
         $this->cbeForm = $allowed ? ['date' => $record->cbe?->date?->format('Y-m-d') ?? now()->toDateString(), 'quotation_ids' => $record->cbe?->quotation_ids ?? [],
-            'selected_vendor_id' => $record->cbe?->selected_vendor_id ?? '', 'selection_reason' => $record->cbe?->selection_reason ?? ''] : [];
+            'selected_vendor_id' => $record->cbe?->selected_vendor_id ?? '', 'selection_reason' => $record->cbe?->selection_reason ?? '',
+            'commercial_terms' => $record->cbe?->commercial_terms ?? []] : [];
         $this->legal = $allowed ? ($record->legalCase?->items->mapWithKeys(fn ($i) => [$i->id => ['status' => $i->status, 'vendor_document_id' => $i->vendor_document_id ?? '', 'correction_notes' => $i->correction_notes ?? '']])->all() ?? []) : [];
+        $this->alternativeDocumentReason = '';
         $this->quotation = [];
+        $this->attachmentFile = null;
         $this->resetValidation();
     }
 
@@ -169,18 +200,37 @@ class ScmProcurement extends Page
         abort_unless(Access::views(auth()->user(), $request), 403);
         abort_if($tab !== 'request' && (static::$requestKind !== null || ! Access::manages(auth()->user(), $request)), 403);
         $this->tab = $tab;
+        if (in_array($tab, ['quotes', 'cbe'])) {
+            $target = $tab === 'cbe' ? 'cbe' : 'quotation';
+            if ($this->attachmentTarget !== $target) {
+                $this->attachmentFile = null;
+            }
+            $this->attachmentTarget = $target;
+            $this->attachmentTargetId = $tab === 'cbe' ? ($request->cbe?->id ?? 0) : 0;
+        }
+        $this->resetValidation();
     }
 
-    public function newDraft(): void
+    public function chooseCompany(): void
     {
         abort_unless(static::$requestKind !== null && Access::has(auth()->user(), 'scm.request'), 403);
-        $number = app(RequestNumbering::class)->reserve(auth()->user(), static::$requestKind);
+        $this->selected = 0;
+        $this->editing = false;
+        $this->choosingCompany = true;
+        $this->resetValidation();
+    }
+
+    public function newDraft(string $company = 'APCA'): void
+    {
+        abort_unless(static::$requestKind !== null && Access::has(auth()->user(), 'scm.request'), 403);
+        $number = app(RequestNumbering::class)->reserve(auth()->user(), static::$requestKind, $company);
         $this->requestNumberId = $number->id;
         $this->requestNumber = $number->number;
         $this->selected = 0;
         $this->editing = true;
-        $this->draft = ['kind' => static::$requestKind, 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
-            'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'items' => []];
+        $this->choosingCompany = false;
+        $this->draft = ['kind' => static::$requestKind, 'company' => $company, 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
+            'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'items' => []];
         $this->addItem();
         $this->resetValidation();
     }
@@ -189,18 +239,21 @@ class ScmProcurement extends Page
     {
         $record = Procurement::with('items')->findOrFail($this->selected);
         abort_unless(static::$requestKind !== null && $record->kind === static::$requestKind && Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->status === 'draft', 403);
-        $this->draft = $record->only(['kind', 'department_id', 'title', 'reason', 'notes']);
+        $this->draft = $record->only(['kind', 'company', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point']);
         $this->requestNumber = $record->number;
         $this->draft['date'] = $record->date->format('Y-m-d');
         $this->draft['needed_at'] = $record->needed_at?->format('Y-m-d') ?? '';
-        $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['name', 'specification', 'unit', 'notes']), 'quantity' => Decimal::input($i->quantity_milli, 3)])->all();
+        $this->draft['estimated_total'] = $record->estimated_total_minor ? Decimal::input($record->estimated_total_minor) : '';
+        $this->draft['requires_cbo3'] = app(Approvals::class)->requiresCbo3($record);
+        $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['name', 'brand', 'item_reference', 'size', 'model_part_number', 'specification', 'unit', 'notes']), 'quantity' => Decimal::input($i->quantity_milli, 3)])->all();
         $this->version = $record->version;
         $this->editing = true;
+        $this->choosingCompany = false;
     }
 
     public function addItem(): void
     {
-        $this->draft['items'][] = ['name' => '', 'specification' => '', 'quantity' => '1', 'unit' => '', 'notes' => ''];
+        $this->draft['items'][] = ['brand' => '', 'item_reference' => '', 'size' => '', 'model_part_number' => '', 'name' => '', 'specification' => '', 'quantity' => '1', 'unit' => '', 'notes' => ''];
     }
 
     public function removeItem(int $index): void
@@ -222,29 +275,15 @@ class ScmProcurement extends Page
     private function refreshed(Procurement $request, string $tab): void
     {
         $this->open($request->id);
-        $this->tab = $tab;
+        $this->showTab($tab);
         $this->success();
     }
 
     public function saveDraft(): void
     {
-        $this->persistDraft(false);
-    }
-
-    public function saveAndSubmit(): void
-    {
-        $this->persistDraft(true);
-    }
-
-    private function persistDraft(bool $submit): void
-    {
         abort_unless(static::$requestKind !== null && ($this->draft['kind'] ?? null) === static::$requestKind, 403);
         abort_if($this->selected && ! Procurement::whereKey($this->selected)->where('kind', static::$requestKind)->exists(), 403);
-        $request = DB::transaction(function () use ($submit): Procurement {
-            $request = $this->workflow()->saveDraft(auth()->user(), $this->draft, $this->selected ?: null, $this->version, $this->requestNumberId ?: null);
-
-            return $submit ? $this->workflow()->submit(auth()->user(), $request->id, $request->version) : $request;
-        }, 3);
+        $request = $this->workflow()->saveDraft(auth()->user(), $this->draft, $this->selected ?: null, $this->version, $this->requestNumberId ?: null);
         $this->refreshed($request, 'request');
     }
 
@@ -253,6 +292,24 @@ class ScmProcurement extends Page
         abort_unless(static::$requestKind !== null, 403);
         abort_unless(Procurement::whereKey($this->selected)->where('kind', static::$requestKind)->exists(), 403);
         $this->refreshed($this->workflow()->submit(auth()->user(), $this->selected, $this->version), 'request');
+    }
+
+    public function signPrepared(): void
+    {
+        abort_unless(static::$requestKind !== null && Access::has(auth()->user(), 'scm.request'), 403);
+        abort_if($this->selected && ! Procurement::whereKey($this->selected)->where('kind', static::$requestKind)->exists(), 403);
+        $request = DB::transaction(function (): Procurement {
+            if ($this->editing) {
+                abort_unless(($this->draft['kind'] ?? null) === static::$requestKind, 403);
+                $request = $this->workflow()->saveDraft(auth()->user(), $this->draft, $this->selected ?: null, $this->version, $this->requestNumberId ?: null);
+            } else {
+                $request = Procurement::findOrFail($this->selected);
+            }
+
+            return app(Signatures::class)->sign(auth()->user(), $request->id, $this->editing ? $request->version : $this->version);
+        }, 3);
+        $this->open($request->id);
+        $this->success('Requested by sudah ditandatangani. Permintaan dapat diajukan untuk persetujuan HO.');
     }
 
     public function receiveRequest(): void
@@ -279,11 +336,19 @@ class ScmProcurement extends Page
                 return ['request_item_id' => $item->id, 'description' => $line?->description ?? $item->specification, 'quantity' => Decimal::input($line?->quantity_milli ?? $item->quantity_milli, 3),
                     'unit' => $line?->unit ?? $item->unit, 'price' => $line ? Decimal::input($line->price_minor) : '', 'discount' => Decimal::input($line?->discount_minor ?? 0), 'tax' => Decimal::input($line?->tax_minor ?? 0)];
             })->all()];
+        $this->resetValidation();
+        $this->dispatch('scm-focus', id: 'scm-quotation-number');
     }
 
     public function saveQuotation(): void
     {
         $this->refreshed($this->workflow()->saveQuotation(auth()->user(), $this->selected, $this->version, $this->quotation), 'quotes');
+    }
+
+    public function cancelQuotation(): void
+    {
+        $this->quotation = [];
+        $this->resetValidation();
     }
 
     public function saveCbe(): void
@@ -306,6 +371,11 @@ class ScmProcurement extends Page
         $this->refreshed($this->workflow()->updateLegal(auth()->user(), $this->selected, $this->version, $itemId, $this->legal[$itemId] ?? []), 'legal');
     }
 
+    public function useAlternativeDocuments(): void
+    {
+        $this->refreshed($this->workflow()->useAlternativeDocuments(auth()->user(), $this->selected, $this->version, $this->alternativeDocumentReason), 'legal');
+    }
+
     public function changeRequirement(): void
     {
         $data = $this->requirementChange;
@@ -325,23 +395,36 @@ class ScmProcurement extends Page
         $this->refreshed($request, $this->tab);
     }
 
-    public function newVendor(): void
+    public function newVendor(bool $focus = true): void
     {
+        $this->vendorPortalUrl = '';
         $this->vendorId = 0;
         $this->vendorVersion = 0;
         $this->vendor = array_fill_keys(['code', 'name', 'business_category', 'address', 'phone', 'email', 'pic_name', 'pic_position', 'pic_phone', 'pic_email', 'notes'], '');
         $this->vendor['provider_type'] = 'keduanya';
         $this->vendor['is_active'] = true;
+        $this->portalInvitation = ['company' => 'KPMOG', 'is_construction' => false, 'amount' => '', 'duration_months' => ''];
+        $this->document = ['vendor_id' => '', 'document_type_id' => '', 'number' => '', 'title' => '', 'issued_at' => '', 'expires_at' => '', 'notes' => ''];
+        $this->documentFile = null;
+        $this->documentVendorFilter = '';
+        $this->resetPage('documentPage');
+        $this->resetValidation();
+        if ($focus) {
+            $this->dispatch('scm-focus', id: 'scm-vendor-code');
+        }
     }
 
     public function editVendor(int $id): void
     {
         abort_unless(Access::manages(auth()->user()), 403);
+        $this->newVendor(false);
         $vendor = Vendor::findOrFail($id);
         $this->vendorId = $id;
         $this->vendorVersion = $vendor->version;
         $this->vendor = $vendor->only(array_keys($this->vendor));
         $this->document['vendor_id'] = $id;
+        $this->documentVendorFilter = (string) $id;
+        $this->dispatch('scm-focus', id: 'scm-vendor-code');
     }
 
     public function saveVendor(): void
@@ -349,6 +432,13 @@ class ScmProcurement extends Page
         $vendor = $this->workflow()->saveVendor(auth()->user(), $this->vendor, $this->vendorId ?: null, $this->vendorVersion);
         $this->editVendor($vendor->id);
         $this->success('Profil vendor tersimpan.');
+    }
+
+    public function inviteVendor(): void
+    {
+        [$registration, $url] = app(VendorEnrollment::class)->invite(auth()->user(), $this->vendorId, $this->portalInvitation);
+        $this->vendorPortalUrl = $url;
+        $this->success('Tautan Form 005 dibuat. Kirim tautan ini kepada vendor melalui saluran Anda.');
     }
 
     public function saveDocument(): void
@@ -365,7 +455,17 @@ class ScmProcurement extends Page
         $record = match ($kind) {
             'category' => Category::findOrFail($id), 'type' => DocumentType::findOrFail($id), 'requirement' => Requirement::findOrFail($id), default => abort(404)
         };
+        $this->newMaster($kind);
         $this->master = array_replace($this->master, $record->getAttributes(), ['kind' => $kind]);
+        $this->dispatch('scm-focus', id: 'scm-master-kind');
+    }
+
+    public function newMaster(string $kind = 'category'): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        abort_unless(in_array($kind, ['category', 'type', 'requirement']), 404);
+        $this->master = ['id' => '', 'kind' => $kind, 'code' => '', 'name' => '', 'description' => '', 'has_expiry' => false, 'is_active' => true, 'category_id' => '', 'document_type_id' => '', 'is_required' => true];
+        $this->resetValidation();
     }
 
     public function saveMaster(): void
@@ -392,15 +492,36 @@ class ScmProcurement extends Page
             }
             $this->workflow()->audit(auth()->user(), $entity, 'pengaturan_master', $data);
         });
-        $this->master['id'] = '';
+        $this->newMaster($kind);
         $this->success('Pengaturan tersimpan. Checklist historis tetap memakai snapshot.');
     }
 
     public function updatedMaster($value, string $key): void
     {
         if ($key === 'kind') {
-            $this->master['id'] = '';
+            $this->newMaster($value);
         }
+    }
+
+    public function editApprovalRoute(int $id): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalRoute = ApprovalRoute::findOrFail($id)->only(array_keys($this->approvalRoute));
+        $this->resetValidation();
+    }
+
+    public function newApprovalRoute(): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalRoute = ['company' => 'APCA', 'department_id' => '', 'acknowledger_id' => '', 'cbo_id' => '', 'cbo3_id' => '', 'version' => 0];
+        $this->resetValidation();
+    }
+
+    public function saveApprovalRoute(): void
+    {
+        app(Approvals::class)->saveRoute(auth()->user(), $this->approvalRoute);
+        $this->newApprovalRoute();
+        $this->success('Penandatangan HO tersimpan. Pengajuan yang sedang berjalan tetap memakai penugasan sebelumnya.');
     }
 
     public function updated(string $property): void
@@ -410,6 +531,13 @@ class ScmProcurement extends Page
         }
         if ($property === 'vendorSearch') {
             $this->resetPage('vendorPage');
+        }
+        if ($property === 'documentVendorFilter') {
+            $this->resetPage('documentPage');
+        }
+        if ($property === 'attachmentTarget') {
+            $this->attachmentTargetId = 0;
+            $this->attachmentFile = null;
         }
     }
 
@@ -424,7 +552,7 @@ class ScmProcurement extends Page
         abort_if($this->section === 'settings' && ! $configure, 403);
         $visible = static::$requestKind !== null
             ? Procurement::where('requester_id', $user->id)->where('kind', static::$requestKind)
-            : Procurement::where('status', '!=', 'draft')->whereIn('department_id', $isScm ? $user->accessibleDepartmentIds() : []);
+            : Procurement::whereNotIn('status', ['draft', 'approval'])->whereIn('department_id', $isScm ? $user->accessibleDepartmentIds() : []);
         $query = clone $visible;
         $summary = (clone $query)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
         $summary['draft'] = ($summary['draft'] ?? 0) + ($summary['submitted'] ?? 0);
@@ -436,13 +564,13 @@ class ScmProcurement extends Page
             $query->where('requester_id', $user->id);
         }
         if ($this->section === 'queue') {
-            $query->where('status', '!=', 'draft');
+            $query->whereNotIn('status', ['draft', 'approval']);
         }
         $query->when($this->search !== '', fn ($q) => $q->where(fn ($q) => $q->where('number', 'like', '%'.$this->search.'%')->orWhere('title', 'like', '%'.$this->search.'%')))
             ->when($this->statusFilter, fn ($q) => $q->whereIn('status', $this->statusFilter === 'draft' ? ['draft', 'submitted'] : [$this->statusFilter]))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))->when($this->picFilter, fn ($q) => $q->where('scm_pic_id', $this->picFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
-        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'department', 'attachments'])->findOrFail($this->selected) : null;
+        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'department', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
         $canManage = $isScm && $record && Access::manages($user, $record);
         if ($record && ! $canManage) {
             $this->tab = 'request';
@@ -453,22 +581,38 @@ class ScmProcurement extends Page
         if ($canManage) {
             $record->load(['candidates.vendor', 'candidates.quotations.lines', 'candidates.quotations.attachments', 'cbe', 'legalCase.items.document.attachments', 'audits.actor']);
         }
+        $finalCbe = $record?->cbe()->where('status', 'final')->first();
+        $selectedQuote = $finalCbe ? collect($finalCbe->snapshot['quotes'])->firstWhere('vendor.id', $finalCbe->selected_vendor_id) : null;
+        $selectedQuotation = $selectedQuote ? Quotation::with('attachments')->whereHas('candidate', fn ($q) => $q->where('request_id', $record->id)->where('vendor_id', $finalCbe->selected_vendor_id))->find($selectedQuote['id']) : null;
         $quotes = $canManage ? $record->candidates->flatMap(fn ($c) => $c->quotations) : collect();
         $documents = $isScm ? VendorDocument::with(['documentType', 'attachments'])->when($record?->legalCase, fn ($q) => $q->where('vendor_id', $record->legalCase->vendor_id))->orderByDesc('id')->get() : collect();
         $duplicate = $isScm && filled($this->vendor['name'] ?? '') ? Vendor::where('id', '!=', $this->vendorId)->where(fn ($q) => $q->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($this->vendor['name']))])->when(filled($this->vendor['email'] ?? ''), fn ($q) => $q->orWhere('email', $this->vendor['email'])))->pluck('name') : collect();
         $statuses = Workflow::STATUSES;
         $statusOptions = array_diff_key($statuses, ['submitted' => true]);
+        if ($isScm) {
+            unset($statusOptions['approval']);
+        }
+        $approvalTarget = null;
+        if ($this->editing && static::$requestKind !== null && $user->canAccessDepartment((int) ($this->draft['department_id'] ?? 0))) {
+            $approvalTarget = app(Approvals::class)->route($this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'])?->cbo3?->name;
+        }
 
         return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
-            'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses, 'statusOptions' => $statusOptions,
+            'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses, 'statusOptions' => $statusOptions, 'approvalTarget' => $approvalTarget,
             'vendors' => $isScm ? Vendor::orderBy('name')->get() : collect(),
+            'vendorRegistrations' => $isScm && $this->vendorId ? VendorRegistration::where('vendor_id', $this->vendorId)->latest('id')->get() : collect(),
+            'pendingRegistrations' => $isScm && $this->section === 'vendors' ? VendorRegistration::with('vendor')->where('status', 'submitted')->whereNull('revoked_at')->orderBy('submitted_at')->paginate(5, ['*'], 'registrationPage') : null,
             'vendorRows' => $isScm ? Vendor::when($this->vendorSearch, fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$this->vendorSearch.'%')->orWhere('code', 'like', '%'.$this->vendorSearch.'%')))->orderBy('name')->paginate(15, ['*'], 'vendorPage') : null,
             'documents' => $documents, 'quotes' => $quotes, 'duplicateVendors' => $duplicate,
-            'documentRows' => $isScm ? VendorDocument::with(['documentType', 'attachments'])->orderByDesc('id')->paginate(15, ['*'], 'documentPage') : null,
+            'documentRows' => $isScm ? VendorDocument::with(['vendor', 'documentType', 'attachments'])->when($this->documentVendorFilter, fn ($q) => $q->where('vendor_id', $this->documentVendorFilter))->orderByDesc('id')->paginate(15, ['*'], 'documentPage') : null,
             'missingDocuments' => $missingDocuments,
+            'approvalRoutes' => $configure ? ApprovalRoute::with(['department', 'acknowledger', 'cbo', 'cbo3'])->orderBy('company')->orderBy('department_id')->get() : collect(),
+            'approvalUsers' => $configure ? User::with('employee')->orderBy('name')->get()->filter(fn ($account) => $account->isActiveForAccess())->pluck('name', 'id') : collect(),
             'types' => ($isScm || $configure) ? DocumentType::orderBy('name')->get() : collect(), 'categories' => Category::orderBy('name')->get(),
             'requirements' => $configure ? Requirement::with('documentType')->get() : collect(), 'departments' => Department::whereIn('id', $user->accessibleDepartmentIds())->pluck('name', 'id'),
             'pics' => $isScm ? Procurement::whereIn('department_id', $user->accessibleDepartmentIds())->whereNotNull('scm_pic_id')->join('users', 'users.id', '=', 'scm_requests.scm_pic_id')->distinct()->pluck('users.name', 'users.id') : collect(),
+            'finalCbe' => $finalCbe, 'selectedQuote' => $selectedQuote, 'selectedQuotation' => $selectedQuotation,
+            'finalCbeAttachments' => $finalCbe ? Attachment::where('cbe_id', $finalCbe->id)->get() : collect(),
             'cbeAttachments' => $canManage && $record->cbe ? Attachment::where('cbe_id', $record->cbe->id)->get() : collect()];
     }
 }

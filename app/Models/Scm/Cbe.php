@@ -8,7 +8,7 @@ class Cbe extends Record
 
     protected function casts(): array
     {
-        return ['quotation_ids' => 'array', 'snapshot' => 'array', 'date' => 'date', 'finalized_at' => 'datetime'];
+        return ['quotation_ids' => 'array', 'commercial_terms' => 'array', 'vat_percent' => 'integer', 'snapshot' => 'array', 'date' => 'date', 'finalized_at' => 'datetime'];
     }
 
     protected static function booted(): void

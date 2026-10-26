@@ -10,9 +10,11 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScmDocumentController;
 use App\Http\Controllers\TicketAttachmentDownloadController;
 use App\Http\Controllers\TicketCommentAttachmentDownloadController;
+use App\Http\Controllers\VendorPortalController;
 use App\Http\Controllers\WorkTaskPermitResultDownloadController;
 use App\Http\Middleware\RequireLtroAccess;
 use App\Http\Middleware\RequireSuperadmin;
+use App\Http\Middleware\VendorPortalResponse;
 use App\Livewire\AvailabilityLtro1b;
 use App\Livewire\DailyInput;
 use App\Livewire\MttrForm;
@@ -104,7 +106,21 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
+Route::prefix('vendor/form-005/{token}')->where(['token' => '[a-f0-9]{64}'])->middleware([VendorPortalResponse::class, 'throttle:60,1'])->group(function (): void {
+    Route::get('/bagian/{step}', [VendorPortalController::class, 'show'])->where('step', '[1-5]')->name('vendor.portal');
+    Route::post('/bagian/{step}', [VendorPortalController::class, 'save'])->where('step', '[1-5]')->middleware('throttle:30,1')->name('vendor.portal.save');
+    Route::post('/dokumen/{code}', [VendorPortalController::class, 'upload'])->middleware('throttle:20,1')->name('vendor.portal.upload');
+    Route::get('/file/{file}', [VendorPortalController::class, 'download'])->whereNumber('file')->name('vendor.portal.download');
+});
+
 Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void {
+    Route::get('/vendor-form/{registration}', [VendorPortalController::class, 'review'])->name('vendor-review');
+    Route::post('/vendor-form/{registration}', [VendorPortalController::class, 'decide'])->name('vendor-decide');
+    Route::get('/vendor-form/{registration}/file/{file}', [VendorPortalController::class, 'reviewDownload'])->whereNumber('file')->name('vendor-review-download');
+    Route::get('/ttd-profil/{signature}', [ScmDocumentController::class, 'profileSignature'])->name('signature-profile');
+    Route::get('/permintaan/{procurement}/ttd', [ScmDocumentController::class, 'preparedSignature'])->name('signature-prepared');
+    Route::get('/persetujuan/{approval}/ttd', [ScmDocumentController::class, 'approvalSignature'])->name('signature-approval');
     Route::get('/lampiran/{attachment}', [ScmDocumentController::class, 'download'])->name('download');
     Route::get('/cbe/{cbe}/cetak', [ScmDocumentController::class, 'print'])->name('print');
+    Route::get('/cbe/{cbe}/penawaran-terpilih', [ScmDocumentController::class, 'selectedQuotation'])->name('selected-quotation');
 });

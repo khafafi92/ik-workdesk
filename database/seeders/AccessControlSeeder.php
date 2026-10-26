@@ -460,6 +460,12 @@ class AccessControlSeeder extends Seeder
                     ],
                 ],
                 [
+                    'name' => 'Management',
+                    'code' => 'management',
+                    'description' => 'Shared access level for CBO and COO. Menus and Legal approval are assigned per user.',
+                    'permissions' => [],
+                ],
+                [
                     'name' => 'Chief Business Officer',
                     'code' => 'cbo',
                     'description' => 'Approve work logs addressed to the Legal department.',

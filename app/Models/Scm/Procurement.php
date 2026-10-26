@@ -11,7 +11,17 @@ class Procurement extends Record
 
     protected function casts(): array
     {
-        return ['date' => 'date', 'needed_at' => 'date', 'submitted_at' => 'datetime', 'received_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['date' => 'date', 'needed_at' => 'date', 'submitted_at' => 'datetime', 'received_at' => 'datetime', 'completed_at' => 'datetime', 'prepared_signed_at' => 'datetime', 'requires_cbo3' => 'boolean'];
+    }
+
+    public function preparedSignature()
+    {
+        return $this->belongsTo(UserSignature::class, 'prepared_signature_id');
+    }
+
+    public function approvals()
+    {
+        return $this->hasMany(RequestApproval::class, 'request_id')->orderBy('round')->orderBy('position');
     }
 
     public function items()

@@ -136,7 +136,7 @@ class UserForm
 
                 Section::make('Level Akses')
                     ->description(
-                        'Pilih satu level utama untuk peran user. Menu diberikan melalui checklist di bawah.'
+                        'CBO dan COO I, II, III menggunakan level Management. Pilih kewenangan persetujuan dan menu sesuai tugasnya.'
                     )
                     ->schema([
                         Select::make('access_level')
@@ -148,7 +148,7 @@ class UserForm
                             ->default(UserAccessHierarchyService::REQUESTER)
                             ->required()
                             ->native(false)
-                            ->helperText('Level menentukan peran utama. Pilih menu yang diperlukan pada daftar di bawah.')
+                            ->helperText('Untuk CBO, pilih Management lalu centang Approval Legal. Penandatangan SCM ditetapkan di Pengaturan SCM.')
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -179,7 +179,7 @@ class UserForm
 
                 Section::make('Akses Menu')
                     ->description(
-                        'Pilih submenu yang boleh dibuka oleh user ini. Gunakan Pilih semua pada setiap modul bila seluruh submenu perlu diberikan.'
+                        'Pilih kewenangan persetujuan dan submenu yang diperlukan user ini.'
                     )
                     ->schema(
                         collect(app(UserAdditionalAccessService::class)->menuGroups())
@@ -188,11 +188,11 @@ class UserForm
                                     ->description($module['description'])
                                     ->schema([
                                         CheckboxList::make("menu_access.{$key}")
-                                            ->label('Submenu')
+                                            ->label($module['field_label'] ?? 'Submenu')
                                             ->extraAttributes(['class' => 'menu-access-checklist'])
                                             ->options(fn (): array => app(UserAdditionalAccessService::class)
                                                 ->menuOptionsForModule($module))
-                                            ->bulkToggleable()
+                                            ->bulkToggleable($module['bulk_toggleable'] ?? true)
                                             ->columns(1)
                                             ->columnSpanFull(),
                                     ])

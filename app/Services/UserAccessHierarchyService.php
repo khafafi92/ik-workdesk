@@ -18,7 +18,7 @@ class UserAccessHierarchyService
         'supervisor' => 'SPV — batas department dan supervisi pekerjaan',
         'general-affairs' => 'General Affairs — proses kerja operasional',
         'attendance-operator' => 'Attendance Operator — proses attendance',
-        'cbo' => 'Chief Business Officer — persetujuan Legal',
+        'management' => 'Management (CBO, COO I, II, III)',
         'requester' => 'Requester — proses permintaan milik sendiri',
     ];
 
@@ -46,6 +46,10 @@ class UserAccessHierarchyService
 
     public function levelFor(User $user): string
     {
+        if ($user->access_level === 'cbo') {
+            return 'management';
+        }
+
         if (array_key_exists((string) $user->access_level, self::LEVELS)) {
             return $user->access_level;
         }
@@ -55,12 +59,12 @@ class UserAccessHierarchyService
         }
 
         $roleCodes = $user->roles()
-            ->whereIn('code', array_keys(self::LEVELS))
+            ->whereIn('code', [...array_keys(self::LEVELS), 'cbo'])
             ->pluck('code')
             ->all();
 
         foreach (array_keys(self::LEVELS) as $level) {
-            if (in_array($level, $roleCodes, true)) {
+            if (in_array($level, $roleCodes, true) || ($level === 'management' && in_array('cbo', $roleCodes, true))) {
                 return $level;
             }
         }
@@ -78,7 +82,7 @@ class UserAccessHierarchyService
         abort_unless($roleId, 422, 'Level akses tidak tersedia.');
 
         $primaryRoleIds = Role::query()
-            ->whereIn('code', array_keys(self::LEVELS))
+            ->whereIn('code', [...array_keys(self::LEVELS), 'cbo'])
             ->pluck('id');
 
         $user->roles()->detach($primaryRoleIds);

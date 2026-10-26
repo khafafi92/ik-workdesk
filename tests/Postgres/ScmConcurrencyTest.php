@@ -4,15 +4,19 @@ namespace Tests\Postgres;
 
 use App\Models\Department;
 use App\Models\Permission;
+use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Audit;
 use App\Models\Scm\Category;
 use App\Models\Scm\Cbe;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\Quotation;
 use App\Models\User;
+use App\Services\Scm\Approvals;
+use App\Services\Scm\Signatures;
 use App\Services\Scm\Workflow;
 use Database\Seeders\ScmSeeder;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
@@ -95,7 +99,7 @@ class ScmConcurrencyTest extends TestCase
         $actor->directPermissions()->attach(Permission::whereIn('code', ['scm.request', 'scm.process'])->pluck('id'));
         $department = Department::create(['name' => 'SCM test', 'code' => 'SCM-T', 'is_active' => true]);
         $category = Category::create(['name' => 'Kategori uji bersamaan']);
-        $data = ['kind' => 'PR', 'date' => today()->toDateString(), 'department_id' => $department->id,
+        $data = ['kind' => 'PR', 'date' => today()->toDateString(), 'department_id' => $department->id, 'estimated_total' => '5000000',
             'title' => 'PR uji bersamaan', 'reason' => 'Data uji fiktif', 'needed_at' => '', 'items' => [['name' => 'Barang uji', 'specification' => 'Spesifikasi uji', 'quantity' => '1', 'unit' => 'unit']]];
         $created = $this->workers(['mode' => 'create', 'actor_id' => $actor->id, 'data' => $data]);
         $this->assertCount(2, array_unique(array_column($created, 'number')));
@@ -103,10 +107,23 @@ class ScmConcurrencyTest extends TestCase
         sort($numbers);
         $this->assertStringStartsWith('001/APCA-HO/PR/', $numbers[0]);
         $this->assertStringStartsWith('002/APCA-HO/PR/', $numbers[1]);
+        $kpmog = $this->workers(['mode' => 'create', 'actor_id' => $actor->id, 'data' => [...$data, 'company' => 'KPMOG']]);
+        $kpmogNumbers = array_column($kpmog, 'number');
+        sort($kpmogNumbers);
+        $this->assertStringStartsWith('001/KPMOG-OFC/PR/', $kpmogNumbers[0]);
+        $this->assertStringStartsWith('002/KPMOG-OFC/PR/', $kpmogNumbers[1]);
         $flow = app(Workflow::class);
         $r = Procurement::firstOrFail();
         $this->assertNull($r->getRawOriginal('needed_at'));
+        $signatures = app(Signatures::class);
+        $signatures->upload($actor, new UploadedFile(database_path('fixtures/scm-demo-signature.png'), 'DEMO-BUKAN-TTD.png', 'image/png', null, true));
+        $r = $signatures->sign($actor, $r->id, $r->version);
+        ApprovalRoute::create(['company' => 'APCA', 'department_id' => $department->id,
+            'acknowledger_id' => $actor->id, 'cbo_id' => $actor->id, 'cbo3_id' => $actor->id]);
         $r = $flow->submit($actor, $r->id, $r->version);
+        while ($step = app(Approvals::class)->next($r)) {
+            $r = app(Approvals::class)->decide($actor, $r->id, $r->version, $step->id, $step->is_required ? 'sign' : 'skip');
+        }
         $this->assertNull($r->category_id);
         $number = $r->number;
         $r = $flow->receive($actor, $r->id, $r->version);

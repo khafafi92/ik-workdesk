@@ -1,12 +1,25 @@
 <!doctype html>
-<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{{ $cbe->number }}</title>
-<style>body{font-family:Arial,sans-serif;color:#111827;background:#fff;margin:2rem;line-height:1.5}h1{font-size:1.5rem}table{width:100%;border-collapse:collapse;margin:1rem 0}th,td{border:1px solid #6b7280;padding:.6rem;text-align:left;vertical-align:top;overflow-wrap:anywhere}button{padding:.75rem;min-height:44px}button:focus-visible{outline:3px solid #111827;outline-offset:3px}.scroll{overflow:auto}@media print{button{display:none}body{margin:0;font-size:10pt}@page{size:A4 landscape;margin:12mm}thead{display:table-header-group}tr{break-inside:avoid}}@media(max-width:600px){body{margin:1rem}}</style></head>
-<body><button type="button" onclick="window.print()">Cetak / simpan PDF</button><h1>Commercial Bid Evaluation</h1>
-<p>{{ $cbe->number }} · {{ $cbe->date->format('d/m/Y') }} · Versi {{ $cbe->version }}</p><h2>{{ $cbe->snapshot['request']['number'] }} · {{ $cbe->snapshot['request']['title'] }}</h2>
-<div class="scroll"><table><thead><tr><th>Komponen</th>@foreach($cbe->snapshot['quotes'] as $q)<th>{{ $q['vendor']['name'] }}<br>{{ $q['number'] }} · versi {{ $q['version'] }}</th>@endforeach</tr></thead><tbody>
-@foreach($cbe->snapshot['items'] as $item)<tr><th>{{ $item['name'] }}<br>{{ $item['specification'] }}<br>{{ \App\Services\Scm\Decimal::input($item['quantity_milli'],3) }} {{ $item['unit'] }}</th>@foreach($cbe->snapshot['quotes'] as $q)@php($line=collect($q['lines'])->firstWhere('request_item_id',$item['id']))<td>{{ $line['description'] }}<br>Harga satuan: {{ \App\Services\Scm\Decimal::money($line['price_minor'],$q['currency']) }}<br>Diskon: {{ \App\Services\Scm\Decimal::money($line['discount_minor'],$q['currency']) }}<br>Pajak nominal: {{ \App\Services\Scm\Decimal::money($line['tax_minor'],$q['currency']) }}<br>Total baris: {{ \App\Services\Scm\Decimal::money($line['total_minor'],$q['currency']) }}</td>@endforeach</tr>@endforeach
-<tr><th>Biaya tambahan</th>@foreach($cbe->snapshot['quotes'] as $q)<td>{{ \App\Services\Scm\Decimal::money($q['extra_minor'],$q['currency']) }}</td>@endforeach</tr>
-<tr><th>Total</th>@foreach($cbe->snapshot['quotes'] as $q)<td><strong>{{ \App\Services\Scm\Decimal::money($q['total_minor'],$q['currency']) }}</strong>@if($q['total_minor']===min(array_column($cbe->snapshot['quotes'],'total_minor'))) · Total terendah @endif</td>@endforeach</tr>
-<tr><th>Waktu / pembayaran</th>@foreach($cbe->snapshot['quotes'] as $q)<td>{{ $q['lead_time'] }}<br>{{ $q['payment_terms'] }}</td>@endforeach</tr></tbody></table></div>
-<p>Vendor terpilih: {{ collect($cbe->snapshot['quotes'])->firstWhere('vendor.id',$cbe->selected_vendor_id)['vendor']['name'] }}</p><p>Alasan: {{ $cbe->selection_reason }}</p><p>Harga akhir: {{ \App\Services\Scm\Decimal::money($cbe->final_minor,$cbe->snapshot['quotes'][0]['currency']) }}</p><p>Difinalkan: {{ $cbe->finalized_at->format('d/m/Y H:i:s') }}. Data menggunakan snapshot final.</p>
-</body></html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>{{ $cbe->number }} · Commercial Bid Evaluation</title>
+    @vite('resources/css/scm-cbe.css')
+</head>
+<body class="scm-cbe-print">
+    <div class="scm-cbe-print-actions"><button type="button" onclick="window.print()">Cetak / simpan PDF</button><span>{{ $cbe->number }} · Versi {{ $cbe->version }} · Difinalkan {{ $cbe->finalized_at->format('d/m/Y H:i:s') }}</span></div>
+    <p class="scm-cbe-sr">Perusahaan: {{ $cbe->snapshot['request']['company'] ?? 'APCA' }}</p>
+    @include('scm.partials.cbe-sheet', [
+        'sheetEditing' => false,
+        'sheetRequest' => $cbe->snapshot['request'],
+        'sheetItems' => $cbe->snapshot['items'],
+        'sheetQuotes' => $cbe->snapshot['quotes'],
+        'sheetNumber' => $cbe->number,
+        'sheetDate' => $cbe->date->format('d/m/Y'),
+        'sheetSelectedVendor' => $cbe->selected_vendor_id,
+        'sheetReason' => $cbe->selection_reason,
+        'sheetPreparedName' => $cbe->snapshot['prepared_by_name'] ?? null,
+    ])
+    <p class="scm-cbe-note">Harga akhir: {{ \App\Services\Scm\Decimal::money($cbe->final_minor, $cbe->snapshot['quotes'][0]['currency']) }}. Data menggunakan snapshot final.</p>
+</body>
+</html>

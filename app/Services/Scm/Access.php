@@ -2,7 +2,9 @@
 
 namespace App\Services\Scm;
 
+use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Procurement;
+use App\Models\Scm\RequestApproval;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -21,7 +23,26 @@ class Access
 
     public static function manages(?User $user, ?Procurement $request = null): bool
     {
-        return self::has($user, 'scm.process') && (! $request || ($request->status !== 'draft' && $user->canAccessDepartment($request->department_id)));
+        return self::has($user, 'scm.process') && (! $request || (! in_array($request->status, ['draft', 'approval']) && $user->canAccessDepartment($request->department_id)));
+    }
+
+    public static function approves(?User $user): bool
+    {
+        return $user && $user->isActiveForAccess() && (
+            ApprovalRoute::where('acknowledger_id', $user->id)->orWhere('cbo_id', $user->id)->orWhere('cbo3_id', $user->id)->exists()
+            || RequestApproval::where('user_id', $user->id)->where('role', '!=', 'requested')->exists()
+        );
+    }
+
+    public static function signs(?User $user): bool
+    {
+        return self::has($user, 'scm.request') || self::approves($user);
+    }
+
+    public static function viewsRequest(User $user, Procurement $request): bool
+    {
+        return self::views($user, $request) || ($user->isActiveForAccess()
+            && $request->approvals()->where('user_id', $user->id)->where('role', '!=', 'requested')->exists());
     }
 
     public static function views(User $user, Procurement $request): bool
@@ -38,7 +59,7 @@ class Access
                 $query->whereRaw('1 = 0');
             }
             if (self::manages($user)) {
-                $query->orWhere(fn ($q) => $q->where('status', '!=', 'draft')->whereIn('department_id', $user->accessibleDepartmentIds()));
+                $query->orWhere(fn ($q) => $q->whereNotIn('status', ['draft', 'approval'])->whereIn('department_id', $user->accessibleDepartmentIds()));
             }
         });
     }

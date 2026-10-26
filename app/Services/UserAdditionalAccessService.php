@@ -68,6 +68,7 @@ class UserAdditionalAccessService
         'vehicles' => ['label' => 'Vehicles', 'access' => 'vehicles'],
         'reminders' => ['label' => 'Reminders', 'access' => 'notifications'],
         'service-desk' => ['label' => 'Service Desk', 'access' => 'service-desk'],
+        'legal-approval' => ['label' => 'Approval Legal', 'access' => 'legal-approval'],
         'service-desk-manage' => ['label' => 'Kelola Service Desk', 'access' => 'service-desk-manage'],
         'service-desk-comments' => ['label' => 'Kirim komentar / balasan', 'access' => 'service-desk-comments'],
         'request-categories' => ['label' => 'Request Categories', 'access' => 'request-categories'],
@@ -105,6 +106,7 @@ class UserAdditionalAccessService
             'tickets.view',
         ],
         'service-desk-manage' => ['tickets.manage'],
+        'legal-approval' => ['legal-tasks.approve'],
         'service-desk-comments' => ['comments.create'],
         'findings-view' => ['findings.view'],
         'findings-manage' => ['findings.manage'],
@@ -242,6 +244,7 @@ class UserAdditionalAccessService
             'master-employees' => 'Master Data - Kelola Employees',
             'master-work-locations' => 'Attendance Report - Kelola Work Locations',
             'service-desk-manage' => 'Kelola Service Desk',
+            'legal-approval' => 'Approval Legal',
             'service-desk-comments' => 'Kirim komentar / balasan Service Desk',
             'findings-view' => 'Lihat Due Diligence Findings',
             'findings-manage' => 'Kelola Due Diligence Findings',
@@ -274,6 +277,7 @@ class UserAdditionalAccessService
         return [
             'notifications' => 'Reminders.',
             'service-desk' => 'Service Desk.',
+            'legal-approval' => 'Menyetujui atau menolak pengajuan Service Desk ke Legal melalui Work Logs.',
             'master-data' => 'Subject Categories, Permit & KBLI, Projects, Activity Categories.',
             'attendance-report' => 'Attendance Report dan Report Results.',
             'attendance-management' => 'Upload Period dan pengelolaan data attendance.',
@@ -305,6 +309,13 @@ class UserAdditionalAccessService
         return [
             'procurement_requests' => ['label' => 'Permintaan', 'description' => 'Menu PR dan SR untuk membuat serta memantau permintaan sendiri.', 'items' => ['scm-requests']],
             'scm' => ['label' => 'SCM', 'description' => 'Penerimaan permintaan, pencarian vendor, CBE, legalitas, dan pengaturan master.', 'items' => ['scm-process', 'scm-configure']],
+            'approvals' => [
+                'label' => 'Kewenangan Persetujuan',
+                'description' => 'Centang untuk CBO yang menyetujui pengajuan Service Desk ke Legal. Work Logs dan riwayat keputusan tersedia otomatis.',
+                'items' => ['legal-approval'],
+                'field_label' => 'Persetujuan',
+                'bulk_toggleable' => false,
+            ],
             'it_infrastructure' => [
                 'label' => 'Infrastruktur IT',
                 'description' => 'Pilih kemampuan petugas IT. Cakupan data tetap mengikuti department pengelola yang dapat diakses pengguna.',

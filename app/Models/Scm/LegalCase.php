@@ -8,7 +8,7 @@ class LegalCase extends Record
 
     protected function casts(): array
     {
-        return ['requested_at' => 'datetime', 'completed_at' => 'datetime'];
+        return ['requested_at' => 'datetime', 'completed_at' => 'datetime', 'document_basis_snapshot' => 'array'];
     }
 
     public function items()
