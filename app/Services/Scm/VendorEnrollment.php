@@ -49,11 +49,19 @@ class VendorEnrollment
         return $registration;
     }
 
-    public function validateStep(int $step, array $data): array
+    public function validateStep(int $step, array $data, array $answers = []): array
     {
+        if ($step === 1) {
+            $data['company_origin'] ??= VendorForm::origin([1 => $data]);
+            $data['document_basis'] ??= 'company';
+            if ($data['company_origin'] === 'indonesia') {
+                $data['country'] = 'Indonesia';
+            }
+            $answers[1] = $data;
+        }
         $rules = [];
         $labels = [];
-        foreach (VendorForm::fields($step) as $key => $field) {
+        foreach (VendorForm::fields($step, $answers) as $key => $field) {
             [$label, $type] = $field;
             $required = $field[2] ?? false;
             $labels[$key] = $label;
@@ -64,7 +72,14 @@ class VendorEnrollment
             };
         }
         if ($step === 1) {
-            $rules['country'] = 'required|in:Indonesia';
+            $rules['company_origin'] = 'required|in:indonesia,foreign';
+            $rules['document_basis'] = 'required|in:company,npwp_ktp';
+            $labels['company_origin'] = 'Asal perusahaan';
+            $labels['document_basis'] = 'Dokumen vendor';
+            $rules['country'] = 'required|string|min:2|max:255';
+            if (VendorForm::origin($answers) === 'foreign' || VendorForm::basis($answers) === 'npwp_ktp') {
+                $rules['has_amendments'] = $rules['non_pkp'] = 'nullable|in:yes,no';
+            }
             $rules['address'] = 'required|string|max:2000';
             $rules['phone'] = $rules['pic_phone'] = 'required|string|max:100';
             $rules['supplied_description'] = 'required_if:supplied_before,yes|nullable|string|max:10000';
@@ -81,15 +96,25 @@ class VendorEnrollment
             $rules['date'] = 'required|date|before_or_equal:today';
         }
 
-        return Validation::make($data, $rules, ['required_if' => ':attribute wajib diisi untuk jawaban yang dipilih.',
+        $validated = Validation::make($data, $rules, ['required_if' => ':attribute wajib diisi untuk jawaban yang dipilih.',
             'accepted' => 'Konfirmasikan pernyataan kebenaran data.', 'after_or_equal' => ':attribute tidak boleh sebelum hari ini.',
             'before_or_equal' => ':attribute tidak boleh setelah hari ini.'], $labels)->validate();
+        if ($step === 1 && $validated['company_origin'] === 'foreign') {
+            if ($validated['document_basis'] !== 'company') {
+                throw ValidationException::withMessages(['document_basis' => 'Pengganti NPWP dan KTP hanya untuk vendor Indonesia.']);
+            }
+            if (in_array(mb_strtolower(trim($validated['country'])), ['indonesia', 'id', 'idn'], true)) {
+                throw ValidationException::withMessages(['country' => 'Pilih Indonesia atau isi negara perusahaan di luar Indonesia.']);
+            }
+        }
+
+        return $validated;
     }
 
     public function saveStep(VendorRegistration $registration, int $version, int $step, array $data, bool $submit = false): void
     {
         abort_unless(isset(VendorForm::TITLES[$step]) && (! $submit || $step === 5), 404);
-        $validated = $this->validateStep($step, $data);
+        $validated = $this->validateStep($step, $data, $registration->answers ?? []);
         DB::transaction(function () use ($registration, $version, $step, $validated, $submit): void {
             $record = $this->editable($registration->id, $version);
             $answers = $record->answers ?? [];
@@ -100,7 +125,7 @@ class VendorEnrollment
                 $record->status = 'submitted';
                 $record->submitted_at = now();
                 $record->submitted_snapshot = ['answers' => $answers, 'context' => $record->context,
-                    'files' => $this->latestFiles($record)->map->only(['id', 'code', 'number', 'issued_at', 'expires_at', 'original_name'])->all()];
+                    'files' => $this->applicableFiles($record)->map->only(['id', 'code', 'number', 'issued_at', 'expires_at', 'original_name'])->all()];
             }
             $record->version++;
             $record->save();
@@ -132,6 +157,9 @@ class VendorEnrollment
         try {
             DB::transaction(function () use ($registration, $version, $code, $data, $file, $extension, &$path): void {
                 $record = $this->editable($registration->id, $version);
+                if (! array_key_exists($code, VendorForm::requestedDocuments($record->answers ?? [], $record->context))) {
+                    throw ValidationException::withMessages(['file' => 'Dokumen ini tidak diminta untuk jenis vendor dan jawaban yang sudah disimpan.']);
+                }
                 $path = $file->storeAs('vendor-registration/'.now()->format('Y/m'), Str::uuid().'.'.$extension, 'scm');
                 if (! $path) {
                     throw ValidationException::withMessages(['file' => 'File gagal disimpan. Coba unggah kembali.']);
@@ -156,11 +184,18 @@ class VendorEnrollment
         return $registration->files()->latest('id')->get()->unique('code')->keyBy('code');
     }
 
+    public function applicableFiles(VendorRegistration $registration, ?Collection $files = null): Collection
+    {
+        $definitions = VendorForm::requestedDocuments($registration->answers ?? [], $registration->context);
+
+        return ($files ?? $this->latestFiles($registration))->filter(fn ($file) => isset($definitions[$file->code]));
+    }
+
     public function validateSubmission(VendorRegistration $registration): void
     {
         foreach (VendorForm::TITLES as $step => $title) {
             try {
-                $this->validateStep($step, $registration->answers[$step] ?? []);
+                $this->validateStep($step, $registration->answers[$step] ?? [], $registration->answers ?? []);
             } catch (ValidationException $exception) {
                 throw ValidationException::withMessages(['form' => 'Lengkapi bagian '.$step.': '.$title.'. '.collect($exception->errors())->flatten()->first()]);
             }
@@ -177,7 +212,7 @@ class VendorEnrollment
         foreach (range(1, 4) as $step) {
             $errors = [];
             try {
-                $this->validateStep($step, $registration->answers[$step] ?? []);
+                $this->validateStep($step, $registration->answers[$step] ?? [], $registration->answers ?? []);
             } catch (ValidationException $exception) {
                 $errors = $exception->errors();
             }
@@ -193,18 +228,19 @@ class VendorEnrollment
     private function documentIssues(VendorRegistration $registration, Collection $files): array
     {
         $issues = [];
-        foreach (VendorForm::documents() as $code => [$name]) {
+        foreach (VendorForm::requestedDocuments($registration->answers ?? [], $registration->context) as $code => [$name]) {
+            $name = VendorForm::documentLabel($code, $registration->answers ?? []);
             if (VendorForm::required($code, $registration->answers ?? [], $registration->context) && ! $files->has($code)) {
                 $issues[] = ['step' => VendorForm::documents()[$code][1], 'code' => $code, 'message' => 'Dokumen wajib belum diunggah: '.$name];
             }
         }
-        foreach ($files as $file) {
+        foreach ($this->applicableFiles($registration, $files) as $file) {
             if (! Storage::disk('scm')->exists($file->path) || $file->expires_at?->lt(today())) {
                 $issues[] = ['step' => VendorForm::documents()[$file->code][1], 'code' => $file->code,
-                    'message' => 'Perbarui dokumen yang hilang/kedaluwarsa: '.VendorForm::documents()[$file->code][0]];
+                    'message' => 'Perbarui dokumen yang hilang/kedaluwarsa: '.VendorForm::documentLabel($file->code, $registration->answers ?? [])];
             }
         }
-        if (($registration->answers[2]['quality_certified'] ?? '') === 'yes'
+        if (VendorForm::required('SERTIFIKAT_MUTU', $registration->answers ?? [], $registration->context)
             && $files->get('SERTIFIKAT_MUTU')?->expires_at?->toDateString() !== ($registration->answers[2]['quality_expiry'] ?? null)) {
             $issues[] = ['step' => 2, 'code' => 'SERTIFIKAT_MUTU',
                 'message' => 'Tanggal sertifikat mutu pada bagian 2 harus sama dengan masa berlaku lampirannya.'];
@@ -240,10 +276,10 @@ class VendorEnrollment
                         $company = $record->answers[1];
                         $workflow = app(Workflow::class);
                         $workflow->saveVendor($actor, [...$vendor->getAttributes(), ...collect($company)->only(['name', 'address', 'phone', 'email', 'pic_name', 'pic_email', 'pic_phone', 'pic_position'])->all()], $vendor->id, $vendor->version);
-                        foreach ($this->latestFiles($record) as $file) {
+                        foreach ($this->applicableFiles($record) as $file) {
                             $type = DocumentType::where('code', $file->code)->where('is_active', true)->firstOrFail();
                             $document = $workflow->saveDocument($actor, ['vendor_id' => $vendor->id, 'document_type_id' => $type->id, 'number' => $file->number,
-                                'title' => VendorForm::documents()[$file->code][0], 'issued_at' => $file->issued_at?->toDateString(),
+                                'title' => VendorForm::documentLabel($file->code, $record->answers ?? []), 'issued_at' => $file->issued_at?->toDateString(),
                                 'expires_at' => $file->expires_at?->toDateString(), 'notes' => 'Diunggah vendor melalui Form 005 #'.$record->id.'; diterima SCM setelah pemeriksaan.'],
                                 new UploadedFile(Storage::disk('scm')->path($file->path), $file->original_name, $file->mime, null, true));
                             array_push($createdPaths, ...$document->attachments()->pluck('path')->all());

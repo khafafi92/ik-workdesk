@@ -16,3 +16,23 @@
 @media(min-width:1000px){.vp-steps{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media(max-width:420px){.vp-header{align-items:flex-start}.vp-header img{width:65px;height:55px}.vp-header h1{font-size:1.25rem}.vp-shell{width:calc(100% - 1rem)}.vp-actions button{width:100%}}
 @media print{.vp-steps,.vp-skip,.vp-actions,.vp-document details,.vp-error{display:none}.vendor-portal{background:#fff}.vp-shell{width:100%;margin:0}.vp-paper{border:0;padding:0}.vp-header{break-inside:avoid}.vp-review-section,.vp-document{break-inside:avoid}}
+.vendor-portal [hidden]{display:none!important}
+.vp-field-group{border:0;border-top:1px solid #6b7280;margin:1.25rem 0 0;padding:1rem 0 0;min-width:0}
+.vp-field-group legend{font-size:1.05rem;font-weight:700;padding:0 .75rem 0 0}
+.vp-field-group .vp-fields{margin:.5rem 0}
+.vp-vendor-kind{border:1px solid #6b7280;padding:1rem;margin-bottom:1.5rem}
+.vp-document-group{margin-top:1.5rem}
+.vp-document-group>header{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem 1rem;flex-wrap:wrap;margin-bottom:.5rem}
+.vp-document-group>header p{font-size:.875rem;color:#4b5563;margin:0}
+.vp-documents{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem;align-items:start}
+.vp-upload{border:1px solid #6b7280;min-width:0}
+.vp-upload summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.75rem;min-height:76px}
+.vp-upload summary strong{font-size:.9rem;font-weight:600}
+.vp-upload-state{display:block;font-size:.8rem;color:#4b5563;margin-top:.25rem}
+.vp-upload-action{color:#9a3412;text-decoration:underline;font-size:.85rem;flex-shrink:0}
+.vp-upload-content{border-top:1px solid #6b7280;padding:.75rem}
+.vp-upload-content .vp-fields{grid-template-columns:minmax(0,1fr);gap:.75rem}
+.vp-upload-content p{font-size:.875rem;margin:0}
+.vendor-portal .vp-submitting{opacity:.8;cursor:progress}
+@media(min-width:800px){.vp-documents{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media print{.vp-upload summary{padding:.25rem}.vp-upload-content{display:none}.vp-documents{grid-template-columns:repeat(2,minmax(0,1fr))}}

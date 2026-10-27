@@ -13,6 +13,7 @@ use App\Models\Scm\RequestNumber;
 use App\Models\Scm\Requirement;
 use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
+use App\Models\Scm\VendorRegistration;
 use App\Models\User;
 use App\Services\Scm\Validation as Validator;
 use Illuminate\Database\Eloquent\Model;
@@ -324,12 +325,32 @@ class Workflow
             $this->reject($request->status !== 'selected' || $request->cbe?->status !== 'final', 'Legalitas hanya dapat dimulai dari CBE final.');
             $case = LegalCase::create(['request_id' => $request->id, 'cbe_id' => $request->cbe->id, 'vendor_id' => $request->cbe->selected_vendor_id,
                 'scm_pic_id' => $actor->id, 'requested_at' => now()]);
+            $registration = VendorRegistration::where('vendor_id', $case->vendor_id)->where('status', 'accepted')->latest('id')->first();
+            if ($registration && isset($registration->answers[1]['company_origin'])) {
+                $definitions = VendorForm::requestedDocuments($registration->answers, $registration->context);
+                $types = DocumentType::whereIn('code', array_keys($definitions))->where('is_active', true)->get();
+                $this->reject($types->count() !== count($definitions), 'Jenis dokumen Form 005 belum lengkap atau nonaktif. Lengkapi master dokumen sebelum memulai legalitas.');
+                foreach ($types as $type) {
+                    $case->items()->create(['document_type_id' => $type->id, 'document_name' => VendorForm::documentLabel($type->code, $registration->answers),
+                        'has_expiry' => $type->has_expiry, 'is_required' => true, 'status' => 'belum_diminta']);
+                }
+                $basis = VendorForm::basis($registration->answers);
+                $case->update(['document_basis' => $basis === 'npwp_ktp' ? 'npwp_ktp' : (VendorForm::origin($registration->answers) === 'foreign' ? 'foreign_company' : 'indonesia_company'),
+                    'document_basis_snapshot' => ['source' => 'form005', 'registration_id' => $registration->id, 'required' => $types->pluck('id')->all(),
+                        'company_origin' => VendorForm::origin($registration->answers), 'codes' => array_keys($definitions), 'substituted' => []]]);
+            }
+            $nationalCodes = [...VendorForm::INDONESIA_LEGAL, ...VendorForm::ADDITIONAL_DOCUMENTS, 'NIB', 'SBU'];
             foreach (Requirement::with('documentType')->where('category_id', $request->category_id)->get() as $requirement) {
-                if (! $requirement->documentType->is_active) {
+                if (! $requirement->documentType->is_active || $case->items()->where('document_type_id', $requirement->document_type_id)->exists()) {
                     continue;
                 }
+                $required = $requirement->is_required;
+                if (in_array($case->document_basis, ['foreign_company', 'npwp_ktp'], true)
+                    && in_array($requirement->documentType->code, $nationalCodes, true)) {
+                    $required = false;
+                }
                 $case->items()->create(['document_type_id' => $requirement->document_type_id, 'document_name' => $requirement->documentType->name,
-                    'has_expiry' => $requirement->documentType->has_expiry, 'is_required' => $requirement->is_required, 'status' => 'belum_diminta']);
+                    'has_expiry' => $requirement->documentType->has_expiry, 'is_required' => $required, 'status' => 'belum_diminta']);
             }
             $request->status = 'legal';
             $this->audit($actor, $case, 'snapshot_persyaratan', ['items' => $case->items->toArray()], $request->id);
@@ -343,6 +364,7 @@ class Workflow
         return $this->mutate($actor, $id, $version, function ($request) use ($actor, $reason): void {
             $case = $request->legalCase;
             $this->reject($request->status !== 'legal' || ! $case, 'Pengganti dokumen hanya dapat dipilih saat pengumpulan legalitas.');
+            $this->reject($case->document_basis === 'foreign_company', 'Pengganti NPWP dan KTP hanya untuk vendor Indonesia.');
             $this->reject($case->document_basis === 'npwp_ktp', 'NPWP dan KTP sudah digunakan sebagai pengganti SBU/NIB.');
             $types = DocumentType::whereIn('code', ['NPWP', 'KTP'])->where('is_active', true)->get();
             $this->reject($types->count() !== 2, 'Jenis dokumen NPWP dan KTP harus tersedia dan aktif.');

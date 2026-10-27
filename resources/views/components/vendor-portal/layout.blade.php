@@ -5,7 +5,7 @@
 @endphp
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Form 005 Vendor · {{ $brand['name'] }}</title>@vite('resources/css/vendor-portal.css')</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Form 005 Vendor · {{ $brand['name'] }}</title>@vite(['resources/css/vendor-portal.css', 'resources/js/vendor-portal.js'])</head>
 <body class="vendor-portal">
     <a class="vp-skip" href="#main">Langsung ke formulir</a>
     <div class="vp-shell">

@@ -131,9 +131,10 @@
             @elseif($tab === 'legal' && $canManage)
                 <h3>Kelengkapan administratif vendor terpilih</h3><p>Checklist menggunakan persyaratan saat pengumpulan dimulai. Kelengkapan ini tidak memverifikasi keaslian dokumen ke instansi penerbit.</p><p class="scm-help">Dokumen Form 005 yang diterima SCM tersedia sebagai versi dokumen vendor. Pilih versinya dan simpan status Diterima pada setiap checklist yang sesuai. Penerimaan Form 005 tidak otomatis menyelesaikan checklist pengadaan.</p>
                 @if(!$record->legalCase)<p>Finalkan CBE lalu mulai pengumpulan legalitas dari tab CBE.</p>@else
+                @if(($record->legalCase->document_basis_snapshot['source'] ?? null) === 'form005')<p class="scm-help" role="status">Checklist mengikuti Form 005 yang sudah diterima SCM untuk {{ $record->legalCase->document_basis === 'foreign_company' ? 'perusahaan luar Indonesia' : 'vendor Indonesia' }}. Dokumen tetap diperiksa dan diterima satu per satu pada pengadaan ini.</p>@endif
                 @if($record->legalCase->document_basis === 'npwp_ktp')
-                    <p class="scm-help" role="status">Pengganti SBU/NIB: NPWP dan KTP wajib diterima beserta file. SBU/NIB menjadi opsional; persyaratan lain pada checklist tetap berlaku.</p>
-                @elseif($record->status === 'legal')
+                    <p class="scm-help" role="status">{{ ($record->legalCase->document_basis_snapshot['source'] ?? null) === 'form005' ? 'Vendor Indonesia tanpa dokumen perusahaan: NPWP dan KTP wajib diterima beserta file.' : 'Pengganti SBU/NIB: NPWP dan KTP wajib diterima beserta file. SBU/NIB menjadi opsional; persyaratan lain pada checklist tetap berlaku.' }}</p>
+                @elseif($record->status === 'legal' && $record->legalCase->document_basis !== 'foreign_company')
                     <form wire:submit="useAlternativeDocuments" class="scm-item">
                         <h4>Vendor tidak memiliki SBU/NIB</h4>
                         <p>Gunakan NPWP dan KTP sebagai pengganti. Kedua dokumen wajib diterima beserta file sebelum pengadaan diselesaikan.</p>

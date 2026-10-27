@@ -6,9 +6,13 @@ class VendorForm
 {
     public const TITLES = [1 => 'Data Perusahaan', 2 => 'Manajemen Mutu', 3 => 'Manajemen K3L / HSE', 4 => 'Manajemen Proses', 5 => 'Pernyataan'];
 
-    public static function fields(int $step): array
+    public const INDONESIA_LEGAL = ['AKTA_PENDIRIAN', 'AKTA_PERUBAHAN', 'IZIN_USAHA', 'TDP', 'DOMISILI', 'SERTIFIKAT_ASOSIASI', 'PERNYATAAN_HUKUM', 'NPWP', 'PKP', 'REFERENSI_BANK', 'KTP'];
+
+    public const ADDITIONAL_DOCUMENTS = ['COMPANY_PROFILE', 'DAFTAR_PENGALAMAN', 'KATALOG_PRODUK'];
+
+    public static function fields(int $step, array $answers = []): array
     {
-        return match ($step) {
+        $fields = match ($step) {
             1 => [
                 'name' => ['1.1.1 Nama lengkap perusahaan', 'text', true],
                 'previous_name' => ['1.1.2 Nama perusahaan sebelumnya (jika ada)', 'text'],
@@ -64,6 +68,17 @@ class VendorForm
             ],
             default => [],
         };
+        if (self::origin($answers) === 'foreign') {
+            if ($step === 3) {
+                $fields['equipment_used'] = ['Menggunakan peralatan lifting / hoisting?', 'choice', true];
+            }
+            if ($step === 4) {
+                $fields['blasting_used'] = ['Ada proses internal blasting?', 'choice', true];
+                $fields['vessel_loading'] = ['Ada pekerjaan load in pipe from vessel?', 'choice', true];
+            }
+        }
+
+        return $fields;
     }
 
     public static function documents(): array
@@ -98,19 +113,110 @@ class VendorForm
             'PROSEDUR_COATING' => ['Instruksi kerja coating process (jika relevan)', 4, 'optional', false],
             'PROSEDUR_LOADING' => ['Instruksi kerja loading-unloading (jika relevan)', 4, 'optional', false],
             'JSA' => ['Job Safety Analysis / JSA (jika relevan)', 4, 'optional', false],
+            'FOREIGN_DEED' => ['Deed of Incorporation & Latest Amendments', 1, 'always', false],
+            'FOREIGN_LICENSE' => ['Business License', 1, 'always', false],
+            'FOREIGN_REGISTRY' => ['Company Registry Certificate', 1, 'always', false],
+            'FOREIGN_DOMICILE' => ['Company Domicile Certificate', 1, 'always', false],
+            'HSE_POLICY' => ['HSE Policy', 3, 'ohs_system', false],
+            'LIFTING_HOISTING' => ['Lifting & Hoisting Equipment', 3, 'equipment_used', false],
+            'DAILY_INSPECTION' => ['Daily Inspection Form', 3, 'equipment_used', false],
+            'EQUIPMENT_INSPECTION' => ['Equipment Certificate of Inspection', 3, 'equipment_used', false],
+            'INTERNAL_BLASTING' => ['Internal Blasting Process (if any)', 4, 'blasting_used', false],
+            'VESSEL_LOADING' => ['Load in Pipe From Vessel', 4, 'vessel_loading', false],
         ];
+    }
+
+    public static function origin(array $answers): string
+    {
+        return $answers[1]['company_origin'] ?? (mb_strtolower(trim($answers[1]['country'] ?? 'Indonesia')) === 'indonesia' ? 'indonesia' : 'foreign');
+    }
+
+    public static function basis(array $answers): string
+    {
+        return self::origin($answers) === 'indonesia' && ($answers[1]['document_basis'] ?? 'company') === 'npwp_ktp' ? 'npwp_ktp' : 'company';
+    }
+
+    public static function documentGroups(array $answers, array $context): array
+    {
+        if (self::basis($answers) === 'npwp_ktp') {
+            return ['Dokumen pengganti Indonesia' => ['NPWP', 'KTP']];
+        }
+        $groups = self::origin($answers) === 'foreign' ? [
+            'Legal Documents' => ['FOREIGN_DEED', 'FOREIGN_LICENSE', 'FOREIGN_REGISTRY', 'FOREIGN_DOMICILE'],
+            'Quality Management Documents' => ['MANUAL_MUTU', 'SERTIFIKAT_MUTU'],
+            'HSE / Equipment / Operator Documents' => ['HSE_POLICY', 'MANUAL_K3', 'KEBIJAKAN_ALKOHOL', 'PENILAIAN_RISIKO', 'LIFTING_HOISTING', 'DAILY_INSPECTION', 'EQUIPMENT_INSPECTION', 'LISENSI_OPERATOR', 'INTERNAL_BLASTING', 'VESSEL_LOADING'],
+        ] : [
+            'Legalitas perusahaan Indonesia' => self::INDONESIA_LEGAL,
+        ];
+        $groups[self::origin($answers) === 'foreign' ? 'Additional documents' : 'Dokumen tambahan'] = self::ADDITIONAL_DOCUMENTS;
+        foreach ($groups as $title => $codes) {
+            $groups[$title] = array_values(array_filter($codes, fn ($code) => self::ruleApplies(self::documents()[$code][2], $answers, $context)));
+        }
+
+        return array_filter($groups);
+    }
+
+    public static function requestedDocuments(array $answers, array $context): array
+    {
+        $codes = array_merge([], ...array_values(self::documentGroups($answers, $context)));
+
+        return array_intersect_key(self::documents(), array_flip($codes));
+    }
+
+    public static function documentLabel(string $code, array $answers): string
+    {
+        if (self::basis($answers) === 'npwp_ktp' && $code === 'NPWP') {
+            return 'NPWP';
+        }
+        if (self::origin($answers) === 'foreign') {
+            return match ($code) {
+                'MANUAL_MUTU' => 'Quality Manual', 'SERTIFIKAT_MUTU' => 'ISO 9001: 2008 Certificate', 'MANUAL_K3' => 'HSE Manual',
+                'KEBIJAKAN_ALKOHOL' => 'Drug & Alcohol Policy', 'PENILAIAN_RISIKO' => 'Workplace Risk Assessment', 'LISENSI_OPERATOR' => 'Operator Certificate',
+                default => self::documents()[$code][0],
+            };
+        }
+
+        return self::documents()[$code][0];
+    }
+
+    public static function fieldGroups(int $step, array $answers): array
+    {
+        return match ($step) {
+            1 => ['Identitas perusahaan' => ['name', 'previous_name'],
+                'Alamat dan kontak perusahaan' => ['address', 'city', 'province', 'postcode', 'country', 'phone', 'fax', 'email', 'website'],
+                'Pimpinan dan contact person' => ['ceo_name', 'ceo_email', 'ceo_phone', 'pic_name', 'pic_position', 'pic_email', 'pic_phone'],
+                'Informasi pemasok dan legalitas' => ['supplied_before', 'supplied_description', 'has_amendments', 'non_pkp']],
+            3 => ['Kesehatan dan keselamatan kerja' => ['ohs_system', 'ohs_standards', 'ohs_certified', 'health_policy', 'drug_policy', 'risk_assessment', 'ohs_remarks'],
+                'Lingkungan' => ['environment_system', 'environment_standards', 'environment_certified', 'environment_offence', 'environment_details', 'environment_remarks'],
+                'Peralatan dan operator' => ['equipment_control', 'operator_licensed', 'equipment_used']],
+            default => [self::TITLES[$step] => array_keys(self::fields($step, $answers))],
+        };
+    }
+
+    public static function fieldCondition(string $key): ?array
+    {
+        return match ($key) {
+            'supplied_description' => ['supplied_before', 'yes'],
+            'certifying_body', 'quality_expiry' => ['quality_certified', 'yes'],
+            'certification_progress' => ['quality_certified', 'no'],
+            'environment_details' => ['environment_offence', 'yes'],
+            default => null,
+        };
     }
 
     public static function required(string $code, array $answers, array $context): bool
     {
-        $rule = self::documents()[$code][2];
+        return array_key_exists($code, self::requestedDocuments($answers, $context));
+    }
 
+    private static function ruleApplies(string $rule, array $answers, array $context): bool
+    {
         return match ($rule) {
             'always' => true, 'optional' => false,
             'amendments' => ($answers[1]['has_amendments'] ?? '') === 'yes',
             'pkp' => ($answers[1]['non_pkp'] ?? '') !== 'yes',
             'construction' => ($context['is_construction'] ?? false) && ($context['amount_minor'] ?? 0) > 10000000000 && ($context['duration_months'] ?? 0) > 3,
-            default => ($answers[in_array($rule, ['quality_system', 'quality_certified']) ? 2 : 3][$rule] ?? '') === 'yes',
+            default => ($answers[in_array($rule, ['quality_system', 'quality_certified']) ? 2 : (in_array($rule, ['blasting_used', 'vessel_loading']) ? 4 : 3)][$rule] ?? '') === 'yes',
         };
     }
 }

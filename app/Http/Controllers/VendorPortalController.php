@@ -19,7 +19,7 @@ class VendorPortalController extends Controller
         $files = $enrollment->latestFiles($registration);
 
         return $this->privateResponse(response()->view('vendor-portal.form', ['registration' => $registration, 'step' => $step,
-            'token' => $token, 'fields' => VendorForm::fields($step), 'files' => $files,
+            'token' => $token, 'fields' => VendorForm::fields($step, $registration->answers ?? []), 'files' => $files,
             'checklist' => $step === 5 ? $enrollment->submissionChecklist($registration, $files) : []]));
     }
 
@@ -51,7 +51,7 @@ class VendorPortalController extends Controller
             return $this->privateResponse(redirect()->route('vendor.portal', ['token' => $token, 'step' => $definition[1]])->withErrors($exception->errors()));
         }
 
-        return $this->privateResponse(redirect()->route('vendor.portal', ['token' => $token, 'step' => $definition[1]])->with('status', $definition[0].' tersimpan.'));
+        return $this->privateResponse(redirect()->route('vendor.portal', ['token' => $token, 'step' => $definition[1]])->with('status', VendorForm::documentLabel($code, $registration->answers ?? []).' tersimpan.'));
     }
 
     public function download(string $token, int $file, VendorEnrollment $enrollment)
