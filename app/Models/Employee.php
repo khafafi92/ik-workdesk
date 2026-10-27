@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\EmployeeHierarchy;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -17,12 +18,30 @@ class Employee extends Model
         'email',
         'phone',
         'position',
+        'position_level',
+        'supervisor_employee_id',
         'is_active',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'supervisor_employee_id' => 'integer',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(fn (Employee $employee) => EmployeeHierarchy::validate($employee));
+    }
+
+    public function supervisor(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'supervisor_employee_id');
+    }
+
+    public function directReports(): HasMany
+    {
+        return $this->hasMany(self::class, 'supervisor_employee_id');
+    }
 
     public function user(): BelongsTo
     {

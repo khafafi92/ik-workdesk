@@ -70,11 +70,28 @@
             @endif
             @if($tab === 'request')
                 @if($record->status === 'submitted')<p role="status">Sudah dikirim ke SCM pada {{ $record->submitted_at?->format('d/m/Y H:i') }}. Menunggu penerimaan SCM.</p>@endif
+                @if($record->status === 'draft' && (int) $record->requester_id === (int) auth()->id())
+                    <section class="scm-panel" aria-label="Status pengajuan">
+                        <h3>Belum diajukan</h3>
+                        @if($submissionIssue)
+                            <p role="alert">{{ $submissionIssue }} Pengajuan belum diteruskan kepada atasan.</p>
+                        @elseif($submissionPlan)
+                            @if($submissionPlan['manager_request'])
+                                <p>Pengajuan atasan akan diteruskan ke CBO {{ $submissionPlan['cbo']->name }}{{ $submissionPlan['coo'] ? ', kemudian COO '.$submissionPlan['coo']->name : '' }}.</p>
+                            @else
+                                @if($submissionPlan['supervisor'])<p>Persetujuan pertama ditugaskan kepada SPV {{ $submissionPlan['supervisor']->name }}.</p>@endif
+                                <p>Setelah diajukan, Acknowledged by ditugaskan kepada {{ $submissionPlan['acknowledger']->name }}, lalu dilanjutkan ke CBO {{ $submissionPlan['cbo']->name }}{{ $submissionPlan['coo'] ? ' dan COO '.$submissionPlan['coo']->name : '' }}.</p>
+                            @endif
+                            <p>{{ $record->prepared_signed_at ? 'Tanda tangan pembuat sudah tersimpan. Klik Ajukan persetujuan HO untuk mengirim pengajuan.' : 'Tanda tangani Requested by, lalu klik Ajukan persetujuan HO.' }}</p>
+                        @endif
+                    </section>
+                @endif
                 @include('filament.pages.scm.partials.request-routing', ['routingEditing' => false])
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => false])
                 @include('filament.pages.scm.partials.approval-progress')
-                <div class="scm-actions">@if($record->status === 'draft' && (int)$record->requester_id === (int)auth()->id() && $canRequest)<button type="button" wire:click="editDraft">Edit draft</button><x-filament::button wire:click="submitRequest" wire:loading.attr="disabled">Ajukan persetujuan HO</x-filament::button>@endif
+                <div class="scm-actions">@if($record->status === 'draft' && (int)$record->requester_id === (int)auth()->id() && $canRequest)<button type="button" wire:click="editDraft">Edit draft</button><x-filament::button wire:click="submitRequest" wire:loading.attr="disabled" :disabled="filled($submissionIssue)">Ajukan persetujuan HO</x-filament::button>@endif
                 </div>
+                @if($record->status === 'draft' && $submissionIssue)<p class="scm-help">Pengajuan belum dapat dikirim. Minta administrator melengkapi pemetaan atasan dan penandatangan yang ditampilkan di atas.</p>@endif
                 @if($canManage && $record->status === 'submitted')
                 <form wire:submit="receiveRequest" class="scm-item"><h3>Penerimaan SCM</h3><x-filament::button type="submit" wire:loading.attr="disabled">Terima oleh SCM</x-filament::button></form>
                 @endif

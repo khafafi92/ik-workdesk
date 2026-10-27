@@ -28,6 +28,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Url;
 use Livewire\WithFileUploads;
@@ -597,7 +598,18 @@ class ScmProcurement extends Page
             $approvalTarget = app(Approvals::class)->route($this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'])?->cbo3?->name;
         }
 
+        $submissionPlan = null;
+        $submissionIssue = null;
+        if ($record?->status === 'draft' && (int) $record->requester_id === (int) $user->id && ! $this->editing) {
+            try {
+                $submissionPlan = app(Approvals::class)->submissionPlan($user, $record->company, $record->department_id, app(Approvals::class)->requiresCbo3($record));
+            } catch (ValidationException $exception) {
+                $submissionIssue = collect($exception->errors())->flatten()->first();
+            }
+        }
+
         return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
+            'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
             'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses, 'statusOptions' => $statusOptions, 'approvalTarget' => $approvalTarget,
             'vendors' => $isScm ? Vendor::orderBy('name')->get() : collect(),
             'vendorRegistrations' => $isScm && $this->vendorId ? VendorRegistration::where('vendor_id', $this->vendorId)->latest('id')->get() : collect(),

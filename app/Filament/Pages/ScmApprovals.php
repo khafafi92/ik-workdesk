@@ -43,6 +43,19 @@ class ScmApprovals extends Page
             && ($user->hasRole('system-admin') || Access::approves($user));
     }
 
+    public static function getNavigationBadge(): ?string
+    {
+        $user = auth()->user();
+        $count = $user ? app(Approvals::class)->pendingCount($user) : 0;
+
+        return $count > 0 ? (string) $count : null;
+    }
+
+    public static function getNavigationBadgeTooltip(): ?string
+    {
+        return 'Pengajuan menunggu persetujuan Anda';
+    }
+
     private function assigned()
     {
         return Procurement::whereHas('approvals', fn ($query) => $query->where('user_id', auth()->id())->where('role', '!=', 'requested'));

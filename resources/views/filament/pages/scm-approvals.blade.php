@@ -9,17 +9,17 @@
         @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => false])
         @include('filament.pages.scm.partials.approval-progress')
         @if($nextApproval && (int) $nextApproval->user_id === (int) auth()->id())
-            <section class="scm-panel"><h2>Giliran Anda: {{ \App\Services\Scm\Approvals::LABELS[$nextApproval->role] }}</h2>
+            <section class="scm-panel"><h2>Giliran Anda: {{ \App\Services\Scm\Approvals::ROLE_LABELS[$nextApproval->role] }}</h2>
                 <p>Periksa isi dan lampiran permintaan sebelum memberikan keputusan. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD profil (tab baru)</a>.</p>
                 <fieldset wire:loading.attr="disabled" wire:target="decide"><legend class="scm-sheet-sr">Keputusan persetujuan</legend>
-                    <div class="scm-actions"><x-filament::button wire:click="decide({{ $nextApproval->id }}, 'sign')">Tanda tangani {{ \App\Services\Scm\Approvals::LABELS[$nextApproval->role] }}</x-filament::button>
+                    <div class="scm-actions"><x-filament::button wire:click="decide({{ $nextApproval->id }}, 'sign')">Tanda tangani {{ \App\Services\Scm\Approvals::ROLE_LABELS[$nextApproval->role] }}</x-filament::button>
                     @if(!$nextApproval->is_required && $nextApproval->role === 'crosschecked')<button type="button" wire:click="decide({{ $nextApproval->id }}, 'skip')">Lewati Crosschecked by</button>@endif</div>
                     <x-scm.field model="returnReason" label="Alasan pengembalian untuk revisi" multiline help="Minimal 10 karakter. Wajib jika dikembalikan; tidak diperlukan untuk tanda tangan." />
                     <div class="scm-actions"><button type="button" wire:click="decide({{ $nextApproval->id }}, 'return')">Kembalikan ke pembuat untuk revisi</button></div>
                 </fieldset>
             </section>
         @elseif($nextApproval)
-            <p role="status">Menunggu {{ \App\Services\Scm\Approvals::LABELS[$nextApproval->role] }} oleh {{ $nextApproval->user->name }}. Tombol keputusan tersedia saat giliran Anda.</p>
+            <p role="status">Menunggu {{ \App\Services\Scm\Approvals::ROLE_LABELS[$nextApproval->role] }} oleh {{ $nextApproval->user->name }}. Tombol keputusan tersedia saat giliran Anda.</p>
         @endif
         <section class="scm-panel"><h2>Lampiran permintaan</h2>@forelse($record->attachments as $file)<a href="{{ route('scm.download', $file) }}">Unduh {{ $file->original_name }}</a>@empty<p>Belum ada lampiran permintaan.</p>@endforelse</section>
     @else

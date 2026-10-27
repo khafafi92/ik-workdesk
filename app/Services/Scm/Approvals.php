@@ -17,6 +17,8 @@ class Approvals
 
     public const LABELS = ['requested' => 'Requested by', 'acknowledged' => 'Acknowledged by', 'crosschecked' => 'Crosschecked by', 'approved' => 'Approved by'];
 
+    public const ROLE_LABELS = ['supervised' => 'Persetujuan SPV', ...self::LABELS];
+
     public const STATUSES = ['pending' => 'Menunggu', 'signed' => 'Ditandatangani', 'skipped' => 'Dilewati', 'returned' => 'Dikembalikan', 'cancelled' => 'Dibatalkan'];
 
     private const MANAGER_CROSSCHECK_NOTE = 'Pengaju adalah atasan yang ditetapkan; pengajuan tidak memerlukan COO 3, sehingga Crosschecked by dilewati otomatis.';
@@ -58,30 +60,59 @@ class Approvals
         });
     }
 
+    public function submissionPlan(User $actor, string $company, int $departmentId, bool $high): array
+    {
+        $route = $this->route($company, $departmentId);
+        if (! $route) {
+            throw ValidationException::withMessages(['scm' => 'Atasan dan CBO untuk perusahaan dan departemen ini belum diatur di Pengaturan SCM.']);
+        }
+        if ($high && ! $route->cbo3_id) {
+            throw ValidationException::withMessages(['scm' => 'Pengajuan ditandai di atas Rp5 juta. Tetapkan penandatangan COO 3 di Pengaturan SCM sebelum mengajukan.']);
+        }
+        $acknowledgerId = $route->acknowledger_id;
+        $spv = null;
+        $employee = $actor->employee()->with('supervisor.user')->first();
+        if ((int) $acknowledgerId !== (int) $actor->id && $employee?->supervisor_employee_id !== null) {
+            $supervisor = $employee->supervisor;
+            if (! $supervisor?->is_active || ! $supervisor->user || ! $supervisor->user->isActiveForAccess()) {
+                throw ValidationException::withMessages(['scm' => 'Atasan langsung pada master Employee belum memiliki akun aktif. Minta administrator melengkapi pemetaan atasan.']);
+            }
+            $acknowledgerId = $supervisor->user_id;
+            if ($supervisor->position_level === 'supervisor') {
+                $spv = $supervisor->user;
+                $manager = $supervisor->supervisor;
+                if (! $manager?->is_active || ! $manager->user || ! $manager->user->isActiveForAccess()) {
+                    throw ValidationException::withMessages(['scm' => 'Manager di atas SPV belum dipetakan ke akun aktif. Tetapkan Manager atau pejabat penggantinya pada master Employee.']);
+                }
+                $acknowledgerId = $manager->user_id;
+            }
+        }
+        foreach ([$acknowledgerId, $route->cbo_id, ...($high ? [$route->cbo3_id] : [])] as $userId) {
+            if (! User::findOrFail($userId)->isActiveForAccess()) {
+                throw ValidationException::withMessages(['scm' => 'Akun penandatangan tidak aktif. Perbarui Pengaturan SCM.']);
+            }
+        }
+
+        return ['route' => $route, 'supervisor' => $spv, 'acknowledger' => User::findOrFail($acknowledgerId), 'cbo' => $route->cbo,
+            'coo' => $high ? $route->cbo3 : null, 'manager_request' => (int) $acknowledgerId === (int) $actor->id];
+    }
+
     public function start(User $actor, Procurement $request): void
     {
         if ($request->approval_scope !== 'HO') {
             throw ValidationException::withMessages(['scm' => 'Simpan kembali draft untuk pengajuan persetujuan HO.']);
         }
-        $route = $this->route($request->company, $request->department_id);
-        if (! $route) {
-            throw ValidationException::withMessages(['scm' => 'Atasan dan CBO untuk perusahaan dan departemen ini belum diatur di Pengaturan SCM.']);
-        }
         $high = $this->requiresCbo3($request);
-        if ($high && ! $route->cbo3_id) {
-            throw ValidationException::withMessages(['scm' => 'Pengajuan ditandai di atas Rp5 juta. Tetapkan penandatangan COO 3 di Pengaturan SCM sebelum mengajukan.']);
-        }
-        foreach ([$route->acknowledger_id, $route->cbo_id, ...($high ? [$route->cbo3_id] : [])] as $userId) {
-            if (! User::findOrFail($userId)->isActiveForAccess()) {
-                throw ValidationException::withMessages(['scm' => 'Akun penandatangan tidak aktif. Perbarui Pengaturan SCM.']);
-            }
-        }
+        $plan = $this->submissionPlan($actor, $request->company, $request->department_id, $high);
+        $route = $plan['route'];
         $request->approval_round++;
         $request->status = 'approval';
         $request->submitted_at = null;
-        $managerRequest = (int) $route->acknowledger_id === (int) $actor->id;
+        $managerRequest = $plan['manager_request'];
         foreach ([
-            ['requested', $actor->id, true], ['acknowledged', $route->acknowledger_id, true],
+            ['requested', $actor->id, true],
+            ...($plan['supervisor'] ? [['supervised', $plan['supervisor']->id, true]] : []),
+            ['acknowledged', $plan['acknowledger']->id, true],
             ['crosschecked', $route->cbo_id, $high], ['approved', $high ? $route->cbo3_id : $route->cbo_id, true],
         ] as $position => [$role, $userId, $required]) {
             $skipAcknowledgment = $role === 'acknowledged' && $managerRequest;
@@ -101,7 +132,26 @@ class Approvals
             'requires_cbo3' => $high,
             'manager_crosscheck_skipped' => $managerRequest && ! $high,
             'route_id' => $route->id, 'route_version' => $route->version,
+            'acknowledger_id' => $plan['acknowledger']->id,
+            'supervisor_id' => $plan['supervisor']?->id,
         ], $request->id);
+    }
+
+    public function pendingCount(User $user): int
+    {
+        if (! $user->isActiveForAccess()) {
+            return 0;
+        }
+
+        return RequestApproval::where('user_id', $user->id)->where('status', 'pending')
+            ->whereHas('request', fn ($query) => $query->where('status', 'approval')
+                ->whereColumn('scm_requests.approval_round', 'scm_request_approvals.round'))
+            ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('scm_request_approvals as earlier')
+                ->whereColumn('earlier.request_id', 'scm_request_approvals.request_id')
+                ->whereColumn('earlier.round', 'scm_request_approvals.round')
+                ->whereColumn('earlier.position', '<', 'scm_request_approvals.position')
+                ->where('earlier.status', 'pending'))
+            ->count();
     }
 
     public function requiresCbo3(Procurement $request): bool

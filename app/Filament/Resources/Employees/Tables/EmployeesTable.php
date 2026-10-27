@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Employees\Tables;
 
+use App\Services\EmployeeHierarchy;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -35,6 +36,15 @@ class EmployeesTable
                 TextColumn::make('phone')
                     ->searchable(),
                 TextColumn::make('position')
+                    ->searchable(),
+                TextColumn::make('position_level')
+                    ->label('Jenjang Jabatan')
+                    ->formatStateUsing(fn (string $state): string => EmployeeHierarchy::levels()[$state] ?? $state)
+                    ->placeholder('Belum dipetakan')
+                    ->sortable(),
+                TextColumn::make('supervisor.name')
+                    ->label('Atasan Langsung')
+                    ->placeholder('Belum dipetakan')
                     ->searchable(),
                 IconColumn::make('is_active')
                     ->boolean(),

@@ -480,6 +480,157 @@ class HoApprovalsTest extends TestCase
         $this->assertSame($this->cbo3->id, $high->approvals()->where('role', 'approved')->sole()->user_id);
     }
 
+    public function test_staff_with_a_supervisor_requires_spv_then_manager_while_paper_keeps_four_signature_columns(): void
+    {
+        $spv = $this->actor('SPV');
+        $spv->employee->update(['position_level' => 'supervisor', 'supervisor_employee_id' => $this->manager->employee->id]);
+        $this->requester->employee->update(['position_level' => 'staff', 'supervisor_employee_id' => $spv->employee->id]);
+        $request = $this->pending('6000000');
+        $this->assertSame('supervised', $this->approvals->next($request)->role);
+        $this->assertSame($spv->id, $this->approvals->next($request)->user_id);
+        $this->assertSame(5, $request->approvals()->count());
+        $this->assertSame(1, $this->approvals->pendingCount($spv));
+        $this->assertSame(0, $this->approvals->pendingCount($this->manager));
+        $this->rejects(fn () => $this->decide($request, 'skip'));
+        $this->rejects(fn () => $this->approvals->decide($this->manager, $request->id, $request->version, $this->approvals->next($request)->id, 'sign'));
+        $this->upload($spv);
+        Livewire::actingAs($spv)->test(ScmApprovals::class)->call('open', $request->id)->assertSee('Giliran Anda: Persetujuan SPV');
+        $request = $this->decide($request);
+        $this->assertSame('acknowledged', $this->approvals->next($request)->role);
+        $this->assertSame($this->manager->id, $this->approvals->next($request)->user_id);
+        $html = Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('open', $request->id)->html();
+        $document = new \DOMDocument;
+        @$document->loadHTML($html);
+        $xpath = new \DOMXPath($document);
+        $columns = $xpath->query('//div[contains(concat(" ", normalize-space(@class), " "), " scm-sheet-signature ")]');
+        $this->assertSame(4, $columns->length);
+        $this->assertSame('', trim($xpath->query('./div', $columns->item(1))->item(2)->textContent));
+        $request = $this->decide($request);
+        $this->assertSame('crosschecked', $this->approvals->next($request)->role);
+        $request = $this->decide($request);
+        $this->assertSame($this->cbo3->id, $this->approvals->next($request)->user_id);
+        $request = $this->decide($request);
+        $this->assertSame('submitted', $request->status);
+    }
+
+    public function test_staff_reporting_to_spv_without_a_named_manager_cannot_bypass_the_manager(): void
+    {
+        $spv = $this->actor('SPV');
+        $spv->employee->update(['position_level' => 'supervisor']);
+        $this->requester->employee->update(['supervisor_employee_id' => $spv->employee->id]);
+        $this->rejects(fn () => $this->pending());
+        $request = Procurement::latest('id')->firstOrFail();
+        $this->assertSame('draft', $request->status);
+        $this->assertSame(0, $request->approvals()->count());
+    }
+
+    public function test_spv_own_request_goes_to_manager_without_a_self_approval_step(): void
+    {
+        $spv = $this->actor('SPV', ['scm.request']);
+        $spv->employee->update(['position_level' => 'supervisor', 'supervisor_employee_id' => $this->manager->employee->id]);
+        $this->upload($spv);
+        $request = $this->pending(requester: $spv);
+        $this->assertFalse($request->approvals()->where('role', 'supervised')->exists());
+        $this->assertSame($this->manager->id, $this->approvals->next($request)->user_id);
+    }
+
+    public function test_employee_direct_supervisor_receives_acknowledgment_and_actionable_badge(): void
+    {
+        $jerry = $this->actor('Jerry');
+        $this->requester->employee->update(['position_level' => 'staff', 'supervisor_employee_id' => $jerry->employee->id]);
+        $request = $this->pending();
+        $this->assertSame($jerry->id, $this->approvals->next($request)->user_id);
+        $this->assertSame(1, $this->approvals->pendingCount($jerry));
+        $this->assertSame(0, $this->approvals->pendingCount($this->manager));
+        $this->assertSame(0, $this->approvals->pendingCount($this->cbo));
+        $this->assertFalse(Access::has($jerry, 'scm.request'));
+        $this->assertTrue(Access::approves($jerry));
+        Livewire::actingAs($jerry)->test(ScmApprovals::class)->call('open', $request->id)
+            ->assertSee('Giliran Anda: Acknowledged by');
+        $this->assertSame('1', ScmApprovals::getNavigationBadge());
+        $this->actingAs($this->cbo);
+        $this->assertNull(ScmApprovals::getNavigationBadge());
+        $this->rejects(fn () => $this->approvals->decide($this->manager, $request->id, $request->version, $this->approvals->next($request)->id, 'sign'));
+    }
+
+    public function test_changing_the_supervisor_only_changes_future_submissions(): void
+    {
+        $jerry = $this->actor('Jerry');
+        $gm = $this->actor('General Manager');
+        $this->requester->employee->update(['supervisor_employee_id' => $jerry->employee->id]);
+        $first = $this->pending();
+        $this->requester->employee->update(['supervisor_employee_id' => $gm->employee->id]);
+        $this->assertSame($jerry->id, $this->approvals->next($first)->user_id);
+        $second = $this->pending();
+        $this->assertSame($gm->id, $this->approvals->next($second)->user_id);
+        $this->assertSame(1, $this->approvals->pendingCount($jerry));
+        $this->assertSame(1, $this->approvals->pendingCount($gm));
+    }
+
+    public function test_explicit_supervisor_without_an_active_account_blocks_submission_without_falling_back(): void
+    {
+        $supervisor = Employee::create(['name' => 'Atasan tanpa akun', 'is_active' => true]);
+        $this->requester->employee->update(['supervisor_employee_id' => $supervisor->id]);
+        $this->rejects(fn () => $this->pending());
+        $request = Procurement::latest('id')->firstOrFail();
+        $this->assertSame('draft', $request->status);
+        $this->assertSame(0, $request->approvals()->count());
+        $this->assertNotNull($request->prepared_signed_at);
+        $jerry = $this->actor('Jerry');
+        $this->requester->employee->update(['supervisor_employee_id' => $jerry->employee->id]);
+        $jerry->employee->update(['is_active' => false]);
+        $this->rejects(fn () => $this->flow->submit($this->requester, $request->id, $request->version));
+        $this->assertSame(0, $this->approvals->pendingCount($jerry->fresh()));
+    }
+
+    public function test_configured_manager_request_keeps_existing_skip_rules_when_the_manager_has_a_supervisor(): void
+    {
+        $gm = $this->actor('General Manager');
+        $this->manager->employee->update(['supervisor_employee_id' => $gm->employee->id]);
+        $request = $this->pending(requester: $this->manager);
+        $this->assertSame('skipped', $request->approvals()->where('role', 'acknowledged')->sole()->status);
+        $this->assertSame('skipped', $request->approvals()->where('role', 'crosschecked')->sole()->status);
+        $this->assertSame('approved', $this->approvals->next($request)->role);
+        $this->assertSame(0, $this->approvals->pendingCount($gm));
+    }
+
+    public function test_badge_counts_only_current_turns_and_does_not_double_count_consecutive_cbo_steps(): void
+    {
+        $first = $this->pending();
+        $second = $this->pending();
+        $this->assertSame(2, $this->approvals->pendingCount($this->manager));
+        $this->assertSame(0, $this->approvals->pendingCount($this->cbo));
+        $first = $this->decide($first);
+        $this->assertSame(1, $this->approvals->pendingCount($this->manager));
+        $this->assertSame(1, $this->approvals->pendingCount($this->cbo));
+        $first = $this->decide($first, 'skip');
+        $this->assertSame(1, $this->approvals->pendingCount($this->cbo));
+        $first = $this->decide($first);
+        $this->assertSame('submitted', $first->status);
+        $this->assertSame(0, $this->approvals->pendingCount($this->cbo));
+        $this->assertSame(1, $this->approvals->pendingCount($this->manager));
+        $this->assertSame('approval', $second->fresh()->status);
+    }
+
+    public function test_draft_explains_missing_routing_and_previews_the_named_supervisor_when_ready(): void
+    {
+        $request = $this->flow->saveDraft($this->requester, $this->data());
+        $request = app(Signatures::class)->sign($this->requester, $request->id, $request->version);
+        ApprovalRoute::where('company', 'APCA')->where('department_id', $this->department->id)->delete();
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('open', $request->id)
+            ->assertSee('Belum diajukan')->assertSee('belum diatur di Pengaturan SCM')
+            ->assertSee('Pengajuan belum diteruskan kepada atasan.');
+        $jerry = $this->actor('Jerry');
+        $this->requester->employee->update(['supervisor_employee_id' => $jerry->employee->id]);
+        $this->approvals->saveRoute($this->scm, ['company' => 'APCA', 'department_id' => $this->department->id,
+            'acknowledger_id' => $this->manager->id, 'cbo_id' => $this->cbo->id, 'cbo3_id' => null, 'version' => 0]);
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('open', $request->id)
+            ->assertSee('Acknowledged by ditugaskan kepada Jerry')
+            ->assertSee('Klik Ajukan persetujuan HO untuk mengirim pengajuan.');
+        $this->assertSame('draft', $request->fresh()->status);
+        $this->assertSame(0, $request->approvals()->count());
+    }
+
     public function test_signing_requires_an_available_profile_image_and_keeps_the_step_pending_on_failure(): void
     {
         $r = $this->pending('6000000');

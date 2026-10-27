@@ -14,10 +14,13 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
 class EmployeeResource extends Resource
 {
-    use AdminOnlyResource;
+    use AdminOnlyResource {
+        canDelete as private canDeleteAsMaster;
+    }
 
     protected static ?string $menuPermissionCode = 'master.employees.manage';
 
@@ -28,6 +31,11 @@ class EmployeeResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedIdentification;
 
     protected static ?string $recordTitleAttribute = 'name';
+
+    public static function canDelete(Model $record): bool
+    {
+        return static::canDeleteAsMaster($record) && ! $record->directReports()->exists();
+    }
 
     public static function form(Schema $schema): Schema
     {

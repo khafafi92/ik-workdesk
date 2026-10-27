@@ -2796,6 +2796,19 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     outline-offset: 2px;
 }
 
+.employee-hierarchy-field.fi-input-wrp {
+    border-color: #64748b !important;
+}
+
+.employee-hierarchy-field .fi-select-input-btn {
+    min-height: 44px;
+}
+
+.employee-hierarchy-field .fi-select-input-btn:focus-visible {
+    outline: 2px solid #0068d9;
+    outline-offset: 2px;
+}
+
 @media (max-width: 640px) {
     .it-infrastructure-table .fi-ta-table :is(a, button) {
         min-height: 2.75rem;
