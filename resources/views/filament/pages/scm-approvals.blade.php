@@ -28,7 +28,7 @@
             <div class="scm-scroll" role="region" aria-label="Daftar persetujuan PR/SR" tabindex="0"><table><thead><tr><th>Permintaan</th><th>Pembuat</th><th>Alur persetujuan</th><th>Status</th><th>Giliran</th><th>Tindakan</th></tr></thead><tbody>
                 @forelse($records as $r)
                     @php($turn = app(\App\Services\Scm\Approvals::class)->next($r))
-                    <tr><td>{{ $r->number }}<br>{{ $r->title }}</td><td>{{ $r->requester->name }}</td><td>{{ app(\App\Services\Scm\Approvals::class)->requiresCbo3($r) ? 'Sampai COO 3' : 'Sampai CBO' }}</td><td>{{ $statuses[$r->status] }}</td><td>{{ $turn ? ((int) $turn->user_id === (int) auth()->id() ? 'Giliran Anda' : 'Menunggu '.$turn->user->name) : 'Tidak ada keputusan tertunda' }}</td><td><button type="button" wire:click="open({{ $r->id }})">Periksa permintaan</button></td></tr>
+                    <tr><td>{{ $r->number }}<br>{{ $r->title }}</td><td>{{ $r->requester->name }}</td><td>{{ \App\Services\Scm\ApprovalPolicies::NEED_TYPES[$r->need_type ?? 'HO'] }}<br>Approved by: {{ $r->approvals->where('round', $r->approval_round)->firstWhere('role', 'approved')?->user?->name ?? 'Belum ditetapkan' }}</td><td>{{ $statuses[$r->status] }}</td><td>{{ $turn ? ((int) $turn->user_id === (int) auth()->id() ? 'Giliran Anda' : 'Menunggu '.$turn->user->name) : 'Tidak ada keputusan tertunda' }}</td><td><button type="button" wire:click="open({{ $r->id }})">Periksa permintaan</button></td></tr>
                 @empty<tr><td colspan="6">Belum ada PR/SR yang ditugaskan kepada Anda.</td></tr>@endforelse
             </tbody></table></div>{{ $records->links() }}
         </section>

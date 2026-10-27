@@ -28,6 +28,8 @@ class Validation
             'mimetypes' => ':attribute harus berupa PDF/JPG/PNG yang valid.',
         ], $messages), array_replace([
             'code' => 'Kode', 'name' => 'Nama', 'date' => 'Tanggal', 'kind' => 'Jenis permintaan',
+            'need_type' => 'Jenis kebutuhan', 'request_kind' => 'Jenis PR/SR', 'supervisor_id' => 'Penandatangan SPV',
+            'crosschecker_id' => 'Crosschecked by', 'approver_id' => 'Approved by', 'high_approver_id' => 'Approved by di atas Rp5 juta',
             'title' => 'Judul', 'reason' => 'Alasan kebutuhan', 'number' => 'Nomor', 'department_id' => 'Departemen',
             'category_id' => 'Kategori', 'document_type_id' => 'Jenis dokumen', 'vendor_id' => 'Vendor',
             'file' => 'File', 'items' => 'Daftar item', 'lines' => 'Baris penawaran', 'currency' => 'Mata uang',

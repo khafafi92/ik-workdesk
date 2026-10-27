@@ -54,14 +54,21 @@ class Approvals
             $route->fill($data);
             $route->version = ($route->version ?? 0) + 1;
             $route->save();
+            app(ApprovalPolicies::class)->syncLegacy($route);
             app(Workflow::class)->audit($actor, $route, 'pengaturan_persetujuan_ho', ['before' => $before, 'after' => $route->getAttributes()]);
 
             return $route;
         });
     }
 
-    public function submissionPlan(User $actor, string $company, int $departmentId, bool $high): array
+    public function submissionPlan(User $actor, string $company, int $departmentId, bool $high, string $needType = 'HO', string $kind = 'ALL'): array
     {
+        if (! array_key_exists($needType, ApprovalPolicies::NEED_TYPES)) {
+            throw ValidationException::withMessages(['scm' => 'Pilih jenis kebutuhan HO atau Project sebelum mengajukan.']);
+        }
+        if ($plan = app(ApprovalPolicies::class)->plan($actor, $company, $departmentId, $high, $needType, $kind)) {
+            return $plan;
+        }
         $route = $this->route($company, $departmentId);
         if (! $route) {
             throw ValidationException::withMessages(['scm' => 'Atasan dan CBO untuk perusahaan dan departemen ini belum diatur di Pengaturan SCM.']);
@@ -93,7 +100,8 @@ class Approvals
             }
         }
 
-        return ['route' => $route, 'supervisor' => $spv, 'acknowledger' => User::findOrFail($acknowledgerId), 'cbo' => $route->cbo,
+        return ['is_custom' => false, 'route' => $route, 'supervisor' => $spv, 'acknowledger' => User::findOrFail($acknowledgerId), 'cbo' => $route->cbo,
+            'crosschecker' => $route->cbo, 'approver' => $high ? $route->cbo3 : $route->cbo, 'crosscheck_required' => $high,
             'coo' => $high ? $route->cbo3 : null, 'manager_request' => (int) $acknowledgerId === (int) $actor->id];
     }
 
@@ -103,36 +111,42 @@ class Approvals
             throw ValidationException::withMessages(['scm' => 'Simpan kembali draft untuk pengajuan persetujuan HO.']);
         }
         $high = $this->requiresCbo3($request);
-        $plan = $this->submissionPlan($actor, $request->company, $request->department_id, $high);
+        $plan = $this->submissionPlan($actor, $request->company, $request->department_id, $high, $request->need_type ?? 'HO', $request->kind);
         $route = $plan['route'];
         $request->approval_round++;
         $request->status = 'approval';
         $request->submitted_at = null;
         $managerRequest = $plan['manager_request'];
-        foreach ([
+        $steps = [
             ['requested', $actor->id, true],
             ...($plan['supervisor'] ? [['supervised', $plan['supervisor']->id, true]] : []),
-            ['acknowledged', $plan['acknowledger']->id, true],
-            ['crosschecked', $route->cbo_id, $high], ['approved', $high ? $route->cbo3_id : $route->cbo_id, true],
-        ] as $position => [$role, $userId, $required]) {
+            ...($plan['acknowledger'] ? [['acknowledged', $plan['acknowledger']->id, true]] : []),
+            ...($plan['crosschecker'] ? [['crosschecked', $plan['crosschecker']->id, $plan['crosscheck_required']]] : []),
+            ['approved', $plan['approver']->id, true],
+        ];
+        foreach ($steps as $position => [$role, $userId, $required]) {
             $skipAcknowledgment = $role === 'acknowledged' && $managerRequest;
-            $skipCrosscheck = $role === 'crosschecked' && $managerRequest && ! $high;
-            $skip = $skipAcknowledgment || $skipCrosscheck;
+            $skipCrosscheck = $role === 'crosschecked' && $managerRequest && ! $required
+                && $userId === $plan['approver']->id;
+            $skip = $skipAcknowledgment || $skipCrosscheck || ($role === 'supervised' && $userId === $actor->id);
             $request->approvals()->create([
                 'round' => $request->approval_round, 'position' => $position, 'role' => $role, 'user_id' => $userId,
                 'is_required' => $required, 'status' => $position === 0 ? 'signed' : ($skip ? 'skipped' : 'pending'),
                 'signature_id' => $position === 0 ? $request->prepared_signature_id : null,
                 'signed_name' => $position === 0 ? $request->prepared_signed_name : null,
                 'acted_at' => $position === 0 ? $request->prepared_signed_at : ($skip ? now() : null),
-                'notes' => $skipAcknowledgment ? 'Pengaju adalah atasan yang ditetapkan; Acknowledged by dilewati.' : ($skipCrosscheck ? self::MANAGER_CROSSCHECK_NOTE : null),
+                'notes' => $skipAcknowledgment ? 'Pengaju adalah atasan yang ditetapkan; Acknowledged by dilewati.' : ($skipCrosscheck
+                    ? ($request->need_type === 'PROJECT' ? 'Pengaju adalah penandatangan Acknowledged by; Crosschecked by opsional tidak diperlukan.' : self::MANAGER_CROSSCHECK_NOTE)
+                    : null),
             ]);
         }
-        app(Workflow::class)->audit($actor, $request, 'mulai_persetujuan_ho', [
+        app(Workflow::class)->audit($actor, $request, $request->need_type === 'PROJECT' ? 'mulai_persetujuan_project' : 'mulai_persetujuan_ho', [
             'round' => $request->approval_round, 'estimated_total_minor' => $request->estimated_total_minor,
             'requires_cbo3' => $high,
-            'manager_crosscheck_skipped' => $managerRequest && ! $high,
-            'route_id' => $route->id, 'route_version' => $route->version,
-            'acknowledger_id' => $plan['acknowledger']->id,
+            'need_type' => $request->need_type ?? 'HO',
+            'manager_crosscheck_skipped' => $managerRequest && ! $plan['crosscheck_required'],
+            'route_id' => $plan['is_custom'] ? null : $route->id, 'policy_id' => $plan['is_custom'] ? $route->id : null, 'route_version' => $route->version,
+            'acknowledger_id' => $plan['acknowledger']?->id,
             'supervisor_id' => $plan['supervisor']?->id,
         ], $request->id);
     }
@@ -172,7 +186,7 @@ class Approvals
 
         return DB::transaction(function () use ($actor, $id, $apply): bool {
             $request = Procurement::lockForUpdate()->findOrFail($id);
-            if ($request->status !== 'approval' || $request->approval_scope !== 'HO' || $this->requiresCbo3($request)) {
+            if ($request->status !== 'approval' || $request->approval_scope !== 'HO' || $request->need_type === 'PROJECT' || $this->requiresCbo3($request)) {
                 return false;
             }
             $steps = $request->approvals()->where('round', $request->approval_round);
@@ -226,7 +240,9 @@ class Approvals
                 if ($step->is_required || $step->role !== 'crosschecked') {
                     throw ValidationException::withMessages(['scm' => 'Tahap persetujuan ini wajib ditandatangani.']);
                 }
-                $step->update(['status' => 'skipped', 'acted_at' => now(), 'notes' => 'CBO melewati pemeriksaan opsional; pengajuan tidak memerlukan COO 3.']);
+                $step->update(['status' => 'skipped', 'acted_at' => now(), 'notes' => $request->need_type === 'PROJECT'
+                    ? 'Crosschecked by opsional dilewati sesuai master approval Project.'
+                    : 'CBO melewati pemeriksaan opsional; pengajuan tidak memerlukan COO 3.']);
             } else {
                 $signature = app(Signatures::class)->current($actor);
                 if (! $signature || ! Storage::disk('scm')->exists($signature->path)) {
@@ -240,7 +256,7 @@ class Approvals
             }
             $request->version++;
             $request->save();
-            app(Workflow::class)->audit($actor, $step, 'keputusan_persetujuan_ho', [
+            app(Workflow::class)->audit($actor, $step, $request->need_type === 'PROJECT' ? 'keputusan_persetujuan_project' : 'keputusan_persetujuan_ho', [
                 'decision' => $decision, 'round' => $request->approval_round, 'role' => $step->role,
                 'status' => $step->status, 'signature_id' => $step->signature_id, 'acted_at' => $step->acted_at?->toIso8601String(),
             ], $request->id, $decision === 'return' ? $reason : null);

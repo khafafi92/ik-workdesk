@@ -1,5 +1,5 @@
 @if($record->approval_round)
-<section class="scm-panel"><h2>Riwayat persetujuan HO</h2>
+<section class="scm-panel"><h2>Riwayat persetujuan {{ $record->need_type === 'PROJECT' ? 'Project' : 'HO' }}</h2>
     @foreach($record->approvals->groupBy('round')->sortKeysDesc() as $round => $steps)
         <h3>Pengajuan {{ $round }}{{ (int) $round === (int) $record->approval_round ? ' (terakhir)' : '' }}</h3>
         @foreach($steps as $step)<p><strong>{{ \App\Services\Scm\Approvals::ROLE_LABELS[$step->role] }}</strong>: {{ $step->signed_name ?? $step->user->name }} · {{ \App\Services\Scm\Approvals::STATUSES[$step->status] }}{{ $step->acted_at ? ' · '.$step->acted_at->format('d/m/Y H:i') : '' }}@if($step->notes)<br>{{ $step->notes }}@endif</p>@endforeach

@@ -18,7 +18,7 @@ class ScmApprovals extends Page
 
     protected static ?string $slug = 'permintaan/persetujuan';
 
-    protected static ?string $title = 'Persetujuan PR/SR HO';
+    protected static ?string $title = 'Persetujuan PR/SR';
 
     protected static ?string $navigationLabel = 'Persetujuan PR/SR';
 

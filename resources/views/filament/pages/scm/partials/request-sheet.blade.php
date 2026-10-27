@@ -100,6 +100,6 @@
     </div>
 </section>
 @if($canRequest && ($sheetEditing || $record?->status === 'draft'))
-    <p class="scm-help">Tanda tangani Requested by sebelum mengajukan persetujuan HO. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD di profil (tab baru)</a>. Setelah isi draft diedit, tanda tangani kembali.</p>
+    <p class="scm-help">Tanda tangani Requested by sebelum mengajukan persetujuan. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD di profil (tab baru)</a>. Setelah isi draft diedit, tanda tangani kembali.</p>
 @endif
 @if(!$sheetEditing && $record?->prepared_signed_at)<p class="scm-help">{{ $sheetHo ? 'Requested by' : 'Prepared by' }}: {{ $record->prepared_signed_name }}, ditandatangani {{ $record->prepared_signed_at->format('d/m/Y H:i') }}.</p>@endif

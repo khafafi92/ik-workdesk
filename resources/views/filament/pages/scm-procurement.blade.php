@@ -58,7 +58,7 @@
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => true])
             </fieldset>
             <div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled" wire:target="saveDraft,signPrepared">Simpan draft</x-filament::button><button type="button" wire:click="switchSection('mine')">Kembali ke daftar</button></div>
-            <p class="scm-help">Nomor tetap sama sejak draft. Lengkapi isi dan lampiran, pilih alur persetujuan, lalu tanda tangani Requested by. Seluruh persetujuan HO harus selesai sebelum masuk antrean SCM.</p>
+            <p class="scm-help">Nomor tetap sama sejak draft. Lengkapi isi dan lampiran, pilih alur persetujuan, lalu tanda tangani Requested by. Seluruh persetujuan harus selesai sebelum masuk antrean SCM.</p>
         </form>
         @elseif($record)
         <section class="{{ $tab === 'request' ? 'scm-request-view' : 'scm-panel' }}"><header class="scm-heading"><div>@if($tab !== 'request')<h2>{{ $record->number }}</h2>@endif<p>{{ $record->title }} · {{ $statuses[$record->status] }}</p></div><button type="button" wire:click="switchSection('{{ $section === 'queue' ? 'queue' : 'mine' }}')">Kembali ke daftar</button></header>
@@ -76,20 +76,25 @@
                         @if($submissionIssue)
                             <p role="alert">{{ $submissionIssue }} Pengajuan belum diteruskan kepada atasan.</p>
                         @elseif($submissionPlan)
-                            @if($submissionPlan['manager_request'])
+                            @if($submissionPlan['is_custom'])
+                                @if($submissionPlan['supervisor'])<p>Persetujuan SPV: {{ $submissionPlan['supervisor']->name }}.</p>@endif
+                                @if($submissionPlan['acknowledger'] && !$submissionPlan['manager_request'])<p>Setelah diajukan, Acknowledged by ditugaskan kepada {{ $submissionPlan['acknowledger']->name }}.</p>@endif
+                                @if($submissionPlan['crosschecker'])<p>Crosschecked by: {{ $submissionPlan['crosschecker']->name }}.</p>@endif
+                                <p>Approved by: {{ $submissionPlan['approver']->name }}.</p>
+                            @elseif($submissionPlan['manager_request'])
                                 <p>Pengajuan atasan akan diteruskan ke CBO {{ $submissionPlan['cbo']->name }}{{ $submissionPlan['coo'] ? ', kemudian COO '.$submissionPlan['coo']->name : '' }}.</p>
                             @else
                                 @if($submissionPlan['supervisor'])<p>Persetujuan pertama ditugaskan kepada SPV {{ $submissionPlan['supervisor']->name }}.</p>@endif
                                 <p>Setelah diajukan, Acknowledged by ditugaskan kepada {{ $submissionPlan['acknowledger']->name }}, lalu dilanjutkan ke CBO {{ $submissionPlan['cbo']->name }}{{ $submissionPlan['coo'] ? ' dan COO '.$submissionPlan['coo']->name : '' }}.</p>
                             @endif
-                            <p>{{ $record->prepared_signed_at ? 'Tanda tangan pembuat sudah tersimpan. Klik Ajukan persetujuan HO untuk mengirim pengajuan.' : 'Tanda tangani Requested by, lalu klik Ajukan persetujuan HO.' }}</p>
+                            <p>{{ $record->prepared_signed_at ? 'Tanda tangan pembuat sudah tersimpan. Klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').' untuk mengirim pengajuan.' : 'Tanda tangani Requested by, lalu klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').'.' }}</p>
                         @endif
                     </section>
                 @endif
                 @include('filament.pages.scm.partials.request-routing', ['routingEditing' => false])
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => false])
                 @include('filament.pages.scm.partials.approval-progress')
-                <div class="scm-actions">@if($record->status === 'draft' && (int)$record->requester_id === (int)auth()->id() && $canRequest)<button type="button" wire:click="editDraft">Edit draft</button><x-filament::button wire:click="submitRequest" wire:loading.attr="disabled" :disabled="filled($submissionIssue)">Ajukan persetujuan HO</x-filament::button>@endif
+                <div class="scm-actions">@if($record->status === 'draft' && (int)$record->requester_id === (int)auth()->id() && $canRequest)<button type="button" wire:click="editDraft">Edit draft</button><x-filament::button wire:click="submitRequest" wire:loading.attr="disabled" :disabled="filled($submissionIssue)">Ajukan persetujuan {{ $record->need_type === 'PROJECT' ? 'Project' : 'HO' }}</x-filament::button>@endif
                 </div>
                 @if($record->status === 'draft' && $submissionIssue)<p class="scm-help">Pengajuan belum dapat dikirim. Minta administrator melengkapi pemetaan atasan dan penandatangan yang ditampilkan di atas.</p>@endif
                 @if($canManage && $record->status === 'submitted')

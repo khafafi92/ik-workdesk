@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Department;
+use App\Models\Scm\ApprovalPolicy;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Attachment;
 use App\Models\Scm\Category;
@@ -17,6 +18,7 @@ use App\Models\Scm\VendorDocument;
 use App\Models\Scm\VendorRegistration;
 use App\Models\User;
 use App\Services\Scm\Access;
+use App\Services\Scm\ApprovalPolicies;
 use App\Services\Scm\Approvals;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\RequestNumbering;
@@ -126,6 +128,12 @@ class ScmProcurement extends Page
 
     public array $approvalRoute = ['company' => 'APCA', 'department_id' => '', 'acknowledger_id' => '', 'cbo_id' => '', 'cbo3_id' => '', 'version' => 0];
 
+    public array $approvalPolicy = ['company' => 'APCA', 'department_id' => '', 'need_type' => 'HO', 'request_kind' => 'ALL',
+        'supervisor_id' => '', 'acknowledger_id' => '', 'crosschecker_id' => '', 'approver_id' => '',
+        'use_amount_escalation' => true, 'high_approver_id' => '', 'crosscheck_mode' => 'above_limit', 'version' => 0];
+
+    public string $approvalPolicyError = '';
+
     public array $master = ['id' => '', 'kind' => 'category', 'code' => '', 'name' => '', 'description' => '', 'has_expiry' => false, 'is_active' => true, 'category_id' => '', 'document_type_id' => '', 'is_required' => true];
 
     public static function canAccess(): bool
@@ -230,7 +238,7 @@ class ScmProcurement extends Page
         $this->selected = 0;
         $this->editing = true;
         $this->choosingCompany = false;
-        $this->draft = ['kind' => static::$requestKind, 'company' => $company, 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
+        $this->draft = ['kind' => static::$requestKind, 'company' => $company, 'need_type' => 'HO', 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
             'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'items' => []];
         $this->addItem();
         $this->resetValidation();
@@ -240,7 +248,7 @@ class ScmProcurement extends Page
     {
         $record = Procurement::with('items')->findOrFail($this->selected);
         abort_unless(static::$requestKind !== null && $record->kind === static::$requestKind && Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->status === 'draft', 403);
-        $this->draft = $record->only(['kind', 'company', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point']);
+        $this->draft = $record->only(['kind', 'company', 'need_type', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point']);
         $this->requestNumber = $record->number;
         $this->draft['date'] = $record->date->format('Y-m-d');
         $this->draft['needed_at'] = $record->needed_at?->format('Y-m-d') ?? '';
@@ -525,8 +533,55 @@ class ScmProcurement extends Page
         $this->success('Penandatangan HO tersimpan. Pengajuan yang sedang berjalan tetap memakai penugasan sebelumnya.');
     }
 
+    public function newApprovalPolicy(): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalPolicy = ApprovalPolicies::defaults();
+        $this->approvalPolicyError = '';
+        $this->resetValidation();
+    }
+
+    public function editApprovalPolicy(int $id): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalPolicy = ApprovalPolicy::findOrFail($id)->only(array_keys(ApprovalPolicies::defaults()));
+        $this->approvalPolicyError = '';
+        $this->resetValidation();
+    }
+
+    public function saveApprovalPolicy(): void
+    {
+        try {
+            app(ApprovalPolicies::class)->save(auth()->user(), $this->approvalPolicy);
+        } catch (ValidationException $exception) {
+            $this->approvalPolicyError = collect($exception->errors())->flatten()->first();
+            throw $exception;
+        }
+        $this->newApprovalPolicy();
+        $this->success('Master approval tersimpan. Pengajuan yang sudah berjalan tetap memakai penugasan sebelumnya.');
+    }
+
+    public function copyApprovalPolicy(int $id): void
+    {
+        $this->editApprovalPolicy($id);
+        $this->approvalPolicy['version'] = 0;
+    }
+
     public function updated(string $property): void
     {
+        if ($property === 'approvalPolicy.need_type') {
+            $this->approvalPolicy['use_amount_escalation'] = $this->approvalPolicy['need_type'] === 'HO';
+            $this->approvalPolicy['crosscheck_mode'] = $this->approvalPolicy['need_type'] === 'HO' ? 'above_limit' : 'always';
+            $this->approvalPolicy['high_approver_id'] = '';
+            if ($this->approvalPolicy['need_type'] === 'PROJECT') {
+                foreach (['supervisor_id', 'acknowledger_id', 'crosschecker_id', 'approver_id'] as $field) {
+                    $signer = filled($this->approvalPolicy[$field] ?? null) ? User::find($this->approvalPolicy[$field]) : null;
+                    if ($signer && app(ApprovalPolicies::class)->isCbo($signer)) {
+                        $this->approvalPolicy[$field] = '';
+                    }
+                }
+            }
+        }
         if (in_array($property, ['search', 'statusFilter', 'kindFilter', 'departmentFilter', 'picFilter', 'dateFrom', 'dateUntil'], true)) {
             $this->resetPage();
         }
@@ -598,11 +653,21 @@ class ScmProcurement extends Page
             $approvalTarget = app(Approvals::class)->route($this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'])?->cbo3?->name;
         }
 
+        $routingPlan = null;
+        $routingIssue = null;
+        if ($this->editing && static::$requestKind !== null && $user->canAccessDepartment((int) ($this->draft['department_id'] ?? 0))) {
+            try {
+                $routingPlan = app(Approvals::class)->submissionPlan($user, $this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'],
+                    (bool) ($this->draft['requires_cbo3'] ?? false), $this->draft['need_type'] ?? 'HO', static::$requestKind);
+            } catch (ValidationException $exception) {
+                $routingIssue = collect($exception->errors())->flatten()->first();
+            }
+        }
         $submissionPlan = null;
         $submissionIssue = null;
         if ($record?->status === 'draft' && (int) $record->requester_id === (int) $user->id && ! $this->editing) {
             try {
-                $submissionPlan = app(Approvals::class)->submissionPlan($user, $record->company, $record->department_id, app(Approvals::class)->requiresCbo3($record));
+                $submissionPlan = app(Approvals::class)->submissionPlan($user, $record->company, $record->department_id, app(Approvals::class)->requiresCbo3($record), $record->need_type ?? 'HO', $record->kind);
             } catch (ValidationException $exception) {
                 $submissionIssue = collect($exception->errors())->flatten()->first();
             }
@@ -610,6 +675,11 @@ class ScmProcurement extends Page
 
         return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
             'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
+            'routingPlan' => $routingPlan, 'routingIssue' => $routingIssue,
+            'approvalPolicies' => $configure ? ApprovalPolicy::with(['department', 'supervisor', 'acknowledger', 'crosschecker', 'approver', 'highApprover'])->orderBy('need_type')->orderBy('company')->orderBy('department_id')->get() : collect(),
+            'policyUsers' => $configure ? User::with(['employee', 'roles'])->orderBy('name')->get()
+                ->filter(fn ($account) => $account->isActiveForAccess() && (($this->approvalPolicy['need_type'] ?? 'HO') !== 'PROJECT' || ! app(ApprovalPolicies::class)->isCbo($account)))
+                ->mapWithKeys(fn ($account) => [$account->id => $account->name.(filled($account->employee?->position) ? ' ('.$account->employee->position.')' : '')])->all() : [],
             'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses, 'statusOptions' => $statusOptions, 'approvalTarget' => $approvalTarget,
             'vendors' => $isScm ? Vendor::orderBy('name')->get() : collect(),
             'vendorRegistrations' => $isScm && $this->vendorId ? VendorRegistration::where('vendor_id', $this->vendorId)->latest('id')->get() : collect(),

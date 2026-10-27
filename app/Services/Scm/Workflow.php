@@ -62,8 +62,10 @@ class Workflow
     {
         abort_unless(Access::has($actor, 'scm.request'), 403);
         $data['company'] ??= 'APCA';
+        $data['need_type'] ??= $id ? Procurement::findOrFail($id)->need_type : 'HO';
         $validated = Validator::make($data, [
             'company' => ['required', Rule::in(array_keys(config('scm.companies')))],
+            'need_type' => ['required', Rule::in(array_keys(ApprovalPolicies::NEED_TYPES))],
             'estimated_total' => 'nullable',
             'requires_cbo3' => 'sometimes|boolean',
             'kind' => ['required', Rule::in(['PR', 'SR'])], 'date' => 'required|date',
@@ -83,6 +85,7 @@ class Workflow
             $this->reject($validated['estimated_total_minor'] !== null && $validated['estimated_total_minor'] <= 0, 'Estimasi total harus lebih dari nol.');
         }
         unset($validated['estimated_total']);
+        // Preserve the four-column document workflow; need_type selects the HO or Project policy.
         $validated['approval_scope'] = 'HO';
 
         return DB::transaction(function () use ($actor, $validated, $id, $version, $numberId): Procurement {

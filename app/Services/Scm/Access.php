@@ -2,6 +2,7 @@
 
 namespace App\Services\Scm;
 
+use App\Models\Scm\ApprovalPolicy;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\RequestApproval;
@@ -30,6 +31,8 @@ class Access
     {
         return $user && $user->isActiveForAccess() && (
             ApprovalRoute::where('acknowledger_id', $user->id)->orWhere('cbo_id', $user->id)->orWhere('cbo3_id', $user->id)->exists()
+            || ApprovalPolicy::where('supervisor_id', $user->id)->orWhere('acknowledger_id', $user->id)->orWhere('crosschecker_id', $user->id)
+                ->orWhere('approver_id', $user->id)->orWhere('high_approver_id', $user->id)->exists()
             || RequestApproval::where('user_id', $user->id)->where('role', '!=', 'requested')->exists()
         );
     }

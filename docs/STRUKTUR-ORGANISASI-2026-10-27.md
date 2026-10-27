@@ -52,7 +52,7 @@ Pada cabang GA juga terlihat Messenger Zainal, Driver Arisman/Decan/Budiman/Deri
 | GM Arkan Trans Continental | Dony Ari Nugroho |
 | GM PSW Antasari Hotel | Yoshie S Anwar |
 
-Cabang Business Development KPMOG memuat Business Development Manager **Yerri Intarto/Jerry**, Tender Manager yang vacant, dan Stakeholder Relation Manager Ayip Idris. Anggi tidak tertulis pada dua gambar ini; hubungan **Anggi → Jerry** berasal dari konfirmasi pengguna dan data akun di server.
+Cabang Business Development KPMOG berada pada garis **COO II (Lenaldy Nuari G) → GM Business Development KPMOG (vacant) → Business Development Manager Yerri Intarto/Jerry**. Jerry bukan bawahan organisasi CBO. Cabang ini juga memuat Tender Manager yang vacant dan Stakeholder Relation Manager Ayip Idris. Anggi tidak tertulis pada dua gambar ini; hubungan **Anggi → Jerry** berasal dari konfirmasi pengguna dan data akun di server.
 
 Pada cabang operasional terlihat beberapa posisi Project Management Manager, Engineer, QC Coordinator, serta pengelola hotel. Mereka perlu dipetakan menurut nama pemegang dan garis jabatan pada cabangnya; label Manager/GM/Direktur tidak otomatis memberi izin menu atau persetujuan semua departemen.
 
@@ -65,9 +65,15 @@ Pada cabang operasional terlihat beberapa posisi Project Management Manager, Eng
 | SPV mengajukan sendiri | Requested by SPV → Acknowledged by Manager |
 | Manager yang ditetapkan dalam rute mengajukan sendiri | Mengikuti pengecualian Manager yang sudah berlaku; Acknowledged by tidak ditandatangani sendiri |
 
-Setelah itu berlaku tahap CBO dan COO sesuai pilihan pengajuan di atas Rp5 juta dan rute SCM. Persetujuan SPV wajib dan tidak dapat dilewati. Kolom kertas tetap empat: Requested by, Acknowledged by, Crosschecked by, Approved by. Persetujuan SPV dicatat dalam riwayat sistem; tanda tangan Manager mengisi Acknowledged by.
+Jika persetujuan SPV ditetapkan pada master, staf harus memperoleh persetujuan SPV sebelum Manager. Kolom kertas tetap empat: Requested by, Acknowledged by, Crosschecked by, Approved by. Persetujuan SPV dicatat dalam riwayat sistem; tanda tangan Manager mengisi Acknowledged by.
 
-Jabatan vacant memerlukan pejabat pengganti yang ditetapkan. Sistem menahan pengajuan jika Manager di atas SPV belum memiliki pemetaan akun aktif, sehingga pengajuan tidak langsung melompati Manager. Warna pada gambar menunjukkan tetap/kontrak/vacant dan tidak menentukan hak akses.
+**Koreksi sebelum penerapan:** tahap setelah Manager harus dibedakan dari garis organisasi. Pengguna menegaskan bahwa **CBO hanya terlibat untuk kebutuhan HO; pengajuan non-HO tidak melewati CBO**. Jerry tetap mengikuti garis organisasi GM Business Development KPMOG / COO II. Pada kebutuhan HO, keterlibatan CBO merupakan kewenangan proses HO dan tidak menjadikan CBO sebagai atasan struktural Jerry.
+
+Arahan pengguna berikutnya: **Project berada di luar HO dan perlu master approval sendiri**. Contoh Project Merista: Acknowledged by Manager, Crosschecked by kosong, Approved by COO II. Karena tiap divisi berbeda, nama penandatangan dipilih pada master; bagan organisasi tidak otomatis memasukkan semua jabatan ke alur approval.
+
+Pembuat memilih jenis kebutuhan pada panel di luar form. Pengaturan baru dijelaskan pada [Master Approval PR/SR](SCM-APPROVAL-MASTER-2026-10-27.md). Kode lama `approval_scope = HO` dipertahankan sebagai kompatibilitas dokumen; klasifikasi bisnis kini menggunakan `need_type` HO/PROJECT.
+
+Jabatan vacant tidak dibuat menjadi akun palsu atau dianggap menyetujui. Jika tahap itu diperlukan, pengelola menetapkan pejabat yang aktif pada master. Jika Crosschecked by memang tidak diperlukan, pengelola mengosongkannya sesuai kewenangan, seperti contoh Project yang diberikan pengguna. Warna pada gambar menunjukkan tetap/kontrak/vacant dan tidak menentukan hak akses.
 
 ## Temuan PR Anggi di server
 
@@ -80,7 +86,7 @@ Pemeriksaan dilakukan melalui transaksi PostgreSQL read-only pada aplikasi `10.1
 
 ## Perubahan yang disiapkan di lokal
 
-Master Employee mempunyai Jenjang Jabatan dan Atasan Langsung. Pemetaan per orang dipakai untuk menentukan SPV dan Manager, dengan rute per perusahaan/departemen tetap menentukan CBO/COO. Akun lama tanpa pemetaan tetap mengikuti atasan rute SCM yang sudah ada.
+Master Employee mempunyai Jenjang Jabatan dan Atasan Langsung untuk pemetaan organisasi. Master Approval memilih penandatangan per perusahaan, divisi, HO/Project, dan PR/SR; penandatangan yang dipilih pada master baru tidak diganti otomatis oleh hubungan atasan Employee. Kompatibilitas konfigurasi lama dipertahankan sampai disimpan melalui master baru.
 
 Pilihan jenjang mencakup Staff, SPV, Manager, GM, Direktur, CBO, COO I/II/III, Chairman, Vice Chairman, dan Spesialis. Nama Position tetap tersedia untuk jabatan spesifik atau rangkap. Jenjang ini tidak mengubah level akses, role, atau checklist menu secara otomatis.
 
@@ -92,7 +98,7 @@ Draft memperlihatkan tujuan persetujuan dan alasan jika rute belum lengkap. Menu
 
 1. Terapkan dua field baru pada Employee dan kode alur yang telah diuji.
 2. Petakan Anggi sebagai Staff dengan atasan Jerry; Jerry sebagai Manager, dengan akun yang sudah ada.
-3. Lengkapi rute KPMOG/BD: atasan Jerry dan CBO yang ditetapkan. Pada konfigurasi KPMOG yang ada, CBO bernama pradipta; gunakan akun tersebut jika penetapan BD sama.
+3. Pastikan jenis kebutuhan PR Anggi terlebih dahulu. Jika HO, tetapkan rute HO dengan CBO sesuai kewenangan HO. Jika non-HO, gunakan cabang GM Business Development KPMOG / COO II tanpa CBO, dengan pejabat pengganti GM yang ditetapkan. Jangan menganggap seluruh permintaan BD sebagai HO atau menyalin rute IT ke BD tanpa klasifikasi kebutuhan.
 4. Setelah pemetaan lengkap, Anggi membuka PR yang sama lalu menekan Ajukan persetujuan HO. PR dan tanda tangan pembuatnya tetap dipertahankan; tidak dibuat pengajuan pengganti atau persetujuan atas nama orang lain.
 5. Pemetaan SPV/Manager cabang lain dilakukan berdasarkan bagan dan penetapan pejabat untuk jabatan vacant.
 
