@@ -197,10 +197,11 @@ class UserForm
                                             ->columnSpanFull(),
                                     ])
                                     ->compact()
-                                    ->columnSpanFull();
+                                    ->columnSpan(1);
                             })
                             ->all()
                     )
+                    ->columns(['default' => 1, 'lg' => 2])
                     ->columnSpanFull(),
             ]);
     }
