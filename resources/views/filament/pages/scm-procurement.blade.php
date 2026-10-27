@@ -42,10 +42,11 @@
         @if($choosingCompany && $canRequest)
         <section class="scm-panel" aria-label="Pilih perusahaan untuk {{ $requestKind }}">
             <h2>Buat {{ $requestKind }} untuk perusahaan</h2>
-            <p>Formulir KPMOG dan APCA sama. Pilihan perusahaan menentukan logo dan nomor {{ $requestKind }}.</p>
+            <x-scm.select model="newRequestNeedType" label="Jenis kebutuhan" :options="\App\Services\Scm\ApprovalPolicies::NEED_TYPES" :live="true" required />
+            <p>Pilih HO atau Project, lalu pilih perusahaan. Format formulir mengikuti jenis kebutuhan; perusahaan menentukan logo dan nomor {{ $requestKind }}.</p>
             <div class="scm-actions">
                 @foreach(['KPMOG', 'APCA'] as $company)
-                <button type="button" wire:click="newDraft('{{ $company }}')" wire:loading.attr="disabled" wire:target="newDraft">{{ $company }}</button>
+                <button type="button" wire:click="newDraft('{{ $company }}')" wire:loading.attr="disabled" wire:target="newDraft" @disabled(blank($newRequestNeedType))>{{ $company }}</button>
                 @endforeach
                 <button type="button" wire:click="switchSection('mine')">Batal</button>
             </div>

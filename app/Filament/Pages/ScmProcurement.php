@@ -17,6 +17,7 @@ use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
 use App\Models\Scm\VendorRegistration;
 use App\Models\User;
+use App\Models\WorkProject;
 use App\Services\Scm\Access;
 use App\Services\Scm\ApprovalPolicies;
 use App\Services\Scm\Approvals;
@@ -126,6 +127,8 @@ class ScmProcurement extends Page
 
     public bool $choosingCompany = false;
 
+    public string $newRequestNeedType = '';
+
     public array $approvalRoute = ['company' => 'APCA', 'department_id' => '', 'acknowledger_id' => '', 'cbo_id' => '', 'cbo3_id' => '', 'version' => 0];
 
     public array $approvalPolicy = ['company' => 'APCA', 'department_id' => '', 'need_type' => 'HO', 'request_kind' => 'ALL',
@@ -226,19 +229,23 @@ class ScmProcurement extends Page
         $this->selected = 0;
         $this->editing = false;
         $this->choosingCompany = true;
+        $this->newRequestNeedType = '';
         $this->resetValidation();
     }
 
     public function newDraft(string $company = 'APCA'): void
     {
         abort_unless(static::$requestKind !== null && Access::has(auth()->user(), 'scm.request'), 403);
+        $needType = $this->newRequestNeedType ?: 'HO';
+        abort_unless(array_key_exists($needType, ApprovalPolicies::NEED_TYPES), 422);
         $number = app(RequestNumbering::class)->reserve(auth()->user(), static::$requestKind, $company);
         $this->requestNumberId = $number->id;
         $this->requestNumber = $number->number;
         $this->selected = 0;
         $this->editing = true;
         $this->choosingCompany = false;
-        $this->draft = ['kind' => static::$requestKind, 'company' => $company, 'need_type' => 'HO', 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
+        $this->draft = ['kind' => static::$requestKind, 'company' => $company, 'need_type' => $needType, 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
+            'work_project_id' => '', 'instruction_to_vendor' => '', 'procedure_required' => '',
             'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'items' => []];
         $this->addItem();
         $this->resetValidation();
@@ -248,13 +255,15 @@ class ScmProcurement extends Page
     {
         $record = Procurement::with('items')->findOrFail($this->selected);
         abort_unless(static::$requestKind !== null && $record->kind === static::$requestKind && Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->status === 'draft', 403);
-        $this->draft = $record->only(['kind', 'company', 'need_type', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point']);
+        $this->draft = $record->only(['kind', 'company', 'need_type', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point', 'work_project_id', 'instruction_to_vendor', 'procedure_required']);
         $this->requestNumber = $record->number;
         $this->draft['date'] = $record->date->format('Y-m-d');
         $this->draft['needed_at'] = $record->needed_at?->format('Y-m-d') ?? '';
         $this->draft['estimated_total'] = $record->estimated_total_minor ? Decimal::input($record->estimated_total_minor) : '';
         $this->draft['requires_cbo3'] = app(Approvals::class)->requiresCbo3($record);
-        $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['name', 'brand', 'item_reference', 'size', 'model_part_number', 'specification', 'unit', 'notes']), 'quantity' => Decimal::input($i->quantity_milli, 3)])->all();
+        $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['name', 'brand', 'item_reference', 'size', 'model_part_number', 'specification', 'unit', 'notes']),
+            'materials_needed' => $i->materials_needed ?? ($record->need_type === 'PROJECT' && $record->kind === 'SR' ? $i->name : ''),
+            'quantity' => Decimal::input($i->quantity_milli, 3)])->all();
         $this->version = $record->version;
         $this->editing = true;
         $this->choosingCompany = false;
@@ -262,7 +271,7 @@ class ScmProcurement extends Page
 
     public function addItem(): void
     {
-        $this->draft['items'][] = ['brand' => '', 'item_reference' => '', 'size' => '', 'model_part_number' => '', 'name' => '', 'specification' => '', 'quantity' => '1', 'unit' => '', 'notes' => ''];
+        $this->draft['items'][] = ['brand' => '', 'item_reference' => '', 'size' => '', 'model_part_number' => '', 'name' => '', 'specification' => '', 'materials_needed' => '', 'quantity' => '1', 'unit' => '', 'notes' => ''];
     }
 
     public function removeItem(int $index): void
@@ -626,7 +635,7 @@ class ScmProcurement extends Page
             ->when($this->statusFilter, fn ($q) => $q->whereIn('status', $this->statusFilter === 'draft' ? ['draft', 'submitted'] : [$this->statusFilter]))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))->when($this->picFilter, fn ($q) => $q->where('scm_pic_id', $this->picFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
-        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'department', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
+        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'department', 'project', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
         $canManage = $isScm && $record && Access::manages($user, $record);
         if ($record && ! $canManage) {
             $this->tab = 'request';
@@ -681,6 +690,9 @@ class ScmProcurement extends Page
                 ->filter(fn ($account) => $account->isActiveForAccess() && (($this->approvalPolicy['need_type'] ?? 'HO') !== 'PROJECT' || ! app(ApprovalPolicies::class)->isCbo($account)))
                 ->mapWithKeys(fn ($account) => [$account->id => $account->name.(filled($account->employee?->position) ? ' ('.$account->employee->position.')' : '')])->all() : [],
             'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses, 'statusOptions' => $statusOptions, 'approvalTarget' => $approvalTarget,
+            'projectOptions' => $this->editing && ($this->draft['need_type'] ?? 'HO') === 'PROJECT' ? WorkProject::where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('department_id')->orWhereIn('department_id', $user->accessibleDepartmentIds()))
+                ->orderBy('name')->get()->mapWithKeys(fn ($project) => [$project->id => $project->code.' - '.$project->name])->all() : [],
             'vendors' => $isScm ? Vendor::orderBy('name')->get() : collect(),
             'vendorRegistrations' => $isScm && $this->vendorId ? VendorRegistration::where('vendor_id', $this->vendorId)->latest('id')->get() : collect(),
             'pendingRegistrations' => $isScm && $this->section === 'vendors' ? VendorRegistration::with('vendor')->where('status', 'submitted')->whereNull('revoked_at')->orderBy('submitted_at')->paginate(5, ['*'], 'registrationPage') : null,

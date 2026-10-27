@@ -4,6 +4,7 @@ namespace App\Models\Scm;
 
 use App\Models\Department;
 use App\Models\User;
+use App\Models\WorkProject;
 
 class Procurement extends Record
 {
@@ -52,6 +53,11 @@ class Procurement extends Record
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    public function project()
+    {
+        return $this->belongsTo(WorkProject::class, 'work_project_id');
     }
 
     public function attachments()

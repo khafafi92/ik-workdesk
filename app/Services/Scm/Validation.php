@@ -36,6 +36,8 @@ class Validation
             'lead_time' => 'Waktu penyediaan', 'payment_terms' => 'Syarat pembayaran', 'extra' => 'Biaya tambahan',
             'customer_po' => 'PO Customer', 'job_order' => 'Job Order', 'items.*.brand' => 'Brand', 'items.*.item_reference' => 'Item',
             'company' => 'Perusahaan', 'delivery_point' => 'Delivery Point', 'items.*.size' => 'Size', 'items.*.model_part_number' => 'Model/PN',
+            'work_project_id' => 'Nama Project', 'instruction_to_vendor' => 'Instruction to vendor',
+            'procedure_required' => 'Procedur required', 'items.*.materials_needed' => 'Materials Needed',
             'estimated_total' => 'Estimasi total HO', 'requires_cbo3' => 'Pengajuan di atas Rp5 juta', 'acknowledger_id' => 'Atasan', 'cbo_id' => 'CBO', 'cbo3_id' => 'COO 3',
             'items.*.name' => 'Material', 'items.*.specification' => 'Description General', 'items.*.quantity' => 'Qty',
             'items.*.unit' => 'Unit', 'lines.*.description' => 'Spesifikasi ditawarkan',

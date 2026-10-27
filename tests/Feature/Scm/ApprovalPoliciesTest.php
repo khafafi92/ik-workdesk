@@ -118,7 +118,9 @@ class ApprovalPoliciesTest extends TestCase
         $xpath = new \DOMXPath($doc);
         $columns = $xpath->query('//div[contains(concat(" ",normalize-space(@class)," ")," scm-sheet-signature ")]');
         $this->assertSame(4, $columns->length);
-        $this->assertSame('Crosschecked by', trim($columns->item(2)->textContent));
+        $this->assertSame('Crosschecked by', rtrim(trim($xpath->query('./div', $columns->item(2))->item(0)->textContent), ':'));
+        $this->assertSame('', trim($xpath->query('./div', $columns->item(2))->item(2)->textContent));
+        $this->assertSame(0, $xpath->query('.//img', $columns->item(2))->length);
         $this->assertSame('COO II', trim($xpath->query('./div', $columns->item(3))->item(2)->textContent));
     }
 
@@ -288,7 +290,9 @@ class ApprovalPoliciesTest extends TestCase
         $route = app(Approvals::class)->saveRoute($this->scm, ['company' => 'APCA', 'department_id' => $this->department->id,
             'acknowledger_id' => $this->manager->id, 'cbo_id' => $this->cbo->id, 'cbo3_id' => $this->coo->id, 'version' => 0]);
         $request = $this->pending('HO');
-        $before = json_encode([DB::table('scm_requests')->get(), DB::table('scm_request_approvals')->get()]);
+        $snapshot = fn () => collect(['scm_requests', 'scm_request_approvals'])->map(fn ($table) => DB::table($table)->orderBy('id')->get()
+            ->map(fn ($row) => collect((array) $row)->sortKeys()->all())->all())->all();
+        $before = $snapshot();
         $migration = require database_path('migrations/2026_10_27_110000_create_scm_approval_policies.php');
         $migration->down();
         $migration->up();
@@ -298,7 +302,7 @@ class ApprovalPoliciesTest extends TestCase
         $this->assertSame('HO', $policy->need_type);
         $this->assertSame($this->cbo->id, $policy->approver_id);
         $this->assertSame($this->coo->id, $policy->high_approver_id);
-        $this->assertSame($before, json_encode([DB::table('scm_requests')->get(), DB::table('scm_request_approvals')->get()]));
+        $this->assertSame($before, $snapshot());
         $this->assertSame($this->manager->id, app(Approvals::class)->next($request->fresh())->user_id);
     }
 

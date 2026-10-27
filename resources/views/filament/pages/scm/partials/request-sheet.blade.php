@@ -1,3 +1,6 @@
+@if(($sheetEditing ? ($draft['need_type'] ?? 'HO') : ($record->need_type ?? 'HO')) === 'PROJECT')
+    @include('filament.pages.scm.partials.project-request-sheet')
+@else
 @php
     $canRequest = $canRequest ?? false;
     $sheetKind = $sheetEditing ? $requestKind : $record->kind;
@@ -103,3 +106,4 @@
     <p class="scm-help">Tanda tangani Requested by sebelum mengajukan persetujuan. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD di profil (tab baru)</a>. Setelah isi draft diedit, tanda tangani kembali.</p>
 @endif
 @if(!$sheetEditing && $record?->prepared_signed_at)<p class="scm-help">{{ $sheetHo ? 'Requested by' : 'Prepared by' }}: {{ $record->prepared_signed_name }}, ditandatangani {{ $record->prepared_signed_at->format('d/m/Y H:i') }}.</p>@endif
+@endif

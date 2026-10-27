@@ -63,6 +63,18 @@ class Workflow
         abort_unless(Access::has($actor, 'scm.request'), 403);
         $data['company'] ??= 'APCA';
         $data['need_type'] ??= $id ? Procurement::findOrFail($id)->need_type : 'HO';
+        $projectService = $data['need_type'] === 'PROJECT' && ($data['kind'] ?? null) === 'SR';
+        if ($projectService && is_array($data['items'] ?? null)) {
+            foreach ($data['items'] as &$item) {
+                if (is_array($item) && is_string($item['specification'] ?? null) && filled($item['specification'])) {
+                    $item['name'] = Str::limit($item['specification'], 255, '');
+                }
+            }
+            unset($item);
+        }
+        if ($data['need_type'] !== 'PROJECT') {
+            $data['work_project_id'] = null;
+        }
         $validated = Validator::make($data, [
             'company' => ['required', Rule::in(array_keys(config('scm.companies')))],
             'need_type' => ['required', Rule::in(array_keys(ApprovalPolicies::NEED_TYPES))],
@@ -73,12 +85,17 @@ class Workflow
             'title' => 'nullable|string|max:255', 'reason' => 'nullable|string|max:10000', 'needed_at' => 'nullable|date',
             'customer_po' => 'nullable|string|max:255', 'job_order' => 'nullable|string|max:255',
             'delivery_point' => 'nullable|string|max:255',
+            'work_project_id' => ['nullable', 'integer', Rule::exists('work_projects', 'id')->where(fn ($query) => $query->where('status', 'active')
+                ->where(fn ($query) => $query->whereNull('department_id')->orWhereIn('department_id', $actor->accessibleDepartmentIds())))],
+            'instruction_to_vendor' => 'nullable|string|max:10000', 'procedure_required' => 'nullable|string|max:10000',
             'location' => 'nullable|string|max:255', 'notes' => 'nullable|string|max:10000', 'items' => 'required|array|min:1|max:100',
             'items.*.name' => 'required|string|max:255', 'items.*.specification' => 'required|string|max:10000',
             'items.*.brand' => 'nullable|string|max:255', 'items.*.item_reference' => 'nullable|string|max:255',
             'items.*.size' => 'nullable|string|max:255', 'items.*.model_part_number' => 'nullable|string|max:255',
+            'items.*.materials_needed' => 'nullable|string|max:10000',
             'items.*.quantity' => 'required', 'items.*.unit' => 'required|string|max:50', 'items.*.notes' => 'nullable|string|max:2000',
-        ], [], ['kind' => 'jenis permintaan', 'items' => 'item', 'title' => 'judul', 'reason' => 'alasan kebutuhan'])->validate();
+        ], [], ['kind' => 'jenis permintaan', 'items' => 'item', 'title' => 'judul', 'reason' => 'alasan kebutuhan',
+            ...($projectService ? ['items.*.name' => 'Description', 'items.*.specification' => 'Description'] : [])])->validate();
         abort_unless($actor->canAccessDepartment((int) $validated['department_id']), 403);
         if (array_key_exists('estimated_total', $validated)) {
             $validated['estimated_total_minor'] = filled($validated['estimated_total']) ? Decimal::parse($validated['estimated_total']) : null;
@@ -116,6 +133,9 @@ class Workflow
                 $number->update(['request_id' => $request->id]);
             }
             foreach (array_values($items) as $index => $item) {
+                if ($request->need_type === 'PROJECT' && $request->kind === 'SR') {
+                    $item['materials_needed'] = $item['materials_needed'] ?? '';
+                }
                 $quantity = Decimal::parse($item['quantity'], 3);
                 $this->reject($quantity <= 0, 'Jumlah setiap item harus lebih dari nol.');
                 unset($item['quantity']);
