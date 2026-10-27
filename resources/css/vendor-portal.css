@@ -27,6 +27,7 @@
 .vp-documents{display:grid;grid-template-columns:minmax(0,1fr);gap:.75rem;align-items:start}
 .vp-upload{border:1px solid #6b7280;min-width:0}
 .vp-upload summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:.75rem;min-height:76px}
+.vp-upload summary>span:first-child{min-width:0;overflow-wrap:anywhere}
 .vp-upload summary strong{font-size:.9rem;font-weight:600}
 .vp-upload-state{display:block;font-size:.8rem;color:#4b5563;margin-top:.25rem}
 .vp-upload-action{color:#9a3412;text-decoration:underline;font-size:.85rem;flex-shrink:0}
