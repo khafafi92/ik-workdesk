@@ -19,6 +19,7 @@
         'sheetSelectedVendor' => $cbe->selected_vendor_id,
         'sheetReason' => $cbe->selection_reason,
         'sheetPreparedName' => $cbe->snapshot['prepared_by_name'] ?? null,
+        'sheetCbeApprovals' => $cbe->approvals,
     ])
     <p class="scm-cbe-note">Harga akhir: {{ \App\Services\Scm\Decimal::money($cbe->final_minor, $cbe->snapshot['quotes'][0]['currency']) }}. Data menggunakan snapshot final.</p>
 </body>

@@ -3,7 +3,7 @@
         <p><a href="{{ url('/panel/scm/pengadaan?bagian=vendors') }}">Kembali ke master vendor SCM</a></p>
         <p>Periksa jawaban dan file sebelum menerima. Penerimaan memperbarui profil dan menambahkan versi dokumen ke master vendor; checklist pengadaan yang sudah ada tetap diperiksa SCM.</p>
         <p class="vp-note"><strong>{{ \App\Services\Scm\VendorForm::origin($registration->answers ?? []) === 'foreign' ? 'Perusahaan luar Indonesia' : 'Vendor Indonesia' }}</strong> · {{ \App\Services\Scm\VendorForm::basis($registration->answers ?? []) === 'npwp_ktp' ? 'Tidak memiliki dokumen perusahaan; menggunakan pengganti NPWP dan KTP.' : 'Menggunakan dokumen perusahaan.' }}</p>
-        @if(!$registration->revoked_at && $registration->expires_at->isPast())<p class="vp-note">Undangan ini sudah kedaluwarsa. Jawaban dan dokumen tetap tersedia untuk diperiksa. Buat undangan baru dari master vendor jika vendor perlu mengisi dan mengirim form kembali.</p>@endif
+        @if(!$registration->revoked_at && $registration->expires_at->isPast())<p class="vp-note">{{ $registration->portal_access_id ? 'Akses formulir sudah kedaluwarsa.' : 'Undangan ini sudah kedaluwarsa.' }} Jawaban dan dokumen tetap tersedia untuk diperiksa. {{ $registration->portal_access_id ? 'Vendor dapat membuka kembali melalui Portal Vendor dengan nomor uniknya.' : 'Buat undangan baru dari master vendor jika vendor perlu mengisi dan mengirim form kembali.' }}</p>@endif
         @foreach(\App\Services\Scm\VendorForm::TITLES as $number => $title)
         <section class="vp-review-section"><h3>{{ $number }}. {{ $title }}</h3><dl class="vp-review-answers">
             @foreach(\App\Services\Scm\VendorForm::fields($number, $registration->answers ?? []) as $key => $field)
@@ -22,7 +22,7 @@
         @if(!$registration->revoked_at)
         <form method="post" action="{{ route('scm.vendor-decide', $registration) }}">@csrf<input type="hidden" name="version" value="{{ $registration->version }}">
             @if($registration->status === 'submitted' && $registration->expires_at->isFuture())<div class="vp-field"><label for="review-notes">Catatan pemeriksaan (wajib untuk perbaikan)</label><textarea id="review-notes" name="notes" rows="4" maxlength="5000">{{ old('notes') }}</textarea></div>@endif
-            <div class="vp-actions">@if($registration->status === 'submitted' && $registration->expires_at->isFuture())<button type="submit" name="action" value="accept">Terima profil dan dokumen ke master</button><button type="submit" name="action" value="correction" class="vp-secondary">Minta perbaikan vendor</button>@endif<button type="submit" name="action" value="revoke" class="vp-secondary">Cabut tautan undangan</button></div>
+            <div class="vp-actions">@if($registration->status === 'submitted' && $registration->expires_at->isFuture())<button type="submit" name="action" value="accept">Terima profil dan dokumen ke master</button><button type="submit" name="action" value="correction" class="vp-secondary">Minta perbaikan vendor</button>@endif<button type="submit" name="action" value="revoke" class="vp-secondary">{{ $registration->portal_access_id ? 'Cabut akses Portal Vendor' : 'Cabut tautan undangan' }}</button></div>
         </form>@endif
     </section>
 </x-vendor-portal.layout>

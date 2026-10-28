@@ -19,6 +19,11 @@ class VendorRegistration extends Record
         return $this->belongsTo(Vendor::class);
     }
 
+    public function portalAccess()
+    {
+        return $this->belongsTo(VendorPortalAccess::class);
+    }
+
     public function files()
     {
         return $this->hasMany(VendorRegistrationFile::class, 'registration_id');

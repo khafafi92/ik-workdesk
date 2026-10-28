@@ -4,6 +4,8 @@ Panduan ini berlaku untuk seluruh menu. Setelah memahami istilah dan contoh di d
 
 Panduan ini ditulis untuk orang yang baru mengenal Laravel, Filament, atau struktur IK WorkDesk. Ikuti dari atas ke bawah saat pertama kali melakukan perubahan.
 
+Untuk menjalankan aplikasi sebagai pengguna, mulai dari [Panduan penggunaan IK WorkDesk](#20-panduan-penggunaan-ik-workdesk). Alur pengadaan lengkap ada pada [panduan SCM](SCM.md#panduan-penggunaan-langkah-demi-langkah).
+
 Jika sudah memahami struktur proyek dan hanya perlu mencari lokasi file, gunakan [Peta Kode Menu](DEVELOPER-MENU-MAP.md).
 
 Untuk penjelasan khusus setiap menu, buka [Panduan Detail Per Menu](menus/README.md).
@@ -761,3 +763,63 @@ Saat meminta bantuan, sertakan:
 - potongan log tanpa credential.
 
 Dengan langkah ini, developer pemula dapat melakukan perubahan kecil dengan aman dan mengetahui kapan perubahan membutuhkan pemeriksaan lebih lanjut.
+
+## 20. Panduan penggunaan IK WorkDesk
+
+Diperbarui 29 Oktober 2026. Bagian ini menjelaskan langkah pengguna, sedangkan bagian sebelumnya menjelaskan pengembangan aplikasi. Gunakan akun pribadi yang disediakan pengelola. Menu dan data yang terlihat mengikuti izin, departemen, serta penugasan akun tersebut.
+
+### Masuk dan menemukan menu
+
+1. Buka alamat IK WorkDesk dari pengelola. Alamat instalasi yang tercatat adalah `http://10.1.20.97:8093`. Halaman `/login` digunakan untuk masuk ke akun internal.
+2. Masukkan email dan kata sandi akun sendiri. Setelah masuk, buka menu melalui sidebar panel. Pada layar kecil, buka tombol menu terlebih dahulu.
+3. Gunakan pencarian dan filter daftar untuk menemukan data. Buka detail record untuk memeriksa isi, lampiran, riwayat, dan tindakan yang tersedia.
+4. Jika menu atau record tidak terlihat, sampaikan nama menu, nomor record dan akun kepada pengelola untuk pemeriksaan izin. Tindakan yang tersedia dapat berbeda antara pemohon, PIC, atasan dan pengelola.
+
+### Meminta bantuan melalui Service Desk
+
+1. Buka **Service Desk**, lalu buat permintaan. Isi judul, penjelasan kebutuhan/kendala, departemen tujuan, kategori dan prioritas sesuai pilihan yang tersedia. Lampirkan bukti bila diperlukan.
+2. Simpan dan buka detail permintaan untuk memantau status. Pekerjaan diteruskan ke Work Log sesuai alur departemen; permintaan ke Legal dapat memerlukan persetujuan sebelum pekerjaan berjalan.
+3. Tambahkan informasi pada ruang kolaborasi/komentar record terkait. Sertakan hasil yang diharapkan dan bukti agar petugas dapat memeriksanya.
+4. Manager menetapkan PIC sesuai kewenangannya. PIC memperbarui Work Log sampai pekerjaan selesai. Status ticket mengikuti penyelesaian pekerjaan wajib yang terkait.
+
+### Mengerjakan Work Logs dan mencatat aktivitas
+
+1. PIC membuka **Work Logs**, memilih pekerjaan yang ditugaskan, membaca kebutuhan dan tenggat, lalu memperbarui progres sesuai kondisi pekerjaan.
+2. Tambahkan keterangan pekerjaan dan lampiran pendukung pada tempat yang tersedia. Jika ada kebutuhan informasi atau hambatan, catat pada pekerjaan/ruang kolaborasi yang terkait.
+3. Tandai pekerjaan selesai setelah hasilnya terpenuhi. Beberapa tindakan membutuhkan penugasan atau persetujuan atasan; ikuti pesan pada layar bila tindakan ditahan.
+4. Gunakan **Aktivitas Harian** untuk mencatat kegiatan dan **Laporan Aktivitas** untuk meninjau kegiatan pada periode yang diperlukan. Periksa tanggal dan cakupan data sebelum mengekspor laporan.
+5. Gunakan **Reminders** untuk pengingat pribadi/departemen dan kaitkan ke Work Log bila relevan. Tandai selesai setelah pengingat ditindaklanjuti. Alarm email bergantung pada konfigurasi pengelola.
+
+### Memesan ruang meeting dan kendaraan
+
+1. Periksa kalender ruang/kendaraan untuk waktu yang akan dipakai.
+2. Buat booking pada menu pemesanan yang sesuai. Untuk meeting, pilih ruang, tanggal, waktu mulai, durasi, peserta dan agenda; lengkapi tautan untuk tipe meeting yang membutuhkannya. Untuk kendaraan, lengkapi kendaraan, waktu dan informasi perjalanan pada form.
+3. Simpan dan periksa kembali jadwal. Jika sistem menolak bentrok, pilih waktu atau fasilitas yang tersedia.
+4. Gunakan tindakan batal atau selesai sesuai keadaan dan kewenangan akun. Perbarui booking bila jadwal berubah agar kalender dapat digunakan petugas lain.
+
+### Meminta ATK
+
+1. Buka **Permintaan ATK**, buat request, lalu pilih barang, jumlah, satuan dan informasi kebutuhan pada form.
+2. Simpan dan lanjutkan tindakan pengajuan yang tersedia. Periksa kembali rincian sebelum mengirim.
+3. Petugas yang berwenang memproses permintaan dan mencatat jumlah yang benar-benar diserahkan. Pemohon memantau status dan jumlah pemenuhan; pemenuhan sebagian masih dapat menyisakan barang yang belum diserahkan.
+4. Petugas menggunakan stok gudang, stok departemen dan laporan sesuai izin. Jangan membuat request baru hanya untuk mengganti status penyerahan yang belum diperiksa petugas.
+
+### Menggunakan Attendance dan laporan
+
+1. Petugas yang memiliki izin membuka menu import Attendance atau Work Hour dan memilih file serta periode yang sesuai.
+2. Periksa status proses dan pesan hasil import. Perbaiki sumber data jika ada baris yang gagal sebelum memakai laporan.
+3. Buka **Attendance Report Center**, pilih periode import, lalu gunakan **Activity Check** atau **Total Jam Kerja** sesuai kebutuhan. Pastikan periode dan cakupan karyawan benar sebelum mengekspor.
+
+### Menjalankan pengadaan PR/SR sampai CBE
+
+Pemohon membuat PR untuk barang atau SR untuk jasa, memilih perusahaan dan HO/Project, menyimpan rincian, menandatangani Requested by, kemudian mengajukan persetujuan. Sesudah persetujuan lengkap, SCM menerima permintaan, mengumpulkan minimal tiga penawaran vendor, menyusun CBE dan mengajukan TTD CBE.
+
+Untuk contoh yang diminta, Prepared By mengikuti login SCM pelaksana (Imam bila Imam yang mengajukan), Acknowledged By Meyfi, Crosschecked By Dipta, dan Approved By Lenaldy. Penetapan tiga pejabat disimpan pada **SCM > Pengaturan > Master Approval**, pilih **Dokumen persetujuan: CBE**, lalu perusahaan. Pilihan PR/SR tersedia pada panel yang sama. Masing-masing akun membuka **Permintaan > Persetujuan**, memilih PR/SR atau CBE, lalu menandatangani pada gilirannya. SCM melanjutkan legalitas setelah keempat TTD CBE baru lengkap.
+
+Ikuti [panduan SCM langkah demi langkah](SCM.md#panduan-penggunaan-langkah-demi-langkah) untuk pembuatan master, pengajuan PR/SR, Form 005 vendor, CBE, legalitas, cetak PDF dan penanganan kendala. Fitur CBE baru harus diterapkan ke instalasi sebelum langkah tersebut tersedia; buku ini tidak menyatakan pembaruan sudah terpasang pada server.
+
+Vendor mengisi data melalui **Portal Vendor**, yang tersedia pada halaman login dan alamat `/vendor`. Pendaftaran baru menghasilkan **Vendor ID**. Untuk melanjutkan isian atau memperbarui data dan berkas, vendor cukup memasukkan ID yang sama lalu menekan **Buka data vendor**. SCM memeriksa kiriman sebelum menerima perubahan ke master. Petunjuk lengkap ada pada bagian vendor di panduan SCM.
+
+### Meminta bantuan saat ada kendala
+
+Jika muncul pesan data berubah, buka ulang record dan periksa perubahan terakhir sebelum mengulangi tindakan. Untuk masalah izin, login, file, atau error aplikasi, kirimkan kepada pengelola: nama menu, URL, nomor record, waktu kejadian, tindakan yang dilakukan dan screenshot pesan. Hindari menyertakan kata sandi atau tautan privat vendor pada laporan yang dibagikan luas. Setelah selesai menggunakan komputer bersama, keluar dari akun.

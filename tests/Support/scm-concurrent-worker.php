@@ -26,9 +26,34 @@ while (! is_file($job['gate'])) {
 }
 $actor = User::findOrFail($job['actor_id']);
 try {
-    if ($job['mode'] === 'skip_manager_crosscheck') {
+    if ($job['mode'] === 'resume_public_vendor') {
+        [$registration] = app(\App\Services\Scm\VendorPublicPortal::class)->resume($job['access_code']);
+        echo json_encode(['result' => 'resumed', 'registration_id' => $registration->id]), PHP_EOL;
+    } elseif ($job['mode'] === 'save_cbe_policy') {
+        $synchronized = false;
+        DB::listen(function ($query) use ($job, &$synchronized): void {
+            if ($synchronized || ! str_starts_with($query->sql, 'select')
+                || ! str_contains($query->sql, '"scm_cbe_approval_policies"') || ! str_contains($query->sql, 'for update')) {
+                return;
+            }
+            $synchronized = true;
+            touch($job['policy_ready']);
+            $started = microtime(true);
+            while (! is_file($job['policy_peer'])) {
+                if (microtime(true) - $started > 15) {
+                    throw new RuntimeException('CBE master read barrier timeout.');
+                }
+                usleep(10000);
+            }
+        });
+        app(\App\Services\Scm\CbeApprovals::class)->savePolicy($actor, $job['data']);
+        echo json_encode(['result' => 'saved']), PHP_EOL;
+    } elseif ($job['mode'] === 'skip_manager_crosscheck') {
         $adjusted = app(Approvals::class)->skipManagerCrosscheck($actor, $job['request_id'], true);
         echo json_encode(['result' => $adjusted ? 'adjusted' : 'unchanged']), PHP_EOL;
+    } elseif ($job['mode'] === 'sign_cbe') {
+        app(\App\Services\Scm\CbeApprovals::class)->sign($actor, $job['cbe_id'], $job['version']);
+        echo json_encode(['result' => 'signed']), PHP_EOL;
     } elseif ($job['mode'] === 'finalize') {
         $r = app(Workflow::class)->saveCbe($actor, $job['request_id'], $job['version'], $job['data'], true);
         echo json_encode(['result' => 'finalized', 'id' => $r->cbe->id]), PHP_EOL;

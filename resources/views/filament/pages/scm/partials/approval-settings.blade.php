@@ -1,5 +1,12 @@
 <section class="scm-panel" id="master-approval" aria-labelledby="scm-approval-master-title">
-    <h2 id="scm-approval-master-title">Master Approval PR/SR</h2>
+    <h2 id="scm-approval-master-title">Master Approval</h2>
+    <div class="scm-field">
+        <label for="scm-approvalDocument">Dokumen persetujuan</label>
+        <select id="scm-approvalDocument" wire:model.live="approvalDocument"><option value="PRSR">PR/SR</option><option value="CBE">CBE</option></select>
+    </div>
+    @if($approvalDocument === 'CBE')
+        @include('filament.pages.scm.partials.cbe-approval-settings')
+    @else
     <p>Atur penandatangan per perusahaan, divisi, jenis kebutuhan, dan PR/SR. Kebutuhan HO dan Project memakai master terpisah. CBO hanya untuk HO. Perubahan berlaku saat pengajuan berikutnya diajukan.</p>
     <p class="scm-help">Pada HO, CBO tetap wajib menyetujui. Jika Approved by diisi pejabat selain CBO, pilih CBO pada Crosschecked by; tahap tersebut wajib.</p>
     <form wire:submit="saveApprovalPolicy">
@@ -39,4 +46,5 @@
         @empty<tr><td colspan="7">Belum ada master approval. Tambahkan aturan HO atau Project untuk divisi yang akan mengajukan PR/SR.</td></tr>@endforelse
         </tbody></table>
     </div>
+    @endif
 </section>

@@ -7,6 +7,7 @@ use App\Models\Scm\ApprovalPolicy;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Attachment;
 use App\Models\Scm\Category;
+use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\LegalCase;
 use App\Models\Scm\LegalItem;
@@ -21,6 +22,7 @@ use App\Models\WorkProject;
 use App\Services\Scm\Access;
 use App\Services\Scm\ApprovalPolicies;
 use App\Services\Scm\Approvals;
+use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\RequestNumbering;
 use App\Services\Scm\Signatures;
@@ -136,6 +138,49 @@ class ScmProcurement extends Page
         'use_amount_escalation' => true, 'high_approver_id' => '', 'crosscheck_mode' => 'above_limit', 'version' => 0];
 
     public string $approvalPolicyError = '';
+
+    public string $approvalDocument = 'PRSR';
+
+    public function updatedApprovalDocument(): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        abort_unless(in_array($this->approvalDocument, ['PRSR', 'CBE'], true), 422);
+        if ($this->approvalDocument === 'CBE') {
+            $this->newCbeApprovalPolicy();
+        } else {
+            $this->newApprovalPolicy();
+        }
+    }
+
+    public array $cbeApprovalPolicy = ['company' => 'KPMOG', 'acknowledger_id' => '', 'crosschecker_id' => '', 'approver_id' => '', 'version' => 0];
+
+    public function editCbeApprovalPolicy(int $id): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalDocument = 'CBE';
+        $this->cbeApprovalPolicy = CbeApprovalPolicy::findOrFail($id)->only(array_keys(CbeApprovals::defaults()));
+        $this->resetValidation();
+    }
+
+    public function newCbeApprovalPolicy(): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalDocument = 'CBE';
+        $this->cbeApprovalPolicy = CbeApprovals::defaults();
+        $this->resetValidation();
+    }
+
+    public function requestCbeApproval(): void
+    {
+        $this->refreshed(app(CbeApprovals::class)->startExisting(auth()->user(), $this->selected, $this->version), 'cbe');
+    }
+
+    public function saveCbeApprovalPolicy(): void
+    {
+        app(CbeApprovals::class)->savePolicy(auth()->user(), $this->cbeApprovalPolicy);
+        $this->newCbeApprovalPolicy();
+        $this->success('Aturan CBE pada Master Approval tersimpan. CBE yang sudah diajukan tetap memakai penugasan sebelumnya.');
+    }
 
     public array $master = ['id' => '', 'kind' => 'category', 'code' => '', 'name' => '', 'description' => '', 'has_expiry' => false, 'is_active' => true, 'category_id' => '', 'document_type_id' => '', 'is_required' => true];
 
@@ -545,6 +590,7 @@ class ScmProcurement extends Page
     public function newApprovalPolicy(): void
     {
         abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalDocument = 'PRSR';
         $this->approvalPolicy = ApprovalPolicies::defaults();
         $this->approvalPolicyError = '';
         $this->resetValidation();
@@ -553,6 +599,7 @@ class ScmProcurement extends Page
     public function editApprovalPolicy(int $id): void
     {
         abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalDocument = 'PRSR';
         $this->approvalPolicy = ApprovalPolicy::findOrFail($id)->only(array_keys(ApprovalPolicies::defaults()));
         $this->approvalPolicyError = '';
         $this->resetValidation();
@@ -683,6 +730,7 @@ class ScmProcurement extends Page
         }
 
         return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
+            'cbeApprovalPolicies' => $configure ? CbeApprovalPolicy::with(['acknowledger', 'crosschecker', 'approver'])->orderBy('company')->get() : collect(),
             'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
             'routingPlan' => $routingPlan, 'routingIssue' => $routingIssue,
             'approvalPolicies' => $configure ? ApprovalPolicy::with(['department', 'supervisor', 'acknowledger', 'crosschecker', 'approver', 'highApprover'])->orderBy('need_type')->orderBy('company')->orderBy('department_id')->get() : collect(),

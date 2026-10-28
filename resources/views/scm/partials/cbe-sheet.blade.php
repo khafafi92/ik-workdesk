@@ -122,12 +122,16 @@
         @endif
     </div>
     <div class="scm-cbe-signatures" role="group" aria-label="Kolom tanda tangan CBE">
-        @foreach(['Prepared By:', 'Acknowledged By:', 'Crosschecked By:', 'Approved By:'] as $role)
-        <div class="scm-cbe-signature"><strong>{{ $role }}</strong><div class="scm-cbe-signature-space"><span class="scm-cbe-sr">Belum ditandatangani</span></div><div>Name: {{ $loop->first ? ($sheetPreparedName ?? '') : '' }}</div><div>Date:</div></div>
+        @foreach(\App\Services\Scm\CbeApprovals::LABELS as $key => $role)
+        @php($signedStep = collect($sheetCbeApprovals ?? [])->firstWhere('role', $key))
+        <div class="scm-cbe-signature"><strong>{{ $role }}</strong><div class="scm-cbe-signature-space">
+            @if($signedStep?->status === 'signed')<img src="{{ route('scm.signature-cbe', $signedStep) }}" alt="Tanda tangan {{ $signedStep->signed_name }}" width="180" height="60" style="width:100%;height:100%;object-fit:contain">
+            @else<span class="scm-cbe-sr">Belum ditandatangani</span>@endif
+        </div><div>Name: {{ $signedStep?->signed_name ?? ($loop->first ? ($sheetPreparedName ?? '') : '') }}</div><div>Date: {{ $signedStep?->acted_at?->format('d/m/Y') }}</div></div>
         @endforeach
     </div>
     @if(($sheetRequest['company'] ?? 'APCA') === 'KPMOG')<p class="scm-cbe-revision">KPM_OG-FRM-063, 23 April 2024, Rev.3</p>@endif
 </section>
 </div>
 <p class="scm-cbe-source">{{ $sheetRequest['kind'] ?? 'PR/SR' }}: {{ $sheetRequest['number'] }} · {{ $sheetRequest['title'] }}</p>
-<p class="scm-cbe-note">{{ $usesCbePricing ? 'Discount menampilkan diskon quotation ditambah diskon tambahan CBE (opsional, kosong berarti nol). PPN master '.$sheetVatPercent.'% dihitung setelah diskon dan biaya tambahan. Non PKP menonaktifkan PPN; pajak nominal quotation tidak ditambahkan lagi.' : 'Total baris sudah termasuk diskon dan pajak nominal quotation.' }} Others mengikuti biaya tambahan quotation; freight belum dirinci terpisah. Kurs dan Incoterms yang kosong belum dicatat. Total Budget memakai estimasi PR/SR (IDR); Differences adalah total CBE dikurangi estimasi. Kolom tanda tangan CBE belum ditandatangani; persetujuan PR/SR dicatat pada form permintaan.</p>
+<p class="scm-cbe-note">{{ $usesCbePricing ? 'Discount menampilkan diskon quotation ditambah diskon tambahan CBE (opsional, kosong berarti nol). PPN master '.$sheetVatPercent.'% dihitung setelah diskon dan biaya tambahan. Non PKP menonaktifkan PPN; pajak nominal quotation tidak ditambahkan lagi.' : 'Total baris sudah termasuk diskon dan pajak nominal quotation.' }} Others mengikuti biaya tambahan quotation; freight belum dirinci terpisah. Kurs dan Incoterms yang kosong belum dicatat. Total Budget memakai estimasi PR/SR (IDR); Differences adalah total CBE dikurangi estimasi. Tanda tangan mengikuti aturan dokumen CBE pada Master Approval. Keputusan PR/SR dan CBE tersedia melalui menu Persetujuan.</p>

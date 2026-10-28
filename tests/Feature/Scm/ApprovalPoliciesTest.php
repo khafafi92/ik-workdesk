@@ -232,7 +232,7 @@ class ApprovalPoliciesTest extends TestCase
         $policy = ApprovalPolicy::sole();
         $page->call('editApprovalPolicy', $policy->id)->assertSet('approvalPolicy.need_type', 'PROJECT')
             ->assertSet('approvalPolicy.approver_id', $this->coo->id)
-            ->assertSee('Master Approval PR/SR')->assertSet('approvalPolicy.crosschecker_id', null);
+            ->assertSee('Master Approval')->assertSet('approvalDocument', 'PRSR')->assertSet('approvalPolicy.crosschecker_id', null);
         $page->call('copyApprovalPolicy', $policy->id)->assertSet('approvalPolicy.version', 0);
         $this->assertSame(1, ApprovalPolicy::count());
         $this->assertFalse(Access::has($this->coo, 'scm.configure'));

@@ -11,6 +11,7 @@ use App\Http\Controllers\ScmDocumentController;
 use App\Http\Controllers\TicketAttachmentDownloadController;
 use App\Http\Controllers\TicketCommentAttachmentDownloadController;
 use App\Http\Controllers\VendorPortalController;
+use App\Http\Controllers\VendorPublicPortalController;
 use App\Http\Controllers\WorkTaskPermitResultDownloadController;
 use App\Http\Middleware\RequireLtroAccess;
 use App\Http\Middleware\RequireSuperadmin;
@@ -106,6 +107,12 @@ Route::middleware('auth')->group(function () {
 
 require __DIR__.'/auth.php';
 
+Route::prefix('vendor')->middleware([VendorPortalResponse::class, 'throttle:60,1'])->group(function (): void {
+    Route::get('/', [VendorPublicPortalController::class, 'index'])->name('vendor.index');
+    Route::post('/daftar', [VendorPublicPortalController::class, 'register'])->middleware('throttle:5,1')->name('vendor.register');
+    Route::post('/buka', [VendorPublicPortalController::class, 'resume'])->middleware('throttle:10,1')->name('vendor.resume');
+});
+
 Route::prefix('vendor/form-005/{token}')->where(['token' => '[a-f0-9]{64}'])->middleware([VendorPortalResponse::class, 'throttle:60,1'])->group(function (): void {
     Route::get('/bagian/{step}', [VendorPortalController::class, 'show'])->where('step', '[1-5]')->name('vendor.portal');
     Route::post('/bagian/{step}', [VendorPortalController::class, 'save'])->where('step', '[1-5]')->middleware('throttle:30,1')->name('vendor.portal.save');
@@ -122,5 +129,6 @@ Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void 
     Route::get('/persetujuan/{approval}/ttd', [ScmDocumentController::class, 'approvalSignature'])->name('signature-approval');
     Route::get('/lampiran/{attachment}', [ScmDocumentController::class, 'download'])->name('download');
     Route::get('/cbe/{cbe}/cetak', [ScmDocumentController::class, 'print'])->name('print');
+    Route::get('/cbe-persetujuan/{cbeApproval}/ttd', [ScmDocumentController::class, 'cbeSignature'])->name('signature-cbe');
     Route::get('/cbe/{cbe}/penawaran-terpilih', [ScmDocumentController::class, 'selectedQuotation'])->name('selected-quotation');
 });

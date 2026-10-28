@@ -298,7 +298,7 @@ class Workflow
                 $this->reject(mb_strlen(trim($data['selection_reason'] ?? '')) < 10, 'Isi alasan pemilihan minimal 10 karakter, termasuk pertimbangan bila bukan harga terendah.');
                 $snapshot = ['request' => [...$request->only(['number', 'kind', 'company', 'title', 'reason', 'department_id', 'approval_scope', 'estimated_total_minor', 'location', 'notes']),
                     'department_name' => $request->department->name, 'needed_at' => $request->needed_at?->toDateString()],
-                    'prepared_by_name' => $actor->name, 'items' => $request->items->toArray(),
+                    'prepared_by_name' => $actor->name, 'approval_required' => true, 'items' => $request->items->toArray(),
                     'quotes' => $quotes->map(fn ($q) => ['id' => $q->id, 'version' => $q->version, 'number' => $q->number, 'currency' => $q->currency,
                         'date' => $q->date?->toDateString(), 'valid_until' => $q->valid_until?->toDateString(), 'notes' => $q->notes,
                         'lead_time' => $q->lead_time, 'payment_terms' => $q->payment_terms, 'total_minor' => $q->total_minor, 'extra_minor' => $q->extra_minor,
@@ -314,6 +314,9 @@ class Workflow
                 $cbe = Cbe::create([...$values, 'request_id' => $request->id, 'number' => 'CBE-'.Str::ulid()]);
             }
             $request->status = $finalize ? 'selected' : ($request->status === 'sourcing' ? 'sourcing' : 'evaluation');
+            if ($finalize) {
+                app(CbeApprovals::class)->start($actor, $cbe);
+            }
             $this->audit($actor, $cbe, $finalize ? 'finalisasi_cbe' : 'draft_cbe', ['quotation_ids' => $data['quotation_ids'], 'selected_vendor_id' => $values['selected_vendor_id'], 'final_minor' => $values['final_minor'],
                 'vat_percent' => $vatPercent, 'commercial_terms' => $terms], $request->id, $data['selection_reason'] ?? null);
         });
@@ -323,6 +326,7 @@ class Workflow
     {
         return $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
             $this->reject($request->status !== 'selected' || $request->cbe?->status !== 'final', 'Legalitas hanya dapat dimulai dari CBE final.');
+            $this->reject(! app(CbeApprovals::class)->complete($request->cbe), 'Tanda tangan CBE belum lengkap. Tunggu Acknowledged, Crosschecked, dan Approved by sebelum memulai legalitas.');
             $case = LegalCase::create(['request_id' => $request->id, 'cbe_id' => $request->cbe->id, 'vendor_id' => $request->cbe->selected_vendor_id,
                 'scm_pic_id' => $actor->id, 'requested_at' => now()]);
             $registration = VendorRegistration::where('vendor_id', $case->vendor_id)->where('status', 'accepted')->latest('id')->first();

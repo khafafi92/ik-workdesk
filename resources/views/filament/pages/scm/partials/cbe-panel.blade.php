@@ -10,7 +10,8 @@
     $sheetDate = $record->cbe?->date?->format('d/m/Y');
     $sheetSelectedVendor = $record->cbe?->selected_vendor_id;
     $sheetReason = $record->cbe?->selection_reason;
-    $sheetPreparedName = $sheetEditing ? null : ($record->cbe->snapshot['prepared_by_name'] ?? null);
+    $sheetPreparedName = $sheetEditing ? auth()->user()->name : ($record->cbe->snapshot['prepared_by_name'] ?? null);
+    $sheetCbeApprovals = $sheetEditing ? collect() : $record->cbe->approvals;
     $sheetVatPercent = $record->cbe?->vat_percent ?? (int) config('scm.cbe_vat_percent');
     if ($sheetEditing) {
         $sheetQuotes = $sheetQuotes->map(function ($quote) use ($cbeForm, $sheetVatPercent) {
@@ -25,6 +26,7 @@
     }
 @endphp
 @if($sheetEditing)
+    <p>Prepared By: {{ auth()->user()->name }}. Gunakan <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}">TTD profil</a> akun SCM untuk menandatangani CBE.</p>
     <p>Pilih satu versi penawaran per vendor dari minimal tiga vendor. SCM menentukan vendor berdasarkan harga, spesifikasi, dan alasan pemilihan.</p>
     @if($chosen->pluck('currency')->unique()->count() > 1)<p class="scm-error" role="status">Belum dapat dibandingkan: mata uang berbeda. Revisi penawaran agar menggunakan satu mata uang.</p>@endif
     @if($chosen->pluck('candidate.vendor_id')->unique()->count() < $chosen->count())<p class="scm-error" role="status">Pilih hanya satu versi penawaran untuk setiap vendor.</p>@endif
@@ -36,13 +38,17 @@
         </fieldset>
         @if($quotes->isNotEmpty() && $chosen->isEmpty())<p role="status">Belum ada penawaran yang dipilih. Centang versi penawaran untuk mengisi Summary of Bids.</p>@endif
         @include('scm.partials.cbe-sheet')
-        <div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan draft CBE</x-filament::button><button type="button" wire:click="finalizeCbe" wire:confirm="Finalkan CBE? Penawaran dan pemilihan ini akan terkunci." wire:loading.attr="disabled">Finalkan CBE & pilih vendor</button></div>
+        <div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan draft CBE</x-filament::button><button type="button" wire:click="finalizeCbe" wire:confirm="Tanda tangani CBE sebagai Prepared By dan ajukan persetujuan? Isi CBE akan terkunci." wire:loading.attr="disabled">Tanda tangani dan ajukan CBE</button></div>
     </form>
 @else
     @include('scm.partials.cbe-sheet')
     <p>Harga akhir: {{ \App\Services\Scm\Decimal::money($record->cbe->final_minor, $record->cbe->snapshot['quotes'][0]['currency']) }}</p>
     <p><a href="{{ route('scm.print', $record->cbe) }}" target="_blank" rel="noopener">Buka CBE untuk cetak / simpan PDF</a></p>
     <p>CBE final terkunci dan memakai snapshot penawaran serta profil vendor saat finalisasi. Versi {{ $record->cbe->version }}.</p>
-    @if($record->status === 'selected')<x-filament::button wire:click="startLegal">Mulai pengumpulan legalitas</x-filament::button>@endif
+    @if($record->status === 'selected' && $record->cbe->approvals->isEmpty() && (int)$record->cbe->prepared_by === (int)auth()->id())
+        <button type="button" wire:click="requestCbeApproval" wire:confirm="Tanda tangani CBE lama ini sebagai Prepared By dan ajukan kepada penandatangan pada master saat ini? Harga dan snapshot tetap terkunci." wire:loading.attr="disabled">Tanda tangani dan ajukan persetujuan CBE lama</button>
+    @endif
+    @if($record->status === 'selected' && app(\App\Services\Scm\CbeApprovals::class)->complete($record->cbe))<x-filament::button wire:click="startLegal">Mulai pengumpulan legalitas</x-filament::button>
+    @elseif($record->status === 'selected')<p role="status">Menunggu kelengkapan tanda tangan CBE sebelum pengumpulan legalitas.</p>@endif
 @endif
 @foreach($cbeAttachments as $file)<p><a href="{{ route('scm.download', $file) }}">Lampiran CBE: {{ $file->original_name }}</a></p>@endforeach

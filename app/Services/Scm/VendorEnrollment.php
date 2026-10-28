@@ -4,6 +4,7 @@ namespace App\Services\Scm;
 
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\Vendor;
+use App\Models\Scm\VendorPortalAccess;
 use App\Models\Scm\VendorRegistration;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -256,26 +257,44 @@ class VendorEnrollment
         if ($action === 'correction' && (mb_strlen(trim($notes ?? '')) < 10 || mb_strlen($notes) > 5000)) {
             throw ValidationException::withMessages(['notes' => 'Isi catatan perbaikan antara 10 dan 5.000 karakter.']);
         }
-        $vendorId = VendorRegistration::findOrFail($id)->vendor_id;
+        $candidate = VendorRegistration::findOrFail($id);
+        $vendorId = $candidate->vendor_id;
+        $portalAccessId = $candidate->portal_access_id;
         $createdPaths = [];
         try {
-            DB::transaction(function () use ($actor, $id, $version, $action, $notes, $vendorId, &$createdPaths): void {
-                $vendor = Vendor::lockForUpdate()->findOrFail($vendorId);
+            DB::transaction(function () use ($actor, $id, $version, $action, $notes, $vendorId, $portalAccessId, &$createdPaths): void {
+                $portalAccess = $portalAccessId ? VendorPortalAccess::lockForUpdate()->findOrFail($portalAccessId) : null;
+                $vendor = $vendorId ? Vendor::lockForUpdate()->findOrFail($vendorId) : null;
                 $record = VendorRegistration::lockForUpdate()->findOrFail($id);
                 $this->checkVersion($record, $version);
                 if ($action === 'revoke') {
                     $record->revoked_at = now();
+                    if ($portalAccess) {
+                        $portalAccess->revoked_at = now();
+                        $portalAccess->save();
+                    }
                 } else {
                     $this->assertAvailable($record);
                     abort_unless($record->status === 'submitted', 409, 'Kiriman ini belum menunggu pemeriksaan.');
                     if ($action === 'accept') {
                         $this->validateSubmission($record);
-                        if ($vendor->version !== $record->vendor_version) {
+                        if ($vendor && $vendor->version !== $record->vendor_version) {
                             throw ValidationException::withMessages(['review' => 'Profil master vendor berubah setelah undangan dibuat. Periksa perubahan dan buat undangan baru agar data tidak tertimpa.']);
                         }
                         $company = $record->answers[1];
                         $workflow = app(Workflow::class);
-                        $workflow->saveVendor($actor, [...$vendor->getAttributes(), ...collect($company)->only(['name', 'address', 'phone', 'email', 'pic_name', 'pic_email', 'pic_phone', 'pic_position'])->all()], $vendor->id, $vendor->version);
+                        abort_unless($vendor || $portalAccess, 409);
+                        $vendor = $workflow->saveVendor($actor, [...($vendor?->getAttributes() ?? ['code' => 'WEB-'.Str::ulid(),
+                            'provider_type' => $record->context['provider_type'], 'is_active' => true]),
+                            ...collect($company)->only(['name', 'address', 'phone', 'email', 'pic_name', 'pic_email', 'pic_phone', 'pic_position'])->all()], $vendor?->id, $vendor?->version);
+                        if (! $record->vendor_id) {
+                            $record->vendor_id = $vendor->id;
+                            $record->vendor_version = $vendor->version;
+                        }
+                        if ($portalAccess) {
+                            $portalAccess->vendor_id = $vendor->id;
+                            $portalAccess->save();
+                        }
                         foreach ($this->applicableFiles($record) as $file) {
                             $type = DocumentType::where('code', $file->code)->where('is_active', true)->firstOrFail();
                             $document = $workflow->saveDocument($actor, ['vendor_id' => $vendor->id, 'document_type_id' => $type->id, 'number' => $file->number,
@@ -323,7 +342,8 @@ class VendorEnrollment
 
     private function assertAvailable(VendorRegistration $record): void
     {
-        abort_if($record->revoked_at || $record->expires_at->isPast(), 410, 'Tautan sudah kedaluwarsa atau dicabut. Hubungi SCM untuk tautan baru.');
+        abort_if($record->revoked_at || $record->expires_at->isPast() || ($record->portal_access_id && $record->portalAccess?->revoked_at),
+            410, 'Tautan sudah kedaluwarsa atau dicabut. Hubungi SCM untuk tautan baru.');
     }
 
     private function event(VendorRegistration $record, string $action, array $details, ?User $actor = null): void

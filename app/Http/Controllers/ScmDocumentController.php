@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Scm\Attachment;
 use App\Models\Scm\Cbe;
+use App\Models\Scm\CbeApproval;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\Quotation;
 use App\Models\Scm\RequestApproval;
 use App\Models\Scm\UserSignature;
 use App\Services\Scm\Access;
+use App\Services\Scm\CbeApprovals;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -47,6 +49,14 @@ class ScmDocumentController extends Controller
         ]);
     }
 
+    public function cbeSignature(Request $http, CbeApproval $cbeApproval)
+    {
+        abort_unless(app(CbeApprovals::class)->canView($http->user(), $cbeApproval->cbe), 403);
+        abort_unless($cbeApproval->status === 'signed' && $cbeApproval->signature, 404);
+
+        return $this->signatureImage($cbeApproval->signature);
+    }
+
     public function download(Request $http, Attachment $attachment)
     {
         $actor = $http->user();
@@ -77,7 +87,7 @@ class ScmDocumentController extends Controller
     public function print(Request $http, Cbe $cbe)
     {
         $request = Procurement::findOrFail($cbe->request_id);
-        abort_unless(Access::manages($http->user(), $request) || ($cbe->status === 'final' && Access::views($http->user(), $request)), 403);
+        abort_unless(Access::manages($http->user(), $request) || ($cbe->status === 'final' && app(CbeApprovals::class)->canView($http->user(), $cbe)), 403);
         abort_unless($cbe->status === 'final', 404);
 
         return response()->view('scm.cbe-print', ['cbe' => $cbe])->header('Cache-Control', 'private, no-store');

@@ -1,8 +1,10 @@
-# Master Approval PR/SR HO dan Project
+# Master Approval PR/SR dan CBE
 
-Master berada di **SCM > Pengaturan > Master Approval PR/SR**, pada bagian paling atas pengaturan. Pengelola harus memiliki izin `scm.configure`; level Management sendiri tidak memberikan izin mengubah master.
+Semua pengaturan berada di **SCM > Pengaturan > Master Approval**. Pemilih **Dokumen persetujuan** menyediakan **PR/SR** sebagai pilihan awal dan **CBE** untuk aturan CBE. Form dan daftar mengikuti dokumen yang dipilih, sehingga satu panel mengelola keduanya. Pengelola harus memiliki izin `scm.configure`; level Management sendiri tidak memberikan izin mengubah master.
 
 ## Pemetaan aturan
+
+Bagian berikut membahas pilihan PR/SR. Untuk CBE, lihat [Aturan dokumen CBE](#aturan-dokumen-cbe).
 
 Setiap master mempunyai perusahaan, divisi/departemen, jenis kebutuhan **HO atau Project**, serta pilihan berlaku untuk **PR dan SR**, **PR**, atau **SR**. Aturan khusus PR/SR didahulukan dari aturan bersama pada perusahaan, divisi, dan jenis kebutuhan yang sama. Project tidak menggunakan aturan HO sebagai cadangan jika master Project belum ada.
 
@@ -55,3 +57,20 @@ Field teknis lama `approval_scope` dipertahankan untuk kompatibilitas alur dokum
 Tabel permintaan, langkah approval, tanda tangan, nomor, vendor, CBE, role, dan izin lama tidak ditulis ulang oleh migrasi. Definisi master yang sudah diedit melalui pengaturan baru tidak ditimpa oleh pembaruan konfigurasi API lama. Rollback yang menghapus data master baru/Project yang sudah digunakan ditolak.
 
 Untuk instalasi yang belum memiliki field struktur Employee, migrasi `2026_10_27_100000_add_employee_reporting_structure.php` juga diperlukan. Data jabatan dan atasan yang belum dipetakan tetap kosong sampai ditetapkan.
+
+## Aturan dokumen CBE
+
+Diperbarui 29 Oktober 2026. Setelah migrasi `2026_10_28_100000_create_scm_cbe_approvals.php` diterapkan, buka **SCM > Pengaturan > Master Approval**, lalu pilih **Dokumen persetujuan: CBE**.
+
+1. Pilih perusahaan APCA atau KPMOG.
+2. Isi **Acknowledged By: Meyfi**, **Crosschecked By: Dipta**, dan **Approved By: Lenaldy** dengan akun aktif yang benar.
+3. Tekan **Simpan master approval**. Gunakan **Edit** pada baris perusahaan untuk perubahan berikutnya. Jika pengelola lain sudah menyimpan perubahan, buka ulang master sebelum menyimpan lagi.
+4. Siapkan aturan perusahaan lain bila digunakan. CBE mengikuti perusahaan PR/SR, tanpa pilihan HO/Project atau divisi pada aturan CBE. Ganti **Dokumen persetujuan** kembali ke PR/SR untuk mengatur persetujuan permintaan.
+
+Prepared By mengikuti akun SCM yang menandatangani dan mengajukan CBE; Imam menjadi Prepared By ketika Imam sendiri yang melaksanakan langkah itu. Tiga pejabat pada master dan akun Prepared By harus berbeda. Sistem tidak mengambil gambar TTD pejabat lain secara otomatis.
+
+Setiap akun menyimpan gambar TTD sendiri lewat tautan profil pada form/persetujuan. SCM memeriksa draft kemudian memilih **Tanda tangani dan ajukan CBE**. CBE menjadi final dan isi perbandingannya terkunci. Meyfi, Dipta, dan Lenaldy membuka **Permintaan > Persetujuan**, memilih **CBE**, memeriksa dokumen, lalu menandatangani berurutan sesuai giliran. Nama, tanggal dan versi gambar TTD disimpan pada tindakan masing-masing akun. Pengumpulan legalitas CBE baru menunggu keempat tanda tangan lengkap.
+
+Mengubah master tidak mengganti penugasan CBE yang sedang berjalan. Mengganti gambar profil tidak mengubah tanda tangan dokumen yang sudah ditandatangani. CBE lama tidak diberi TTD otomatis. CBE final lama yang belum masuk legalitas dan belum mempunyai penugasan dapat diajukan secara eksplisit oleh akun SCM pembuat aslinya, dengan harga dan snapshot tetap terkunci.
+
+Langkah pengguna lengkap, termasuk vendor dan penanganan pesan kesalahan, tersedia di [panduan SCM](SCM.md#panduan-penggunaan-langkah-demi-langkah).

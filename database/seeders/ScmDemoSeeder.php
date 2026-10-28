@@ -7,6 +7,7 @@ use App\Models\Employee;
 use App\Models\Permission;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Category;
+use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\Quotation;
@@ -15,6 +16,7 @@ use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
 use App\Models\User;
 use App\Services\Scm\Approvals;
+use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\Signatures;
 use App\Services\Scm\Workflow;
@@ -35,13 +37,17 @@ class ScmDemoSeeder extends Seeder
         $type = DocumentType::where('code', 'NIB')->firstOrFail();
         Requirement::firstOrCreate(['category_id' => $category->id, 'document_type_id' => $type->id], ['is_required' => true]);
         $actors = [];
-        foreach (['pemohon' => ['scm.request'], 'petugas' => ['scm.process', 'scm.configure', 'scm.request']] as $name => $permissions) {
+        foreach (['pemohon' => ['scm.request'], 'petugas' => ['scm.process', 'scm.configure', 'scm.request'], 'acknowledged' => ['scm.request'], 'crosschecked' => ['scm.request'], 'approved' => ['scm.request']] as $name => $permissions) {
             $user = User::firstOrCreate(['email' => 'scm.'.$name.'@example.test'], ['name' => 'SCM Demo '.ucfirst($name), 'password' => Hash::make('SCM-Demo-2026!'), 'is_admin' => false]);
             Employee::firstOrCreate(['user_id' => $user->id], ['department_id' => $department->id, 'name' => $user->name, 'is_active' => true]);
             $user->directPermissions()->syncWithoutDetaching(Permission::whereIn('code', $permissions)->pluck('id'));
             $actors[$name] = $user->fresh();
         }
         $flow = app(Workflow::class);
+        $demoPolicy = CbeApprovalPolicy::firstOrCreate(['company' => 'APCA'], ['acknowledger_id' => $actors['acknowledged']->id, 'crosschecker_id' => $actors['crosschecked']->id, 'approver_id' => $actors['approved']->id]);
+        if ((int) $demoPolicy->acknowledger_id !== (int) $actors['acknowledged']->id || (int) $demoPolicy->crosschecker_id !== (int) $actors['crosschecked']->id || (int) $demoPolicy->approver_id !== (int) $actors['approved']->id) {
+            throw new \RuntimeException('Master Approval CBE memakai akun di luar demo. Seeder demo tidak boleh menandatangani atas nama akun tersebut.');
+        }
         $signatures = app(Signatures::class);
         if (! $signatures->current($actors['pemohon'])) {
             $signatures->upload($actors['pemohon'], new UploadedFile(database_path('fixtures/scm-demo-signature.png'), 'DEMO-BUKAN-TTD.png', 'image/png', null, true));
@@ -83,6 +89,13 @@ class ScmDemoSeeder extends Seeder
             $winner = $vendors[$kind === 'PR' ? 0 : 1];
             $r = $flow->saveCbe($scm, $r->id, $r->version, ['date' => today()->toDateString(), 'quotation_ids' => $ids, 'selected_vendor_id' => $winner->id,
                 'selection_reason' => $kind === 'PR' ? 'DEMO: total terendah dengan spesifikasi setara.' : 'DEMO: vendor kedua dipilih berdasarkan kesesuaian syarat, bukan semata total terendah.'], true);
+            while ($step = app(CbeApprovals::class)->next($r->cbe)) {
+                if (! $signatures->current($step->user)) {
+                    $signatures->upload($step->user, new UploadedFile(database_path('fixtures/scm-demo-signature.png'), 'DEMO-BUKAN-TTD.png', 'image/png', null, true));
+                }
+                app(CbeApprovals::class)->sign($step->user, $r->cbe->id, $r->version);
+                $r->refresh();
+            }
             $r = $flow->startLegal($scm, $r->id, $r->version);
             $doc = VendorDocument::where('vendor_id', $winner->id)->where('document_type_id', $type->id)->first();
             if (! $doc) {

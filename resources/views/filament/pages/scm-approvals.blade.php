@@ -1,5 +1,13 @@
 <x-filament-panels::page>
+@vite('resources/css/scm.css')
 <div class="scm-workspace">
+    <nav class="scm-actions" aria-label="Dokumen persetujuan">
+        <button type="button" wire:click="switchDocument('PRSR')" @if($documentType === 'PRSR') aria-current="page" @endif>PR/SR</button>
+        <button type="button" wire:click="switchDocument('CBE')" @if($documentType === 'CBE') aria-current="page" @endif>CBE</button>
+    </nav>
+    @if($documentType === 'CBE')
+        @include('filament.pages.scm.partials.cbe-approval-inbox')
+    @else
     <p role="status" wire:loading.delay wire:target="decide">Menyimpan keputusan persetujuan. Mohon tunggu...</p>
     @if($errors->any())<div class="scm-error" role="alert"><h2>Periksa persetujuan</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     @if($record)
@@ -23,7 +31,7 @@
         @endif
         <section class="scm-panel"><h2>Lampiran permintaan</h2>@forelse($record->attachments as $file)<a href="{{ route('scm.download', $file) }}">Unduh {{ $file->original_name }}</a>@empty<p>Belum ada lampiran permintaan.</p>@endforelse</section>
     @else
-        <section class="scm-panel"><h2>Permintaan yang ditugaskan kepada Anda</h2>
+        <section class="scm-panel"><h2>Persetujuan PR/SR</h2>
             <p>Kolom giliran menunjukkan permintaan yang dapat Anda putuskan sekarang. Riwayat penugasan tetap tersedia setelah persetujuan selesai.</p>
             <div class="scm-scroll" role="region" aria-label="Daftar persetujuan PR/SR" tabindex="0"><table><thead><tr><th>Permintaan</th><th>Pembuat</th><th>Alur persetujuan</th><th>Status</th><th>Giliran</th><th>Tindakan</th></tr></thead><tbody>
                 @forelse($records as $r)
@@ -32,6 +40,7 @@
                 @empty<tr><td colspan="6">Belum ada PR/SR yang ditugaskan kepada Anda.</td></tr>@endforelse
             </tbody></table></div>{{ $records->links() }}
         </section>
+    @endif
     @endif
 </div>
 </x-filament-panels::page>

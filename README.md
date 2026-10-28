@@ -2,6 +2,12 @@
 
 IK WorkDesk adalah platform operasional internal berbasis Laravel dan Filament untuk Service Desk, Work Logs, Attendance, Reminder, Meeting Room, Vehicle Booking, serta workflow kolaboratif antar-department.
 
+## Panduan pengguna
+
+Vendor dapat membuka **Portal Vendor** melalui tautan pada halaman login atau `/vendor`. Vendor ID diberikan saat pendaftaran dan dipakai kembali untuk membuka data serta mengajukan pembaruan dokumen. SCM memeriksa setiap kiriman sebelum profil dan berkas masuk master.
+
+Mulai dari [cara menggunakan IK WorkDesk](docs/BEGINNER-DEVELOPER-GUIDE.md#20-panduan-penggunaan-ik-workdesk). Untuk pengadaan, ikuti [panduan SCM](docs/SCM.md#panduan-penggunaan-langkah-demi-langkah), termasuk PR/SR, dokumen vendor, Master Approval bersama PR/SR dan CBE, serta tanda tangan berurutan. Buku yang sudah ada diperbarui pada [Buku Pengembangan IK WorkDesk](output/Buku%20Pengembangan%20IK%20WorkDesk.docx), dengan [salinan PDF](output/pdf/Buku%20Pengembangan%20IK%20WorkDesk.pdf). Panduan penggunaan berada pada bab 13 dan 14.
+
 ## Panduan developer
 
 Mulai dari [Panduan Developer Pemula](docs/BEGINNER-DEVELOPER-GUIDE.md) untuk penjelasan langkah demi langkah. Gunakan [Dari Layar Menu ke File Kode](docs/UI-TO-CODE-BY-MENU.md) untuk menelusuri Page, Form, Table, function, dan style; [Peta Kode Menu](docs/DEVELOPER-MENU-MAP.md) untuk pencarian cepat; serta [Panduan Detail Per Menu](docs/menus/README.md) untuk field, permission, aturan, dan test setiap menu. Jika ingin membuat modul baru dengan pola yang sama, ikuti [Membuat Menu Baru dari Nol](docs/BUILD-A-MENU-FROM-ZERO.md).

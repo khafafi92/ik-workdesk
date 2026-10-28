@@ -1,6 +1,89 @@
 # Modul SCM: PR/SR, CBE, dan legalitas vendor
 
-Modul terintegrasi dengan pengguna, departemen, Filament, dan hak akses IK WorkDesk. Sidebar menyediakan **Permintaan > PR** dan **Permintaan > SR** untuk permintaan user, serta **SCM > SCM** untuk penerimaan dan pemrosesan oleh tim SCM. Vendor mengisi Form 005 melalui portal undangan terpisah; SCM meninjau kiriman sebelum menerima profil dan dokumen ke master. Modul tidak menambahkan PO, kontrak, penerimaan barang, invoice, pembayaran, atau pesan otomatis.
+Modul terintegrasi dengan pengguna, departemen, Filament, dan hak akses IK WorkDesk. Sidebar menyediakan **Permintaan > PR** dan **Permintaan > SR** untuk permintaan user, serta **SCM > SCM** untuk penerimaan dan pemrosesan oleh tim SCM. Vendor mengisi Form 005 melalui Portal Vendor dengan pendaftaran mandiri dan Vendor ID, atau melalui undangan dari SCM. SCM meninjau kiriman sebelum menerima profil dan dokumen ke master. Modul tidak menambahkan PO, kontrak, penerimaan barang, invoice, pembayaran, atau pesan otomatis.
+
+## Panduan penggunaan langkah demi langkah
+
+Diperbarui 29 Oktober 2026. Buka alamat IK WorkDesk yang diberikan pengelola dan masuk menggunakan akun pribadi. Alamat server yang tercatat untuk IK WorkDesk adalah `http://10.1.20.97:8093`; fitur CBE dan Portal Vendor pada pembaruan ini masih perlu diterapkan sesuai [petunjuk rilis](SCM-DEPLOY-2026-10-29.md). Menu mengikuti izin akun. Jika menu tidak muncul, minta pengelola memeriksa izin dan cakupan departemen akun tersebut.
+
+### 1. Menyiapkan tanda tangan dan master
+
+1. Setiap penandatangan membuka tautan **Atur TTD di profil (tab baru)** pada halaman persetujuan atau form PR/SR. SCM juga dapat memakai tautan **TTD profil** pada tab CBE. Simpan gambar tanda tangan sendiri pada halaman **Tanda tangan profil**. Gunakan PNG/JPG maksimal 2 MB dan 4096 × 4096 piksel. Menyimpan profil belum menandatangani dokumen.
+2. Pengelola berizin konfigurasi membuka **SCM > Pengaturan > Master Approval**. Pilihan **Dokumen persetujuan** awalnya **PR/SR**; atur perusahaan, divisi, HO/Project, dan jenis form pada pilihan tersebut. Ikuti [panduan master approval](SCM-APPROVAL-MASTER-2026-10-27.md).
+3. Pada panel **Master Approval** yang sama, ubah **Dokumen persetujuan** menjadi **CBE**, lalu pilih perusahaan. Isi **Acknowledged By: Meyfi**, **Crosschecked By: Dipta**, dan **Approved By: Lenaldy** menggunakan akun aktif yang sesuai, lalu tekan **Simpan master approval**. Atur perusahaan lain jika digunakan. Ganti kembali pilihan ke PR/SR untuk melihat atau mengedit aturan PR/SR.
+4. **Prepared By** memakai akun SCM yang benar-benar menandatangani dan mengajukan CBE. Jika Imam yang memproses, masuk sebagai Imam. Keempat penandatangan harus memakai akun berbeda. Nama contoh tidak membuat akun atau gambar tanda tangan secara otomatis.
+
+Satu Master Approval mengelola aturan PR/SR dan CBE melalui pemilih dokumen. Masing-masing jenis dokumen mempunyai penugasan sesuai aturannya. Perubahan master berlaku untuk pengajuan berikutnya; penandatangan dokumen yang sudah diajukan tetap mengikuti penugasan saat pengajuan.
+
+### 2. Membuat dan mengajukan PR atau SR
+
+1. Buka **Permintaan > PR** untuk barang atau **Permintaan > SR** untuk jasa, lalu buat permintaan baru.
+2. Pilih perusahaan sebelum nomor diterbitkan. Perusahaan tidak dapat diganti setelah nomor terbit.
+3. Pilih kebutuhan HO atau Project, isi tanggal dan rincian barang/jasa, jumlah, satuan, serta informasi kebutuhan yang tersedia. Tandai pengajuan di atas Rp5 juta jika sesuai. Kategori tidak perlu dipilih oleh pemohon.
+4. Simpan draft, lengkapi lampiran yang diperlukan, lalu **Tanda tangani** pada Requested by. Perubahan isi atau lampiran draft setelah ditandatangani memerlukan tanda tangan ulang.
+5. Ajukan persetujuan sesuai jenis kebutuhan. Pejabat membuka **Permintaan > Persetujuan**, memilih **PR/SR**, memeriksa dokumen yang ditugaskan, lalu menandatangani sesuai urutan atau mengembalikan dengan alasan perbaikan.
+6. Jika dikembalikan, perbaiki draft, tandatangani ulang, lalu ajukan kembali. SCM baru menerima permintaan setelah seluruh tahap persetujuan yang diwajibkan selesai.
+
+### 3. Menerima permintaan dan mengumpulkan penawaran
+
+1. Petugas membuka **SCM > SCM**, mencari nomor PR/SR pada antrean, lalu membuka detail dan memilih **Terima oleh SCM**.
+2. Di **Vendor & penawaran**, pilih minimal tiga vendor berbeda. Buat data vendor terlebih dahulu pada **Vendor & dokumen** bila belum tersedia.
+3. Catat nomor/tanggal quotation, mata uang, syarat komersial, rincian harga, diskon dan pajak, lalu lampirkan file quotation. Cocokkan barang/jasa, jumlah, dan satuan dengan permintaan.
+4. Jika vendor merevisi quotation, simpan versi baru. Saat menyusun CBE, pilih satu versi untuk setiap vendor dengan mata uang yang sama.
+
+### 4. Mengelola berkas vendor dan Form 005
+
+**Untuk vendor yang mengisi sendiri**, buka **Portal Vendor** melalui tautan pada halaman login atau alamat `/vendor`. Pada instalasi lokal, alamatnya `http://127.0.0.1:8000/vendor`. Setelah paket diterapkan ke server, gunakan alamat IK WorkDesk server diikuti `/vendor`.
+
+1. Vendor baru memilih perusahaan tujuan, mengisi nama perusahaan dan jenis penyedia, lalu menekan **Mulai pendaftaran vendor**. SCM tidak perlu membuat profil master terlebih dahulu.
+2. Sistem memberikan **Vendor ID** berawalan VND. Salin dan simpan ID tersebut sebelum melanjutkan Form 005. ID digunakan kembali untuk membuka data perusahaan dan berkas vendor yang sama.
+3. Lengkapi lima bagian Form 005 dan unggah dokumen yang diminta. Untuk melanjutkan di lain waktu, buka Portal Vendor, isi **Vendor ID**, lalu tekan **Buka data vendor**. Data yang sudah disimpan akan muncul kembali.
+4. Kirim form setelah lengkap. Selama menunggu pemeriksaan SCM, kiriman terkunci. Bila SCM meminta perbaikan, masukkan Vendor ID yang sama untuk membuka isian dan memperbaiki berkas sesuai catatan, lalu kirim ulang.
+5. Setelah kiriman diterima SCM, masukkan Vendor ID yang sama saat membutuhkan pembaruan berikutnya. Sistem menyiapkan kiriman baru berisi data dan salinan berkas sebelumnya; pernyataan harus diisi ulang. Pembaruan masuk master setelah diperiksa dan diterima SCM. Profil yang sedang berlaku serta riwayat kiriman lama tetap tersimpan.
+
+Vendor ID diberikan pada saat pendaftaran dan dipakai oleh pengelola data vendor tersebut. Jika ID hilang atau akses dicabut, hubungi SCM. Semua berkas tetap terikat pada vendor dan versi kirimannya.
+
+**Untuk petugas SCM**, tautan dan alamat Portal Vendor tersedia di **SCM > Vendor & dokumen**. Kiriman pendaftaran baru muncul pada antrean pemeriksaan sebelum menjadi master vendor. Setelah diterima, profil dan berkas masuk pada vendor yang sama. Undangan langsung untuk vendor yang sudah terdaftar tetap tersedia:
+
+1. Buka **Vendor & dokumen**, cari vendor yang dimaksud, lalu **Edit** untuk memilihnya. Riwayat dokumen ikut terfilter pada vendor tersebut. Periksa nama vendor tujuan sebelum mengunggah file.
+2. Untuk pengisian oleh vendor, pilih **Buat tautan undangan Form 005**, tentukan perusahaan tujuan serta konteks transaksi bila diperlukan, lalu sampaikan tautan khusus itu kepada vendor.
+3. Vendor membuka tautan tanpa akun internal, mengisi lima bagian, memilih asal/jenis dokumen, menyimpan bagian, serta mengunggah berkas yang diminta. Pilihan asal/jenis harus disimpan sebelum mengunggah dokumen yang mengikuti pilihan baru.
+4. Vendor melengkapi ringkasan kekurangan di bagian 5 dan mengirim pernyataan. Setelah dikirim, isian terkunci sampai SCM meminta perbaikan.
+5. SCM memilih **Periksa Form 005**, memeriksa jawaban dan file, lalu menerima atau meminta perbaikan dengan alasan. Jika diminta perbaikan, vendor memakai kembali tautan yang masih berlaku, memperbaiki isian/berkas dan mengirim ulang.
+
+Tautan berisi token khusus vendor dan berlaku 30 hari. Simpan serta sampaikan hanya kepada vendor terkait. Tautan baru mencabut undangan lama yang belum diterima dan memulai formulir baru; gunakan alur perbaikan untuk memperbaiki kiriman yang sama. Penerimaan Form 005 memasukkan profil dan dokumen ke master, tetapi checklist legalitas setiap pengadaan tetap diperiksa oleh SCM.
+
+### 5. Menyusun dan menandatangani CBE
+
+1. Buka tab **CBE** pada pengadaan. Pilih minimal tiga vendor, masing-masing satu versi quotation.
+2. Periksa harga, Non PKP/PPN, diskon tambahan dan syarat komersial. Pilih vendor pemenang serta isi alasan pemilihannya. Gunakan **Simpan draft CBE** selama masih perlu perubahan.
+3. Periksa seluruh angka dan vendor, lalu tekan **Tanda tangani dan ajukan CBE** dan konfirmasi. Sistem membubuhkan TTD Prepared By dari profil akun SCM pelaksana dan mengunci isi CBE final. Tahap ini belum membubuhkan TTD pejabat berikutnya.
+4. Meyfi masuk menggunakan akunnya, membuka **Permintaan > Persetujuan**, memilih **CBE** lalu **Periksa CBE**, memeriksa perbandingan dan menekan **Tanda tangani sebagai Acknowledged By**.
+5. Dipta melakukan langkah yang sama untuk **Crosschecked By**, dilanjutkan Lenaldy untuk **Approved By**. Tombol tanda tangan hanya tersedia bagi akun yang sedang mendapat giliran.
+6. Gunakan **Buka CBE untuk cetak / simpan PDF**. Empat kolom memuat gambar TTD, nama dan tanggal setelah masing-masing akun menandatangani. Perubahan gambar profil berikutnya tidak mengganti TTD pada dokumen yang sudah ditandatangani.
+
+CBE final terkunci. Periksa isinya sebelum pengajuan; versi ini belum menyediakan pembukaan ulang/revisi CBE final. Pada CBE lama yang masih berada di tahap vendor terpilih dan belum mempunyai penugasan TTD, akun SCM pembuat aslinya dapat memilih **Tanda tangani dan ajukan persetujuan CBE lama**. Harga dan snapshot lama tetap tersimpan. Dokumen historis tidak diberi tanda tangan otomatis.
+
+### 6. Melengkapi legalitas dan melihat hasil
+
+1. Sesudah keempat TTD CBE baru lengkap, SCM membuka pengadaan dan memilih **Mulai pengumpulan legalitas**.
+2. Periksa daftar persyaratan, gunakan dokumen vendor yang sesuai atau unggah versi baru, lalu tetapkan hasil pemeriksaan setiap item.
+3. Jika dasar dokumen perlu diubah menjadi NPWP dan KTP, gunakan pilihan yang disediakan dan isi alasan. Penuhi seluruh persyaratan wajib dengan file dan masa berlaku yang sesuai.
+4. Selesaikan pengadaan setelah seluruh dokumen wajib diterima. Transaksi selesai terkunci.
+5. Pemohon membuka kembali PR/SR miliknya untuk melihat CBE final dan penawaran vendor terpilih. File legalitas dan quotation vendor lain tetap mengikuti batas akses SCM.
+
+### Bantuan saat langkah tertahan
+
+| Pesan atau keadaan | Tindakan pengguna |
+| --- | --- |
+| Aturan CBE belum diatur | Buka Master Approval, pilih CBE, lalu isi aturan perusahaan pada PR/SR tersebut. |
+| Penandatangan harus berbeda atau tidak aktif | Periksa akun pada master, termasuk akun SCM yang menjadi Prepared By. |
+| Gambar TTD belum tersedia | Akun yang akan menandatangani menyimpan gambar TTD sendiri pada profil. |
+| Data/master berubah | Buka ulang dokumen atau master, periksa perubahan terbaru, lalu ulangi tindakan. |
+| Masih menunggu pejabat lain | Buka Persetujuan, pilih CBE, lalu lihat nama penandatangan berikutnya. |
+| Tautan vendor kedaluwarsa/dicabut | Hubungi SCM untuk pengaturan undangan; tautan baru memulai formulir baru. |
+| Legalitas belum bisa dimulai | Lengkapi TTD CBE baru terlebih dahulu. |
+| Dokumen wajib belum lengkap/kedaluwarsa | Perbarui file dan pemeriksaannya sebelum menyelesaikan pengadaan. |
 
 ## Menjalankan lokal di Windows PowerShell
 
@@ -18,6 +101,11 @@ php artisan migrate --path=database/migrations/2026_10_23_130000_add_scm_ho_appr
 php artisan migrate --path=database/migrations/2026_10_23_140000_allow_pending_cbo3_on_scm_routes.php
 php artisan migrate --path=database/migrations/2026_10_24_100000_add_scm_cbe_commercial_terms.php
 php artisan migrate --path=database/migrations/2026_10_24_120000_create_scm_vendor_registrations.php
+php artisan migrate --path=database/migrations/2026_10_27_100000_add_employee_reporting_structure.php
+php artisan migrate --path=database/migrations/2026_10_27_110000_create_scm_approval_policies.php
+php artisan migrate --path=database/migrations/2026_10_27_140000_add_project_request_form_fields.php
+php artisan migrate --path=database/migrations/2026_10_27_170000_add_foreign_vendor_document_types.php
+php artisan migrate --path=database/migrations/2026_10_28_100000_create_scm_cbe_approvals.php
 php artisan db:seed --class=ScmSeeder
 npm run build
 php artisan config:cache
@@ -42,9 +130,9 @@ Administrator mengatur izin melalui checklist menu Users, grup Permintaan dan SC
 
 - `scm.request`: membuat/edit draft sendiri, mengirim ke SCM, melihat permintaan sendiri serta lampiran permintaan. Setelah CBE final, pembuat PR/SR dapat membuka CBE dan penawaran vendor terpilih dari permintaan tersebut. File legalitas dan file penawaran vendor lain tetap privat untuk SCM.
 - `scm.process`: menerima permintaan yang sudah dikirim dalam cakupan departemen yang diizinkan; mengelola vendor, penawaran, CBE dan legalitas. Draft pengguna lain tetap privat.
-- `scm.configure`: kategori, jenis dokumen, default persyaratan, serta Master Approval PR/SR per perusahaan, divisi, jenis kebutuhan HO/Project, dan jenis form. Tidak otomatis memperoleh hak transaksi SCM.
+- `scm.configure`: kategori, jenis dokumen, default persyaratan, serta Master Approval. Pilihan PR/SR berlaku per perusahaan, divisi, HO/Project, dan jenis form; pilihan CBE berlaku per perusahaan. Tidak otomatis memperoleh hak transaksi SCM.
 
-Menu **Permintaan > Persetujuan PR/SR** dan profil TTD juga tersedia untuk akun aktif yang ditetapkan sebagai pejabat persetujuan. Pejabat hanya dapat membuka isi dan lampiran permintaan yang ditugaskan kepadanya. Penetapan ini tidak memberi akses CBE, penawaran vendor, atau legalitas; akses komersial tetap mengikuti aturan SCM dan pembuat PR/SR.
+Menu **Permintaan > Persetujuan** menyatukan pilihan PR/SR dan CBE. Profil TTD juga tersedia untuk akun aktif yang ditetapkan sebagai pejabat persetujuan. Pejabat PR/SR hanya dapat membuka isi dan lampiran permintaan yang ditugaskan kepadanya; penetapan PR/SR sendiri tidak memberi akses CBE, penawaran vendor, atau legalitas. Penandatangan CBE memilih CBE pada menu yang sama untuk membaca dan mencetak CBE yang ditugaskan kepadanya serta melihat gambar TTD di dalamnya. Penugasan CBE tidak memberi akses pengelolaan vendor, file legalitas, atau file quotation. Angka pada sidebar menghitung giliran tanda tangan PR/SR dan CBE yang dapat ditindaklanjuti akun tersebut. Tautan CBE lama diarahkan ke menu gabungan dengan pilihan dokumen yang sama. Akses file tetap mengikuti aturan SCM dan pembuat PR/SR.
 
 SCM menggunakan permission yang benar-benar diberikan melalui role aktif atau permission langsung aktif. Flag admin atau role system-admin saja tidak memberi akses transaksi SCM. Cakupan departemen tetap mengikuti mekanisme proyek. Vendor merupakan master bersama dalam instalasi proyek yang saat ini tidak memiliki tenant terpisah.
 
@@ -78,7 +166,9 @@ Hasil pengadaan tampil pada PR/SR yang sama: CBE final beserta lampirannya dan p
 
 ### Form 005 untuk pengisian oleh vendor
 
-Di **SCM > Vendor & dokumen**, simpan atau pilih vendor melalui **Edit**, lalu gunakan **Buat tautan undangan Form 005**. Pilih perusahaan tujuan dan, jika relevan, konteks transaksi konstruksi (nilai IDR dan durasi kontrak). Salin tautan yang muncul dan sampaikan melalui saluran organisasi; aplikasi tidak mengirim pesan otomatis. Vendor membuka halaman tersendiri di `/vendor/form-005/{token}/bagian/1`, tanpa akun/panel internal IK WorkDesk. Lima halaman mengikuti referensi Form 005: Data Perusahaan, Manajemen Mutu, K3L/HSE, Manajemen Proses, dan Pernyataan. Implementasi ini berfokus pada perusahaan Indonesia sesuai daftar legalitas yang ditetapkan pengguna.
+Vendor baru membuka `/vendor` untuk mendaftar sendiri dan memperoleh Vendor ID. ID yang sama digunakan untuk membuka kembali data dan mengajukan pembaruan, sesuai langkah pada bagian 4 di atas. Undangan langsung untuk master vendor yang sudah ada tetap tersedia melalui langkah berikut.
+
+Di **SCM > Vendor & dokumen**, simpan atau pilih vendor melalui **Edit**, lalu gunakan **Buat tautan undangan Form 005**. Pilih perusahaan tujuan dan, jika relevan, konteks transaksi konstruksi (nilai IDR dan durasi kontrak). Salin tautan yang muncul dan sampaikan melalui saluran organisasi; aplikasi tidak mengirim pesan otomatis. Vendor membuka halaman tersendiri di `/vendor/form-005/{token}/bagian/1`, tanpa akun/panel internal IK WorkDesk. Lima halaman mengikuti referensi Form 005: Data Perusahaan, Manajemen Mutu, K3L/HSE, Manajemen Proses, dan Pernyataan. Daftar dokumen mengikuti pilihan perusahaan Indonesia, luar Indonesia, atau pengganti NPWP/KTP untuk vendor Indonesia yang memenuhi pilihan tersebut; lihat [panduan dokumen vendor](SCM-VENDOR-PROFILES-2026-10-27.md).
 
 Undangan berlaku 30 hari. Token acak 256 bit disimpan sebagai hash. Tautan baru mencabut undangan vendor yang belum diterima sebelumnya. Kiriman dan file hanya dapat diakses dengan token undangan yang valid atau akun SCM berizin. Link kedaluwarsa/dicabut menghasilkan HTTP 410 dengan petunjuk menghubungi SCM. Data dan file tidak disajikan lewat URL publik storage. Respons portal memakai no-store, no-referrer, noindex, nosniff, dan anti-frame. Upload PDF/JPG/PNG diperiksa ukuran, MIME, ekstensi dan signature; unggahan pengganti membuat versi baru.
 
@@ -117,7 +207,7 @@ Untuk penerapan berikutnya, cadangkan database dan dokumen terlebih dahulu, jala
 
 Pembuat PR/SR dan pejabat persetujuan menyimpan gambar TTD PNG/JPG sekali melalui menu pengguna **Tanda tangan profil**. File maksimal 2 MB dan 4096 × 4096 piksel, disimpan privat. Pembuat menekan **Tanda tangani** di Requested by. Tombol ini menyimpan draft terlebih dahulu apabila formulir sedang diedit. TTD tidak ditempel otomatis ketika profil atau formulir dibuka.
 
-Dasar pemilihan pejabat pada form baru adalah pilihan **Pengajuan di atas Rp5 juta**, yang berada di luar lembar PR/SR dan tidak dicentang secara default. Kolom estimasi nominal tidak lagi ditampilkan atau diwajibkan. Aturan ini berlaku untuk HO APCA dan KPMOG. Project belum memiliki alur dalam fitur ini.
+Dasar pemilihan pejabat pada form baru adalah pilihan **Pengajuan di atas Rp5 juta**, yang berada di luar lembar PR/SR dan tidak dicentang secara default. Kolom estimasi nominal tidak lagi ditampilkan atau diwajibkan. HO dan Project memakai master masing-masing pada APCA dan KPMOG; Project tidak mengambil rute HO sebagai cadangan. Tabel berikut menjelaskan rute awal HO, sedangkan penugasan berikutnya mengikuti master yang disimpan.
 
 | Pilihan di atas Rp5 juta | Acknowledged by | Crosschecked by | Approved by |
 | --- | --- | --- | --- |
@@ -129,7 +219,7 @@ Jika pembuat adalah atasan yang ditetapkan pada perusahaan/departemennya, Acknow
 
 Untuk permintaan lama yang masih menunggu Crosschecked by, administrator aktif atau pemilik izin konfigurasi SCM dapat memeriksa `php artisan scm:skip-manager-crosschecks --actor=ID_ADMIN --request=ID_PR`. Tanpa `--apply`, perintah hanya memeriksa. Opsi `--apply` melewati tahap opsional yang masih tertunda jika snapshot Acknowledged by sudah dilewati karena pengaju adalah atasannya sendiri dan Approved by masih ditugaskan kepada CBO yang sama. Penyesuaian menambah versi permintaan dan audit atas nama administrator pelaksana. Permintaan yang memerlukan COO 3, pengaju lain, tahap yang sudah ditandatangani, dan putaran lama dipertahankan.
 
-Pengaturan kini berada di **SCM > Pengaturan > Master Approval PR/SR**, terpisah untuk HO dan Project. Pilih Acknowledged by, Crosschecked by bila diperlukan, dan Approved by per perusahaan/divisi/form. CBO hanya untuk HO; Project mengikuti penandatangan yang dipilih pada master Project, tanpa mengambil rute HO. Aturan awal HO dan eskalasi nominal sebelumnya dipertahankan saat migrasi. Lihat [panduan master approval](SCM-APPROVAL-MASTER-2026-10-27.md). Budhy (COO III) sebelumnya telah ditetapkan sebagai penandatangan lanjutan pada pengaturan lokal IT untuk APCA dan KPMOG, menggunakan akun yang dibuat pengguna; pemetaan lokal tidak menyatakan akun atau rute yang sama sudah ada di server produksi.
+Pengaturan berada di **SCM > Pengaturan > Master Approval**, pilih **Dokumen persetujuan: PR/SR**. HO dan Project memakai aturan masing-masing. Pilih Acknowledged by, Crosschecked by bila diperlukan, dan Approved by per perusahaan/divisi/form. CBO hanya untuk HO; Project mengikuti penandatangan yang dipilih pada master Project, tanpa mengambil rute HO. Aturan awal HO dan eskalasi nominal sebelumnya dipertahankan saat migrasi. Lihat [panduan master approval](SCM-APPROVAL-MASTER-2026-10-27.md). Budhy (COO III) sebelumnya telah ditetapkan sebagai penandatangan lanjutan pada pengaturan lokal IT untuk APCA dan KPMOG, menggunakan akun yang dibuat pengguna; pemetaan lokal tidak menyatakan akun atau rute yang sama sudah ada di server produksi.
 
 Pejabat dapat mengembalikan permintaan untuk revisi dengan alasan minimal 10 karakter. TTD Requested by aktif dihapus dan tahap yang belum diputus dibatalkan. Tanda tangan dan keputusan putaran lama tetap tersimpan. Pengajuan ulang memerlukan TTD Requested by baru dan membuat putaran persetujuan baru mengikuti pilihan serta pengaturan saat itu.
 

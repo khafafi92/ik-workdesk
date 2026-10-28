@@ -9,7 +9,9 @@
 <body class="vendor-portal">
     <a class="vp-skip" href="#main">Langsung ke formulir</a>
     <div class="vp-shell">
-        <header class="vp-header"><img src="{{ asset($brand['logo']) }}" alt="{{ $brand['logo_alt'] }}" width="120" height="75"><div><p>{{ $brand['logo_alt'] }}</p><h1>Form 005 · Kualifikasi Vendor</h1><p>{{ $registration->vendor->name }}</p></div></header>
+        <header class="vp-header"><img src="{{ asset($brand['logo']) }}" alt="{{ $brand['logo_alt'] }}" width="120" height="75"><div><p>{{ $brand['logo_alt'] }}</p><h1>Form 005 · Kualifikasi Vendor</h1><p>{{ $registration->vendor?->name ?? ($registration->answers[1]['name'] ?? 'Vendor baru') }}</p></div></header>
+        <p><a href="{{ route('vendor.index') }}">Portal Vendor</a></p>
+        @if(session('vendor_access_code'))<section class="vp-paper" aria-labelledby="vendor-access-title"><h2 id="vendor-access-title">Simpan Vendor ID Anda</h2><p>Salin ID ini untuk melanjutkan atau memperbarui data melalui Portal Vendor.</p><div class="vp-field"><label for="issued-vendor-code">Vendor ID Anda</label><input id="issued-vendor-code" value="{{ session('vendor_access_code') }}" readonly autocomplete="off"></div><p>ID ditampilkan pada langkah pendaftaran ini. Simpan sebelum melanjutkan dan berikan hanya kepada pengelola data vendor Anda.</p></section>@endif
         <div class="vp-status" role="status"><strong>{{ $statusLabels[$registration->status] }}</strong><span>{{ $registration->revoked_at ? 'Tautan dicabut' : ($registration->expires_at->isPast() ? 'Tautan kedaluwarsa' : 'Tautan aktif') }} · Berlaku sampai {{ $registration->expires_at->format('d/m/Y H:i') }} WIB</span></div>
         @if(session('status'))<p class="vp-success" role="status">{{ session('status') }}</p>@endif
         @if($errors->any())<section class="vp-error" role="alert"><h2>Periksa isian berikut</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></section>@endif

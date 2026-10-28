@@ -8,11 +8,14 @@ use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Audit;
 use App\Models\Scm\Category;
 use App\Models\Scm\Cbe;
+use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\Quotation;
 use App\Models\User;
 use App\Services\Scm\Approvals;
+use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\Signatures;
+use App\Services\Scm\VendorPublicPortal;
 use App\Services\Scm\Workflow;
 use Database\Seeders\ScmSeeder;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -51,6 +54,11 @@ class ScmConcurrencyTest extends TestCase
         try {
             for ($i = 0; $i < 2; $i++) {
                 $payload = [...$job, 'ready' => $directory.'/ready-'.$i, 'gate' => $directory.'/gate'];
+                if ($job['mode'] === 'save_cbe_policy') {
+                    $payload['policy_ready'] = $directory.'/policy-'.$i;
+                    $payload['policy_peer'] = $directory.'/policy-'.(1 - $i);
+                    $files[] = $payload['policy_ready'];
+                }
                 $path = $directory.'/job-'.$i.'.json';
                 file_put_contents($path, json_encode($payload));
                 $files[] = $path;
@@ -93,10 +101,44 @@ class ScmConcurrencyTest extends TestCase
         return $results;
     }
 
+    public function test_simultaneous_first_cbe_master_save_returns_a_recoverable_conflict(): void
+    {
+        $actor = User::factory()->create();
+        $actor->directPermissions()->attach(Permission::where('code', 'scm.configure')->sole()->id);
+        $users = User::factory()->count(3)->create();
+        $data = ['company' => 'KPMOG', 'acknowledger_id' => $users[0]->id, 'crosschecker_id' => $users[1]->id,
+            'approver_id' => $users[2]->id, 'version' => 0];
+
+        $results = $this->workers(['mode' => 'save_cbe_policy', 'actor_id' => $actor->id, 'data' => $data]);
+
+        $this->assertEqualsCanonicalizing(['saved', 'conflict'], array_column($results, 'result'));
+        $this->assertSame(1, CbeApprovalPolicy::where('company', 'KPMOG')->count());
+        $this->assertSame(1, Audit::where('action', 'master_approval_cbe')->count());
+    }
+
+    public function test_vendor_number_opens_one_update_draft_when_resumed_by_two_sessions(): void
+    {
+        $actor = User::factory()->create();
+        $actor->directPermissions()->attach(Permission::where('code', 'scm.process')->sole()->id);
+        [$registration, $token, $code] = app(VendorPublicPortal::class)->register(['company' => 'KPMOG', 'provider_type' => 'barang', 'name' => 'Vendor pengujian konkurensi']);
+        $vendor = app(Workflow::class)->saveVendor($actor, ['code' => 'DEMO-PUBLIC', 'name' => 'Vendor pengujian konkurensi', 'provider_type' => 'barang', 'is_active' => true]);
+        $registration->update(['status' => 'accepted', 'vendor_id' => $vendor->id, 'vendor_version' => $vendor->version, 'submitted_snapshot' => ['fixture' => 'DEMO pengujian']]);
+        $registration->portalAccess->update(['vendor_id' => $vendor->id]);
+        $results = $this->workers(['mode' => 'resume_public_vendor', 'actor_id' => $actor->id, 'access_code' => $code]);
+        $this->assertSame(['resumed', 'resumed'], array_column($results, 'result'));
+        $this->assertCount(1, array_unique(array_column($results, 'registration_id')));
+        $this->assertSame(2, $registration->portalAccess->registrations()->count());
+        $this->assertSame('accepted', $registration->fresh()->status);
+        $this->assertSame(['fixture' => 'DEMO pengujian'], $registration->fresh()->submitted_snapshot);
+        $this->assertSame(1, $vendor->fresh()->version);
+    }
+
     public function test_simultaneous_request_numbers_and_cbe_finalization(): void
     {
         $actor = User::factory()->create(['is_admin' => true]);
         $actor->directPermissions()->attach(Permission::whereIn('code', ['scm.request', 'scm.process'])->pluck('id'));
+        $acknowledger = User::factory()->create();
+        CbeApprovalPolicy::create(['company' => 'APCA', 'acknowledger_id' => $acknowledger->id, 'crosschecker_id' => User::factory()->create()->id, 'approver_id' => User::factory()->create()->id]);
         $department = Department::create(['name' => 'SCM test', 'code' => 'SCM-T', 'is_active' => true]);
         $category = Category::create(['name' => 'Kategori uji bersamaan']);
         $data = ['kind' => 'PR', 'date' => today()->toDateString(), 'department_id' => $department->id, 'estimated_total' => '5000000',
@@ -153,5 +195,14 @@ class ScmConcurrencyTest extends TestCase
         $this->assertEqualsCanonicalizing(['finalized', 'conflict'], array_column($results, 'result'));
         $this->assertSame(1, Cbe::where('status', 'final')->count());
         $this->assertSame(1, Audit::where('action', 'finalisasi_cbe')->count());
+        $cbe = Cbe::sole();
+        $this->assertSame(1, app(CbeApprovals::class)->pendingCount($acknowledger));
+        app(Signatures::class)->upload($acknowledger, new UploadedFile(database_path('fixtures/scm-demo-signature.png'), 'DEMO-BUKAN-TTD.png', 'image/png', null, true));
+        $results = $this->workers(['mode' => 'sign_cbe', 'actor_id' => $acknowledger->id, 'cbe_id' => $cbe->id, 'version' => $cbe->request->version]);
+        $this->assertEqualsCanonicalizing(['signed', 'conflict'], array_column($results, 'result'));
+        $this->assertSame(2, $cbe->approvals()->where('status', 'signed')->count());
+        $this->assertSame(1, Audit::where('action', 'tanda_tangan_cbe')->count());
+        $this->assertSame(0, app(CbeApprovals::class)->pendingCount($acknowledger));
+        $this->assertSame(1, app(CbeApprovals::class)->pendingCount(CbeApprovalPolicy::where('company', 'APCA')->sole()->crosschecker));
     }
 }

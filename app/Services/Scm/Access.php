@@ -4,6 +4,8 @@ namespace App\Services\Scm;
 
 use App\Models\Scm\ApprovalPolicy;
 use App\Models\Scm\ApprovalRoute;
+use App\Models\Scm\CbeApproval;
+use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\RequestApproval;
 use App\Models\User;
@@ -34,12 +36,14 @@ class Access
             || ApprovalPolicy::where('supervisor_id', $user->id)->orWhere('acknowledger_id', $user->id)->orWhere('crosschecker_id', $user->id)
                 ->orWhere('approver_id', $user->id)->orWhere('high_approver_id', $user->id)->exists()
             || RequestApproval::where('user_id', $user->id)->where('role', '!=', 'requested')->exists()
+            || CbeApproval::where('user_id', $user->id)->where('role', '!=', 'prepared')->exists()
+            || CbeApprovalPolicy::where('acknowledger_id', $user->id)->orWhere('crosschecker_id', $user->id)->orWhere('approver_id', $user->id)->exists()
         );
     }
 
     public static function signs(?User $user): bool
     {
-        return self::has($user, 'scm.request') || self::approves($user);
+        return self::has($user, 'scm.request') || self::has($user, 'scm.process') || self::approves($user);
     }
 
     public static function viewsRequest(User $user, Procurement $request): bool

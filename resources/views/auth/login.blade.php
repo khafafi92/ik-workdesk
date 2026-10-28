@@ -84,7 +84,7 @@
 
         <div class="wd-login-card-foot">
             <span></span>
-            <p>Secure access</p>
+            <a href="{{ route('vendor.index') }}">Portal Vendor</a>
             <span></span>
         </div>
     </section>

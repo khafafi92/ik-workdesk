@@ -64,8 +64,8 @@ class MenuAccessCatalogTest extends TestCase
             GlobalChatRoom::class => 'Signed-in users, company scope',
             AiAssistantSettingsPage::class => 'System administrator only',
             UserResource::class => 'Administrator access level',
-            ScmApprovals::class => 'Assigned SCM approval route or approval history',
-            SignatureProfile::class => 'SCM requester or assigned approver',
+            ScmApprovals::class => 'Assigned PR/SR or CBE approval, SCM processor, or system administrator',
+            SignatureProfile::class => 'SCM requester, processor or assigned approver',
         ];
         $aliases = ['Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
             'Master Perangkat' => 'Lihat Master Perangkat',

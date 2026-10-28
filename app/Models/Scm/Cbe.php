@@ -6,6 +6,16 @@ class Cbe extends Record
 {
     protected $table = 'scm_cbes';
 
+    public function approvals()
+    {
+        return $this->hasMany(CbeApproval::class)->orderBy('position');
+    }
+
+    public function request()
+    {
+        return $this->belongsTo(Procurement::class, 'request_id');
+    }
+
     protected function casts(): array
     {
         return ['quotation_ids' => 'array', 'commercial_terms' => 'array', 'vat_percent' => 'integer', 'snapshot' => 'array', 'date' => 'date', 'finalized_at' => 'datetime'];

@@ -14,6 +14,7 @@ use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Attachment;
 use App\Models\Scm\Audit;
 use App\Models\Scm\Category;
+use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\Quotation;
@@ -24,6 +25,7 @@ use App\Models\Scm\VendorDocument;
 use App\Models\User;
 use App\Services\Scm\Access;
 use App\Services\Scm\Approvals;
+use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\RequestNumbering;
 use App\Services\Scm\Signatures;
@@ -74,7 +76,10 @@ class ProcurementTest extends TestCase
         $this->scm = $this->user('scm.process');
         $this->flow = app(Workflow::class);
         app(Signatures::class)->upload($this->requester, $this->signatureFile());
+        app(Signatures::class)->upload($this->scm, $this->signatureFile());
         foreach (['APCA', 'KPMOG'] as $company) {
+            CbeApprovalPolicy::create(['company' => $company,
+                'acknowledger_id' => $this->user('scm.request')->id, 'crosschecker_id' => $this->user('scm.request')->id, 'approver_id' => $this->user('scm.request')->id]);
             ApprovalRoute::create(['company' => $company, 'department_id' => $this->department->id,
                 'acknowledger_id' => $this->user('scm.request')->id, 'cbo_id' => $this->user('scm.request')->id, 'cbo3_id' => $this->user('scm.request')->id]);
         }
@@ -177,7 +182,20 @@ class ProcurementTest extends TestCase
     {
         $r = $this->quoted($kind);
 
-        return $this->flow->saveCbe($this->scm, $r->id, $r->version, $this->cbeData($r), true);
+        return $this->approveCbe($this->flow->saveCbe($this->scm, $r->id, $r->version, $this->cbeData($r), true));
+    }
+
+    private function approveCbe(Procurement $request): Procurement
+    {
+        while ($step = app(CbeApprovals::class)->next($request->cbe)) {
+            if (! app(Signatures::class)->current($step->user)) {
+                app(Signatures::class)->upload($step->user, $this->signatureFile());
+            }
+            app(CbeApprovals::class)->sign($step->user, $request->cbe->id, $request->version);
+            $request->refresh();
+        }
+
+        return $request;
     }
 
     private function pdf(string $name = 'dokumen.pdf'): UploadedFile
@@ -278,7 +296,7 @@ class ProcurementTest extends TestCase
             ->assertSee('Belum ada gambar tanda tangan')->call('saveSignature')->assertHasErrors('signatureFile')
             ->set('signatureFile', $this->signatureFile())->call('saveSignature')->assertHasNoErrors()->assertSee('Ganti TTD profil');
         $this->assertNotNull($signatures->current($other));
-        Livewire::actingAs($this->scm)->test(SignatureProfile::class)->assertForbidden();
+        Livewire::actingAs($this->scm)->test(SignatureProfile::class)->assertSee('Ganti TTD profil');
     }
 
     #[DataProvider('kinds')]
@@ -367,6 +385,7 @@ class ProcurementTest extends TestCase
 
     public function test_demo_seeder_assigns_categories_during_scm_receipt_and_remains_idempotent(): void
     {
+        CbeApprovalPolicy::query()->delete();
         $this->seed(ScmDemoSeeder::class);
         $requests = Procurement::where('title', 'like', 'DEMO % sampai legalitas lengkap')->get();
         $this->assertCount(2, $requests);
@@ -484,6 +503,7 @@ class ProcurementTest extends TestCase
         $this->assertSame('KPMOG', $request->cbe->snapshot['request']['company']);
         $this->actingAs($this->requester)->get(route('scm.print', $request->cbe))->assertOk()->assertSee('Perusahaan: KPMOG');
         $this->get(route('scm.selected-quotation', $request->cbe))->assertOk()->assertSee('Perusahaan: KPMOG');
+        $request = $this->approveCbe($request);
         $request = $this->flow->startLegal($this->scm, $request->id, $request->version);
         $request = $this->flow->complete($this->scm, $request->id, $request->version);
         $this->assertSame('completed', $request->status);
@@ -733,6 +753,7 @@ class ProcurementTest extends TestCase
         $this->actingAs($this->scm)->get(route('scm.print', $request->cbe))->assertOk()
             ->assertSee($request->number)->assertSee($vendor->name)->assertSee($data['selection_reason']);
         $this->rejects(fn () => $this->flow->addCandidate($this->scm, $request->id, $request->version, ['vendor_id' => $vendor->id, 'followup_status' => 'diminta']));
+        $request = $this->approveCbe($request);
         $request = $this->flow->startLegal($this->scm, $request->id, $request->version);
         $this->assertSame($vendor->id, $request->legalCase->vendor_id);
         $this->assertSame($request->cbe->id, $request->legalCase->cbe_id);
@@ -1169,6 +1190,7 @@ class ProcurementTest extends TestCase
         $data = $this->cbeData($second);
         $data['selected_vendor_id'] = $winner;
         $second = $this->flow->saveCbe($this->scm, $second->id, $second->version, $data, true);
+        $second = $this->approveCbe($second);
         $second = $this->flow->startLegal($this->scm, $second->id, $second->version);
         $second = $this->flow->updateLegal($this->scm, $second->id, $second->version, $second->legalCase->items->first()->id, ['status' => 'diterima', 'vendor_document_id' => $doc->id]);
         Storage::disk('scm')->delete($doc->attachments->first()->path);
