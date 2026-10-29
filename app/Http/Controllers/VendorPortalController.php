@@ -75,6 +75,7 @@ class VendorPortalController extends Controller
         abort_unless(Access::manages($request->user()), 403);
 
         return $this->privateResponse(response()->view('vendor-portal.review', ['registration' => $registration,
+            'returnToDirectory' => $request->query('dari') === 'data-vendor',
             'files' => $enrollment->latestFiles($registration)]));
     }
 

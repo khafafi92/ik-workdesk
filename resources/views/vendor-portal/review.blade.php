@@ -1,6 +1,6 @@
 <x-vendor-portal.layout :registration="$registration">
     <section class="vp-paper"><h2>Pemeriksaan Form 005 #{{ $registration->id }}</h2>
-        <p><a href="{{ url('/panel/scm/pengadaan?bagian=vendors') }}">Kembali ke master vendor SCM</a></p>
+        <p>@if($returnToDirectory ?? false)<a href="{{ \App\Filament\Pages\ScmVendorRegistrations::getUrl() }}">Kembali ke Data Vendor</a>@else<a href="{{ url('/panel/scm/pengadaan?bagian=vendors') }}">Kembali ke master vendor SCM</a>@endif</p>
         <p>Periksa jawaban dan file sebelum menerima. Penerimaan memperbarui profil dan menambahkan versi dokumen ke master vendor; checklist pengadaan yang sudah ada tetap diperiksa SCM.</p>
         <p class="vp-note"><strong>{{ \App\Services\Scm\VendorForm::origin($registration->answers ?? []) === 'foreign' ? 'Perusahaan luar Indonesia' : 'Vendor Indonesia' }}</strong> · {{ \App\Services\Scm\VendorForm::basis($registration->answers ?? []) === 'npwp_ktp' ? 'Tidak memiliki dokumen perusahaan; menggunakan pengganti NPWP dan KTP.' : 'Menggunakan dokumen perusahaan.' }}</p>
         @if(!$registration->revoked_at && $registration->expires_at->isPast())<p class="vp-note">{{ $registration->portal_access_id ? 'Akses formulir sudah kedaluwarsa.' : 'Undangan ini sudah kedaluwarsa.' }} Jawaban dan dokumen tetap tersedia untuk diperiksa. {{ $registration->portal_access_id ? 'Vendor dapat membuka kembali melalui Portal Vendor dengan nomor uniknya.' : 'Buat undangan baru dari master vendor jika vendor perlu mengisi dan mengirim form kembali.' }}</p>@endif

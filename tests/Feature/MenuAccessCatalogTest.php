@@ -67,7 +67,7 @@ class MenuAccessCatalogTest extends TestCase
             ScmApprovals::class => 'Assigned PR/SR or CBE approval, SCM processor, or system administrator',
             SignatureProfile::class => 'SCM requester, processor or assigned approver',
         ];
-        $aliases = ['Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
+        $aliases = ['Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
             'Master Perangkat' => 'Lihat Master Perangkat',
             'Pengecekan Infrastruktur' => 'Lihat Pengecekan',
             'Monitoring Harian IT' => 'Lihat Pengecekan',
