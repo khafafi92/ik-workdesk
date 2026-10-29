@@ -21,6 +21,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class PublicVendorPortalTest extends TestCase
@@ -93,6 +94,45 @@ class PublicVendorPortalTest extends TestCase
         $this->enrollment->saveStep($record, $record->fresh()->version, 5, $this->answers(5), true);
 
         return $record->fresh();
+    }
+
+    public static function websiteAddresses(): array
+    {
+        return [
+            'www without scheme' => ['www.perusahaan.example', 'https://www.perusahaan.example'],
+            'domain and path' => ['perusahaan.example/profil', 'https://perusahaan.example/profil'],
+            'existing HTTPS' => ['https://perusahaan.example', 'https://perusahaan.example'],
+            'existing HTTP' => ['http://perusahaan.example', 'http://perusahaan.example'],
+            'pasted spaces' => ['  www.perusahaan.example  ', 'https://www.perusahaan.example'],
+            'optional empty' => ['', null],
+        ];
+    }
+
+    #[DataProvider('websiteAddresses')]
+    public function test_website_addresses_are_normalized_when_saving_without_requiring_browser_javascript(string $input, ?string $expected): void
+    {
+        [$record, $token] = $this->register();
+        $this->post(route('vendor.portal.save', ['token' => $token, 'step' => 1]), [
+            'version' => $record->version, 'answers' => [...$this->answers(1), 'website' => $input],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame($expected, $record->fresh()->answers[1]['website']);
+    }
+
+    public static function invalidWebsiteAddresses(): array
+    {
+        return [['javascript:alert(1)'], ['ftp://perusahaan.example'], ['mailto:info@perusahaan.example'], ['bukan alamat situs'], [['www.perusahaan.example']]];
+    }
+
+    #[DataProvider('invalidWebsiteAddresses')]
+    public function test_invalid_website_addresses_are_rejected_without_modifying_saved_vendor_data(mixed $input): void
+    {
+        [$record, $token] = $this->register();
+        $before = $record->answers;
+        $this->post(route('vendor.portal.save', ['token' => $token, 'step' => 1]), [
+            'version' => $record->version, 'answers' => [...$this->answers(1), 'website' => $input],
+        ])->assertRedirect()->assertSessionHasErrors('website');
+        $this->assertSame($before, $record->fresh()->answers);
+        $this->assertSame(1, $record->version);
     }
 
     public function test_public_entry_is_available_from_login_and_registration_does_not_create_a_master_vendor(): void

@@ -53,6 +53,12 @@ class VendorEnrollment
     public function validateStep(int $step, array $data, array $answers = []): array
     {
         if ($step === 1) {
+            if (isset($data['website']) && is_string($data['website'])) {
+                $data['website'] = trim($data['website']);
+                if ($data['website'] !== '' && ! preg_match('/^[a-z][a-z0-9+.-]*:/i', $data['website'])) {
+                    $data['website'] = 'https://'.$data['website'];
+                }
+            }
             $data['company_origin'] ??= VendorForm::origin([1 => $data]);
             $data['document_basis'] ??= 'company';
             if ($data['company_origin'] === 'indonesia') {
@@ -109,6 +115,7 @@ class VendorEnrollment
         }
 
         $validated = Validation::make($data, $rules, ['required_if' => ':attribute wajib diisi untuk jawaban yang dipilih.',
+            'url' => ':attribute harus berupa alamat situs HTTP atau HTTPS yang valid.',
             'accepted' => 'Konfirmasikan pernyataan kebenaran data.', 'after_or_equal' => ':attribute tidak boleh sebelum hari ini.',
             'before_or_equal' => ':attribute tidak boleh setelah hari ini.'], $labels)->validate();
         if ($step === 1 && $validated['company_origin'] === 'foreign') {

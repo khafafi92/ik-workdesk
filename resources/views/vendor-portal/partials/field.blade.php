@@ -19,6 +19,8 @@
         <label for="answer-{{ $key }}">{{ $label }}{{ $required ? ' *' : '' }}</label>
         @if($type === 'textarea')<textarea id="answer-{{ $key }}" name="answers[{{ $key }}]" rows="4" @required($required) maxlength="10000">{{ $value }}</textarea>
         @elseif($type === 'choice')<select id="answer-{{ $key }}" name="answers[{{ $key }}]" required><option value="">Pilih jawaban</option><option value="yes" @selected($value === 'yes')>Ya</option><option value="no" @selected($value === 'no')>Tidak</option></select>
+        @elseif($key === 'website' && $type === 'url')
+            <input id="answer-website" name="answers[website]" type="text" inputmode="url" autocomplete="url" autocapitalize="off" spellcheck="false" value="{{ $value }}" maxlength="255">
         @else<input id="answer-{{ $key }}" name="answers[{{ $key }}]" type="{{ $type }}" value="{{ $value }}" @required($required) @if($type !== 'date') maxlength="255" @endif>
         @endif
     @endif

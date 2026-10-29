@@ -43,6 +43,16 @@ if (form) {
     };
     form.addEventListener('change', update);
     form.addEventListener('input', update);
+    const website = form.querySelector('[name="answers[website]"]');
+    if (website) {
+        const normalizeWebsite = () => {
+            const value = website.value.trim();
+            website.value = value && !/^[a-z][a-z0-9+.-]*:/i.test(value) ? `https://${value}` : value;
+            update();
+        };
+        website.addEventListener('blur', normalizeWebsite);
+        form.addEventListener('submit', normalizeWebsite);
+    }
     update();
     initializeVendorAddress(form, update);
 }
