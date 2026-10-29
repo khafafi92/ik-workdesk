@@ -108,6 +108,7 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/auth.php';
 
 Route::prefix('vendor')->middleware([VendorPortalResponse::class, 'throttle:60,1'])->group(function (): void {
+    Route::get('/wilayah/{city}', [VendorPortalController::class, 'address'])->where('city', '[0-9]{2}\.[0-9]{2}')->name('vendor.address');
     Route::get('/', [VendorPublicPortalController::class, 'index'])->name('vendor.index');
     Route::post('/daftar', [VendorPublicPortalController::class, 'register'])->middleware('throttle:5,1')->name('vendor.register');
     Route::post('/buka', [VendorPublicPortalController::class, 'resume'])->middleware('throttle:10,1')->name('vendor.resume');

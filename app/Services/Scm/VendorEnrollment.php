@@ -57,6 +57,12 @@ class VendorEnrollment
             $data['document_basis'] ??= 'company';
             if ($data['company_origin'] === 'indonesia') {
                 $data['country'] = 'Indonesia';
+                $codes = Validation::make($data, [
+                    'city_code' => ['nullable', 'string', 'regex:/^\d{2}\.\d{2}$/D'],
+                    'district_code' => ['nullable', 'string', 'regex:/^\d{2}\.\d{2}\.\d{2}$/D'],
+                    'village_code' => ['nullable', 'string', 'regex:/^\d{2}\.\d{2}\.\d{2}\.\d{4}$/D'],
+                ])->validate();
+                $data = app(IndonesiaAddress::class)->normalize([...$data, ...$codes]);
             }
             $answers[1] = $data;
         }
@@ -78,6 +84,11 @@ class VendorEnrollment
             $labels['company_origin'] = 'Asal perusahaan';
             $labels['document_basis'] = 'Dokumen vendor';
             $rules['country'] = 'required|string|min:2|max:255';
+            if (filled($data['city_code'] ?? null) && $data['company_origin'] === 'indonesia') {
+                foreach (['city_code', 'district_code', 'village_code', 'district', 'village'] as $key) {
+                    $rules[$key] = 'required|string|max:255';
+                }
+            }
             if (VendorForm::origin($answers) === 'foreign' || VendorForm::basis($answers) === 'npwp_ktp') {
                 $rules['has_amendments'] = $rules['non_pkp'] = 'nullable|in:yes,no';
             }

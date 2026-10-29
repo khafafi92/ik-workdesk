@@ -33,7 +33,7 @@
             @endforeach
             <p>SCM akan memeriksa seluruh jawaban dan dokumen. Mengirim form tidak langsung mengubah profil master vendor.</p>
         @endif
-        <form method="post" action="{{ route('vendor.portal.save', ['token' => $token, 'step' => $step]) }}" @if(!$readOnly)data-vp-form @endif data-saved-origin="{{ $savedOrigin }}" data-saved-basis="{{ $savedBasis }}" data-saved-answers="{{ json_encode($registration->answers[$step] ?? []) }}">
+        <form method="post" action="{{ route('vendor.portal.save', ['token' => $token, 'step' => $step]) }}" @if(!$readOnly)data-vp-form @endif data-vp-address-url="{{ url('/vendor/wilayah') }}" data-saved-origin="{{ $savedOrigin }}" data-saved-basis="{{ $savedBasis }}" data-saved-answers="{{ json_encode($registration->answers[$step] ?? []) }}">
             @csrf<input type="hidden" name="version" value="{{ $registration->version }}">
             @if($step === 1)
                 <fieldset class="vp-field-group vp-vendor-kind"><legend>Jenis vendor dan dokumen</legend>
@@ -59,10 +59,10 @@
         </form>
     </section>
     @if($documentGroups->isNotEmpty())
-    <section class="vp-paper" data-vp-documents><h2>{{ $step === 1 ? '1.4.3 Dokumen vendor' : 'Lampiran bagian '.$step }}</h2>
+    <section class="vp-paper" data-vp-documents><h2>{{ $step === 1 ? 'Dokumen vendor' : 'Lampiran bagian '.$step }}</h2>
         <p class="vp-note">{{ $savedOrigin === 'foreign' ? 'Perusahaan luar Indonesia' : 'Vendor Indonesia' }} · {{ $savedBasis === 'npwp_ktp' ? 'Pengganti NPWP dan KTP' : 'Dokumen perusahaan' }}. Pilih dokumen untuk membuka unggahan. PDF/JPG/PNG, maksimal {{ number_format(config('scm.upload_max_kb') / 1024, 0) }} MB per file.</p>
         <p class="vp-feedback" data-vp-save-first hidden role="status">Simpan jawaban bagian ini untuk memperbarui daftar dokumen sebelum mengunggah.</p>
-        @if($step === 1 && $savedOrigin === 'indonesia' && $savedBasis !== 'npwp_ktp')<p class="vp-note">Perubahan akta dan PKP mengikuti jawaban yang disimpan. Dokumen 7 dan 10 diminta hanya untuk konstruksi di atas Rp100 juta dengan kontrak lebih dari 3 bulan. Referensi bank asli diserahkan kepada SCM; unggah salinannya di sini.</p>@endif
+        @if($step === 1 && $savedOrigin === 'indonesia' && $savedBasis !== 'npwp_ktp')<p class="vp-note">Perubahan akta dan PKP mengikuti jawaban yang disimpan. Pernyataan hukum dan referensi bank diminta hanya untuk konstruksi di atas Rp100 juta dengan kontrak lebih dari 3 bulan. Referensi bank asli diserahkan kepada SCM; unggah salinannya di sini.</p>@endif
         <div data-vp-document-list>
             @foreach($documentGroups as $groupTitle => $codes)
                 <section class="vp-document-group"><header><h3>{{ $groupTitle }}</h3><p>{{ $files->filter(fn ($file) => in_array($file->code, $codes, true))->count() }} dari {{ count($codes) }} diunggah</p></header><div class="vp-documents">

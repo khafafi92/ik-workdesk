@@ -301,8 +301,8 @@ class VendorPortalTest extends TestCase
     {
         [$registration, $token] = $this->invite();
         $response = $this->get(route('vendor.portal', ['token' => $token, 'step' => 5]))->assertOk()
-            ->assertSee('Kelengkapan sebelum dikirim')->assertSee('Dokumen wajib belum diunggah: 1. Salinan Akta Pendirian Perusahaan')
-            ->assertSee('Dokumen wajib belum diunggah: 8. Salinan NPWP')
+            ->assertSee('Kelengkapan sebelum dikirim')->assertSee('Dokumen wajib belum diunggah: Salinan Akta Pendirian Perusahaan')
+            ->assertSee('Dokumen wajib belum diunggah: Salinan NPWP')
             ->assertSee(route('vendor.portal', ['token' => $token, 'step' => 1]).'#answer-city')
             ->assertSee(route('vendor.portal', ['token' => $token, 'step' => 1]).'#document-AKTA_PENDIRIAN');
         $this->assertNotEmpty($response->viewData('checklist')[1]['answers']);

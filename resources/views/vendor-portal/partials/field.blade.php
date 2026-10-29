@@ -4,13 +4,17 @@
     $value = old('answers.'.$key, $registration->answers[$step][$key] ?? '');
     $condition = \App\Services\Scm\VendorForm::fieldCondition($key);
     $required = $required || $condition !== null;
+    $addressField = $step === 1 && in_array($key, ['city', 'province', 'district', 'village', 'postcode', 'country']);
 @endphp
+@if(!($readOnly && in_array($key, ['district', 'village']) && blank($value)))
 @if(!$readOnly || !$condition || ($registration->answers[$step][$condition[0]] ?? '') === $condition[1])
-<div class="vp-field{{ $type === 'textarea' ? ' vp-wide' : '' }}" @if($condition) data-vp-condition="{{ $condition[0] }}" data-vp-value="{{ $condition[1] }}" @endif @if(in_array($key, ['has_amendments', 'non_pkp'])) data-vp-company-legal @endif>
+<div class="vp-field{{ $type === 'textarea' ? ' vp-wide' : '' }}" @if($addressField) data-vp-address-field="{{ $key }}" @endif @if($condition) data-vp-condition="{{ $condition[0] }}" data-vp-value="{{ $condition[1] }}" @endif @if(in_array($key, ['has_amendments', 'non_pkp'])) data-vp-company-legal @endif>
     @if($readOnly)
         <dl><dt>{{ $label }}</dt><dd>{{ $type === 'choice' ? (['yes' => 'Ya', 'no' => 'Tidak'][$value] ?? 'Belum diisi') : ($type === 'confirm' ? ($value ? 'Disetujui oleh pengisi' : 'Belum diisi') : ($value ?: 'Belum diisi')) }}</dd></dl>
     @elseif($type === 'confirm')
         <label class="vp-check"><input type="checkbox" name="answers[{{ $key }}]" value="1" @checked($value) required><span>{{ $label }}</span></label>
+    @elseif($addressField)
+        @include('vendor-portal.partials.address-field')
     @else
         <label for="answer-{{ $key }}">{{ $label }}{{ $required ? ' *' : '' }}</label>
         @if($type === 'textarea')<textarea id="answer-{{ $key }}" name="answers[{{ $key }}]" rows="4" @required($required) maxlength="10000">{{ $value }}</textarea>
@@ -19,4 +23,5 @@
         @endif
     @endif
 </div>
+@endif
 @endif

@@ -113,6 +113,51 @@ class PublicVendorPortalTest extends TestCase
         $this->assertStringNotContainsString($code, json_encode(DB::table('scm_vendor_portal_accesses')->get()));
     }
 
+    public function test_indonesia_address_uses_the_selected_kelurahan_and_rejects_a_mismatched_district(): void
+    {
+        [$record, $token] = $this->register();
+        $answers = [...$this->answers(1), 'company_origin' => 'indonesia', 'city_code' => '31.74',
+            'district_code' => '31.74.01', 'village_code' => '31.74.01.1001',
+            'city' => '', 'province' => '', 'postcode' => '', 'country' => 'Singapore'];
+        $this->post(route('vendor.portal.save', ['token' => $token, 'step' => 1]), [
+            'version' => $record->version, 'answers' => $answers,
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $record->refresh();
+        $saved = $record->answers[1];
+        $this->assertSame('Jakarta Selatan', $saved['city']);
+        $this->assertSame('DKI Jakarta', $saved['province']);
+        $this->assertSame('12820', $saved['postcode']);
+        $this->assertSame('Indonesia', $saved['country']);
+        $this->assertSame('Tebet Timur', $saved['village']);
+        $this->post(route('vendor.portal.save', ['token' => $token, 'step' => 1]), [
+            'version' => $record->version, 'answers' => [...$answers, 'district_code' => '31.71.01'],
+        ])->assertRedirect()->assertSessionHasErrors('district');
+        $this->assertSame($saved, $record->fresh()->answers[1]);
+    }
+
+    public function test_foreign_addresses_keep_their_country_and_do_not_use_indonesian_region_codes(): void
+    {
+        [$record, $token] = $this->register();
+        $this->post(route('vendor.portal.save', ['token' => $token, 'step' => 1]), [
+            'version' => $record->version, 'answers' => [...$this->answers(1), 'company_origin' => 'foreign',
+                'document_basis' => 'company', 'city' => 'Singapore', 'province' => 'Singapore',
+                'postcode' => '048616', 'country' => 'Singapore', 'city_code' => '31.74'],
+        ])->assertRedirect()->assertSessionHasNoErrors();
+        $saved = $record->fresh()->answers[1];
+        $this->assertSame('Singapore', $saved['country']);
+        $this->assertSame('048616', $saved['postcode']);
+        $this->assertArrayNotHasKey('city_code', $saved);
+    }
+
+    public function test_region_reference_is_available_without_exposing_vendor_data(): void
+    {
+        $response = $this->getJson(route('vendor.address', ['city' => '31.74']))->assertOk()
+            ->assertJsonPath('province', 'DKI Jakarta')
+            ->assertHeader('Cache-Control', 'no-store, private');
+        $this->assertSame('12820', $response->json('districts')['31.74.01']['villages']['31.74.01.1001']['postcode']);
+        $this->getJson(route('vendor.address', ['city' => '99.99']))->assertNotFound();
+    }
+
     public function test_number_reopens_only_its_own_saved_data_and_never_reveals_other_vendor_files(): void
     {
         [$first, $firstToken, $firstCode] = $this->register('Vendor satu pengujian');

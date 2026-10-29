@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Scm\VendorRegistration;
 use App\Services\Scm\Access;
+use App\Services\Scm\IndonesiaAddress;
 use App\Services\Scm\VendorEnrollment;
 use App\Services\Scm\VendorForm;
 use Illuminate\Http\Request;
@@ -12,6 +13,14 @@ use Illuminate\Validation\ValidationException;
 
 class VendorPortalController extends Controller
 {
+    public function address(string $city, IndonesiaAddress $addresses)
+    {
+        $result = $addresses->city($city);
+        abort_unless($result, 404);
+
+        return $this->privateResponse(response()->json($result));
+    }
+
     public function show(string $token, int $step, VendorEnrollment $enrollment)
     {
         abort_unless(isset(VendorForm::TITLES[$step]), 404);

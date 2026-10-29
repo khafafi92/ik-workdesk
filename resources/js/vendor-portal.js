@@ -1,3 +1,5 @@
+import initializeVendorAddress from './vendor-address';
+
 const form = document.querySelector('[data-vp-form]');
 
 if (form) {
@@ -42,6 +44,7 @@ if (form) {
     form.addEventListener('change', update);
     form.addEventListener('input', update);
     update();
+    initializeVendorAddress(form, update);
 }
 
 document.querySelectorAll('form').forEach(element => {
