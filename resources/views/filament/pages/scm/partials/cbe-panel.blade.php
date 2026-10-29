@@ -1,6 +1,7 @@
 @php
     $sheetEditing = $record->cbe?->status !== 'final';
     $chosen = $quotes->whereIn('id', $cbeForm['quotation_ids'] ?? []);
+    $chosenCompanies = $chosen->map(fn ($quote) => \App\Services\Scm\VendorIdentity::companyKey($quote->candidate->vendor->name));
     $sheetRequest = $sheetEditing
         ? [...$record->toArray(), 'department_name' => $record->department->name, 'needed_at' => $record->needed_at?->toDateString()]
         : $record->cbe->snapshot['request'];
@@ -29,11 +30,16 @@
     <p>Prepared By: {{ auth()->user()->name }}. Gunakan <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}">TTD profil</a> akun SCM untuk menandatangani CBE.</p>
     <p>Pilih satu versi penawaran per vendor dari minimal tiga vendor. SCM menentukan vendor berdasarkan harga, spesifikasi, dan alasan pemilihan.</p>
     @if($chosen->pluck('currency')->unique()->count() > 1)<p class="scm-error" role="status">Belum dapat dibandingkan: mata uang berbeda. Revisi penawaran agar menggunakan satu mata uang.</p>@endif
-    @if($chosen->pluck('candidate.vendor_id')->unique()->count() < $chosen->count())<p class="scm-error" role="status">Pilih hanya satu versi penawaran untuk setiap vendor.</p>@endif
+    @if($chosenCompanies->unique()->count() < $chosen->count())<p class="scm-error" role="status">Perusahaan yang sama hanya boleh muncul satu kali. Pilih satu versi penawaran per perusahaan.</p>@endif
     <form wire:submit="saveCbe" class="scm-cbe-editor">
         <p role="status" wire:loading.delay>Memperbarui perbandingan, diskon, dan PPN CBE...</p>
         <fieldset><legend>Versi penawaran yang dibandingkan</legend>
-            @forelse($quotes as $q)<label class="scm-check"><input type="checkbox" wire:model.live="cbeForm.quotation_ids" value="{{ $q->id }}"><span>{{ $q->candidate->vendor->name }} · {{ $q->number }} · Versi {{ $q->version }} · {{ \App\Services\Scm\Decimal::money($q->total_minor, $q->currency) }}</span></label>
+            @forelse($quotes as $q)
+                @php
+                    $quoteSelected = $chosen->contains('id', $q->id);
+                    $conflict = !$quoteSelected && $chosenCompanies->contains(\App\Services\Scm\VendorIdentity::companyKey($q->candidate->vendor->name));
+                @endphp
+                <label class="scm-check"><input type="checkbox" wire:model.live="cbeForm.quotation_ids" value="{{ $q->id }}" @disabled($conflict)><span>{{ $q->candidate->vendor->name }} · {{ $q->number }} · Versi {{ $q->version }} · {{ \App\Services\Scm\Decimal::money($q->total_minor, $q->currency) }}@if($conflict)<span class="scm-help"> · Perusahaan sudah dipilih. Batalkan pilihan sebelumnya untuk mengganti penawaran.</span>@endif</span></label>
             @empty<p>Belum ada penawaran. Masukkan quotation melalui tab Vendor & penawaran.</p>@endforelse
         </fieldset>
         @if($quotes->isNotEmpty() && $chosen->isEmpty())<p role="status">Belum ada penawaran yang dipilih. Centang versi penawaran untuk mengisi Summary of Bids.</p>@endif

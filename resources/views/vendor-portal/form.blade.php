@@ -29,6 +29,7 @@
                             </ul>
                         </details>
                     @endif
+                    @if(!empty($completion['warnings']))<ul class="vp-completion vp-expired">@foreach($completion['warnings'] as $warning)<li><a href="{{ route('vendor.portal', ['token' => $token, 'step' => $number]).($warning['field'] ? '#answer-'.$warning['field'] : '#document-'.$warning['code']) }}">{{ $warning['message'] }}</a></li>@endforeach</ul>@endif
                 </section>
             @endforeach
             <p>SCM akan memeriksa seluruh jawaban dan dokumen. Mengirim form tidak langsung mengubah profil master vendor.</p>
@@ -62,7 +63,7 @@
     <section class="vp-paper" data-vp-documents><h2>{{ $step === 1 ? 'Dokumen vendor' : 'Lampiran bagian '.$step }}</h2>
         <p class="vp-note">{{ $savedOrigin === 'foreign' ? 'Perusahaan luar Indonesia' : 'Vendor Indonesia' }} · {{ $savedBasis === 'npwp_ktp' ? 'Pengganti NPWP dan KTP' : 'Dokumen perusahaan' }}. Pilih dokumen untuk membuka unggahan. PDF/JPG/PNG, maksimal {{ number_format(config('scm.upload_max_kb') / 1024, 0) }} MB per file.</p>
         <p class="vp-feedback" data-vp-save-first hidden role="status">Simpan jawaban bagian ini untuk memperbarui daftar dokumen sebelum mengunggah.</p>
-        @if($step === 1 && $savedOrigin === 'indonesia' && $savedBasis !== 'npwp_ktp')<p class="vp-note">Perubahan akta dan PKP mengikuti jawaban yang disimpan. Pernyataan hukum dan referensi bank diminta hanya untuk konstruksi di atas Rp100 juta dengan kontrak lebih dari 3 bulan. Referensi bank asli diserahkan kepada SCM; unggah salinannya di sini.</p>@endif
+        @if($step === 1 && $savedOrigin === 'indonesia' && $savedBasis !== 'npwp_ktp')<p class="vp-note">Dokumen wajib: Akta Pendirian, Perizinan, NPWP, dan KTP. Lampiran lainnya opsional. Perubahan akta dan PKP tersedia sesuai jawaban yang disimpan; pernyataan hukum dan referensi bank tersedia untuk konteks konstruksi yang sesuai.</p>@endif
         <div data-vp-document-list>
             @foreach($documentGroups as $groupTitle => $codes)
                 <section class="vp-document-group"><header><h3>{{ $groupTitle }}</h3><p>{{ $files->filter(fn ($file) => in_array($file->code, $codes, true))->count() }} dari {{ count($codes) }} diunggah</p></header><div class="vp-documents">

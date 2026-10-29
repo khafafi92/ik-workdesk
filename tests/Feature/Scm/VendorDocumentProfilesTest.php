@@ -204,6 +204,10 @@ class VendorDocumentProfilesTest extends TestCase
         foreach ([DocumentType::where('code', 'NIB')->sole(), $custom] as $type) {
             Requirement::create(['category_id' => $category->id, 'document_type_id' => $type->id, 'is_required' => true]);
         }
+        if ($origin === 'indonesia' && $basis === 'company') {
+            $companyProfile = DocumentType::where('code', 'COMPANY_PROFILE')->sole();
+            Requirement::create(['category_id' => $category->id, 'document_type_id' => $companyProfile->id, 'is_required' => true]);
+        }
         $request = Procurement::create(['number' => 'QA-PROFILE-PR', 'kind' => 'PR', 'company' => 'KPMOG', 'need_type' => 'PROJECT',
             'date' => today(), 'requester_id' => $this->scm->id, 'department_id' => $this->department->id,
             'category_id' => $category->id, 'title' => 'QA', 'reason' => 'QA', 'status' => 'selected']);
@@ -212,6 +216,9 @@ class VendorDocumentProfilesTest extends TestCase
         $case = $request->legalCase;
         $this->assertSame($registration->id, $case->document_basis_snapshot['registration_id']);
         $this->assertTrue($case->items()->where('document_type_id', $custom->id)->sole()->is_required);
+        if (isset($companyProfile)) {
+            $this->assertTrue($case->items()->where('document_type_id', $companyProfile->id)->sole()->is_required);
+        }
         $nib = $case->items()->where('document_type_id', DocumentType::where('code', 'NIB')->value('id'))->sole();
         $this->assertSame($origin === 'indonesia' && $basis === 'company', $nib->is_required);
         $this->assertSame($count + 2, $case->items()->count());

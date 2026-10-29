@@ -57,6 +57,17 @@ if (form) {
     initializeVendorAddress(form, update);
 }
 
+document.querySelectorAll('[data-vp-expiry]').forEach(input => {
+    const updateExpiry = () => {
+        const expired = Boolean(input.value && input.value < input.dataset.today);
+        input.classList.toggle('vp-expired', expired);
+        input.closest('.vp-field').querySelector('[data-vp-expiry-warning]').hidden = !expired;
+    };
+    input.addEventListener('input', updateExpiry);
+    input.addEventListener('change', updateExpiry);
+    updateExpiry();
+});
+
 document.querySelectorAll('form').forEach(element => {
     element.addEventListener('submit', event => {
         const button = event.submitter || element.querySelector('button[type="submit"]');

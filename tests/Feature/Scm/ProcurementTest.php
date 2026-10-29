@@ -707,6 +707,44 @@ class ProcurementTest extends TestCase
         $this->rejects(fn () => $this->flow->saveCbe($this->scm, $r->id, $r->version, ['date' => today()->toDateString(), 'quotation_ids' => [], 'selected_vendor_id' => null], true));
     }
 
+    public function test_candidate_company_cannot_be_repeated_under_a_different_vendor_code_or_name_format(): void
+    {
+        $request = $this->sourcing();
+        $first = $this->flow->saveVendor($this->scm, ['code' => 'COMPANY-QA-A', 'name' => 'PT. Cakrawala PENGUJIAN', 'provider_type' => 'keduanya', 'is_active' => true]);
+        $duplicate = $this->flow->saveVendor($this->scm, ['code' => 'COMPANY-QA-B', 'name' => '  pt cakrawala pengujian  ', 'provider_type' => 'keduanya', 'is_active' => true]);
+        $request = $this->flow->addCandidate($this->scm, $request->id, $request->version, ['vendor_id' => $first->id, 'followup_status' => 'diminta']);
+        $before = $request->version;
+        $this->rejects(fn () => $this->flow->addCandidate($this->scm, $request->id, $request->version, ['vendor_id' => $duplicate->id, 'followup_status' => 'diminta']));
+        $this->assertSame(1, $request->candidates()->count());
+        $this->assertSame($before, $request->fresh()->version);
+        $this->actingAs($this->scm);
+        Livewire::test(ScmProcurement::class)->call('open', $request->id)->call('showTab', 'quotes')
+            ->assertViewHas('candidateVendors', fn ($vendors) => ! $vendors->contains('id', $first->id) && ! $vendors->contains('id', $duplicate->id));
+    }
+
+    public function test_duplicate_company_names_are_rejected_for_both_draft_and_final_cbe_without_modifying_data(): void
+    {
+        $request = $this->quoted();
+        $first = $request->candidates->first()->vendor;
+        $other = $request->candidates->skip(1)->first()->vendor;
+        $this->flow->saveVendor($this->scm, [...$other->getAttributes(), 'name' => '  '.mb_strtoupper($first->name).'. '], $other->id, $other->version);
+        $data = $this->cbeData($request);
+        foreach ([false, true] as $finalize) {
+            $this->rejects(fn () => $this->flow->saveCbe($this->scm, $request->id, $request->version, $data, $finalize));
+            $this->assertNull($request->fresh()->cbe);
+            $this->assertSame($request->version, $request->fresh()->version);
+        }
+    }
+
+    public function test_multiple_versions_of_one_company_cannot_be_saved_in_a_draft_cbe(): void
+    {
+        $request = $this->quoted();
+        $old = $request->candidates->first()->quotations->first();
+        $request = $this->flow->saveQuotation($this->scm, $request->id, $request->version, $this->quoteData($request, $old->candidate_id, '90,01'));
+        $this->rejects(fn () => $this->flow->saveCbe($this->scm, $request->id, $request->version, $this->cbeData($request)));
+        $this->assertNull($request->fresh()->cbe);
+    }
+
     public function test_incomparable_currency_quantity_and_winner_are_rejected(): void
     {
         $r = $this->quoted();

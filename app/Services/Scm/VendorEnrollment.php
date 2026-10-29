@@ -104,7 +104,7 @@ class VendorEnrollment
         }
         if ($step === 2) {
             $rules['certifying_body'] = 'required_if:quality_certified,yes|nullable|string|max:255';
-            $rules['quality_expiry'] = 'required_if:quality_certified,yes|nullable|date|after_or_equal:today';
+            $rules['quality_expiry'] = 'required_if:quality_certified,yes|nullable|date';
             $rules['certification_progress'] = 'required_if:quality_certified,no|nullable|string|max:10000';
         }
         if ($step === 3) {
@@ -156,7 +156,7 @@ class VendorEnrollment
     {
         $definition = VendorForm::documents()[$code] ?? abort(404);
         $data = Validation::make([...$data, 'file' => $file], ['number' => 'nullable|string|max:255', 'issued_at' => 'nullable|date',
-            'expires_at' => $definition[3] ? 'required|date|after_or_equal:today' : 'prohibited',
+            'expires_at' => $definition[3] ? 'required|date' : 'prohibited',
             'file' => 'required|file|max:'.config('scm.upload_max_kb').'|mimes:pdf,jpg,jpeg,png|mimetypes:application/pdf,image/jpeg,image/png'])->validate();
         if (filled($data['issued_at'] ?? null) && filled($data['expires_at'] ?? null) && $data['issued_at'] > $data['expires_at']) {
             throw ValidationException::withMessages(['expires_at' => 'Tanggal kedaluwarsa tidak boleh sebelum tanggal terbit.']);
@@ -235,10 +235,13 @@ class VendorEnrollment
             } catch (ValidationException $exception) {
                 $errors = $exception->errors();
             }
-            $steps[$step] = ['title' => VendorForm::TITLES[$step], 'answers' => $errors, 'documents' => []];
+            $steps[$step] = ['title' => VendorForm::TITLES[$step], 'answers' => $errors, 'documents' => [], 'warnings' => []];
         }
         foreach ($this->documentIssues($registration, $files ?? $this->latestFiles($registration)) as $issue) {
             $steps[$issue['step']]['documents'][] = $issue;
+        }
+        foreach ($this->expiryWarnings($registration, $files) as $warning) {
+            $steps[$warning['step']]['warnings'][] = $warning;
         }
 
         return $steps;
@@ -254,9 +257,9 @@ class VendorEnrollment
             }
         }
         foreach ($this->applicableFiles($registration, $files) as $file) {
-            if (! Storage::disk('scm')->exists($file->path) || $file->expires_at?->lt(today())) {
+            if (! Storage::disk('scm')->exists($file->path)) {
                 $issues[] = ['step' => VendorForm::documents()[$file->code][1], 'code' => $file->code,
-                    'message' => 'Perbarui dokumen yang hilang/kedaluwarsa: '.VendorForm::documentLabel($file->code, $registration->answers ?? [])];
+                    'message' => 'Unggah ulang berkas yang tidak ditemukan: '.VendorForm::documentLabel($file->code, $registration->answers ?? [])];
             }
         }
         if (VendorForm::required('SERTIFIKAT_MUTU', $registration->answers ?? [], $registration->context)
@@ -266,6 +269,26 @@ class VendorEnrollment
         }
 
         return $issues;
+    }
+
+    public function expiryWarnings(VendorRegistration $registration, ?Collection $files = null): array
+    {
+        $warnings = [];
+        $answers = $registration->answers ?? [];
+        $date = $answers[2]['quality_expiry'] ?? null;
+        if (($answers[2]['quality_certified'] ?? '') === 'yes' && is_string($date)
+            && preg_match('/^\d{4}-\d{2}-\d{2}$/D', $date) && $date < today()->toDateString()) {
+            $warnings[] = ['step' => 2, 'field' => 'quality_expiry', 'code' => null,
+                'message' => 'Sertifikat manajemen mutu sudah kedaluwarsa. Data tetap dapat disimpan dan dikirim.'];
+        }
+        foreach ($this->applicableFiles($registration, $files) as $file) {
+            if ($file->expires_at?->lt(today())) {
+                $warnings[] = ['step' => VendorForm::documents()[$file->code][1], 'field' => null, 'code' => $file->code,
+                    'message' => VendorForm::documentLabel($file->code, $answers).' sudah kedaluwarsa. Berkas tetap diterima dan disimpan.'];
+            }
+        }
+
+        return $warnings;
     }
 
     public function review(User $actor, int $id, int $version, string $action, ?string $notes): void

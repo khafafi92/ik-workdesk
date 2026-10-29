@@ -4,7 +4,7 @@ Lima bagian kuesioner tetap mengikuti Book1.xlsx: Data Perusahaan, Manajemen Mut
 
 ## Pilihan dokumen
 
-- **Perusahaan Indonesia:** daftar legalitas Indonesia dan KTP penanggung jawab, serta Company Profile, List of Experience, Catalogue Products. Perubahan akta, PKP, pernyataan hukum dan referensi bank mengikuti kondisi yang relevan. Batas konstruksi tetap di atas Rp100 juta sekaligus lebih dari tiga bulan.
+- **Perusahaan Indonesia:** dokumen wajib Form 005 adalah Akta Pendirian, Perizinan, NPWP, dan KTP. Legalitas lain, Company Profile, List of Experience, dan Catalogue Products menjadi lampiran opsional. Perubahan akta, PKP, pernyataan hukum dan referensi bank tetap tersedia mengikuti kondisi yang relevan. Batas konstruksi tetap di atas Rp100 juta sekaligus lebih dari tiga bulan.
 - **Perusahaan luar Indonesia:** Deed of Incorporation & Latest Amendments, Business License, Company Registry Certificate, Company Domicile Certificate, serta dokumen tambahan. Lampiran Quality dan HSE/Equipment/Operator muncul pada bagian 2–4 sesuai jawaban sistem, sertifikasi, penggunaan peralatan, blasting dan vessel loading. Nama dokumen mengikuti daftar pengguna, termasuk ISO 9001: 2008 Certificate. Tidak diminta NPWP/KTP, PKP atau legalitas Indonesia.
 - **Vendor Indonesia tanpa dokumen perusahaan:** pilih pengganti NPWP dan KTP. Hanya dua lampiran tersebut diminta pada Form 005. Kuesioner lima bagian dan pemeriksaan SCM tetap berlangsung. Pilihan pengganti ditolak di server untuk perusahaan luar Indonesia.
 
@@ -17,5 +17,7 @@ Isian dikelompokkan per identitas, alamat/kontak, pimpinan/PIC dan informasi pem
 Pilihan asal atau jenis dokumen harus disimpan sebelum unggahan untuk daftar baru. Halaman menjelaskan hal ini dan menyembunyikan daftar lama selama pilihan belum disimpan. Validasi server memakai jawaban tersimpan, bukan status kontrol di browser. File tetap privat, berversi, diperiksa isi/ekstensi, dan terikat satu undangan. Masa berlaku, pencabutan, versi bersamaan, kiriman terkunci, pemeriksaan dan rollback impor tetap berlaku.
 
 SCM memeriksa kiriman sebelum profil dan dokumen masuk master. Kiriman baru yang sudah diterima menyimpan asal serta dasar dokumennya. Saat pengumpulan legalitas baru dimulai, sistem mengambil daftar tersebut; persyaratan khusus kategori tetap dipertahankan. Dokumen Indonesia menjadi opsional pada dasar asing/pengganti, sedangkan persyaratan khusus lain tidak dihapus. Dokumen tidak otomatis berstatus Diterima di pengadaan; SCM tetap memeriksa setiap item. Checklist pengadaan yang sudah berjalan tidak ditulis ulang ketika form vendor berubah. Form lama tanpa metadata jenis tetap memakai master kategori sebelumnya.
+
+Perubahan 29 Oktober: email/telepon pimpinan opsional; tanggal sertifikasi dan lampiran kedaluwarsa diterima pada Form 005 dengan peringatan merah. Rincian tersedia di [Form 005 dan perusahaan pada CBE](SCM-FORM005-CBE-2026-10-29.md).
 
 Migrasi `2026_10_27_170000_add_foreign_vendor_document_types.php` hanya menambah sepuluh jenis dokumen yang belum tersedia. Jenis lama, profil vendor, token undangan, isian, file, PR/SR, CBE dan persetujuan tidak diperbarui oleh migrasi.

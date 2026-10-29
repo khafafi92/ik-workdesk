@@ -38,5 +38,8 @@
 .vp-field[data-vp-address-field]{align-content:start}
 .vp-field[data-vp-address-field] .vp-note{margin:0}
 #vendor-address-status:empty{display:none}
+.vendor-portal .vp-expired{color:#b91c1c}
+.vendor-portal .vp-expired a{color:inherit}
+.vendor-portal input.vp-expired{color:#b91c1c;border-color:#b91c1c;border-width:2px}
 @media(min-width:800px){.vp-documents{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media print{.vp-upload summary{padding:.25rem}.vp-upload-content{display:none}.vp-documents{grid-template-columns:repeat(2,minmax(0,1fr))}}

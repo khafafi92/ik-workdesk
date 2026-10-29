@@ -140,22 +140,28 @@ class VendorPortalTest extends TestCase
         $this->assertSame('DEMO isian name', $registration->fresh()->answers[1]['name']);
     }
 
-    public function test_conditional_documents_use_all_three_construction_thresholds_and_pkp_answers(): void
+    public function test_only_four_indonesia_documents_are_required_and_other_documents_follow_context_as_optional(): void
     {
         $answers = [1 => ['has_amendments' => 'no', 'non_pkp' => 'yes']];
         $this->assertTrue(VendorForm::required('KTP', $answers, []));
         $this->assertTrue(VendorForm::required('NPWP', $answers, []));
+        $this->assertTrue(VendorForm::required('AKTA_PENDIRIAN', $answers, []));
+        $this->assertTrue(VendorForm::required('IZIN_USAHA', $answers, []));
         $this->assertFalse(VendorForm::required('PKP', $answers, []));
         $this->assertFalse(VendorForm::required('AKTA_PERUBAHAN', $answers, []));
         foreach (['PERNYATAAN_HUKUM', 'REFERENSI_BANK'] as $code) {
             $this->assertFalse(VendorForm::required($code, $answers, ['is_construction' => true, 'amount_minor' => 10000000000, 'duration_months' => 4]));
             $this->assertFalse(VendorForm::required($code, $answers, ['is_construction' => true, 'amount_minor' => 10000000001, 'duration_months' => 3]));
             $this->assertFalse(VendorForm::required($code, $answers, ['is_construction' => false, 'amount_minor' => 10000000001, 'duration_months' => 4]));
-            $this->assertTrue(VendorForm::required($code, $answers, ['is_construction' => true, 'amount_minor' => 10000000001, 'duration_months' => 4]));
+            $context = ['is_construction' => true, 'amount_minor' => 10000000001, 'duration_months' => 4];
+            $this->assertFalse(VendorForm::required($code, $answers, $context));
+            $this->assertArrayHasKey($code, VendorForm::requestedDocuments($answers, $context));
         }
         $answers[1] = ['has_amendments' => 'yes', 'non_pkp' => 'no'];
-        $this->assertTrue(VendorForm::required('PKP', $answers, []));
-        $this->assertTrue(VendorForm::required('AKTA_PERUBAHAN', $answers, []));
+        $this->assertFalse(VendorForm::required('PKP', $answers, []));
+        $this->assertFalse(VendorForm::required('AKTA_PERUBAHAN', $answers, []));
+        $this->assertArrayHasKey('PKP', VendorForm::requestedDocuments($answers, []));
+        $this->assertArrayHasKey('AKTA_PERUBAHAN', VendorForm::requestedDocuments($answers, []));
     }
 
     public function test_files_are_private_scoped_versioned_and_validated_by_content(): void
@@ -230,7 +236,7 @@ class VendorPortalTest extends TestCase
         $this->assertDatabaseCount('scm_vendor_documents', 0);
     }
 
-    public function test_vendor_cannot_bypass_construction_documents_by_changing_the_posted_context(): void
+    public function test_construction_context_is_preserved_and_extra_documents_are_optional(): void
     {
         [$registration, $token] = $this->invite(['is_construction' => true, 'amount' => '100000001', 'duration_months' => 4]);
         $registration = $this->fill($registration, false);
@@ -242,9 +248,51 @@ class VendorPortalTest extends TestCase
         }
         $url = route('vendor.portal.save', ['token' => $token, 'step' => 5]);
         $this->post($url, ['version' => $registration->fresh()->version, 'intent' => 'submit', 'context' => ['is_construction' => false],
-            'answers' => $this->answers(5)])->assertSessionHasErrors('documents');
+            'answers' => $this->answers(5)])->assertSessionHasNoErrors();
         $this->assertTrue($registration->fresh()->context['is_construction']);
-        $this->assertSame('draft', $registration->fresh()->status);
+        $this->assertSame('submitted', $registration->fresh()->status);
+    }
+
+    public function test_optional_leader_contacts_and_expired_certificates_can_be_saved_submitted_and_imported_with_warnings(): void
+    {
+        [$registration, $token] = $this->invite();
+        $registration = $this->fill($registration);
+        $this->enrollment->saveStep($registration, $registration->version, 1, [...$this->answers(1), 'ceo_email' => '', 'ceo_phone' => '']);
+        $this->enrollment->saveStep($registration, $registration->fresh()->version, 2, [...$this->answers(2), 'quality_certified' => 'yes',
+            'certifying_body' => 'BADAN SERTIFIKASI PENGUJIAN', 'quality_expiry' => today()->subYear()->toDateString()]);
+        foreach (['IZIN_USAHA', 'SERTIFIKAT_ASOSIASI'] as $code) {
+            $this->enrollment->upload($registration, $registration->fresh()->version, $code, ['expires_at' => today()->subDay()->toDateString()], $this->pdf());
+        }
+        $this->enrollment->upload($registration, $registration->fresh()->version, 'COMPANY_PROFILE', [], $this->pdf());
+        $registration->refresh();
+        $this->assertNull($registration->answers[1]['ceo_email']);
+        $this->assertNull($registration->answers[1]['ceo_phone']);
+        $checklist = $this->enrollment->submissionChecklist($registration);
+        $this->assertSame([], $checklist[1]['documents']);
+        $this->assertSame([], $checklist[2]['answers']);
+        $this->assertCount(2, $checklist[1]['warnings']);
+        $this->assertCount(1, $checklist[2]['warnings']);
+        $this->get(route('vendor.portal', ['token' => $token, 'step' => 1]))->assertOk()->assertSee('PT. KPMOG atau APCA Group?')->assertSee('Kedaluwarsa · tetap tersimpan');
+        $this->get(route('vendor.portal', ['token' => $token, 'step' => 2]))->assertOk()->assertSee('vp-expired')->assertSee('Data tetap dapat disimpan dan dikirim.');
+        $this->enrollment->saveStep($registration, $registration->version, 5, $this->answers(5), true);
+        $this->enrollment->review($this->scm, $registration->id, $registration->fresh()->version, 'accept', null);
+        $this->assertSame('accepted', $registration->fresh()->status);
+        $this->assertSame(6, VendorDocument::where('vendor_id', $this->vendor->id)->count());
+        $this->assertSame(2, VendorDocument::where('vendor_id', $this->vendor->id)->whereDate('expires_at', '<', today())->count());
+        $this->actingAs($this->scm)->get(route('scm.vendor-review', $registration))->assertOk()->assertSee('vp-expired')->assertSee('Kedaluwarsa; berkas tetap diterima.')->assertSee('Opsional');
+    }
+
+    public function test_each_of_the_four_required_documents_is_still_enforced_and_optional_leader_email_is_validated_when_supplied(): void
+    {
+        [$registration] = $this->invite();
+        $registration = $this->fill($registration);
+        foreach (VendorForm::REQUIRED_INDONESIA as $code) {
+            $files = $this->enrollment->latestFiles($registration)->except($code);
+            $issues = $this->enrollment->submissionChecklist($registration, $files)[1]['documents'];
+            $this->assertContains($code, array_column($issues, 'code'));
+        }
+        $this->expectException(ValidationException::class);
+        $this->enrollment->validateStep(1, [...$this->answers(1), 'ceo_email' => 'bukan-email']);
     }
 
     public function test_failed_master_import_rolls_back_profile_documents_and_new_file_copies(): void
@@ -313,7 +361,7 @@ class VendorPortalTest extends TestCase
         $this->assertNull($registration->fresh()->submitted_at);
     }
 
-    public function test_checklist_agrees_with_submission_for_conditional_and_expired_documents(): void
+    public function test_checklist_allows_optional_and_expired_documents_but_blocks_missing_stored_files(): void
     {
         [$registration] = $this->invite();
         $registration = $this->fill($registration);
@@ -324,16 +372,17 @@ class VendorPortalTest extends TestCase
         }
         $registration->answers = array_replace($registration->answers, [1 => [...$registration->answers[1], 'non_pkp' => 'no', 'has_amendments' => 'yes']]);
         $codes = array_column($this->enrollment->submissionChecklist($registration)[1]['documents'], 'code');
-        $this->assertContains('PKP', $codes);
-        $this->assertContains('AKTA_PERUBAHAN', $codes);
+        $this->assertNotContains('PKP', $codes);
+        $this->assertNotContains('AKTA_PERUBAHAN', $codes);
         $file = $registration->files()->where('code', 'IZIN_USAHA')->sole();
         $file->update(['expires_at' => today()->subDay()]);
         $issues = $this->enrollment->submissionChecklist($registration)[1]['documents'];
-        $this->assertContains('IZIN_USAHA', array_column($issues, 'code'));
-        $this->assertStringContainsString('hilang/kedaluwarsa', collect($issues)->firstWhere('code', 'IZIN_USAHA')['message']);
+        $this->assertSame([], $issues);
+        $this->assertContains('IZIN_USAHA', array_column($this->enrollment->submissionChecklist($registration)[1]['warnings'], 'code'));
         $missingFile = $registration->files()->where('code', 'KTP')->sole();
         Storage::disk('scm')->delete($missingFile->path);
-        $this->assertContains('KTP', array_column($this->enrollment->submissionChecklist($registration)[1]['documents'], 'code'));
+        $issues = $this->enrollment->submissionChecklist($registration)[1]['documents'];
+        $this->assertContains('KTP', array_column($issues, 'code'));
         $registration->answers = array_replace($registration->answers, [5 => $this->answers(5)]);
         try {
             $this->enrollment->validateSubmission($registration);

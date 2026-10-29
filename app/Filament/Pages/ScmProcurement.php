@@ -28,6 +28,7 @@ use App\Services\Scm\RequestNumbering;
 use App\Services\Scm\Signatures;
 use App\Services\Scm\Validation as Validator;
 use App\Services\Scm\VendorEnrollment;
+use App\Services\Scm\VendorIdentity;
 use App\Services\Scm\Workflow;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -697,6 +698,9 @@ class ScmProcurement extends Page
         $selectedQuote = $finalCbe ? collect($finalCbe->snapshot['quotes'])->firstWhere('vendor.id', $finalCbe->selected_vendor_id) : null;
         $selectedQuotation = $selectedQuote ? Quotation::with('attachments')->whereHas('candidate', fn ($q) => $q->where('request_id', $record->id)->where('vendor_id', $finalCbe->selected_vendor_id))->find($selectedQuote['id']) : null;
         $quotes = $canManage ? $record->candidates->flatMap(fn ($c) => $c->quotations) : collect();
+        $vendors = $isScm ? Vendor::orderBy('name')->get() : collect();
+        $candidateCompanies = $canManage ? $record->candidates->map(fn ($candidate) => VendorIdentity::companyKey($candidate->vendor->name)) : collect();
+        $candidateVendors = $vendors->reject(fn ($vendor) => $candidateCompanies->contains(VendorIdentity::companyKey($vendor->name)));
         $documents = $isScm ? VendorDocument::with(['documentType', 'attachments'])->when($record?->legalCase, fn ($q) => $q->where('vendor_id', $record->legalCase->vendor_id))->orderByDesc('id')->get() : collect();
         $duplicate = $isScm && filled($this->vendor['name'] ?? '') ? Vendor::where('id', '!=', $this->vendorId)->where(fn ($q) => $q->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($this->vendor['name']))])->when(filled($this->vendor['email'] ?? ''), fn ($q) => $q->orWhere('email', $this->vendor['email'])))->pluck('name') : collect();
         $statuses = Workflow::STATUSES;
@@ -741,7 +745,7 @@ class ScmProcurement extends Page
             'projectOptions' => $this->editing && ($this->draft['need_type'] ?? 'HO') === 'PROJECT' ? WorkProject::where('status', 'active')
                 ->where(fn ($query) => $query->whereNull('department_id')->orWhereIn('department_id', $user->accessibleDepartmentIds()))
                 ->orderBy('name')->get()->mapWithKeys(fn ($project) => [$project->id => $project->code.' - '.$project->name])->all() : [],
-            'vendors' => $isScm ? Vendor::orderBy('name')->get() : collect(),
+            'vendors' => $vendors, 'candidateVendors' => $candidateVendors,
             'vendorRegistrations' => $isScm && $this->vendorId ? VendorRegistration::where('vendor_id', $this->vendorId)->latest('id')->get() : collect(),
             'pendingRegistrations' => $isScm && $this->section === 'vendors' ? VendorRegistration::with('vendor')->where('status', 'submitted')->whereNull('revoked_at')->orderBy('submitted_at')->paginate(5, ['*'], 'registrationPage') : null,
             'vendorRows' => $isScm ? Vendor::when($this->vendorSearch, fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$this->vendorSearch.'%')->orWhere('code', 'like', '%'.$this->vendorSearch.'%')))->orderBy('name')->paginate(15, ['*'], 'vendorPage') : null,

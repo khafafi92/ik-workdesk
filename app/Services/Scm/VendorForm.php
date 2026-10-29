@@ -10,6 +10,8 @@ class VendorForm
 
     public const ADDITIONAL_DOCUMENTS = ['COMPANY_PROFILE', 'DAFTAR_PENGALAMAN', 'KATALOG_PRODUK'];
 
+    public const REQUIRED_INDONESIA = ['AKTA_PENDIRIAN', 'IZIN_USAHA', 'NPWP', 'KTP'];
+
     public static function fields(int $step, array $answers = []): array
     {
         $fields = match ($step) {
@@ -22,11 +24,11 @@ class VendorForm
                 'country' => ['Negara', 'text', true], 'phone' => ['Telepon perusahaan', 'text', true],
                 'fax' => ['Fax (jika ada)', 'text'], 'email' => ['Email perusahaan', 'email', true],
                 'website' => ['Website (jika ada)', 'url'],
-                'ceo_name' => ['Nama pimpinan', 'text', true], 'ceo_email' => ['Email pimpinan', 'email', true],
-                'ceo_phone' => ['Telepon pimpinan', 'text', true], 'pic_name' => ['Nama contact person', 'text', true],
+                'ceo_name' => ['Nama pimpinan', 'text', true], 'ceo_email' => ['Email pimpinan', 'email'],
+                'ceo_phone' => ['Telepon pimpinan', 'text'], 'pic_name' => ['Nama contact person', 'text', true],
                 'pic_position' => ['Jabatan contact person', 'text', true], 'pic_email' => ['Email contact person', 'email', true],
                 'pic_phone' => ['Telepon contact person', 'text', true],
-                'supplied_before' => ['Pernah memasok barang/jasa kepada perusahaan tujuan?', 'choice', true],
+                'supplied_before' => ['Pernah memasok barang/jasa kepada PT. KPMOG atau APCA Group?', 'choice', true],
                 'supplied_description' => ['Barang/jasa yang pernah dipasok (jika ya)', 'textarea'],
                 'has_amendments' => ['Apakah ada perubahan akta perusahaan?', 'choice', true],
                 'non_pkp' => ['Apakah perusahaan Non PKP?', 'choice', true],
@@ -87,10 +89,10 @@ class VendorForm
         return [
             'AKTA_PENDIRIAN' => ['Salinan Akta Pendirian Perusahaan', 1, 'always', false],
             'AKTA_PERUBAHAN' => ['Perubahan akta terakhir (jika ada)', 1, 'amendments', false],
-            'IZIN_USAHA' => ['Perizinan SIUP/SUJK/UJK/SIUPAL yang masih berlaku', 1, 'always', true],
+            'IZIN_USAHA' => ['Perizinan SIUP/SUJK/UJK/SIUPAL', 1, 'always', true],
             'TDP' => ['Salinan Tanda Daftar Perusahaan (TDP)', 1, 'always', false],
             'DOMISILI' => ['Salinan Surat Keterangan Domisili', 1, 'always', false],
-            'SERTIFIKAT_ASOSIASI' => ['Sertifikat asosiasi perusahaan/profesi yang masih berlaku', 1, 'always', true],
+            'SERTIFIKAT_ASOSIASI' => ['Sertifikat asosiasi perusahaan/profesi', 1, 'always', true],
             'PERNYATAAN_HUKUM' => ['Pernyataan tidak dalam pengawasan pengadilan, tidak bangkrut, usaha tidak dihentikan, dan tidak menjalani sanksi pidana', 1, 'construction', false],
             'NPWP' => ['Salinan NPWP', 1, 'always', false],
             'PKP' => ['Salinan PKP', 1, 'pkp', false],
@@ -207,7 +209,8 @@ class VendorForm
 
     public static function required(string $code, array $answers, array $context): bool
     {
-        return array_key_exists($code, self::requestedDocuments($answers, $context));
+        return array_key_exists($code, self::requestedDocuments($answers, $context))
+            && (self::origin($answers) === 'foreign' || in_array($code, self::REQUIRED_INDONESIA, true));
     }
 
     private static function ruleApplies(string $rule, array $answers, array $context): bool

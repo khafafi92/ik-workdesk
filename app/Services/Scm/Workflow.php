@@ -211,6 +211,9 @@ class Workflow
             $vendor = Vendor::findOrFail($data['vendor_id']);
             $this->reject(! $vendor->is_active || ! in_array($vendor->provider_type, [$request->kind === 'PR' ? 'barang' : 'jasa', 'keduanya']), 'Vendor tidak aktif atau jenis penyedianya tidak sesuai permintaan.');
             $this->reject($request->candidates()->where('vendor_id', $vendor->id)->exists(), 'Vendor sudah menjadi kandidat.');
+            $company = VendorIdentity::companyKey($vendor->name);
+            $this->reject($request->candidates()->with('vendor')->get()->contains(fn ($candidate) => VendorIdentity::companyKey($candidate->vendor->name) === $company),
+                'Perusahaan yang sama sudah menjadi kandidat, meskipun kode vendornya berbeda.');
             $candidate = $request->candidates()->create($data);
             if ($request->status === 'sourcing' && $request->candidates()->count() >= 3) {
                 $request->status = 'quotations';
@@ -270,6 +273,8 @@ class Workflow
             $this->reject($cbe && $cbe->status === 'final', 'CBE final tidak dapat diedit.');
             $quotes = Quotation::with(['candidate.vendor', 'lines'])->whereIn('id', $data['quotation_ids'])->get();
             $this->reject($quotes->count() !== count($data['quotation_ids']) || $quotes->contains(fn ($q) => (int) $q->candidate->request_id !== (int) $request->id), 'Referensi penawaran tidak sesuai permintaan.');
+            $companies = $quotes->map(fn ($quote) => VendorIdentity::companyKey($quote->candidate->vendor->name));
+            $this->reject($companies->unique()->count() !== $quotes->count(), 'Perusahaan yang sama hanya boleh muncul satu kali dalam CBE. Pilih satu versi penawaran per perusahaan.');
             $vatPercent = $cbe?->vat_percent ?? (int) config('scm.cbe_vat_percent');
             $this->reject($vatPercent < 0 || $vatPercent > 100, 'Master PPN CBE harus antara 0 dan 100 persen.');
             $terms = [];
@@ -336,22 +341,31 @@ class Workflow
                 $this->reject($types->count() !== count($definitions), 'Jenis dokumen Form 005 belum lengkap atau nonaktif. Lengkapi master dokumen sebelum memulai legalitas.');
                 foreach ($types as $type) {
                     $case->items()->create(['document_type_id' => $type->id, 'document_name' => VendorForm::documentLabel($type->code, $registration->answers),
-                        'has_expiry' => $type->has_expiry, 'is_required' => true, 'status' => 'belum_diminta']);
+                        'has_expiry' => $type->has_expiry, 'is_required' => VendorForm::required($type->code, $registration->answers, $registration->context), 'status' => 'belum_diminta']);
                 }
                 $basis = VendorForm::basis($registration->answers);
                 $case->update(['document_basis' => $basis === 'npwp_ktp' ? 'npwp_ktp' : (VendorForm::origin($registration->answers) === 'foreign' ? 'foreign_company' : 'indonesia_company'),
-                    'document_basis_snapshot' => ['source' => 'form005', 'registration_id' => $registration->id, 'required' => $types->pluck('id')->all(),
+                    'document_basis_snapshot' => ['source' => 'form005', 'registration_id' => $registration->id,
+                        'required' => $types->filter(fn ($type) => VendorForm::required($type->code, $registration->answers, $registration->context))->pluck('id')->values()->all(),
                         'company_origin' => VendorForm::origin($registration->answers), 'codes' => array_keys($definitions), 'substituted' => []]]);
             }
             $nationalCodes = [...VendorForm::INDONESIA_LEGAL, ...VendorForm::ADDITIONAL_DOCUMENTS, 'NIB', 'SBU'];
             foreach (Requirement::with('documentType')->where('category_id', $request->category_id)->get() as $requirement) {
-                if (! $requirement->documentType->is_active || $case->items()->where('document_type_id', $requirement->document_type_id)->exists()) {
+                if (! $requirement->documentType->is_active) {
                     continue;
                 }
                 $required = $requirement->is_required;
                 if (in_array($case->document_basis, ['foreign_company', 'npwp_ktp'], true)
                     && in_array($requirement->documentType->code, $nationalCodes, true)) {
                     $required = false;
+                }
+                $existing = $case->items()->where('document_type_id', $requirement->document_type_id)->first();
+                if ($existing) {
+                    if ($required && ! $existing->is_required) {
+                        $existing->update(['is_required' => true]);
+                    }
+
+                    continue;
                 }
                 $case->items()->create(['document_type_id' => $requirement->document_type_id, 'document_name' => $requirement->documentType->name,
                     'has_expiry' => $requirement->documentType->has_expiry, 'is_required' => $required, 'status' => 'belum_diminta']);
