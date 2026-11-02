@@ -111,14 +111,15 @@ class Approvals
             throw ValidationException::withMessages(['scm' => 'Simpan kembali draft untuk pengajuan persetujuan HO.']);
         }
         $high = $this->requiresCbo3($request);
-        $plan = $this->submissionPlan($actor, $request->company, $request->department_id, $high, $request->need_type ?? 'HO', $request->kind);
+        $requester = $request->requester;
+        $plan = $this->submissionPlan($requester, $request->company, $request->department_id, $high, $request->need_type ?? 'HO', $request->kind);
         $route = $plan['route'];
         $request->approval_round++;
         $request->status = 'approval';
         $request->submitted_at = null;
         $managerRequest = $plan['manager_request'];
         $steps = [
-            ['requested', $actor->id, true],
+            ['requested', $request->requester_id, true],
             ...($plan['supervisor'] ? [['supervised', $plan['supervisor']->id, true]] : []),
             ...($plan['acknowledger'] ? [['acknowledged', $plan['acknowledger']->id, true]] : []),
             ...($plan['crosschecker'] ? [['crosschecked', $plan['crosschecker']->id, $plan['crosscheck_required']]] : []),
@@ -128,7 +129,7 @@ class Approvals
             $skipAcknowledgment = $role === 'acknowledged' && $managerRequest;
             $skipCrosscheck = $role === 'crosschecked' && $managerRequest && ! $required
                 && $userId === $plan['approver']->id;
-            $skip = $skipAcknowledgment || $skipCrosscheck || ($role === 'supervised' && $userId === $actor->id);
+            $skip = $skipAcknowledgment || $skipCrosscheck || ($role === 'supervised' && (int) $userId === (int) $requester->id);
             $request->approvals()->create([
                 'round' => $request->approval_round, 'position' => $position, 'role' => $role, 'user_id' => $userId,
                 'is_required' => $required, 'status' => $position === 0 ? 'signed' : ($skip ? 'skipped' : 'pending'),
@@ -144,6 +145,7 @@ class Approvals
             'round' => $request->approval_round, 'estimated_total_minor' => $request->estimated_total_minor,
             'requires_cbo3' => $high,
             'need_type' => $request->need_type ?? 'HO',
+            'requester_id' => $request->requester_id, 'superuser_override' => (int) $actor->id !== (int) $request->requester_id,
             'manager_crosscheck_skipped' => $managerRequest && ! $plan['crosscheck_required'],
             'route_id' => $plan['is_custom'] ? null : $route->id, 'policy_id' => $plan['is_custom'] ? $route->id : null, 'route_version' => $route->version,
             'acknowledger_id' => $plan['acknowledger']?->id,
@@ -157,7 +159,7 @@ class Approvals
             return 0;
         }
 
-        return RequestApproval::where('user_id', $user->id)->where('status', 'pending')
+        return RequestApproval::when(! $user->isSystemAdministrator(), fn ($query) => $query->where('user_id', $user->id))->where('status', 'pending')
             ->whereHas('request', fn ($query) => $query->where('status', 'approval')
                 ->whereColumn('scm_requests.approval_round', 'scm_request_approvals.round'))
             ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('scm_request_approvals as earlier')
@@ -225,7 +227,7 @@ class Approvals
                 throw ValidationException::withMessages(['scm' => 'Data persetujuan sudah berubah. Buka ulang permintaan.']);
             }
             $step = $this->next($request);
-            abort_unless($step && (int) $step->id === $stepId && (int) $step->user_id === (int) $actor->id, 403);
+            abort_unless($step && (int) $step->id === $stepId && ($actor->isSystemAdministrator() || (int) $step->user_id === (int) $actor->id), 403);
             abort_unless(in_array($decision, ['sign', 'skip', 'return'], true), 403);
             if ($decision === 'return') {
                 $data = Validation::make(['reason' => $reason], ['reason' => 'required|string|min:10|max:3000'],
@@ -254,11 +256,15 @@ class Approvals
                 $request->status = 'submitted';
                 $request->submitted_at = now();
             }
+            if ((int) $step->user_id !== (int) $actor->id) {
+                $step->update(['notes' => trim(($step->notes ? $step->notes.' ' : '').'Superuser '.$actor->name.' menjalankan penugasan '.$step->user->name.'.')]);
+            }
             $request->version++;
             $request->save();
             app(Workflow::class)->audit($actor, $step, $request->need_type === 'PROJECT' ? 'keputusan_persetujuan_project' : 'keputusan_persetujuan_ho', [
                 'decision' => $decision, 'round' => $request->approval_round, 'role' => $step->role,
                 'status' => $step->status, 'signature_id' => $step->signature_id, 'acted_at' => $step->acted_at?->toIso8601String(),
+                'assigned_user_id' => $step->user_id, 'superuser_override' => (int) $step->user_id !== (int) $actor->id,
             ], $request->id, $decision === 'return' ? $reason : null);
 
             return $request->fresh();

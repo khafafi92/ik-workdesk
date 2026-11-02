@@ -127,9 +127,25 @@ class User extends Authenticatable implements FilamentUser
             || $this->employee->is_active === true;
     }
 
+    public function isSystemAdministrator(): bool
+    {
+        if (! $this->isActiveForAccess()) {
+            return false;
+        }
+        if ($this->is_admin === true) {
+            return true;
+        }
+        $this->loadMissing('roles');
+
+        return $this->roles->contains(fn (Role $role): bool => $role->is_active && $role->code === 'system-admin');
+    }
+
     public function hasRole(string ...$roleCodes): bool
     {
-        if ($this->is_admin === true) {
+        if (! $this->isActiveForAccess()) {
+            return false;
+        }
+        if ($this->isSystemAdministrator()) {
             return true;
         }
 
@@ -154,7 +170,10 @@ class User extends Authenticatable implements FilamentUser
 
     public function hasPermission(string $permissionCode): bool
     {
-        if ($this->is_admin === true) {
+        if (! $this->isActiveForAccess()) {
+            return false;
+        }
+        if ($this->isSystemAdministrator()) {
             return true;
         }
 

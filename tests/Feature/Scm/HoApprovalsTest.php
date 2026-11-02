@@ -326,7 +326,7 @@ class HoApprovalsTest extends TestCase
         $this->assertSame('submitted', $r->fresh()->status);
     }
 
-    public function test_system_admin_can_open_approval_menu_without_receiving_other_peoples_assignments(): void
+    public function test_system_admin_can_operate_other_assignments_but_inactive_account_is_denied(): void
     {
         $request = $this->pending();
         $admin = $this->actor('DEMO Sysadmin');
@@ -334,13 +334,19 @@ class HoApprovalsTest extends TestCase
 
         $this->actingAs($admin)->get(ScmApprovals::getUrl())->assertOk()
             ->assertSee('Persetujuan PR/SR')
-            ->assertSee('Belum ada PR/SR yang ditugaskan kepada Anda.');
+            ->assertSee($request->number);
         $this->assertTrue(ScmApprovals::canAccess());
-        $this->assertFalse(Access::approves($admin));
-        Livewire::actingAs($admin)->test(ScmApprovals::class)->call('open', $request->id)->assertStatus(404);
+        $this->assertTrue(Access::approves($admin));
+        Livewire::actingAs($admin)->test(ScmApprovals::class)->call('open', $request->id)->assertSee('Tindakan Superuser');
         $step = $this->approvals->next($request);
-        $this->rejects(fn () => $this->approvals->decide($admin, $request->id, $request->version, $step->id, 'sign'));
-        $this->assertSame('pending', $step->fresh()->status);
+        $this->upload($admin);
+        $later = $request->approvals()->where('status', 'pending')->where('id', '!=', $step->id)->firstOrFail();
+        $this->rejects(fn () => $this->approvals->decide($admin, $request->id, $request->version, $later->id, 'sign'));
+        $this->rejects(fn () => $this->approvals->decide($admin, $request->id, $request->version + 1, $step->id, 'sign'));
+        $this->rejects(fn () => $this->approvals->decide($admin, $request->id, $request->version, $step->id, 'skip'));
+        $this->approvals->decide($admin, $request->id, $request->version, $step->id, 'sign');
+        $this->assertSame('signed', $step->fresh()->status);
+        $this->assertSame($admin->name, $step->fresh()->signed_name);
 
         $admin->employee->update(['is_active' => false]);
         $this->actingAs($admin->fresh())->get(ScmApprovals::getUrl())->assertForbidden();

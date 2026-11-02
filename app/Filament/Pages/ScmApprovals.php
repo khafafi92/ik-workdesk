@@ -68,6 +68,10 @@ class ScmApprovals extends Page
 
     private function assigned()
     {
+        if (auth()->user()->isSystemAdministrator()) {
+            return Procurement::whereHas('approvals');
+        }
+
         return Procurement::whereHas('approvals', fn ($query) => $query->where('user_id', auth()->id())->where('role', '!=', 'requested'));
     }
 
@@ -96,6 +100,10 @@ class ScmApprovals extends Page
 
     private function assignedCbes()
     {
+        if (auth()->user()->isSystemAdministrator()) {
+            return Cbe::whereHas('approvals');
+        }
+
         return Cbe::whereHas('approvals', fn ($query) => $query->where('user_id', auth()->id()));
     }
 
@@ -149,16 +157,19 @@ class ScmApprovals extends Page
 
     protected function getViewData(): array
     {
+        abort_unless(static::canAccess(), 403);
         abort_unless(in_array($this->documentType, ['PRSR', 'CBE'], true), 404);
         if ($this->documentType === 'CBE') {
             $cbe = $this->selectedCbe ? $this->assignedCbes()->with(['request', 'approvals.user'])->findOrFail($this->selectedCbe) : null;
 
             return ['records' => $this->assignedCbes()->with(['request', 'approvals'])->latest('id')->paginate(15), 'cbe' => $cbe,
+                'isSuperuser' => auth()->user()->isSystemAdministrator(),
                 'nextStep' => $cbe ? app(CbeApprovals::class)->next($cbe) : null];
         }
         $record = $this->selected ? $this->assigned()->with(['items', 'requester', 'department', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
 
         return ['records' => $this->assigned()->with(['requester', 'department', 'approvals.user'])->latest('id')->paginate(15),
+            'isSuperuser' => auth()->user()->isSystemAdministrator(),
             'record' => $record, 'canRequest' => false, 'nextApproval' => $record ? app(Approvals::class)->next($record) : null,
             'statuses' => array_replace(Workflow::STATUSES, ['submitted' => 'Menunggu SCM'])];
     }

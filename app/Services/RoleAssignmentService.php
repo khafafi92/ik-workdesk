@@ -13,7 +13,7 @@ class RoleAssignmentService
     {
         $query->where('is_active', true);
 
-        if ($actor?->is_admin === true) {
+        if ($actor?->isSystemAdministrator()) {
             return $query;
         }
 

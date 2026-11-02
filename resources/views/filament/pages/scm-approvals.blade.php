@@ -1,6 +1,7 @@
 <x-filament-panels::page>
 @vite('resources/css/scm.css')
 <div class="scm-workspace">
+    @if($isSuperuser)<p class="scm-help">Akses superuser: Anda dapat menjalankan penugasan seluruh pengguna sesuai urutan proses. Tindakan dan tanda tangan tercatat sebagai {{ auth()->user()->name }}.</p>@endif
     <nav class="scm-actions" aria-label="Dokumen persetujuan">
         <button type="button" wire:click="switchDocument('PRSR')" @if($documentType === 'PRSR') aria-current="page" @endif>PR/SR</button>
         <button type="button" wire:click="switchDocument('CBE')" @if($documentType === 'CBE') aria-current="page" @endif>CBE</button>
@@ -16,8 +17,9 @@
         @include('filament.pages.scm.partials.request-routing', ['routingEditing' => false])
         @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => false])
         @include('filament.pages.scm.partials.approval-progress')
-        @if($nextApproval && (int) $nextApproval->user_id === (int) auth()->id())
-            <section class="scm-panel"><h2>Giliran Anda: {{ \App\Services\Scm\Approvals::ROLE_LABELS[$nextApproval->role] }}</h2>
+        @if($nextApproval && ($isSuperuser || (int) $nextApproval->user_id === (int) auth()->id()))
+            <section class="scm-panel"><h2>{{ $isSuperuser && (int) $nextApproval->user_id !== (int) auth()->id() ? 'Tindakan Superuser' : 'Giliran Anda' }}: {{ \App\Services\Scm\Approvals::ROLE_LABELS[$nextApproval->role] }}</h2>
+                @if($isSuperuser && (int) $nextApproval->user_id !== (int) auth()->id())<p>Penugasan asli: {{ $nextApproval->user->name }}. Tanda tangan menggunakan profil {{ auth()->user()->name }}.</p>@endif
                 <p>Periksa isi dan lampiran permintaan sebelum memberikan keputusan. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD profil (tab baru)</a>.</p>
                 <fieldset wire:loading.attr="disabled" wire:target="decide"><legend class="scm-sheet-sr">Keputusan persetujuan</legend>
                     <div class="scm-actions"><x-filament::button wire:click="decide({{ $nextApproval->id }}, 'sign')">Tanda tangani {{ \App\Services\Scm\Approvals::ROLE_LABELS[$nextApproval->role] }}</x-filament::button>
@@ -36,7 +38,7 @@
             <div class="scm-scroll" role="region" aria-label="Daftar persetujuan PR/SR" tabindex="0"><table><thead><tr><th>Permintaan</th><th>Pembuat</th><th>Alur persetujuan</th><th>Status</th><th>Giliran</th><th>Tindakan</th></tr></thead><tbody>
                 @forelse($records as $r)
                     @php($turn = app(\App\Services\Scm\Approvals::class)->next($r))
-                    <tr><td>{{ $r->number }}<br>{{ $r->title }}</td><td>{{ $r->requester->name }}</td><td>{{ \App\Services\Scm\ApprovalPolicies::NEED_TYPES[$r->need_type ?? 'HO'] }}<br>Approved by: {{ $r->approvals->where('round', $r->approval_round)->firstWhere('role', 'approved')?->user?->name ?? 'Belum ditetapkan' }}</td><td>{{ $statuses[$r->status] }}</td><td>{{ $turn ? ((int) $turn->user_id === (int) auth()->id() ? 'Giliran Anda' : 'Menunggu '.$turn->user->name) : 'Tidak ada keputusan tertunda' }}</td><td><button type="button" wire:click="open({{ $r->id }})">Periksa permintaan</button></td></tr>
+                    <tr><td>{{ $r->number }}<br>{{ $r->title }}</td><td>{{ $r->requester->name }}</td><td>{{ \App\Services\Scm\ApprovalPolicies::NEED_TYPES[$r->need_type ?? 'HO'] }}<br>Approved by: {{ $r->approvals->where('round', $r->approval_round)->firstWhere('role', 'approved')?->user?->name ?? 'Belum ditetapkan' }}</td><td>{{ $statuses[$r->status] }}</td><td>{{ $turn ? ($isSuperuser || (int) $turn->user_id === (int) auth()->id() ? 'Giliran Anda' : 'Menunggu '.$turn->user->name) : 'Tidak ada keputusan tertunda' }}</td><td><button type="button" wire:click="open({{ $r->id }})">Periksa permintaan</button></td></tr>
                 @empty<tr><td colspan="6">Belum ada PR/SR yang ditugaskan kepada Anda.</td></tr>@endforelse
             </tbody></table></div>{{ $records->links() }}
         </section>

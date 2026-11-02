@@ -32,7 +32,7 @@ class TicketCommentPolicy
         User $user,
         TicketComment $ticketComment
     ): bool {
-        return (int) $ticketComment->user_id === (int) $user->id
+        return ($user->isSystemAdministrator() || (int) $ticketComment->user_id === (int) $user->id)
             && $this->canAccessTicket($user, $ticketComment->ticket);
     }
 
@@ -40,7 +40,7 @@ class TicketCommentPolicy
         User $user,
         TicketComment $ticketComment
     ): bool {
-        return (int) $ticketComment->user_id === (int) $user->id
+        return ($user->isSystemAdministrator() || (int) $ticketComment->user_id === (int) $user->id)
             && $this->canAccessTicket($user, $ticketComment->ticket);
     }
 

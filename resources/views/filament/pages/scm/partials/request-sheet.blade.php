@@ -90,8 +90,8 @@
                 @if($signatureIndex === 0)
                     @if(!$sheetEditing && $record?->prepared_signed_at)
                         <img src="{{ route('scm.signature-prepared', $record) }}" alt="Tanda tangan {{ $record->prepared_signed_name }}" width="180" height="60">
-                    @elseif(($canSignPrepared ?? $canRequest) && ($sheetEditing || ($record?->status === 'draft' && (int) $record->requester_id === (int) auth()->id())))
-                        <button type="button" wire:click="signPrepared" wire:loading.attr="disabled" wire:target="signPrepared,saveDraft">Tanda tangani</button>
+                    @elseif(($canSignPrepared ?? $canRequest) && ($sheetEditing || ($record?->status === 'draft' && (($isSuperuser ?? false) || (int) $record->requester_id === (int) auth()->id()))))
+                        <button type="button" wire:click="signPrepared" wire:loading.attr="disabled" wire:target="signPrepared,saveDraft">{{ $preparedSignatureLabel ?? 'Tanda tangani' }}</button>
                     @endif
                 @elseif($sheetStep?->status === 'signed')
                     <img src="{{ route('scm.signature-approval', $sheetStep) }}" alt="Tanda tangan {{ $sheetStep->signed_name }} sebagai {{ $signatureLabel }}" width="180" height="60">

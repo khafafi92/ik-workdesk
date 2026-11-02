@@ -9,6 +9,7 @@ use App\Filament\Pages\SignatureProfile;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
+use App\Models\Scm\Audit;
 use App\Models\Scm\Cbe;
 use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\Procurement;
@@ -151,6 +152,27 @@ class CbeApprovalsTest extends TestCase
         $this->rejects(fn () => $this->service->savePolicy($this->scm, $this->policy(['version' => 1, 'crosschecker_id' => $this->meyfi->id])));
         $this->service->savePolicy($this->scm, $this->policy(['version' => 1, 'acknowledger_id' => $this->outsider->id]));
         $this->assertSame($this->meyfi->id, $this->service->next($cbe)->user_id);
+    }
+
+    public function test_superuser_without_scm_grants_signs_other_assignments_using_own_identity(): void
+    {
+        $owner = $this->actor('Pemilik sistem');
+        $owner->update(['is_admin' => true]);
+        $this->signature($owner);
+        $cbe = $this->cbe();
+        $step = $this->service->next($cbe);
+        $this->assertSame(1, $this->service->pendingCount($owner));
+        $this->rejects(fn () => $this->service->sign($owner, $cbe->id, 99));
+        Livewire::actingAs($owner)->test(ScmApprovals::class)->call('switchDocument', 'CBE')->assertSee($cbe->number);
+        $this->service->sign($owner, $cbe->id, $cbe->request->version);
+        $this->assertSame($this->meyfi->id, $step->fresh()->user_id);
+        $this->assertSame($owner->name, $step->fresh()->signed_name);
+        $this->assertSame(app(Signatures::class)->current($owner)->id, $step->fresh()->signature_id);
+        $audit = Audit::where('action', 'tanda_tangan_cbe')->sole();
+        $this->assertSame($owner->id, $audit->actor_id);
+        $this->assertTrue($audit->changes['superuser_override']);
+        $this->assertSame($this->meyfi->id, $audit->changes['assigned_user_id']);
+        $this->assertSame($this->dipta->id, $this->service->next($cbe->fresh())->user_id);
     }
 
     public function test_missing_policy_or_signature_cannot_start_approval(): void

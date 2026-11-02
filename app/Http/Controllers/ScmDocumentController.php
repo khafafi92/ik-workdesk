@@ -18,7 +18,7 @@ class ScmDocumentController extends Controller
 {
     public function profileSignature(Request $http, UserSignature $signature)
     {
-        abort_unless(Access::signs($http->user()) && (int) $signature->user_id === (int) $http->user()->id, 403);
+        abort_unless($http->user()->isSystemAdministrator() || (Access::signs($http->user()) && (int) $signature->user_id === (int) $http->user()->id), 403);
 
         return $this->signatureImage($signature);
     }

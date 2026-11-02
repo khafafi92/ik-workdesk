@@ -685,10 +685,10 @@ class ProcurementTest extends TestCase
         $r = $this->draft();
         $other = $this->user('scm.request');
         $admin = User::factory()->create(['is_admin' => true]);
-        $this->assertFalse(Access::manages($admin));
+        $this->assertTrue(Access::manages($admin));
         $this->assertFalse(Access::views($other, $r));
         $this->actingAs($other)->get('/panel/scm/pengadaan?permintaan='.$r->id)->assertForbidden();
-        $this->actingAs($admin)->get('/panel/scm/pengadaan')->assertForbidden();
+        $this->actingAs($admin)->get('/panel/scm/pengadaan')->assertOk();
         $r = $this->submitApproved($r);
         $this->scm->employee->update(['department_id' => Department::create(['code' => 'OTHER', 'name' => 'Lain', 'is_active' => true])->id]);
         $this->scm->unsetRelation('employee');
@@ -1264,7 +1264,7 @@ class ProcurementTest extends TestCase
 
     public function test_settings_permission_is_separate_and_snapshot_edits_need_reason(): void
     {
-        $configurator = $this->user('scm.configure', true);
+        $configurator = $this->user('scm.configure');
         Livewire::actingAs($configurator)->test(ScmProcurement::class)->call('switchSection', 'settings')
             ->set('master.name', 'Kategori baru fiktif')->call('saveMaster')->assertHasNoErrors();
         $this->assertDatabaseHas('scm_categories', ['name' => 'Kategori baru fiktif']);

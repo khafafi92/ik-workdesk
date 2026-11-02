@@ -98,6 +98,11 @@ class ScmRequestNumbers extends Page
         abort_unless(static::canAccess(), 403);
         $user = auth()->user();
         $query = RequestNumber::query()->where(function ($query) use ($user): void {
+            if ($user->isSystemAdministrator()) {
+                $query->whereRaw('1 = 1');
+
+                return;
+            }
             if (Access::has($user, 'scm.request')) {
                 $query->where('requester_id', $user->id)->whereNull('request_id');
             } else {

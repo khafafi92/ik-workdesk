@@ -89,7 +89,7 @@ class UserResource extends Resource
         }
 
         // Super Admin boleh mengedit user.
-        if ($actor->is_admin === true) {
+        if ($actor->isSystemAdministrator()) {
             return true;
         }
 
@@ -112,7 +112,7 @@ class UserResource extends Resource
         $actor = auth()->user();
 
         // Penghapusan user hanya untuk Super Admin.
-        if (! $actor || $actor->is_admin !== true) {
+        if (! $actor || ! $actor->isSystemAdministrator()) {
             return false;
         }
 

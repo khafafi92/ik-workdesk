@@ -18,6 +18,9 @@ class Access
         if (! $user || ! $user->isActiveForAccess()) {
             return false;
         }
+        if ($user->isSystemAdministrator()) {
+            return true;
+        }
         $user->loadMissing(['directPermissions', 'roles.permissions']);
 
         return $user->directPermissions->contains(fn ($p) => $p->is_active && $p->code === $permission)
@@ -26,22 +29,25 @@ class Access
 
     public static function manages(?User $user, ?Procurement $request = null): bool
     {
-        return self::has($user, 'scm.process') && (! $request || (! in_array($request->status, ['draft', 'approval']) && $user->canAccessDepartment($request->department_id)));
+        return $user?->isSystemAdministrator() || (self::has($user, 'scm.process') && (! $request || (! in_array($request->status, ['draft', 'approval']) && $user->canAccessDepartment($request->department_id))));
     }
 
     public static function canChooseRequester(?User $user, string $kind): bool
     {
-        return $kind === 'PR' && self::has($user, 'scm.request') && $user->hasRole('system-admin');
+        return in_array($kind, ['PR', 'SR'], true) && $user?->isSystemAdministrator();
     }
 
     public static function authors(User $user, Procurement $request): bool
     {
-        return self::has($user, 'scm.request') && ((int) $request->requester_id === (int) $user->id
-            || (self::canChooseRequester($user, $request->kind) && (int) $request->numberReservation?->requester_id === (int) $user->id));
+        return $user->isSystemAdministrator() || (self::has($user, 'scm.request') && (int) $request->requester_id === (int) $user->id);
     }
 
     public static function scopeMine(Builder $query, User $user): Builder
     {
+        if ($user->isSystemAdministrator()) {
+            return $query;
+        }
+
         return $query->where(function ($query) use ($user): void {
             if (! self::has($user, 'scm.request')) {
                 $query->whereRaw('1 = 0');
@@ -49,15 +55,15 @@ class Access
                 return;
             }
             $query->where('requester_id', $user->id);
-            if (self::canChooseRequester($user, 'PR')) {
-                $query->orWhere(fn ($query) => $query->where('kind', 'PR')
-                    ->whereHas('numberReservation', fn ($number) => $number->where('requester_id', $user->id)));
-            }
         });
     }
 
     public static function approves(?User $user): bool
     {
+        if ($user?->isSystemAdministrator()) {
+            return true;
+        }
+
         return $user && $user->isActiveForAccess() && (
             ApprovalRoute::where('acknowledger_id', $user->id)->orWhere('cbo_id', $user->id)->orWhere('cbo3_id', $user->id)->exists()
             || ApprovalPolicy::where('supervisor_id', $user->id)->orWhere('acknowledger_id', $user->id)->orWhere('crosschecker_id', $user->id)
@@ -86,6 +92,10 @@ class Access
 
     public static function scope(Builder $query, User $user): Builder
     {
+        if ($user->isSystemAdministrator()) {
+            return $query;
+        }
+
         return $query->where(function ($query) use ($user): void {
             $query->where(fn ($own) => self::scopeMine($own, $user));
             if (self::manages($user)) {

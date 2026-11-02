@@ -16,6 +16,7 @@ use App\Models\Scm\ProjectNumbering;
 use App\Models\Scm\RequestNumber;
 use App\Models\User;
 use App\Services\Scm\Access;
+use App\Services\Scm\Approvals;
 use App\Services\Scm\Signatures;
 use App\Services\Scm\Workflow;
 use Database\Seeders\ScmSeeder;
@@ -23,7 +24,6 @@ use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -117,10 +117,10 @@ class DelegatedPurchaseRequestTest extends TestCase
         $this->assertFalse(Access::views($this->other, $request));
         Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->assertSee($request->number)->call('open', $request->id)->assertSee('Permintaan dibuat oleh Pemilik sistem untuk pemohon Pemohon terpilih.');
         Livewire::actingAs($this->owner)->test(PurchaseRequests::class)->assertSee($request->number)->call('open', $request->id)->assertSee('Edit draft')
-            ->assertDontSeeHtml('wire:click="signPrepared"')->assertDontSeeHtml('wire:click="submitRequest"');
+            ->assertSeeHtml('wire:click="signPrepared"')->assertSee('Tanda tangani sebagai Pemilik sistem');
     }
 
-    public function test_form_only_offers_eligible_requesters_and_previews_the_selected_requester_approval(): void
+    public function test_superuser_form_offers_all_requesters_and_departments_and_previews_the_selected_requester_approval(): void
     {
         $approver = $this->policy();
         $inactive = $this->person('Tidak aktif', $this->department);
@@ -129,11 +129,11 @@ class DelegatedPurchaseRequestTest extends TestCase
         Livewire::test(PurchaseRequests::class)->set('newRequestNeedType', 'PROJECT')
             ->set('newProjectNumberingId', (string) ProjectNumbering::where('code', 'COMP-19E001')->sole()->id)->call('newDraft', 'KPMOG')
             ->assertSeeHtml('id="scm-draft-requester_id"')
-            ->assertViewHas('requesterOptions', fn ($options) => ! isset($options[$inactive->id]) && ! isset($options[$noPermission->id]) && isset($options[$this->requester->id]))
+            ->assertViewHas('requesterOptions', fn ($options) => isset($options[$inactive->id], $options[$noPermission->id], $options[$this->requester->id]))
             ->set('draft.requester_id', (string) $this->requester->id)->assertSet('draft.department_id', $this->department->id)
-            ->assertViewHas('departments', fn ($departments) => $departments->has($this->department->id) && ! $departments->has($this->home->id))
+            ->assertViewHas('departments', fn ($departments) => $departments->has($this->department->id) && $departments->has($this->home->id))
             ->assertViewHas('routingPlan', fn ($plan) => $plan['manager_request'] && $plan['approver']->id === $approver->id)
-            ->assertDontSeeHtml('wire:click="signPrepared"')->set('draft.items.0.name', 'Valve')->set('draft.items.0.specification', 'Spesifikasi')
+            ->assertSeeHtml('wire:click="signPrepared"')->set('draft.items.0.name', 'Valve')->set('draft.items.0.specification', 'Spesifikasi')
             ->set('draft.items.0.unit', 'unit')->call('saveDraft')->assertHasNoErrors();
         $this->assertSame($this->requester->id, Procurement::sole()->requester_id);
     }
@@ -164,48 +164,60 @@ class DelegatedPurchaseRequestTest extends TestCase
         app(Workflow::class)->saveDraft($this->other, $this->data());
     }
 
-    public function test_sysadmin_role_is_accepted_and_sr_does_not_gain_requester_selection(): void
+    public function test_sysadmin_role_is_accepted_for_pr_and_sr_without_explicit_permissions(): void
     {
         $role = Role::firstOrCreate(['code' => 'system-admin'], ['name' => 'Sys Administrator', 'is_active' => true]);
         $this->other->roles()->attach($role);
+        $this->other->directPermissions()->detach();
         $this->assertTrue(Access::canChooseRequester($this->other->fresh(), 'PR'));
-        $this->assertFalse(Access::canChooseRequester($this->other->fresh(), 'SR'));
-        $request = app(Workflow::class)->saveDraft($this->other, $this->data());
+        $this->assertTrue(Access::canChooseRequester($this->other->fresh(), 'SR'));
+        $request = app(Workflow::class)->saveDraft($this->other->fresh(), $this->data());
         $this->assertSame($this->requester->id, $request->requester_id);
-        Livewire::actingAs($this->owner)->test(ServiceRequests::class)->call('newDraft', 'KPMOG')->assertDontSeeHtml('id="scm-draft-requester_id"');
-        $this->expectException(HttpException::class);
-        app(Workflow::class)->saveDraft($this->owner, $this->data(['kind' => 'SR']));
+        Livewire::actingAs($this->owner)->test(ServiceRequests::class)->call('newDraft', 'KPMOG')->assertSeeHtml('id="scm-draft-requester_id"');
+        $sr = app(Workflow::class)->saveDraft($this->owner, $this->data(['kind' => 'SR']));
+        $this->assertSame($this->requester->id, $sr->requester_id);
     }
 
-    public function test_owner_cannot_assign_an_inaccessible_department_to_the_requester(): void
+    public function test_owner_can_assign_a_department_outside_the_requester_access(): void
     {
-        $this->expectException(HttpException::class);
-        app(Workflow::class)->saveDraft($this->owner, $this->data(['department_id' => $this->home->id]));
+        $request = app(Workflow::class)->saveDraft($this->owner, $this->data(['department_id' => $this->home->id]));
+        $this->assertSame($this->home->id, $request->department_id);
     }
 
-    public function test_inactive_or_unpermitted_requester_is_rejected(): void
+    public function test_owner_can_prepare_for_inactive_requester_but_inactive_actor_has_no_override(): void
     {
         $this->requester->employee->update(['is_active' => false]);
-        $this->expectException(ValidationException::class);
-        app(Workflow::class)->saveDraft($this->owner, $this->data());
+        $request = app(Workflow::class)->saveDraft($this->owner, $this->data());
+        $this->assertSame($this->requester->id, $request->requester_id);
+        $this->owner->employee->update(['is_active' => false]);
+        $this->assertFalse($this->owner->fresh()->isSystemAdministrator());
+        $this->expectException(HttpException::class);
+        app(Workflow::class)->saveDraft($this->owner->fresh(), $this->data());
     }
 
-    public function test_only_selected_requester_can_sign_and_submit_using_their_actual_approval_route(): void
+    public function test_superuser_signs_submits_and_approves_with_own_signature_and_original_assignments(): void
     {
         $approver = $this->policy();
         $request = app(Workflow::class)->saveDraft($this->owner, $this->data());
         $this->signature($this->owner);
         $this->signature($this->requester);
-        Livewire::actingAs($this->owner)->test(PurchaseRequests::class)->call('open', $request->id)->call('signPrepared')->assertForbidden();
-        $this->assertNull($request->fresh()->prepared_signed_at);
-        $this->assertSame($request->version, $request->fresh()->version);
-        $request = app(Signatures::class)->sign($this->requester, $request->id, $request->version);
-        $this->assertSame($this->requester->name, $request->prepared_signed_name);
-        Livewire::actingAs($this->owner)->test(PurchaseRequests::class)->call('open', $request->id)->call('submitRequest')->assertForbidden();
-        $request = app(Workflow::class)->submit($this->requester, $request->id, $request->version);
+        $request = app(Signatures::class)->sign($this->owner, $request->id, $request->version);
+        $this->assertSame($this->owner->name, $request->prepared_signed_name);
+        $this->assertSame(app(Signatures::class)->current($this->owner)->id, $request->prepared_signature_id);
+        $request = app(Workflow::class)->submit($this->owner, $request->id, $request->version);
         $this->assertSame('approval', $request->status);
         $this->assertSame($this->requester->id, $request->approvals->firstWhere('role', 'requested')->user_id);
         $this->assertSame($approver->id, $request->approvals->firstWhere('role', 'approved')->user_id);
+        $service = app(Approvals::class);
+        $step = $service->next($request);
+        $this->assertSame(1, $service->pendingCount($this->owner));
+        $request = $service->decide($this->owner, $request->id, $request->version, $step->id, 'sign');
+        $this->assertSame($approver->id, $step->fresh()->user_id);
+        $this->assertSame($this->owner->name, $step->fresh()->signed_name);
+        $audit = Audit::where('request_id', $request->id)->latest('id')->first();
+        $this->assertSame($this->owner->id, $audit->actor_id);
+        $this->assertTrue($audit->changes['superuser_override']);
+        $this->assertSame($approver->id, $audit->changes['assigned_user_id']);
     }
 
     public function test_owner_can_attach_and_reassign_draft_but_reassignment_clears_signature(): void
@@ -239,10 +251,11 @@ class DelegatedPurchaseRequestTest extends TestCase
         $this->assertTrue(Access::views($this->requester, $request));
     }
 
-    public function test_owner_does_not_gain_edit_access_to_someone_elses_unrelated_draft(): void
+    public function test_owner_can_edit_someone_elses_unrelated_draft_and_view_its_number(): void
     {
         $request = app(Workflow::class)->saveDraft($this->other, $this->data(['requester_id' => $this->other->id]));
-        $this->assertFalse(Access::views($this->owner, $request));
-        Livewire::test(PurchaseRequests::class)->call('open', $request->id)->assertForbidden();
+        $this->assertTrue(Access::views($this->owner, $request));
+        Livewire::test(PurchaseRequests::class)->assertSee($request->number)->call('open', $request->id)->call('editDraft')->assertSet('editing', true);
+        Livewire::test(ScmRequestNumbers::class)->assertSee($request->number);
     }
 }

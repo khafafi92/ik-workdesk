@@ -17,7 +17,8 @@
     <section class="scm-panel" wire:key="cbe-approval-{{ $cbe->id }}">
         <h2>{{ $cbe->number }}</h2>
         @include('scm.partials.cbe-sheet', ['sheetEditing' => false, 'sheetRequest' => $cbe->snapshot['request'], 'sheetItems' => $cbe->snapshot['items'], 'sheetQuotes' => $cbe->snapshot['quotes'], 'sheetNumber' => $cbe->number, 'sheetDate' => $cbe->date->format('d/m/Y'), 'sheetSelectedVendor' => $cbe->selected_vendor_id, 'sheetReason' => $cbe->selection_reason, 'sheetPreparedName' => $cbe->snapshot['prepared_by_name'] ?? null, 'sheetCbeApprovals' => $cbe->approvals])
-        @if($nextStep && (int)$nextStep->user_id === (int)auth()->id())
+        @if($nextStep && ($isSuperuser || (int)$nextStep->user_id === (int)auth()->id()))
+            @if($isSuperuser && (int)$nextStep->user_id !== (int)auth()->id())<p>Penugasan asli: {{ $nextStep->assigned_name }}. Tanda tangan menggunakan profil {{ auth()->user()->name }}.</p>@endif
             <button type="button" wire:click="signCbe" wire:confirm="Tanda tangani CBE ini sesuai penugasan kamu?" wire:loading.attr="disabled">Tanda tangani sebagai {{ rtrim(\App\Services\Scm\CbeApprovals::LABELS[$nextStep->role], ':') }}</button>
         @elseif($nextStep)<p role="status">Menunggu {{ $nextStep->assigned_name }} untuk {{ rtrim(\App\Services\Scm\CbeApprovals::LABELS[$nextStep->role], ':') }}.</p>
         @else<p role="status">Keempat tanda tangan CBE sudah lengkap.</p>@endif

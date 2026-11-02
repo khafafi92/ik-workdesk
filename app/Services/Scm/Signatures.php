@@ -47,9 +47,9 @@ class Signatures
 
         return DB::transaction(function () use ($actor, $id, $version): Procurement {
             $request = Procurement::lockForUpdate()->findOrFail($id);
-            abort_unless((int) $request->requester_id === (int) $actor->id, 403);
+            abort_unless($actor->isSystemAdministrator() || (int) $request->requester_id === (int) $actor->id, 403);
             if ($request->status !== 'draft' || $request->version !== $version) {
-                throw ValidationException::withMessages(['scm' => 'Hanya draft terbaru milik sendiri yang dapat ditandatangani.']);
+                throw ValidationException::withMessages(['scm' => 'Data draft sudah berubah atau bukan lagi draft. Buka ulang sebelum menandatangani.']);
             }
             $signature = $this->current($actor);
             if (! $signature || ! Storage::disk('scm')->exists($signature->path)) {
@@ -58,7 +58,8 @@ class Signatures
             $request->update(['prepared_signature_id' => $signature->id, 'prepared_signed_at' => now(),
                 'prepared_signed_name' => $actor->name, 'version' => $request->version + 1]);
             app(Workflow::class)->audit($actor, $request, 'tanda_tangan_prepared',
-                ['signature_id' => $signature->id, 'name' => $actor->name, 'signed_at' => $request->prepared_signed_at->toIso8601String()], $id);
+                ['signature_id' => $signature->id, 'name' => $actor->name, 'signed_at' => $request->prepared_signed_at->toIso8601String(),
+                    'requester_id' => $request->requester_id, 'superuser_override' => (int) $actor->id !== (int) $request->requester_id], $id);
 
             return $request->fresh();
         }, 3);

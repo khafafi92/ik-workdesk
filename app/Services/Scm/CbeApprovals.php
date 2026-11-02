@@ -91,7 +91,7 @@ class CbeApprovals
             return 0;
         }
 
-        return CbeApproval::where('user_id', $actor->id)->where('status', 'pending')
+        return CbeApproval::when(! $actor->isSystemAdministrator(), fn ($query) => $query->where('user_id', $actor->id))->where('status', 'pending')
             ->whereHas('cbe', fn ($query) => $query->where('status', 'final')->whereHas('request', fn ($request) => $request->where('status', 'selected')))
             ->whereNotExists(fn ($query) => $query->selectRaw('1')->from('scm_cbe_approvals as earlier')
                 ->whereColumn('earlier.cbe_id', 'scm_cbe_approvals.cbe_id')->whereColumn('earlier.position', '<', 'scm_cbe_approvals.position')->where('earlier.status', 'pending'))
@@ -106,17 +106,18 @@ class CbeApprovals
             $candidate = Cbe::findOrFail($id);
             $request = Procurement::lockForUpdate()->findOrFail($candidate->request_id);
             $cbe = Cbe::lockForUpdate()->findOrFail($id);
-            abort_unless($cbe->approvals()->where('user_id', $actor->id)->where('role', '!=', 'prepared')->exists(), 403);
+            abort_unless($actor->isSystemAdministrator() || $cbe->approvals()->where('user_id', $actor->id)->where('role', '!=', 'prepared')->exists(), 403);
             $this->reject($request->version !== $requestVersion, 'Data CBE berubah. Buka ulang sebelum menandatangani.');
             $step = $this->next($cbe);
-            abort_unless($step && (int) $step->user_id === (int) $actor->id, 403);
+            abort_unless($step && ($actor->isSystemAdministrator() || (int) $step->user_id === (int) $actor->id), 403);
             $this->reject($cbe->status !== 'final' || $request->status !== 'selected', 'CBE tidak sedang menunggu persetujuan.');
             $signature = app(Signatures::class)->current($actor);
             $this->reject(! $signature || ! Storage::disk('scm')->exists($signature->path), 'Simpan gambar TTD pada profil terlebih dahulu.');
             $step->update(['status' => 'signed', 'signature_id' => $signature->id, 'signed_name' => $actor->name, 'acted_at' => now()]);
             $request->version++;
             $request->save();
-            app(Workflow::class)->audit($actor, $cbe, 'tanda_tangan_cbe', ['role' => $step->role, 'signature_id' => $signature->id, 'signed_name' => $actor->name], $request->id);
+            app(Workflow::class)->audit($actor, $cbe, 'tanda_tangan_cbe', ['role' => $step->role, 'signature_id' => $signature->id, 'signed_name' => $actor->name,
+                'assigned_user_id' => $step->user_id, 'superuser_override' => (int) $step->user_id !== (int) $actor->id], $request->id);
 
             return $cbe->fresh();
         });

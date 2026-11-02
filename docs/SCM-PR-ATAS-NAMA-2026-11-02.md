@@ -1,26 +1,27 @@
 # Membuat PR atas nama pemohon lain
 
-Akun **Sys Administrator/pemilik sistem** yang mempunyai izin membuat PR dapat memilih **Requestor** langsung pada form PR HO maupun Project. Akun dengan peran Administrator, Admin, Management, atau izin konfigurasi SCM saja tetap membuat PR atas nama sendiri. SR mengikuti perilaku sebelumnya.
+Akun aktif dengan `is_admin` atau role aktif **system-admin** mempunyai seluruh izin aplikasi dan akses semua departemen. Khafafi memakai kewenangan ini. Administrator biasa, Admin, Management, dan pengelola SCM tetap mengikuti izin operasional serta penugasannya.
 
 ## Penggunaan
 
-1. Buka **Permintaan > PR**, pilih kebutuhan HO/Project, master kode Project bila diperlukan, lalu perusahaan.
-2. Pada **Requestor**, pilih akun pemohon aktif yang memiliki izin PR/SR. Daftar menampilkan nama dan departemen untuk membantu pemilihan.
-3. Departemen utama pemohon terisi otomatis. Pilihan departemen dan nama Project operasional mengikuti cakupan akses pemohon yang dipilih. Lengkapi rincian, lalu **Simpan draft**. Sysadmin dapat melengkapi lampiran dan mengedit draft yang dibuatnya.
-4. Pemohon yang dipilih membuka PR tersebut melalui akunnya sendiri. Pemohon menandatangani **Requested by**, lalu mengajukan persetujuan. Sysadmin pembuat draft tidak mendapat tombol atau hak menggunakan tanda tangan pemohon tersebut.
+1. Buka **Permintaan > PR** atau **SR**, pilih HO/Project, master kode Project bila diperlukan, lalu perusahaan.
+2. Pada **Requestor**, pilih pemohon. Daftar mencakup seluruh akun dan menandai akun nonaktif.
+3. Departemen utama pemohon terisi otomatis; superuser dapat menggantinya dengan departemen lain. Nama Project operasional dapat dipilih dari seluruh departemen. Lengkapi rincian, lalu **Simpan draft**.
+4. Superuser dapat membuka dan mengedit draft semua pengguna, menambah lampiran, menandatangani Requested by menggunakan profilnya sendiri, lalu mengajukan persetujuan.
+5. Pada **Persetujuan**, superuser melihat penugasan seluruh pengguna dan dapat menjalankan tahap yang sedang menunggu, termasuk CBE. Panel tindakan menampilkan penugasan asli dan nama penandatangan yang akan dipakai.
 
-PR tampil pada daftar pemohon dan pada daftar sysadmin yang membuatkannya. Pada dokumen tampil nama pemohon; keterangan di luar lembar mencatat siapa yang membuat permintaan dan untuk siapa. Nomor tetap sama saat draft diperbarui. Penomoran tidak mengubah penandatangan maupun aturan approval HO/Project.
+PR/SR tampil pada daftar pemohon dan seluruh superuser. Nomor dan pemohon tetap tersimpan sebagai identitas permintaan. Register nomor mempertahankan penerbit awal. Tanda tangan dan nama yang tampil adalah milik akun pelaksana yang sedang masuk.
 
 ## Penandatangan dan akses
 
-Pratinjau approval memakai identitas pemohon terpilih, termasuk aturan atasan dan perlakuan pengajuan Manager. Saat diajukan, pengajuan berasal dari akun pemohon yang menandatangani dan mengikuti master perusahaan, departemen, HO/Project, dan PR yang sesuai.
+Alur approval mengikuti identitas pemohon terpilih dan master perusahaan, departemen, HO/Project, serta PR/SR. Urutan tahap, validasi data, versi dokumen, tanda tangan profil yang tersedia, alasan revisi, dan kelengkapan dokumen tetap diperiksa.
 
-Perubahan isi, pemohon, departemen, atau lampiran draft menghapus tanda tangan Requested by sebagaimana pengeditan draft sebelumnya. Pemohon terbaru perlu memeriksa dan menandatangani kembali. Pemohon hanya dapat diganti selama dokumen masih draft. Sysadmin lain tidak otomatis memperoleh hak mengedit draft yang dibuat akun lain.
+Perubahan isi, pemohon, departemen, atau lampiran draft menghapus tanda tangan Requested by sehingga perlu ditandatangani kembali. Pemohon hanya dapat diganti selama dokumen masih draft.
 
-Pembatasan juga diperiksa pada server: pengiriman `requester_id` lain oleh akun biasa ditolak, termasuk jika data dikirim di luar kontrol form. Pemohon nonaktif/tanpa izin PR ditolak, dan departemen harus termasuk cakupan pemohon. Pencabutan akses sysadmin menghentikan jalur akses sebagai pembuat draft untuk pemohon lain; akses SCM lain tetap mengikuti izinnya masing-masing.
+Akun biasa tidak dapat mengirim `requester_id` pengguna lain, membuka draft di luar cakupannya, atau menjalankan persetujuan yang bukan penugasannya. Akun nonaktif tidak memperoleh kewenangan superuser. Pencabutan status superuser mengembalikan akses ke izin operasional yang tersisa.
 
 ## Pencatatan
 
-Register nomor mempertahankan akun penerbit nomor. Permintaan menyimpan pemohon pada `requester_id`; relasi nomor mengidentifikasi pembuat awal. Audit penyimpanan tetap mencatat akun pelaksana dan pemohon yang dipilih. Audit penandatanganan/pengajuan mencatat akun pemohon yang melakukannya. Tidak ada tabel, migrasi, atau grant role baru untuk fitur ini.
+Audit menyimpan akun pelaksana, pemohon/penugasan asli, serta penanda tindakan superuser. Tidak ada migrasi, pengubahan role pengguna, maupun penggantian tanda tangan profil untuk penerapan ini.
 
-Pemeriksaan: 274 tes fitur SCM/unit formatter/katalog akses, 2 tes konkurensi PostgreSQL, serta alur browser sysadmin sampai pemohon menandatangani dan mengajukan. Bukti tampilan dan interaksi ada dalam [laporan delivery](../anti-slop/delivery-pr-atas-nama-2026-11-02.md).
+Lihat [laporan pengujian dan tampilan superuser](../anti-slop/delivery-superuser-2026-11-02.md).

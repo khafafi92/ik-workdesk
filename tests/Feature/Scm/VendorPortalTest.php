@@ -227,7 +227,7 @@ class VendorPortalTest extends TestCase
         [$registration] = $this->invite();
         $registration = $this->fill($registration);
         $this->enrollment->saveStep($registration, $registration->version, 5, $this->answers(5), true);
-        $other = User::factory()->create(['is_admin' => true]);
+        $other = User::factory()->create(['is_admin' => false]);
         $this->actingAs($other)->get(route('scm.vendor-review', $registration))->assertForbidden();
         $this->post(route('scm.vendor-decide', $registration), ['version' => $registration->fresh()->version, 'action' => 'accept'])->assertForbidden();
         $this->vendor->update(['name' => 'DEMO perubahan internal', 'version' => $this->vendor->version + 1]);

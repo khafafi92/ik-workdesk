@@ -1,5 +1,6 @@
 <x-filament-panels::page>
 <div class="scm-workspace" x-on:scm-focus.window="$nextTick(() => document.getElementById($event.detail.id)?.focus())">
+    @if($isSuperuser)<p class="scm-help">Akses superuser: seluruh pengguna dan departemen. Tanda tangan dan riwayat tindakan memakai identitas {{ auth()->user()->name }}.</p>@endif
     @if(!$requestKind)<nav class="scm-actions" aria-label="Bagian pengadaan">
         @foreach(['queue' => 'Antrean SCM', 'vendors' => 'Vendor & dokumen', 'settings' => 'Pengaturan'] as $key => $label)
             @if((in_array($key, ['queue', 'vendors']) && $isScm) || ($key === 'settings' && $configure))
@@ -20,7 +21,7 @@
         @endif
         @if(!$selected && !$editing && !$choosingCompany)
         <section class="scm-panel">
-            <header class="scm-heading"><h2>{{ $section === 'queue' ? 'Antrean pengadaan SCM' : $requestKind.' saya' }}</h2>@if($canRequest)<x-filament::button wire:click="chooseCompany">Buat {{ $requestKind }}</x-filament::button>@endif</header>
+            <header class="scm-heading"><h2>{{ $section === 'queue' ? 'Antrean pengadaan SCM' : $requestKind.($isSuperuser ? ' seluruh pengguna' : ' saya') }}</h2>@if($canRequest)<x-filament::button wire:click="chooseCompany">Buat {{ $requestKind }}</x-filament::button>@endif</header>
             <div class="scm-grid">
                 <x-scm.field model="search" label="Cari nomor atau judul" :live="true" />
                 <x-scm.select model="statusFilter" label="Status" :options="$statusOptions" :live="true" />
@@ -31,7 +32,7 @@
                 <x-scm.field model="dateUntil" label="Sampai tanggal" type="date" :live="true" />
             </div>
             <div class="scm-actions"><button type="button" wire:click="clearFilters">Hapus semua filter</button></div>
-            @if($isScm)<p class="scm-help">Tahap Draft pada antrean ini berarti persetujuan HO sudah lengkap dan menunggu penerimaan SCM.</p>@endif
+            @if($isScm && !$isSuperuser)<p class="scm-help">Tahap Draft pada antrean ini berarti persetujuan HO sudah lengkap dan menunggu penerimaan SCM.</p>@endif
             <div class="scm-scroll" role="region" aria-label="Daftar permintaan" tabindex="0"><table><thead><tr><th>Permintaan</th><th>Departemen</th><th>Tanggal</th><th>Tahap</th><th>Tindak lanjut</th></tr></thead><tbody>
             @forelse($records as $r)<tr><td>{{ $r->number }}<br>{{ $r->title }}</td><td>{{ $r->department->name }}</td><td>{{ $r->date->format('d/m/Y') }}</td><td>{{ $statuses[$r->status] }}</td><td><button type="button" wire:click="open({{ $r->id }})">Buka permintaan</button></td></tr>
             @empty<tr><td colspan="5">Belum ada permintaan sesuai filter. @if($canRequest)Gunakan Buat {{ $requestKind }} untuk mengajukan permintaan.@else Permintaan yang dikirim dan sesuai akses departemen akan tampil di sini.@endif</td></tr>@endforelse
@@ -58,7 +59,7 @@
         @elseif($editing)
         <form class="scm-sheet-editor" wire:submit="saveDraft">
             <p>Perusahaan: <strong>{{ $draft['company'] ?? 'APCA' }}</strong>. Untuk perusahaan lain, kembali ke daftar dan buat {{ $requestKind }} baru.</p>
-            @if($canChooseRequester)<p class="scm-help">Sysadmin dapat memilih Requestor. Pilihan departemen mengikuti akses pemohon tersebut. Pemohon menandatangani Requested by melalui akunnya sendiri.</p>@endif
+            @if($canChooseRequester)<p class="scm-help">Superuser dapat memilih Requestor dan seluruh departemen. Jika menandatangani atau mengajukan atas nama pemohon, akun pelaksana tetap tercatat pada riwayat.</p>@endif
             @include('filament.pages.scm.partials.request-routing', ['routingEditing' => true])
             <fieldset class="scm-sheet-inputs" wire:loading.attr="disabled" wire:target="saveDraft,signPrepared"><legend class="scm-sheet-sr">Form {{ $requestKind }}</legend>
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => true])

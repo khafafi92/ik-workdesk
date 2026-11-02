@@ -260,12 +260,12 @@ class CommentsRelationManager extends RelationManager
                 EditAction::make()
                     ->label('Edit')
                     ->visible(
-                        fn (TicketComment $record): bool => (int) $record->user_id === (int) auth()->id()
+                        fn (TicketComment $record): bool => auth()->user()->isSystemAdministrator() || (int) $record->user_id === (int) auth()->id()
                     ),
 
                 DeleteAction::make()
                     ->visible(
-                        fn (TicketComment $record): bool => (int) $record->user_id === (int) auth()->id()
+                        fn (TicketComment $record): bool => auth()->user()->isSystemAdministrator() || (int) $record->user_id === (int) auth()->id()
                     ),
             ])
             ->recordAction('view')

@@ -381,7 +381,7 @@ class ScmProcurement extends Page
             return app(Signatures::class)->sign(auth()->user(), $request->id, $this->editing ? $request->version : $this->version);
         }, 3);
         $this->open($request->id);
-        $this->success('Requested by sudah ditandatangani. Permintaan dapat diajukan untuk persetujuan HO.');
+        $this->success('Requested by sudah ditandatangani. Permintaan dapat diajukan untuk persetujuan '.($request->need_type === 'PROJECT' ? 'Project' : 'HO').'.');
     }
 
     public function receiveRequest(): void
@@ -637,9 +637,9 @@ class ScmProcurement extends Page
         if ($property === 'draft.requester_id') {
             abort_unless(Access::canChooseRequester(auth()->user(), static::$requestKind ?? ''), 403);
             $requester = $this->requesterCandidates()->get((int) $this->draft['requester_id']);
-            $departmentIds = $requester?->accessibleDepartmentIds() ?? [];
+            $departmentIds = auth()->user()->accessibleDepartmentIds();
             $primary = $requester?->employee?->department_id;
-            $this->draft['department_id'] = in_array($primary, $departmentIds, true) ? $primary : (Department::whereIn('id', $departmentIds)->where('is_active', true)->orderBy('name')->value('id') ?? '');
+            $this->draft['department_id'] = in_array((int) $primary, $departmentIds, true) ? $primary : '';
             $this->draft['work_project_id'] = '';
             $this->resetValidation();
         }
@@ -675,6 +675,7 @@ class ScmProcurement extends Page
     {
         abort_unless(static::canAccess(), 403);
         $user = auth()->user();
+        $isSuperuser = $user->isSystemAdministrator();
         $isScm = static::$requestKind === null && Access::manages($user);
         $configure = static::$requestKind === null && Access::has($user, 'scm.configure');
         $canChooseRequester = Access::canChooseRequester($user, static::$requestKind ?? '');
@@ -687,31 +688,33 @@ class ScmProcurement extends Page
                 $draftRequester = $requesterCandidates->get($requesterId);
             }
         }
-        $requestDepartmentIds = $this->editing && $canChooseRequester ? ($draftRequester?->accessibleDepartmentIds() ?? []) : $user->accessibleDepartmentIds();
+        $requestDepartmentIds = $user->accessibleDepartmentIds();
         abort_if(static::$requestKind !== null ? $this->section !== 'mine' : $this->section === 'mine', 403);
         abort_if(in_array($this->section, ['queue', 'vendors']) && ! $isScm, 403);
         abort_if($this->section === 'settings' && ! $configure, 403);
         $visible = static::$requestKind !== null
             ? Access::scopeMine(Procurement::query(), $user)->where('kind', static::$requestKind)
-            : Procurement::whereNotIn('status', ['draft', 'approval'])->whereIn('department_id', $isScm ? $user->accessibleDepartmentIds() : []);
+            : Procurement::when(! $isSuperuser, fn ($query) => $query->whereNotIn('status', ['draft', 'approval']))->whereIn('department_id', $isScm ? $user->accessibleDepartmentIds() : []);
         $query = clone $visible;
         $summary = (clone $query)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
-        $summary['draft'] = ($summary['draft'] ?? 0) + ($summary['submitted'] ?? 0);
-        unset($summary['submitted']);
+        if (! $isSuperuser) {
+            $summary['draft'] = ($summary['draft'] ?? 0) + ($summary['submitted'] ?? 0);
+            unset($summary['submitted']);
+        }
         $missingDocuments = $isScm ? LegalItem::whereIn('legal_case_id', LegalCase::whereNull('completed_at')->whereIn('request_id', (clone $visible)->select('id'))->select('id'))
             ->where('is_required', true)->where(fn ($q) => $q->where('status', '!=', 'diterima')->orWhereNull('vendor_document_id')
             ->orWhereHas('document', fn ($d) => $d->whereDate('expires_at', '<', today())))->count() : null;
-        if ($this->section === 'queue') {
+        if ($this->section === 'queue' && ! $isSuperuser) {
             $query->whereNotIn('status', ['draft', 'approval']);
         }
         $query->when($this->search !== '', fn ($q) => $q->where(fn ($q) => $q->where('number', 'like', '%'.$this->search.'%')->orWhere('title', 'like', '%'.$this->search.'%')))
-            ->when($this->statusFilter, fn ($q) => $q->whereIn('status', $this->statusFilter === 'draft' ? ['draft', 'submitted'] : [$this->statusFilter]))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
+            ->when($this->statusFilter, fn ($q) => $q->whereIn('status', $this->statusFilter === 'draft' && ! $isSuperuser ? ['draft', 'submitted'] : [$this->statusFilter]))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))->when($this->picFilter, fn ($q) => $q->where('scm_pic_id', $this->picFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
         $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'numberReservation.requester', 'department', 'project', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
         $canEditDraft = static::$requestKind !== null && $record?->status === 'draft' && Access::authors($user, $record);
         $canSignPrepared = static::$requestKind !== null && Access::has($user, 'scm.request')
-            && ($this->editing ? (int) ($this->draft['requester_id'] ?? $user->id) === (int) $user->id : ($record?->status === 'draft' && (int) $record->requester_id === (int) $user->id));
+            && ($this->editing ? ($isSuperuser || (int) ($this->draft['requester_id'] ?? $user->id) === (int) $user->id) : ($record?->status === 'draft' && ($isSuperuser || (int) $record->requester_id === (int) $user->id)));
         $canManage = $isScm && $record && Access::manages($user, $record);
         if ($record && ! $canManage) {
             $this->tab = 'request';
@@ -732,18 +735,21 @@ class ScmProcurement extends Page
         $documents = $isScm ? VendorDocument::with(['documentType', 'attachments'])->when($record?->legalCase, fn ($q) => $q->where('vendor_id', $record->legalCase->vendor_id))->orderByDesc('id')->get() : collect();
         $duplicate = $isScm && filled($this->vendor['name'] ?? '') ? Vendor::where('id', '!=', $this->vendorId)->where(fn ($q) => $q->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($this->vendor['name']))])->when(filled($this->vendor['email'] ?? ''), fn ($q) => $q->orWhere('email', $this->vendor['email'])))->pluck('name') : collect();
         $statuses = Workflow::STATUSES;
-        $statusOptions = array_diff_key($statuses, ['submitted' => true]);
-        if ($isScm) {
+        if ($isSuperuser) {
+            $statuses['submitted'] = 'Menunggu SCM';
+        }
+        $statusOptions = $isSuperuser ? $statuses : array_diff_key($statuses, ['submitted' => true]);
+        if ($isScm && ! $isSuperuser) {
             unset($statusOptions['approval']);
         }
         $approvalTarget = null;
-        if ($this->editing && static::$requestKind !== null && $draftRequester?->canAccessDepartment((int) ($this->draft['department_id'] ?? 0))) {
+        if ($this->editing && static::$requestKind !== null && $draftRequester && ($isSuperuser || $draftRequester->canAccessDepartment((int) ($this->draft['department_id'] ?? 0)))) {
             $approvalTarget = app(Approvals::class)->route($this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'])?->cbo3?->name;
         }
 
         $routingPlan = null;
         $routingIssue = null;
-        if ($this->editing && static::$requestKind !== null && $draftRequester?->canAccessDepartment((int) ($this->draft['department_id'] ?? 0))) {
+        if ($this->editing && static::$requestKind !== null && $draftRequester && ($isSuperuser || $draftRequester->canAccessDepartment((int) ($this->draft['department_id'] ?? 0)))) {
             try {
                 $routingPlan = app(Approvals::class)->submissionPlan($draftRequester, $this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'],
                     (bool) ($this->draft['requires_cbo3'] ?? false), $this->draft['need_type'] ?? 'HO', static::$requestKind);
@@ -763,8 +769,10 @@ class ScmProcurement extends Page
 
         return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
             'canChooseRequester' => $canChooseRequester, 'canEditDraft' => $canEditDraft, 'canSignPrepared' => $canSignPrepared,
+            'isSuperuser' => $isSuperuser,
+            'preparedSignatureLabel' => $isSuperuser && (int) ($this->editing ? ($this->draft['requester_id'] ?? $user->id) : $record?->requester_id) !== (int) $user->id ? 'Tanda tangani sebagai '.$user->name : 'Tanda tangani',
             'draftRequesterName' => $draftRequester?->name ?? '',
-            'requesterOptions' => $requesterCandidates->mapWithKeys(fn ($account) => [$account->id => $account->name.($account->employee?->department ? ' - '.$account->employee->department->name : '')])->all(),
+            'requesterOptions' => $requesterCandidates->mapWithKeys(fn ($account) => [$account->id => $account->name.($account->employee?->department ? ' - '.$account->employee->department->name : '').($account->isActiveForAccess() ? '' : ' (nonaktif)')])->all(),
             'projectNumberingOptions' => static::$requestKind !== null ? ProjectNumbering::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($master) => [$master->id => $master->code.' - '.$master->name])->all() : [],
             'cbeApprovalPolicies' => $configure ? CbeApprovalPolicy::with(['acknowledger', 'crosschecker', 'approver'])->orderBy('company')->get() : collect(),
             'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
@@ -798,7 +806,6 @@ class ScmProcurement extends Page
     {
         abort_unless(Access::canChooseRequester(auth()->user(), static::$requestKind ?? ''), 403);
 
-        return User::with(['employee.department', 'directPermissions', 'roles.permissions', 'accessibleDepartments'])->orderBy('name')->get()
-            ->filter(fn ($account) => Access::has($account, 'scm.request') && $account->accessibleDepartmentIds() !== [])->keyBy('id');
+        return User::with('employee.department')->orderBy('name')->get()->keyBy('id');
     }
 }

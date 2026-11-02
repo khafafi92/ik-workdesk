@@ -26,7 +26,7 @@ class UserAccessHierarchyService
     {
         $options = self::LEVELS;
 
-        if ($actor?->is_admin === true) {
+        if ($actor?->isSystemAdministrator()) {
             return $options;
         }
 
@@ -46,6 +46,9 @@ class UserAccessHierarchyService
 
     public function levelFor(User $user): string
     {
+        if ($user->isSystemAdministrator()) {
+            return 'system-admin';
+        }
         if ($user->access_level === 'cbo') {
             return 'management';
         }

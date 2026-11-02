@@ -64,7 +64,7 @@ class CreateUser extends CreateRecord
         |--------------------------------------------------------------------------
         */
 
-        if ($actor->is_admin !== true) {
+        if (! $actor->isSystemAdministrator()) {
             $data['is_admin'] = false;
         } else {
             $data['is_admin'] =
@@ -111,7 +111,7 @@ class CreateUser extends CreateRecord
         |
         */
 
-        if ($actor?->is_admin !== true) {
+        if (! $actor?->isSystemAdministrator()) {
             $this->record
                 ->forceFill([
                     'is_admin' => false,

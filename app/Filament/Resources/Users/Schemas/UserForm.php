@@ -122,13 +122,13 @@ class UserForm
                             ->label('Sys Administrator')
                             ->default(false)
                             ->visible(
-                                fn (): bool => auth()->user()?->is_admin === true
+                                fn (): bool => auth()->user()?->isSystemAdministrator() === true
                             )
                             ->dehydrated(
-                                fn (): bool => auth()->user()?->is_admin === true
+                                fn (): bool => auth()->user()?->isSystemAdministrator() === true
                             )
                             ->helperText(
-                                'Hanya satu Sys Administrator yang diperbolehkan. Hanya akun tersebut yang dapat mengubah status ini.'
+                                'Satu akun administrator utama diperbolehkan. Sys Administrator dapat mengatur status ini.'
                             ),
                     ])
                     ->columns(2)

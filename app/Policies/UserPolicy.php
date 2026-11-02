@@ -8,27 +8,27 @@ class UserPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $user->is_admin === true;
+        return $user->isSystemAdministrator();
     }
 
     public function view(User $user, User $model): bool
     {
-        return $user->is_admin === true;
+        return $user->isSystemAdministrator();
     }
 
     public function create(User $user): bool
     {
-        return $user->is_admin === true;
+        return $user->isSystemAdministrator();
     }
 
     public function update(User $user, User $model): bool
     {
-        return $user->is_admin === true;
+        return $user->isSystemAdministrator();
     }
 
     public function delete(User $user, User $model): bool
     {
-        return $user->is_admin === true
+        return $user->isSystemAdministrator()
             && (int) $user->id !== (int) $model->id;
     }
 
