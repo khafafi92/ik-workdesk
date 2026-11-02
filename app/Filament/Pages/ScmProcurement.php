@@ -24,6 +24,7 @@ use App\Services\Scm\Access;
 use App\Services\Scm\ApprovalPolicies;
 use App\Services\Scm\Approvals;
 use App\Services\Scm\CbeApprovals;
+use App\Services\Scm\CbeRecommendation;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\RequestNumbering;
 use App\Services\Scm\Signatures;
@@ -426,6 +427,27 @@ class ScmProcurement extends Page
     public function saveCbe(): void
     {
         $this->refreshed($this->workflow()->saveCbe(auth()->user(), $this->selected, $this->version, $this->cbeForm), 'cbe');
+    }
+
+    public function useCbeRecommendation(): void
+    {
+        $request = Procurement::with(['items', 'cbe'])->findOrFail($this->selected);
+        abort_unless(Access::manages(auth()->user(), $request), 403);
+        abort_unless(in_array($request->status, ['sourcing', 'quotations', 'evaluation']) && $request->cbe?->status !== 'final', 403);
+        if ($request->version !== $this->version) {
+            throw ValidationException::withMessages(['scm' => 'Data CBE berubah. Buka ulang sebelum memakai rekomendasi.']);
+        }
+        $ids = $this->cbeForm['quotation_ids'] ?? [];
+        $quotes = Quotation::with(['candidate.vendor', 'lines'])->whereHas('candidate', fn ($query) => $query->where('request_id', $request->id))->whereIn('id', $ids)->get();
+        abort_unless($quotes->count() === count($ids), 403);
+        $comparison = CbeRecommendation::compare($quotes->map(fn ($quote) => [...$quote->toArray(), 'vendor' => $quote->candidate->vendor->toArray()])->all(),
+            $request->items->toArray(), $this->cbeForm['commercial_terms'] ?? [], $request->cbe?->vat_percent ?? (int) config('scm.cbe_vat_percent'));
+        $recommendation = $comparison['recommendation'];
+        if ($recommendation['status'] !== 'available' || count($recommendation['vendors']) !== 1) {
+            throw ValidationException::withMessages(['scm' => $recommendation['message'] ?? 'Beberapa vendor memiliki harga terendah yang sama. Pilih vendor melalui RECOMMENDED VENDOR.']);
+        }
+        $this->cbeForm['selected_vendor_id'] = $recommendation['vendors'][0]['id'];
+        $this->dispatch('scm-focus', id: 'scm-cbeForm-selected_vendor_id');
     }
 
     public function finalizeCbe(): void

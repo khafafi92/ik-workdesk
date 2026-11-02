@@ -15,15 +15,11 @@
     $sheetCbeApprovals = $sheetEditing ? collect() : $record->cbe->approvals;
     $sheetVatPercent = $record->cbe?->vat_percent ?? (int) config('scm.cbe_vat_percent');
     if ($sheetEditing) {
-        $sheetQuotes = $sheetQuotes->map(function ($quote) use ($cbeForm, $sheetVatPercent) {
-            try {
-                $terms = $cbeForm['commercial_terms'][$quote['id']] ?? [];
-                $terms['discount'] = filled($terms['discount'] ?? null) ? $terms['discount'] : '0';
-                return [...$quote, 'evaluation' => \App\Services\Scm\CbePricing::evaluate($quote, $terms, $sheetVatPercent)];
-            } catch (\Illuminate\Validation\ValidationException $exception) {
-                return [...$quote, 'evaluation_error' => collect($exception->errors())->flatten()->implode(' ')];
-            }
-        });
+        $comparison = \App\Services\Scm\CbeRecommendation::compare($sheetQuotes->all(), $sheetItems, $cbeForm['commercial_terms'] ?? [], $sheetVatPercent);
+        $sheetQuotes = collect($comparison['quotes']);
+        $priceRecommendation = $comparison['recommendation'];
+    } else {
+        $priceRecommendation = $record->cbe->snapshot['price_recommendation'] ?? null;
     }
 @endphp
 @if($sheetEditing)
@@ -43,10 +39,12 @@
             @empty<p>Belum ada penawaran. Masukkan quotation melalui tab Vendor & penawaran.</p>@endforelse
         </fieldset>
         @if($quotes->isNotEmpty() && $chosen->isEmpty())<p role="status">Belum ada penawaran yang dipilih. Centang versi penawaran untuk mengisi Summary of Bids.</p>@endif
+        @include('filament.pages.scm.partials.cbe-recommendation')
         @include('scm.partials.cbe-sheet')
         <div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan draft CBE</x-filament::button><button type="button" wire:click="finalizeCbe" wire:confirm="Tanda tangani CBE sebagai Prepared By dan ajukan persetujuan? Isi CBE akan terkunci." wire:loading.attr="disabled">Tanda tangani dan ajukan CBE</button></div>
     </form>
 @else
+    @if($priceRecommendation)@include('filament.pages.scm.partials.cbe-recommendation')@endif
     @include('scm.partials.cbe-sheet')
     <p>Harga akhir: {{ \App\Services\Scm\Decimal::money($record->cbe->final_minor, $record->cbe->snapshot['quotes'][0]['currency']) }}</p>
     <p><a href="{{ route('scm.print', $record->cbe) }}" target="_blank" rel="noopener">Buka CBE untuk cetak / simpan PDF</a></p>

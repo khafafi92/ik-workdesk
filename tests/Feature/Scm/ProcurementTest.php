@@ -797,6 +797,38 @@ class ProcurementTest extends TestCase
         $this->assertSame($request->cbe->id, $request->legalCase->cbe_id);
     }
 
+    public function test_price_recommendation_is_optional_refreshes_with_terms_and_keeps_the_users_final_choice(): void
+    {
+        $request = $this->quoted();
+        $quotes = Quotation::with(['candidate', 'lines'])->whereHas('candidate', fn ($query) => $query->where('request_id', $request->id))->orderBy('id')->get();
+        $quotes[2]->lines()->update(['price_minor' => 5000]);
+        $data = $this->cbeData($request);
+        $page = Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)->call('showTab', 'cbe')->set('cbeForm', $data)
+            ->assertSee('Rekomendasi harga sistem')->assertSet('cbeForm.selected_vendor_id', $data['selected_vendor_id'])
+            ->call('useCbeRecommendation')->assertHasNoErrors()->assertSet('cbeForm.selected_vendor_id', $quotes[2]->candidate->vendor_id)
+            ->assertSet('cbeForm.selection_reason', $data['selection_reason']);
+        $page->set('cbeForm.selected_vendor_id', $quotes[1]->candidate->vendor_id)
+            ->set('cbeForm.commercial_terms.'.$quotes[0]->id.'.discount', '1,00')
+            ->assertSet('cbeForm.selected_vendor_id', $quotes[1]->candidate->vendor_id)
+            ->call('finalizeCbe')->assertHasNoErrors();
+        $final = $request->fresh()->cbe;
+        $this->assertSame($quotes[1]->candidate->vendor_id, $final->selected_vendor_id);
+        $this->assertSame($quotes[2]->candidate->vendor_id, $final->snapshot['price_recommendation']['vendors'][0]['id']);
+        $this->assertSame($data['selection_reason'], $final->selection_reason);
+        $page->call('useCbeRecommendation')->assertForbidden();
+    }
+
+    public function test_tied_recommendation_does_not_choose_arbitrarily_or_change_a_manual_choice(): void
+    {
+        $request = $this->quoted();
+        $data = $this->cbeData($request);
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)->call('showTab', 'cbe')->set('cbeForm', $data)
+            ->assertSee('Harga terendah sama pada beberapa vendor.')
+            ->call('useCbeRecommendation')->assertHasErrors('scm')->assertSet('cbeForm.selected_vendor_id', $data['selected_vendor_id']);
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('open', $request->id)
+            ->call('useCbeRecommendation')->assertForbidden();
+    }
+
     public function test_cbe_rejects_two_versions_from_one_vendor_even_with_three_distinct_vendors(): void
     {
         $request = $this->quoted();

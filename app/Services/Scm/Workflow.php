@@ -321,6 +321,7 @@ class Workflow
                         'date' => $q->date?->toDateString(), 'valid_until' => $q->valid_until?->toDateString(), 'notes' => $q->notes,
                         'lead_time' => $q->lead_time, 'payment_terms' => $q->payment_terms, 'total_minor' => $q->total_minor, 'extra_minor' => $q->extra_minor,
                         'evaluation' => $evaluations[$q->id], 'vendor' => $q->candidate->vendor->toArray(), 'lines' => $q->lines->toArray()])->all()];
+                $snapshot['price_recommendation'] = CbeRecommendation::assess($snapshot['quotes'], $snapshot['items']);
             }
             $values = [...$data, 'selected_vendor_id' => ($data['selected_vendor_id'] ?? null) ?: null, 'status' => $finalize ? 'final' : 'draft',
                 'prepared_by' => $actor->id, 'version' => $cbe ? $cbe->version + 1 : 1, 'snapshot' => $snapshot,
