@@ -14,7 +14,10 @@ use Database\Seeders\ScmSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Tests\TestCase;
 
 class VendorDirectoryTest extends TestCase
@@ -123,5 +126,83 @@ class VendorDirectoryTest extends TestCase
         $this->scm->employee->update(['is_active' => false]);
         $this->actingAs($this->scm->fresh())->get(ScmVendorRegistrations::getUrl())->assertForbidden();
         $this->assertSame(0, DB::table('scm_vendors')->count());
+    }
+
+    public function test_superuser_sees_encrypted_portal_id_and_can_use_it_to_open_existing_draft(): void
+    {
+        [$record, $token, $code] = app(VendorPublicPortal::class)->register(['name' => 'Vendor ID PENGUJIAN', 'company' => 'KPMOG', 'provider_type' => 'jasa']);
+        $owner = User::factory()->create(['is_admin' => true]);
+        $stored = DB::table('scm_vendor_portal_accesses')->where('id', $record->portal_access_id)->value('access_code');
+        $this->assertNotSame($code, $stored);
+        $this->assertStringNotContainsString($code, $stored);
+        $this->assertArrayNotHasKey('access_code', $record->portalAccess->toArray());
+        $response = $this->actingAs($owner)->get(ScmVendorRegistrations::getUrl())->assertOk()->assertSee('Vendor ID Portal')->assertSee($code)
+            ->assertSee('Form #'.$record->id)->assertSee('Belum terbit; menunggu penerimaan SCM.');
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        $this->post(route('vendor.resume'), ['access_code' => $code])->assertRedirect(route('vendor.portal', ['token' => $token, 'step' => 1]));
+        $this->actingAs($this->scm)->get(ScmVendorRegistrations::getUrl())->assertOk()->assertDontSee($code)->assertDontSee('Terbitkan Vendor ID pengganti');
+        Livewire::actingAs($owner)->test(ScmVendorRegistrations::class)->set('search', 'Form #'.$record->id)->assertSee('Vendor ID PENGUJIAN');
+    }
+
+    public function test_legacy_id_stays_valid_until_explicit_reissue_and_reissue_keeps_answers_and_files(): void
+    {
+        Storage::fake('scm');
+        [$record, $oldToken, $oldCode] = app(VendorPublicPortal::class)->register(['name' => 'Vendor lama PENGUJIAN', 'company' => 'KPMOG', 'provider_type' => 'barang']);
+        $record->portalAccess->update(['access_code' => null]);
+        Storage::disk('scm')->put('vendor-registration/test.pdf', '%PDF-1.4');
+        $file = $record->files()->create(['code' => 'NPWP', 'number' => 'DEMO', 'path' => 'vendor-registration/test.pdf', 'original_name' => 'test.pdf', 'mime' => 'application/pdf', 'size' => 8]);
+        $before = $record->fresh()->only(['answers', 'context', 'status', 'vendor_id', 'company', 'expires_at']);
+        $owner = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($owner)->get(ScmVendorRegistrations::getUrl())->assertSee('Terbitkan Vendor ID pengganti')->assertDontSee($oldCode);
+        $this->assertSame($record->id, app(VendorPublicPortal::class)->resume($oldCode)[0]->id);
+        Livewire::actingAs($owner)->test(ScmVendorRegistrations::class)->call('reissueVendorId', $record->id, $record->version)->assertHasNoErrors()->assertSee('Vendor ID Portal');
+        $this->assertSame($before['answers'], $record->fresh()->answers);
+        $this->assertSame($before['context'], $record->fresh()->context);
+        $this->assertSame($before['status'], $record->fresh()->status);
+        $this->assertSame($before['vendor_id'], $record->fresh()->vendor_id);
+        $this->assertSame($before['company'], $record->fresh()->company);
+        $this->assertSame($file->id, $record->files()->sole()->id);
+        Storage::disk('scm')->assertExists($file->path);
+        $newCode = $record->portalAccess()->first()->access_code;
+        $this->assertNotSame($oldCode, $newCode);
+        $this->assertSame($record->id, app(VendorPublicPortal::class)->resume($newCode)[0]->id);
+        $this->get(route('vendor.portal', ['token' => $oldToken, 'step' => 1]))->assertNotFound();
+        $audit = DB::table('scm_vendor_registration_events')->where('action', 'portal_access_reissued')->sole();
+        $this->assertSame($owner->id, $audit->actor_id);
+        $this->assertStringNotContainsString($newCode, $audit->details);
+        $this->expectException(ValidationException::class);
+        app(VendorPublicPortal::class)->resume($oldCode);
+    }
+
+    public function test_ordinary_scm_and_inactive_superuser_cannot_reissue_vendor_id(): void
+    {
+        $record = $this->registration('Vendor dilindungi PENGUJIAN');
+        $before = $record->portalAccess->getRawOriginal();
+        Livewire::actingAs($this->scm)->test(ScmVendorRegistrations::class)->call('reissueVendorId', $record->id, $record->version)->assertForbidden();
+        $this->scm->update(['is_admin' => true]);
+        $this->scm->employee->update(['is_active' => false]);
+        try {
+            app(VendorPublicPortal::class)->reissueAccessCode($this->scm->fresh(), $record->id, $record->version);
+            $this->fail('Inactive superuser must be rejected.');
+        } catch (HttpException $error) {
+            $this->assertSame(403, $error->getStatusCode());
+        }
+        $this->assertSame($before, $record->portalAccess()->first()->getRawOriginal());
+    }
+
+    public function test_reissue_rejects_stale_historical_and_revoked_forms_without_changing_code(): void
+    {
+        $owner = User::factory()->create(['is_admin' => true]);
+        $record = $this->registration('Vendor versi PENGUJIAN');
+        $latest = $record->replicate();
+        $latest->token_hash = hash('sha256', 'vendor-reissue-latest');
+        $latest->save();
+        $this->actingAs($owner);
+        $before = $record->portalAccess->getRawOriginal();
+        Livewire::test(ScmVendorRegistrations::class)->call('reissueVendorId', $record->id, $record->version)->assertHasErrors('vendorAccess');
+        Livewire::test(ScmVendorRegistrations::class)->call('reissueVendorId', $latest->id, $latest->version + 1)->assertHasErrors('vendorAccess');
+        $record->portalAccess->update(['revoked_at' => now()]);
+        Livewire::test(ScmVendorRegistrations::class)->assertDontSee('Vendor ID Portal')->call('reissueVendorId', $latest->id, $latest->version)->assertHasErrors('vendorAccess');
+        $this->assertSame($before['code_hash'], $record->portalAccess()->first()->code_hash);
     }
 }

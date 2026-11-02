@@ -2,8 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Http\Middleware\VendorPortalResponse;
 use App\Models\Scm\VendorRegistration;
 use App\Services\Scm\Access;
+use App\Services\Scm\VendorPublicPortal;
+use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +29,8 @@ class ScmVendorRegistrations extends Page
     protected static ?int $navigationSort = 2;
 
     protected string $view = 'filament.pages.scm-vendor-registrations';
+
+    protected static string|array $routeMiddleware = [VendorPortalResponse::class];
 
     public const STATUSES = ['draft' => 'Draft / belum dikirim', 'submitted' => 'Menunggu pemeriksaan',
         'correction' => 'Perlu perbaikan', 'accepted' => 'Diterima SCM', 'revoked' => 'Akses dicabut'];
@@ -57,6 +62,12 @@ class ScmVendorRegistrations extends Page
         $this->resetPage();
     }
 
+    public function reissueVendorId(int $registrationId, int $version): void
+    {
+        app(VendorPublicPortal::class)->reissueAccessCode(auth()->user(), $registrationId, $version);
+        Notification::make()->title('Vendor ID pengganti diterbitkan. ID dan tautan formulir lama tidak berlaku.')->success()->send();
+    }
+
     protected function getViewData(): array
     {
         abort_unless(static::canAccess(), 403);
@@ -67,10 +78,12 @@ class ScmVendorRegistrations extends Page
                 ->orWhere(fn (Builder $query) => $query->whereNull('portal_access_id')->whereNull('vendor_id')));
         $term = mb_substr(trim($this->search), 0, 255);
         if ($term !== '') {
+            $formId = preg_match('/^(?:Form\s*)?#?([1-9][0-9]*)$/iD', $term, $matches) ? $matches[1] : null;
             $name = DB::getDriverName() === 'pgsql' ? DB::raw("answers->'1'->>'name'") : 'answers->1->name';
             $email = DB::getDriverName() === 'pgsql' ? DB::raw("answers->'1'->>'email'") : 'answers->1->email';
             $query->where(fn (Builder $query) => $query->whereLike($name, '%'.$term.'%')
                 ->orWhereLike($email, '%'.$term.'%')
+                ->when($formId, fn (Builder $query) => $query->orWhere('id', $formId))
                 ->orWhereHas('vendor', fn (Builder $query) => $query->whereLike('name', '%'.$term.'%')->orWhereLike('code', '%'.$term.'%')));
         }
         if ($this->companyFilter !== '') {
@@ -84,6 +97,7 @@ class ScmVendorRegistrations extends Page
         }
 
         return ['registrations' => $query->orderByDesc('updated_at')->orderByDesc('id')->paginate(15),
+            'canManageVendorId' => auth()->user()->isSystemAdministrator(),
             'statuses' => self::STATUSES, 'companies' => collect(config('scm.companies'))->map(fn ($company) => $company['name'])->all()];
     }
 }

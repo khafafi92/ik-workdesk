@@ -6,11 +6,11 @@ class VendorPortalAccess extends Record
 {
     protected $table = 'scm_vendor_portal_accesses';
 
-    protected $hidden = ['code_hash'];
+    protected $hidden = ['code_hash', 'access_code'];
 
     protected function casts(): array
     {
-        return ['revoked_at' => 'datetime'];
+        return ['revoked_at' => 'datetime', 'access_code' => 'encrypted'];
     }
 
     public function vendor()

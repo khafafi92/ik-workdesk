@@ -3,6 +3,8 @@
 namespace App\Services\Scm;
 
 use App\Models\Scm\VendorPortalAccess;
+use App\Models\Scm\VendorRegistration;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -17,8 +19,8 @@ class VendorPublicPortal
             'name' => 'required|string|min:2|max:255', 'provider_type' => 'required|in:barang,jasa,keduanya'])->validate();
         $secret = strtoupper(bin2hex(random_bytes(16)));
         $code = 'VND-'.implode('-', str_split($secret, 8));
-        [$record, $token] = DB::transaction(function () use ($data, $secret): array {
-            $access = VendorPortalAccess::create(['code_hash' => hash('sha256', $secret)]);
+        [$record, $token] = DB::transaction(function () use ($data, $secret, $code): array {
+            $access = VendorPortalAccess::create(['code_hash' => hash('sha256', $secret), 'access_code' => $code]);
 
             return $this->createDraft($access, $secret, $data['company'],
                 ['provider_type' => $data['provider_type'], 'is_construction' => false, 'amount_minor' => 0, 'duration_months' => null],
@@ -26,6 +28,31 @@ class VendorPublicPortal
         });
 
         return [$record, $token, $code];
+    }
+
+    public function reissueAccessCode(User $actor, int $registrationId, int $version): void
+    {
+        abort_unless($actor->isSystemAdministrator(), 403);
+        $candidate = VendorRegistration::findOrFail($registrationId);
+        abort_unless($candidate->portal_access_id, 404);
+        DB::transaction(function () use ($actor, $candidate, $version): void {
+            $access = VendorPortalAccess::lockForUpdate()->findOrFail($candidate->portal_access_id);
+            $record = $access->registrations()->latest('id')->lockForUpdate()->firstOrFail();
+            if ($record->id !== $candidate->id || $record->version !== $version) {
+                throw ValidationException::withMessages(['vendorAccess' => 'Data vendor sudah berubah. Muat ulang daftar sebelum menerbitkan Vendor ID pengganti.']);
+            }
+            if ($access->revoked_at || $record->revoked_at) {
+                throw ValidationException::withMessages(['vendorAccess' => 'Akses vendor sudah dicabut. Vendor ID pengganti tidak dapat diterbitkan.']);
+            }
+            $secret = strtoupper(bin2hex(random_bytes(16)));
+            $access->update(['code_hash' => hash('sha256', $secret), 'access_code' => 'VND-'.implode('-', str_split($secret, 8))]);
+            foreach ($access->registrations()->lockForUpdate()->get() as $form) {
+                $form->update(['token_hash' => hash('sha256', random_bytes(32)), 'version' => $form->version + 1]);
+            }
+            $record->refresh()->update(['token_hash' => hash('sha256', $this->token($secret, $record->id))]);
+            DB::table('scm_vendor_registration_events')->insert(['registration_id' => $record->id, 'actor_id' => $actor->id,
+                'action' => 'portal_access_reissued', 'details' => json_encode(['previous_form_tokens_invalidated' => true], JSON_THROW_ON_ERROR), 'created_at' => now()]);
+        });
     }
 
     public function resume(string $code): array
