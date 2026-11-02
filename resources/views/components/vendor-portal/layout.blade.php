@@ -1,7 +1,7 @@
 @props(['registration', 'token' => null, 'step' => null])
 @php
     $brand = config('scm.companies.'.$registration->company);
-    $statusLabels = ['draft' => 'Sedang diisi vendor', 'submitted' => 'Menunggu pemeriksaan SCM', 'correction' => 'Perlu perbaikan', 'accepted' => 'Diterima SCM'];
+    $statusLabels = ['draft' => 'Draft / belum dikirim', 'submitted' => 'Terkirim / menunggu pemeriksaan SCM', 'correction' => 'Perlu perbaikan', 'accepted' => 'Diterima SCM'];
 @endphp
 <!doctype html>
 <html lang="id">

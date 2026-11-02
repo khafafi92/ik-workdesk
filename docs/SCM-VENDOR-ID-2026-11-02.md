@@ -17,3 +17,15 @@ Sebelumnya sistem hanya menyimpan hash Vendor ID, sehingga ID lama tidak dapat d
 Setelah dikonfirmasi, ID dan tautan formulir lama berhenti berlaku. Jawaban, dokumen, status pendaftaran, dan hubungan ke Master Vendor dipertahankan. Riwayat mencatat akun superuser yang menerbitkan pengganti. Akses yang telah dicabut tidak dapat dipulihkan melalui tombol ini. Penggantian memakai formulir terbaru dan pemeriksaan versi untuk mencegah perubahan dari halaman yang sudah kedaluwarsa.
 
 Form yang sudah dikirim tetap mengikuti pemeriksaan SCM. Pembaruan setelah diterima mengikuti alur portal yang membuat draft pembaruan, tanpa menulis ulang kiriman lama.
+
+## Status dan langkah berikutnya
+
+Data Vendor menampilkan petunjuk sesuai status masing-masing pendaftaran:
+
+- **Draft / belum dikirim:** buka **Lengkapi dan kirim formulir**, lengkapi bagian 1 sampai 4 dan dokumen wajib, lalu isi serta konfirmasikan **Bagian 5: Pernyataan**. Tekan **Kirim form dan dokumen ke SCM**. Jumlah bagian tersimpan dan unggahan tidak memastikan kelengkapan.
+- **Terkirim / menunggu pemeriksaan:** SCM membuka **Periksa kiriman**, memeriksa jawaban/lampiran, lalu memilih **Terima profil dan dokumen ke master** atau **Minta perbaikan vendor**.
+- **Perlu perbaikan:** catatan SCM tampil di daftar; vendor memperbaiki formulir dan mengirim kembali melalui Bagian 5.
+- **Diterima SCM:** profil masuk Master Vendor. Untuk pendaftaran melalui Portal Vendor, tombol **Buat draft pembaruan** memulai pembaruan melalui Vendor ID. Vendor undangan mengikuti pembaruan/undangan dari SCM.
+- **Akses dicabut atau kedaluwarsa:** petunjuk menjelaskan akses yang diperlukan; jawaban/lampiran tetap tersedia untuk dilihat.
+
+Pada bagian 1 sampai 4 tersedia tautan **Periksa kelengkapan dan kirim (Bagian 5)**. Simpan perubahan sebelum berpindah bagian. Bagian 5 menunjukkan isian/dokumen yang kurang dan menolak pengiriman yang belum lengkap. Setelah pengiriman, isian terkunci selama pemeriksaan. Hasil pemeriksaan yang dimulai dari Data Vendor mempertahankan tautan kembali ke Data Vendor.

@@ -32,7 +32,7 @@ class ScmVendorRegistrations extends Page
 
     protected static string|array $routeMiddleware = [VendorPortalResponse::class];
 
-    public const STATUSES = ['draft' => 'Draft / belum dikirim', 'submitted' => 'Menunggu pemeriksaan',
+    public const STATUSES = ['draft' => 'Draft / belum dikirim', 'submitted' => 'Terkirim / menunggu pemeriksaan',
         'correction' => 'Perlu perbaikan', 'accepted' => 'Diterima SCM', 'revoked' => 'Akses dicabut'];
 
     #[Url(as: 'cari')]

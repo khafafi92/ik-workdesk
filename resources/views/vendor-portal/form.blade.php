@@ -9,8 +9,14 @@
 <x-vendor-portal.layout :registration="$registration" :token="$token" :step="$step">
     <section class="vp-paper">
         <header class="vp-section-header"><p>Bagian {{ $step }} dari 5</p><h2>{{ \App\Services\Scm\VendorForm::TITLES[$step] }}</h2></header>
-        @if($readOnly)<p>Kiriman terkunci selama pemeriksaan atau setelah diterima. Hubungi SCM jika data perlu diperbaiki.</p>
-        @else<p>Isi sesuai kondisi vendor. Tanda * wajib diisi. Lampiran mengikuti asal perusahaan dan jawaban yang disimpan.</p>@endif
+        @if($readOnly)
+            @if($registration->status === 'submitted')<p>Formulir sudah terkirim dan menunggu pemeriksaan SCM. Isian terkunci selama pemeriksaan. SCM akan menerima profil atau meminta perbaikan.</p>
+            @else<p>Profil sudah diterima SCM. @if($registration->portal_access_id)Untuk memperbarui data, kembali ke Portal Vendor dan masukkan Vendor ID untuk membuat draft pembaruan.@else Hubungi SCM untuk meminta undangan pembaruan formulir.@endif</p>@endif
+        @else
+            <p>Isi sesuai kondisi vendor. Tanda * wajib diisi. Lampiran mengikuti asal perusahaan dan jawaban yang disimpan.</p>
+            <p class="vp-note">Simpan jawaban belum mengirim formulir. Lengkapi bagian 1 sampai 4 dan dokumen wajib, lalu isi serta konfirmasikan Bagian 5: Pernyataan dan klik Kirim form dan dokumen ke SCM. Status akan menjadi Terkirim / menunggu pemeriksaan.</p>
+            @if($step < 5)<p>Simpan perubahan bagian ini sebelum berpindah.</p><div class="vp-actions"><a href="{{ route('vendor.portal', ['token' => $token, 'step' => 5]) }}">Periksa kelengkapan dan kirim (Bagian 5)</a></div>@endif
+        @endif
         @if($step === 5)
             <div class="vp-declaration"><p>Saya menjamin informasi yang disampaikan benar dan lengkap sesuai pengetahuan saya. Saya memahami bahwa informasi tidak benar atau menyesatkan dapat menyebabkan perusahaan dikeluarkan dari daftar vendor yang disetujui.</p></div>
             <h3>Kelengkapan sebelum dikirim</h3>

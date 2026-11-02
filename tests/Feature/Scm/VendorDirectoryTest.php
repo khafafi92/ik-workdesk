@@ -144,6 +144,20 @@ class VendorDirectoryTest extends TestCase
         Livewire::actingAs($owner)->test(ScmVendorRegistrations::class)->set('search', 'Form #'.$record->id)->assertSee('Vendor ID PENGUJIAN');
     }
 
+    public function test_review_started_from_directory_keeps_the_return_link_after_errors_and_a_decision(): void
+    {
+        $record = $this->registration('Vendor navigasi PENGUJIAN');
+        $parameters = ['registration' => $record, 'dari' => 'data-vendor'];
+        $this->actingAs($this->scm)->get(route('scm.vendor-review', $parameters))->assertSee(route('scm.vendor-decide', $parameters));
+        $this->post(route('scm.vendor-decide', $parameters), ['version' => $record->version + 1, 'action' => 'revoke'])
+            ->assertRedirect(route('scm.vendor-review', $parameters))->assertSessionHasErrors('version');
+        $this->assertNull($record->fresh()->revoked_at);
+        $this->post(route('scm.vendor-decide', $parameters), ['version' => $record->version, 'action' => 'revoke'])
+            ->assertRedirect(route('scm.vendor-review', $parameters));
+        $this->get(route('scm.vendor-review', $parameters))->assertSee('Kembali ke Data Vendor');
+        $this->assertNotNull($record->fresh()->revoked_at);
+    }
+
     public function test_legacy_id_stays_valid_until_explicit_reissue_and_reissue_keeps_answers_and_files(): void
     {
         Storage::fake('scm');

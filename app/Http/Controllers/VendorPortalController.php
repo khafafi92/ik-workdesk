@@ -82,14 +82,15 @@ class VendorPortalController extends Controller
     public function decide(Request $request, VendorRegistration $registration, VendorEnrollment $enrollment)
     {
         abort_unless(Access::manages($request->user()), 403);
+        $returnParameters = ['registration' => $registration, ...($request->query('dari') === 'data-vendor' ? ['dari' => 'data-vendor'] : [])];
         $data = $request->validate(['version' => 'required|integer|min:1', 'action' => 'required|in:accept,correction,revoke', 'notes' => 'nullable|string|max:5000']);
         try {
             $enrollment->review($request->user(), $registration->id, $data['version'], $data['action'], $data['notes'] ?? null);
         } catch (ValidationException $exception) {
-            return $this->privateResponse(redirect()->route('scm.vendor-review', $registration)->withErrors($exception->errors()));
+            return $this->privateResponse(redirect()->route('scm.vendor-review', $returnParameters)->withErrors($exception->errors()));
         }
 
-        return $this->privateResponse(redirect()->route('scm.vendor-review', $registration)->with('status', 'Hasil pemeriksaan tersimpan.'));
+        return $this->privateResponse(redirect()->route('scm.vendor-review', $returnParameters)->with('status', 'Hasil pemeriksaan tersimpan.'));
     }
 
     public function reviewDownload(Request $request, VendorRegistration $registration, int $file)
