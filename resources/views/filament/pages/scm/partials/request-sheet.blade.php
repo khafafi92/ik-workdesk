@@ -8,7 +8,7 @@
     $sheetBrand = config('scm.companies.'.$sheetCompany) ?? config('scm.companies.APCA');
     $sheetTitle = $sheetKind === 'PR' ? 'PURCHASE REQUEST' : 'SERVICE REQUEST';
     $sheetNumber = $sheetEditing ? $requestNumber : $record->number;
-    $sheetRequestor = $record?->requester?->name ?? auth()->user()->name;
+    $sheetRequestor = $sheetEditing ? ($draftRequesterName ?? auth()->user()->name) : ($record?->requester?->name ?? auth()->user()->name);
     $sheetItems = $sheetEditing ? array_values($draft['items'] ?? []) : $record->items->map(fn ($item) => [...$item->toArray(), 'quantity' => rtrim(rtrim(\App\Services\Scm\Decimal::input($item->quantity_milli, 3), '0'), ',')])->all();
     $sheetHo = $sheetEditing || $record?->approval_scope === 'HO' || $record?->status === 'draft';
     $sheetApprovals = !$sheetEditing && $sheetHo && $record?->status !== 'draft'
@@ -28,7 +28,7 @@
         <div>
             @if($sheetEditing)
                 <x-scm.field model="draft.date" label="Date issue" type="date" required />
-                <div class="scm-field"><label for="scm-sheet-requestor">Requestor</label><input id="scm-sheet-requestor" value="{{ $sheetRequestor }}" readonly aria-readonly="true"></div>
+                @include('filament.pages.scm.partials.requestor-field', ['requestorFieldId' => 'scm-sheet-requestor', 'requestorFieldName' => $sheetRequestor])
                 <x-scm.select model="draft.department_id" label="Department/Div" :options="$departments" :live="true" required />
                 <x-scm.field model="draft.customer_po" label="PO Customer (If any)" />
             @else
@@ -90,7 +90,7 @@
                 @if($signatureIndex === 0)
                     @if(!$sheetEditing && $record?->prepared_signed_at)
                         <img src="{{ route('scm.signature-prepared', $record) }}" alt="Tanda tangan {{ $record->prepared_signed_name }}" width="180" height="60">
-                    @elseif($canRequest && ($sheetEditing || ($record?->status === 'draft' && (int) $record->requester_id === (int) auth()->id())))
+                    @elseif(($canSignPrepared ?? $canRequest) && ($sheetEditing || ($record?->status === 'draft' && (int) $record->requester_id === (int) auth()->id())))
                         <button type="button" wire:click="signPrepared" wire:loading.attr="disabled" wire:target="signPrepared,saveDraft">Tanda tangani</button>
                     @endif
                 @elseif($sheetStep?->status === 'signed')
@@ -103,7 +103,11 @@
     </div>
 </section>
 @if($canRequest && ($sheetEditing || $record?->status === 'draft'))
+    @if($canSignPrepared ?? true)
     <p class="scm-help">Tanda tangani Requested by sebelum mengajukan persetujuan. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD di profil (tab baru)</a>. Setelah isi draft diedit, tanda tangani kembali.</p>
+    @else
+    <p class="scm-help">Pemohon {{ $sheetRequestor }} perlu masuk melalui akunnya sendiri untuk menandatangani Requested by dan mengajukan persetujuan.</p>
+    @endif
 @endif
 @if(!$sheetEditing && $record?->prepared_signed_at)<p class="scm-help">{{ $sheetHo ? 'Requested by' : 'Prepared by' }}: {{ $record->prepared_signed_name }}, ditandatangani {{ $record->prepared_signed_at->format('d/m/Y H:i') }}.</p>@endif
 @endif

@@ -4,7 +4,7 @@
     $projectCompany = $sheetEditing ? ($draft['company'] ?? 'APCA') : $record->company;
     $projectBrand = config('scm.companies.'.$projectCompany) ?? config('scm.companies.APCA');
     $projectNumber = $sheetEditing ? $requestNumber : $record->number;
-    $projectRequestor = $record?->requester?->name ?? auth()->user()->name;
+    $projectRequestor = $sheetEditing ? ($draftRequesterName ?? auth()->user()->name) : ($record?->requester?->name ?? auth()->user()->name);
     $projectItems = $sheetEditing ? array_values($draft['items'] ?? []) : $record->items->map(fn ($item) => [...$item->toArray(), 'quantity' => rtrim(rtrim(\App\Services\Scm\Decimal::input($item->quantity_milli, 3), '0'), ',')])->all();
     $projectApprovals = !$sheetEditing && $record?->status !== 'draft' ? $record->approvals->where('round', $record->approval_round)->keyBy('role') : collect();
 @endphp
@@ -23,7 +23,7 @@
         <div>
             @if($sheetEditing)
                 <x-scm.field model="draft.date" label="Date issue" type="date" required />
-                <div class="scm-field"><label for="scm-project-requestor">Requestor</label><input id="scm-project-requestor" value="{{ $projectRequestor }}" readonly aria-readonly="true"></div>
+                @include('filament.pages.scm.partials.requestor-field', ['requestorFieldId' => 'scm-project-requestor', 'requestorFieldName' => $projectRequestor])
                 <x-scm.select model="draft.department_id" label="Department/Div" :options="$departments" :live="true" required />
                 <x-scm.field model="draft.customer_po" label="PO Customer (If any)" />
             @else
@@ -86,6 +86,10 @@
 </section>
 @endif
 @if($canRequest && ($sheetEditing || $record?->status === 'draft'))
+    @if($canSignPrepared ?? true)
     <p class="scm-help">Tanda tangani Requested by sebelum mengajukan persetujuan. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD di profil (tab baru)</a>. Setelah isi draft diedit, tanda tangani kembali.</p>
+    @else
+    <p class="scm-help">Pemohon {{ $projectRequestor }} perlu masuk melalui akunnya sendiri untuk menandatangani Requested by dan mengajukan persetujuan.</p>
+    @endif
 @endif
 @if(!$sheetEditing && $record?->prepared_signed_at)<p class="scm-help">Requested by: {{ $record->prepared_signed_name }}, ditandatangani {{ $record->prepared_signed_at->format('d/m/Y H:i') }}.</p>@endif

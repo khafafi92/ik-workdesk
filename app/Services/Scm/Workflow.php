@@ -65,6 +65,11 @@ class Workflow
         $data['company'] ??= 'APCA';
         $data['need_type'] ??= $id ? Procurement::findOrFail($id)->need_type : 'HO';
         $data['project_numbering_id'] ??= $id ? Procurement::findOrFail($id)->project_numbering_id : null;
+        $data['requester_id'] ??= $id ? Procurement::findOrFail($id)->requester_id : $actor->id;
+        $identity = Validator::make($data, ['requester_id' => 'required|integer|exists:users,id', 'kind' => ['required', Rule::in(['PR', 'SR'])]], [], ['requester_id' => 'pemohon'])->validate();
+        abort_unless((int) $identity['requester_id'] === (int) $actor->id || Access::canChooseRequester($actor, $identity['kind']), 403);
+        $requester = User::findOrFail($identity['requester_id']);
+        $this->reject(! Access::has($requester, 'scm.request'), 'Pemohon harus memakai akun aktif dengan izin membuat PR/SR.');
         $projectService = $data['need_type'] === 'PROJECT' && ($data['kind'] ?? null) === 'SR';
         if ($projectService && is_array($data['items'] ?? null)) {
             foreach ($data['items'] as &$item) {
@@ -82,6 +87,7 @@ class Workflow
             'company' => ['required', Rule::in(array_keys(config('scm.companies')))],
             'need_type' => ['required', Rule::in(array_keys(ApprovalPolicies::NEED_TYPES))],
             'project_numbering_id' => ['nullable', 'integer', Rule::exists('scm_project_numbering', 'id')],
+            'requester_id' => 'required|integer|exists:users,id',
             'estimated_total' => 'nullable',
             'requires_cbo3' => 'sometimes|boolean',
             'kind' => ['required', Rule::in(['PR', 'SR'])], 'date' => 'required|date',
@@ -90,7 +96,7 @@ class Workflow
             'customer_po' => 'nullable|string|max:255', 'job_order' => 'nullable|string|max:255',
             'delivery_point' => 'nullable|string|max:255',
             'work_project_id' => ['nullable', 'integer', Rule::exists('work_projects', 'id')->where(fn ($query) => $query->where('status', 'active')
-                ->where(fn ($query) => $query->whereNull('department_id')->orWhereIn('department_id', $actor->accessibleDepartmentIds())))],
+                ->where(fn ($query) => $query->whereNull('department_id')->orWhereIn('department_id', $requester->accessibleDepartmentIds())))],
             'instruction_to_vendor' => 'nullable|string|max:10000', 'procedure_required' => 'nullable|string|max:10000',
             'location' => 'nullable|string|max:255', 'notes' => 'nullable|string|max:10000', 'items' => 'required|array|min:1|max:100',
             'items.*.name' => 'required|string|max:255', 'items.*.specification' => 'required|string|max:10000',
@@ -100,7 +106,7 @@ class Workflow
             'items.*.quantity' => 'required', 'items.*.unit' => 'required|string|max:50', 'items.*.notes' => 'nullable|string|max:2000',
         ], [], ['kind' => 'jenis permintaan', 'items' => 'item', 'title' => 'judul', 'reason' => 'alasan kebutuhan',
             ...($projectService ? ['items.*.name' => 'Description', 'items.*.specification' => 'Description'] : [])])->validate();
-        abort_unless($actor->canAccessDepartment((int) $validated['department_id']), 403);
+        abort_unless($actor->canAccessDepartment((int) $validated['department_id']) && $requester->canAccessDepartment((int) $validated['department_id']), 403);
         if (array_key_exists('estimated_total', $validated)) {
             $validated['estimated_total_minor'] = filled($validated['estimated_total']) ? Decimal::parse($validated['estimated_total']) : null;
             $this->reject($validated['estimated_total_minor'] !== null && $validated['estimated_total_minor'] <= 0, 'Estimasi total harus lebih dari nol.');
@@ -114,7 +120,7 @@ class Workflow
             unset($validated['items']);
             if ($id) {
                 $request = Procurement::query()->lockForUpdate()->findOrFail($id);
-                abort_unless((int) $request->requester_id === (int) $actor->id, 403);
+                abort_unless(Access::authors($actor, $request), 403);
                 $this->reject($request->status !== 'draft' || $request->version !== $version, 'Hanya draft terbaru milik sendiri yang dapat diedit.');
                 $validated['version'] = $request->version + 1;
                 $this->reject($validated['kind'] !== $request->kind, 'Jenis permintaan tidak dapat diubah setelah nomor diterbitkan.');
@@ -137,7 +143,7 @@ class Workflow
                 $this->reject($number->request_id !== null, 'Nomor sudah digunakan. Muat ulang permintaan.');
                 $validated['title'] ??= Str::limit(collect($items)->pluck('name')->implode(', '), 255, '');
                 $validated['reason'] ??= '';
-                $request = Procurement::create([...$validated, 'number' => $number->number, 'requester_id' => $actor->id, 'status' => 'draft']);
+                $request = Procurement::create([...$validated, 'number' => $number->number, 'status' => 'draft']);
                 $number->update(['request_id' => $request->id]);
             }
             foreach (array_values($items) as $index => $item) {
@@ -512,7 +518,7 @@ class Workflow
     {
         return $this->mutate($actor, $id, $version, function ($request) use ($actor, $target, $targetId, $file): void {
             if ($target === 'request') {
-                abort_unless((int) $request->requester_id === (int) $actor->id && Access::has($actor, 'scm.request'), 403);
+                abort_unless(Access::authors($actor, $request), 403);
                 $this->reject($request->status !== 'draft', 'Lampiran permintaan terkunci setelah dikirim.');
                 $request->prepared_signature_id = null;
                 $request->prepared_signed_at = null;

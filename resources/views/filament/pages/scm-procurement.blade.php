@@ -58,6 +58,7 @@
         @elseif($editing)
         <form class="scm-sheet-editor" wire:submit="saveDraft">
             <p>Perusahaan: <strong>{{ $draft['company'] ?? 'APCA' }}</strong>. Untuk perusahaan lain, kembali ke daftar dan buat {{ $requestKind }} baru.</p>
+            @if($canChooseRequester)<p class="scm-help">Sysadmin dapat memilih Requestor. Pilihan departemen mengikuti akses pemohon tersebut. Pemohon menandatangani Requested by melalui akunnya sendiri.</p>@endif
             @include('filament.pages.scm.partials.request-routing', ['routingEditing' => true])
             <fieldset class="scm-sheet-inputs" wire:loading.attr="disabled" wire:target="saveDraft,signPrepared"><legend class="scm-sheet-sr">Form {{ $requestKind }}</legend>
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => true])
@@ -75,7 +76,10 @@
             @endif
             @if($tab === 'request')
                 @if($record->status === 'submitted')<p role="status">Sudah dikirim ke SCM pada {{ $record->submitted_at?->format('d/m/Y H:i') }}. Menunggu penerimaan SCM.</p>@endif
-                @if($record->status === 'draft' && (int) $record->requester_id === (int) auth()->id())
+                @if($record->numberReservation && (int) $record->numberReservation->requester_id !== (int) $record->requester_id)
+                    <p class="scm-help">Permintaan dibuat oleh {{ $record->numberReservation->requester->name }} untuk pemohon {{ $record->requester->name }}.</p>
+                @endif
+                @if($canEditDraft)
                     <section class="scm-panel" aria-label="Status pengajuan">
                         <h3>Belum diajukan</h3>
                         @if($submissionIssue)
@@ -92,14 +96,16 @@
                                 @if($submissionPlan['supervisor'])<p>Persetujuan pertama ditugaskan kepada SPV {{ $submissionPlan['supervisor']->name }}.</p>@endif
                                 <p>Setelah diajukan, Acknowledged by ditugaskan kepada {{ $submissionPlan['acknowledger']->name }}, lalu dilanjutkan ke CBO {{ $submissionPlan['cbo']->name }}{{ $submissionPlan['coo'] ? ' dan COO '.$submissionPlan['coo']->name : '' }}.</p>
                             @endif
-                            <p>{{ $record->prepared_signed_at ? 'Tanda tangan pembuat sudah tersimpan. Klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').' untuk mengirim pengajuan.' : 'Tanda tangani Requested by, lalu klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').'.' }}</p>
+                            @if($canSignPrepared)<p>{{ $record->prepared_signed_at ? 'Tanda tangan pembuat sudah tersimpan. Klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').' untuk mengirim pengajuan.' : 'Tanda tangani Requested by, lalu klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').'.' }}</p>
+                            @else<p>Pemohon {{ $record->requester->name }} menandatangani Requested by dan mengajukan persetujuan melalui akunnya sendiri.</p>@endif
                         @endif
                     </section>
                 @endif
                 @include('filament.pages.scm.partials.request-routing', ['routingEditing' => false])
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => false])
                 @include('filament.pages.scm.partials.approval-progress')
-                <div class="scm-actions">@if($record->status === 'draft' && (int)$record->requester_id === (int)auth()->id() && $canRequest)<button type="button" wire:click="editDraft">Edit draft</button><x-filament::button wire:click="submitRequest" wire:loading.attr="disabled" :disabled="filled($submissionIssue)">Ajukan persetujuan {{ $record->need_type === 'PROJECT' ? 'Project' : 'HO' }}</x-filament::button>@endif
+                <div class="scm-actions">@if($canEditDraft)<button type="button" wire:click="editDraft">Edit draft</button>@endif
+                @if($canSignPrepared)<x-filament::button wire:click="submitRequest" wire:loading.attr="disabled" :disabled="filled($submissionIssue)">Ajukan persetujuan {{ $record->need_type === 'PROJECT' ? 'Project' : 'HO' }}</x-filament::button>@endif
                 </div>
                 @if($record->status === 'draft' && $submissionIssue)<p class="scm-help">Pengajuan belum dapat dikirim. Minta administrator melengkapi pemetaan atasan dan penandatangan yang ditampilkan di atas.</p>@endif
                 @if($canManage && $record->status === 'submitted')
@@ -156,7 +162,7 @@
             @elseif($tab === 'history' && $canManage)
                 <h3>Riwayat tindakan</h3>@forelse($record->audits as $audit)<article class="scm-item"><h4>{{ str_replace('_',' ',$audit->action) }}</h4><p>{{ $audit->actor->name }} · {{ $audit->created_at->format('d/m/Y H:i:s') }}</p>@if($audit->reason)<p>Alasan: {{ $audit->reason }}</p>@endif<details><summary>Rincian perubahan</summary><pre>{{ json_encode($audit->changes, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre></details></article>@empty<p>Belum ada tindakan.</p>@endforelse
             @endif
-            @if(($tab === 'request' && $record->status === 'draft' && (int)$record->requester_id === (int)auth()->id() && $canRequest) || ($canManage && in_array($tab, ['quotes','cbe']) && in_array($record->status,['sourcing','quotations','evaluation']) && ($tab === 'quotes' ? $quotes->isNotEmpty() : $record->cbe)))
+            @if(($tab === 'request' && $canEditDraft) || ($canManage && in_array($tab, ['quotes','cbe']) && in_array($record->status,['sourcing','quotations','evaluation']) && ($tab === 'quotes' ? $quotes->isNotEmpty() : $record->cbe)))
             <form wire:submit="uploadAttachment" class="scm-item"><h3>Tambahkan lampiran {{ $tab === 'quotes' ? 'quotation' : ($tab === 'cbe' ? 'CBE' : 'permintaan') }}</h3><div class="scm-grid">
                 @if($record->status !== 'draft')
                 <x-scm.select model="attachmentTargetId" label="Target lampiran" :options="$attachmentTarget === 'quotation' ? $quotes->mapWithKeys(fn($q)=>[$q->id=>$q->candidate->vendor->name.' · versi '.$q->version]) : ($record->cbe ? [$record->cbe->id => $record->cbe->number] : [])" required />@endif

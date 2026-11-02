@@ -33,6 +33,7 @@ use App\Services\Scm\VendorIdentity;
 use App\Services\Scm\Workflow;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -233,7 +234,7 @@ class ScmProcurement extends Page
     {
         $record = Procurement::with(['items', 'cbe', 'legalCase.items'])->findOrFail($id);
         abort_unless(static::$requestKind !== null
-            ? Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->kind === static::$requestKind
+            ? Access::authors(auth()->user(), $record) && $record->kind === static::$requestKind
             : Access::manages(auth()->user(), $record), 403);
         $this->selected = $id;
         $this->choosingCompany = false;
@@ -296,6 +297,7 @@ class ScmProcurement extends Page
         $this->editing = true;
         $this->choosingCompany = false;
         $this->draft = ['kind' => static::$requestKind, 'company' => $company, 'need_type' => $needType, 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
+            'requester_id' => auth()->id(),
             'project_numbering_id' => $number->project_numbering_id,
             'work_project_id' => '', 'instruction_to_vendor' => '', 'procedure_required' => '',
             'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'items' => []];
@@ -306,8 +308,8 @@ class ScmProcurement extends Page
     public function editDraft(): void
     {
         $record = Procurement::with('items')->findOrFail($this->selected);
-        abort_unless(static::$requestKind !== null && $record->kind === static::$requestKind && Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->status === 'draft', 403);
-        $this->draft = $record->only(['kind', 'company', 'need_type', 'project_numbering_id', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point', 'work_project_id', 'instruction_to_vendor', 'procedure_required']);
+        abort_unless(static::$requestKind !== null && $record->kind === static::$requestKind && Access::authors(auth()->user(), $record) && $record->status === 'draft', 403);
+        $this->draft = $record->only(['kind', 'company', 'need_type', 'project_numbering_id', 'requester_id', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point', 'work_project_id', 'instruction_to_vendor', 'procedure_required']);
         $this->requestNumber = $record->number;
         $this->draft['date'] = $record->date->format('Y-m-d');
         $this->draft['needed_at'] = $record->needed_at?->format('Y-m-d') ?? '';
@@ -632,6 +634,15 @@ class ScmProcurement extends Page
 
     public function updated(string $property): void
     {
+        if ($property === 'draft.requester_id') {
+            abort_unless(Access::canChooseRequester(auth()->user(), static::$requestKind ?? ''), 403);
+            $requester = $this->requesterCandidates()->get((int) $this->draft['requester_id']);
+            $departmentIds = $requester?->accessibleDepartmentIds() ?? [];
+            $primary = $requester?->employee?->department_id;
+            $this->draft['department_id'] = in_array($primary, $departmentIds, true) ? $primary : (Department::whereIn('id', $departmentIds)->where('is_active', true)->orderBy('name')->value('id') ?? '');
+            $this->draft['work_project_id'] = '';
+            $this->resetValidation();
+        }
         if ($property === 'approvalPolicy.need_type') {
             $this->approvalPolicy['use_amount_escalation'] = $this->approvalPolicy['need_type'] === 'HO';
             $this->approvalPolicy['crosscheck_mode'] = $this->approvalPolicy['need_type'] === 'HO' ? 'above_limit' : 'always';
@@ -666,11 +677,22 @@ class ScmProcurement extends Page
         $user = auth()->user();
         $isScm = static::$requestKind === null && Access::manages($user);
         $configure = static::$requestKind === null && Access::has($user, 'scm.configure');
+        $canChooseRequester = Access::canChooseRequester($user, static::$requestKind ?? '');
+        $requesterCandidates = $this->editing && $canChooseRequester ? $this->requesterCandidates() : collect();
+        $draftRequester = $user;
+        if ($this->editing) {
+            $requesterId = (int) ($this->draft['requester_id'] ?? $user->id);
+            abort_unless($requesterId === (int) $user->id || $canChooseRequester, 403);
+            if ($canChooseRequester) {
+                $draftRequester = $requesterCandidates->get($requesterId);
+            }
+        }
+        $requestDepartmentIds = $this->editing && $canChooseRequester ? ($draftRequester?->accessibleDepartmentIds() ?? []) : $user->accessibleDepartmentIds();
         abort_if(static::$requestKind !== null ? $this->section !== 'mine' : $this->section === 'mine', 403);
         abort_if(in_array($this->section, ['queue', 'vendors']) && ! $isScm, 403);
         abort_if($this->section === 'settings' && ! $configure, 403);
         $visible = static::$requestKind !== null
-            ? Procurement::where('requester_id', $user->id)->where('kind', static::$requestKind)
+            ? Access::scopeMine(Procurement::query(), $user)->where('kind', static::$requestKind)
             : Procurement::whereNotIn('status', ['draft', 'approval'])->whereIn('department_id', $isScm ? $user->accessibleDepartmentIds() : []);
         $query = clone $visible;
         $summary = (clone $query)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
@@ -679,9 +701,6 @@ class ScmProcurement extends Page
         $missingDocuments = $isScm ? LegalItem::whereIn('legal_case_id', LegalCase::whereNull('completed_at')->whereIn('request_id', (clone $visible)->select('id'))->select('id'))
             ->where('is_required', true)->where(fn ($q) => $q->where('status', '!=', 'diterima')->orWhereNull('vendor_document_id')
             ->orWhereHas('document', fn ($d) => $d->whereDate('expires_at', '<', today())))->count() : null;
-        if ($this->section === 'mine') {
-            $query->where('requester_id', $user->id);
-        }
         if ($this->section === 'queue') {
             $query->whereNotIn('status', ['draft', 'approval']);
         }
@@ -689,7 +708,10 @@ class ScmProcurement extends Page
             ->when($this->statusFilter, fn ($q) => $q->whereIn('status', $this->statusFilter === 'draft' ? ['draft', 'submitted'] : [$this->statusFilter]))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))->when($this->picFilter, fn ($q) => $q->where('scm_pic_id', $this->picFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
-        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'department', 'project', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
+        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'numberReservation.requester', 'department', 'project', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
+        $canEditDraft = static::$requestKind !== null && $record?->status === 'draft' && Access::authors($user, $record);
+        $canSignPrepared = static::$requestKind !== null && Access::has($user, 'scm.request')
+            && ($this->editing ? (int) ($this->draft['requester_id'] ?? $user->id) === (int) $user->id : ($record?->status === 'draft' && (int) $record->requester_id === (int) $user->id));
         $canManage = $isScm && $record && Access::manages($user, $record);
         if ($record && ! $canManage) {
             $this->tab = 'request';
@@ -715,15 +737,15 @@ class ScmProcurement extends Page
             unset($statusOptions['approval']);
         }
         $approvalTarget = null;
-        if ($this->editing && static::$requestKind !== null && $user->canAccessDepartment((int) ($this->draft['department_id'] ?? 0))) {
+        if ($this->editing && static::$requestKind !== null && $draftRequester?->canAccessDepartment((int) ($this->draft['department_id'] ?? 0))) {
             $approvalTarget = app(Approvals::class)->route($this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'])?->cbo3?->name;
         }
 
         $routingPlan = null;
         $routingIssue = null;
-        if ($this->editing && static::$requestKind !== null && $user->canAccessDepartment((int) ($this->draft['department_id'] ?? 0))) {
+        if ($this->editing && static::$requestKind !== null && $draftRequester?->canAccessDepartment((int) ($this->draft['department_id'] ?? 0))) {
             try {
-                $routingPlan = app(Approvals::class)->submissionPlan($user, $this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'],
+                $routingPlan = app(Approvals::class)->submissionPlan($draftRequester, $this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'],
                     (bool) ($this->draft['requires_cbo3'] ?? false), $this->draft['need_type'] ?? 'HO', static::$requestKind);
             } catch (ValidationException $exception) {
                 $routingIssue = collect($exception->errors())->flatten()->first();
@@ -731,15 +753,18 @@ class ScmProcurement extends Page
         }
         $submissionPlan = null;
         $submissionIssue = null;
-        if ($record?->status === 'draft' && (int) $record->requester_id === (int) $user->id && ! $this->editing) {
+        if ($canEditDraft && ! $this->editing) {
             try {
-                $submissionPlan = app(Approvals::class)->submissionPlan($user, $record->company, $record->department_id, app(Approvals::class)->requiresCbo3($record), $record->need_type ?? 'HO', $record->kind);
+                $submissionPlan = app(Approvals::class)->submissionPlan($record->requester, $record->company, $record->department_id, app(Approvals::class)->requiresCbo3($record), $record->need_type ?? 'HO', $record->kind);
             } catch (ValidationException $exception) {
                 $submissionIssue = collect($exception->errors())->flatten()->first();
             }
         }
 
         return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
+            'canChooseRequester' => $canChooseRequester, 'canEditDraft' => $canEditDraft, 'canSignPrepared' => $canSignPrepared,
+            'draftRequesterName' => $draftRequester?->name ?? '',
+            'requesterOptions' => $requesterCandidates->mapWithKeys(fn ($account) => [$account->id => $account->name.($account->employee?->department ? ' - '.$account->employee->department->name : '')])->all(),
             'projectNumberingOptions' => static::$requestKind !== null ? ProjectNumbering::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($master) => [$master->id => $master->code.' - '.$master->name])->all() : [],
             'cbeApprovalPolicies' => $configure ? CbeApprovalPolicy::with(['acknowledger', 'crosschecker', 'approver'])->orderBy('company')->get() : collect(),
             'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
@@ -750,7 +775,7 @@ class ScmProcurement extends Page
                 ->mapWithKeys(fn ($account) => [$account->id => $account->name.(filled($account->employee?->position) ? ' ('.$account->employee->position.')' : '')])->all() : [],
             'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses, 'statusOptions' => $statusOptions, 'approvalTarget' => $approvalTarget,
             'projectOptions' => $this->editing && ($this->draft['need_type'] ?? 'HO') === 'PROJECT' ? WorkProject::where('status', 'active')
-                ->where(fn ($query) => $query->whereNull('department_id')->orWhereIn('department_id', $user->accessibleDepartmentIds()))
+                ->where(fn ($query) => $query->whereNull('department_id')->orWhereIn('department_id', $requestDepartmentIds))
                 ->orderBy('name')->get()->mapWithKeys(fn ($project) => [$project->id => $project->code.' - '.$project->name])->all() : [],
             'vendors' => $vendors, 'candidateVendors' => $candidateVendors,
             'vendorRegistrations' => $isScm && $this->vendorId ? VendorRegistration::where('vendor_id', $this->vendorId)->latest('id')->get() : collect(),
@@ -762,10 +787,18 @@ class ScmProcurement extends Page
             'approvalRoutes' => $configure ? ApprovalRoute::with(['department', 'acknowledger', 'cbo', 'cbo3'])->orderBy('company')->orderBy('department_id')->get() : collect(),
             'approvalUsers' => $configure ? User::with('employee')->orderBy('name')->get()->filter(fn ($account) => $account->isActiveForAccess())->pluck('name', 'id') : collect(),
             'types' => ($isScm || $configure) ? DocumentType::orderBy('name')->get() : collect(), 'categories' => Category::orderBy('name')->get(),
-            'requirements' => $configure ? Requirement::with('documentType')->get() : collect(), 'departments' => Department::whereIn('id', $user->accessibleDepartmentIds())->pluck('name', 'id'),
+            'requirements' => $configure ? Requirement::with('documentType')->get() : collect(), 'departments' => Department::whereIn('id', $requestDepartmentIds)->pluck('name', 'id'),
             'pics' => $isScm ? Procurement::whereIn('department_id', $user->accessibleDepartmentIds())->whereNotNull('scm_pic_id')->join('users', 'users.id', '=', 'scm_requests.scm_pic_id')->distinct()->pluck('users.name', 'users.id') : collect(),
             'finalCbe' => $finalCbe, 'selectedQuote' => $selectedQuote, 'selectedQuotation' => $selectedQuotation,
             'finalCbeAttachments' => $finalCbe ? Attachment::where('cbe_id', $finalCbe->id)->get() : collect(),
             'cbeAttachments' => $canManage && $record->cbe ? Attachment::where('cbe_id', $record->cbe->id)->get() : collect()];
+    }
+
+    private function requesterCandidates(): Collection
+    {
+        abort_unless(Access::canChooseRequester(auth()->user(), static::$requestKind ?? ''), 403);
+
+        return User::with(['employee.department', 'directPermissions', 'roles.permissions', 'accessibleDepartments'])->orderBy('name')->get()
+            ->filter(fn ($account) => Access::has($account, 'scm.request') && $account->accessibleDepartmentIds() !== [])->keyBy('id');
     }
 }

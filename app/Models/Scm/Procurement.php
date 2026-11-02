@@ -50,6 +50,11 @@ class Procurement extends Record
         return $this->belongsTo(User::class, 'requester_id');
     }
 
+    public function numberReservation()
+    {
+        return $this->hasOne(RequestNumber::class, 'request_id');
+    }
+
     public function department()
     {
         return $this->belongsTo(Department::class);

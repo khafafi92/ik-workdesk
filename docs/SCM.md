@@ -26,6 +26,8 @@ Satu Master Approval mengelola aturan PR/SR dan CBE melalui pemilih dokumen. Mas
 
 Riwayat pemakaian dan master kode Project tersedia di **Permintaan > Nomor PR/SR**. Lihat [panduan nomor HO/Project](SCM-NOMOR-PR-SR-2026-11-02.md) untuk format LTRO, pembatasan akses, serta aturan nomor yang sudah terbit.
 
+Sysadmin/pemilik sistem dapat memilih **Requestor** untuk membuat PR atas nama pemohon lain. Departemen mengikuti akses pemohon; Requested by tetap ditandatangani pemohon melalui akunnya sendiri. Akun lain tetap menggunakan namanya sendiri. Lihat [panduan PR atas nama pemohon lain](SCM-PR-ATAS-NAMA-2026-11-02.md).
+
 ### 3. Menerima permintaan dan mengumpulkan penawaran
 
 1. Petugas membuka **SCM > SCM**, mencari nomor PR/SR pada antrean, lalu membuka detail dan memilih **Terima oleh SCM**.

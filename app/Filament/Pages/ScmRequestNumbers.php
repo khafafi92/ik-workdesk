@@ -99,7 +99,7 @@ class ScmRequestNumbers extends Page
         $user = auth()->user();
         $query = RequestNumber::query()->where(function ($query) use ($user): void {
             if (Access::has($user, 'scm.request')) {
-                $query->where('requester_id', $user->id);
+                $query->where('requester_id', $user->id)->whereNull('request_id');
             } else {
                 $query->whereRaw('1 = 0');
             }

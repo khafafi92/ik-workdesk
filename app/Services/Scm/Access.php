@@ -29,6 +29,33 @@ class Access
         return self::has($user, 'scm.process') && (! $request || (! in_array($request->status, ['draft', 'approval']) && $user->canAccessDepartment($request->department_id)));
     }
 
+    public static function canChooseRequester(?User $user, string $kind): bool
+    {
+        return $kind === 'PR' && self::has($user, 'scm.request') && $user->hasRole('system-admin');
+    }
+
+    public static function authors(User $user, Procurement $request): bool
+    {
+        return self::has($user, 'scm.request') && ((int) $request->requester_id === (int) $user->id
+            || (self::canChooseRequester($user, $request->kind) && (int) $request->numberReservation?->requester_id === (int) $user->id));
+    }
+
+    public static function scopeMine(Builder $query, User $user): Builder
+    {
+        return $query->where(function ($query) use ($user): void {
+            if (! self::has($user, 'scm.request')) {
+                $query->whereRaw('1 = 0');
+
+                return;
+            }
+            $query->where('requester_id', $user->id);
+            if (self::canChooseRequester($user, 'PR')) {
+                $query->orWhere(fn ($query) => $query->where('kind', 'PR')
+                    ->whereHas('numberReservation', fn ($number) => $number->where('requester_id', $user->id)));
+            }
+        });
+    }
+
     public static function approves(?User $user): bool
     {
         return $user && $user->isActiveForAccess() && (
@@ -54,17 +81,13 @@ class Access
 
     public static function views(User $user, Procurement $request): bool
     {
-        return (self::has($user, 'scm.request') && (int) $request->requester_id === (int) $user->id) || self::manages($user, $request);
+        return self::authors($user, $request) || self::manages($user, $request);
     }
 
     public static function scope(Builder $query, User $user): Builder
     {
         return $query->where(function ($query) use ($user): void {
-            if (self::has($user, 'scm.request')) {
-                $query->where('requester_id', $user->id);
-            } else {
-                $query->whereRaw('1 = 0');
-            }
+            $query->where(fn ($own) => self::scopeMine($own, $user));
             if (self::manages($user)) {
                 $query->orWhere(fn ($q) => $q->whereNotIn('status', ['draft', 'approval'])->whereIn('department_id', $user->accessibleDepartmentIds()));
             }

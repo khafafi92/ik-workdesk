@@ -11,7 +11,7 @@
         @if($requestedRole)
             @if(!$sheetEditing && $record?->prepared_signed_at)
                 <img src="{{ route('scm.signature-prepared', $record) }}" alt="Tanda tangan {{ $record->prepared_signed_name }}" width="180" height="60">
-            @elseif($canRequest && ($sheetEditing || ($record?->status === 'draft' && (int) $record->requester_id === (int) auth()->id())))
+            @elseif(($canSignPrepared ?? $canRequest) && ($sheetEditing || ($record?->status === 'draft' && (int) $record->requester_id === (int) auth()->id())))
                 <button type="button" wire:click="signPrepared" wire:loading.attr="disabled" wire:target="signPrepared,saveDraft">Tanda tangani</button>
             @endif
         @elseif($projectStep?->status === 'signed')
