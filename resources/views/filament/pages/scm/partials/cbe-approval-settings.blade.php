@@ -1,5 +1,6 @@
 <div id="cbe-approval-settings">
     <p>Tetapkan penandatangan CBE per perusahaan. Prepared by otomatis memakai akun SCM yang menandatangani dan mengajukan CBE. Acknowledged, Crosschecked, dan Approved by wajib menggunakan akun berbeda.</p>
+    <p>Jika akun Prepared by juga ditetapkan sebagai Acknowledged by, tahap Acknowledged by dilewati otomatis. Akun Prepared by tetap harus berbeda dari Crosschecked dan Approved by.</p>
     <form wire:submit="saveCbeApprovalPolicy">
         <fieldset wire:loading.attr="disabled" wire:target="saveCbeApprovalPolicy">
             <legend>{{ $cbeApprovalPolicy['version'] ? 'Edit aturan CBE' : 'Tambah aturan CBE' }}</legend>

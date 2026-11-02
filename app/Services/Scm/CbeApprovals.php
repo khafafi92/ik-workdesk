@@ -63,21 +63,25 @@ class CbeApprovals
         $this->reject(! $policy, 'Aturan CBE untuk perusahaan ini belum diatur. Buka Pengaturan SCM > Master Approval, pilih CBE, lalu tetapkan Acknowledged, Crosschecked, dan Approved by.');
         $this->reject($cbe->approvals()->exists(), 'Persetujuan CBE sudah dimulai.');
         $users = [$actor, $policy->acknowledger, $policy->crosschecker, $policy->approver];
-        $this->reject(collect($users)->pluck('id')->unique()->count() !== 4, 'Prepared by dan ketiga penandatangan CBE harus memakai akun berbeda.');
+        $skipAcknowledgment = (int) $actor->id === (int) $policy->acknowledger_id;
+        $this->reject(collect($users)->pluck('id')->unique()->count() !== ($skipAcknowledgment ? 3 : 4), 'Prepared by tidak boleh sama dengan Crosschecked atau Approved by. Tiga penandatangan pada master harus berbeda.');
         $this->reject(collect($users)->contains(fn ($user) => ! $user->isActiveForAccess()), 'Akun penandatangan CBE tidak aktif. Perbarui master terlebih dahulu.');
         $signature = app(Signatures::class)->current($actor);
         $this->reject(! $signature || ! Storage::disk('scm')->exists($signature->path), 'Simpan gambar TTD pada profil SCM sebelum menandatangani dan mengajukan CBE.');
 
         foreach (array_keys(self::LABELS) as $position => $role) {
             $user = $users[$position];
+            $skip = $role === 'acknowledged' && $skipAcknowledgment;
             $cbe->approvals()->create([
                 'position' => $position, 'role' => $role, 'user_id' => $user->id, 'assigned_name' => $user->name,
-                'status' => $position === 0 ? 'signed' : 'pending',
+                'status' => $position === 0 ? 'signed' : ($skip ? 'skipped' : 'pending'),
                 'signature_id' => $position === 0 ? $signature->id : null,
-                'signed_name' => $position === 0 ? $actor->name : null, 'acted_at' => $position === 0 ? now() : null,
+                'signed_name' => $position === 0 ? $actor->name : null, 'acted_at' => $position === 0 || $skip ? now() : null,
             ]);
         }
-        app(Workflow::class)->audit($actor, $cbe, 'mulai_approval_cbe', ['policy_id' => $policy->id, 'policy_version' => $policy->version], $request->id);
+        app(Workflow::class)->audit($actor, $cbe, 'mulai_approval_cbe', ['policy_id' => $policy->id, 'policy_version' => $policy->version,
+            'prepared_by' => $actor->id, 'acknowledged_skipped' => $skipAcknowledgment,
+            'skip_reason' => $skipAcknowledgment ? 'Prepared by sama dengan Acknowledged by pada master.' : null], $request->id);
     }
 
     public function next(Cbe $cbe): ?CbeApproval
@@ -130,7 +134,12 @@ class CbeApprovals
             return ! ($cbe->snapshot['approval_required'] ?? false);
         }
 
-        return $steps->count() === 4 && $steps->every(fn ($step) => $step->status === 'signed');
+        $prepared = $steps->firstWhere('role', 'prepared');
+
+        return $steps->count() === 4 && $steps->every(fn ($step) => $step->status === 'signed'
+            || ($step->role === 'acknowledged' && $step->status === 'skipped' && $prepared?->status === 'signed'
+                && (int) $step->user_id === (int) $prepared->user_id && (int) $prepared->user_id === (int) $cbe->prepared_by
+                && $step->signature_id === null && $step->signed_name === null));
     }
 
     public function startExisting(User $actor, int $id, int $version): Procurement

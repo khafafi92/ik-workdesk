@@ -67,9 +67,16 @@ Diperbarui 29 Oktober 2026. Setelah migrasi `2026_10_28_100000_create_scm_cbe_ap
 3. Tekan **Simpan master approval**. Gunakan **Edit** pada baris perusahaan untuk perubahan berikutnya. Jika pengelola lain sudah menyimpan perubahan, buka ulang master sebelum menyimpan lagi.
 4. Siapkan aturan perusahaan lain bila digunakan. CBE mengikuti perusahaan PR/SR, tanpa pilihan HO/Project atau divisi pada aturan CBE. Ganti **Dokumen persetujuan** kembali ke PR/SR untuk mengatur persetujuan permintaan.
 
-Prepared By mengikuti akun SCM yang menandatangani dan mengajukan CBE; Imam menjadi Prepared By ketika Imam sendiri yang melaksanakan langkah itu. Tiga pejabat pada master dan akun Prepared By harus berbeda. Sistem tidak mengambil gambar TTD pejabat lain secara otomatis.
+Prepared By mengikuti akun SCM yang menandatangani dan mengajukan CBE; Imam menjadi Prepared By ketika Imam sendiri yang melaksanakan langkah itu. Jika Meyfi yang menyiapkan dan menandatangani, Prepared By menjadi Meyfi. Pembuat tetap mengikuti izin proses SCM; tidak dibatasi berdasarkan nama akun.
 
-Setiap akun menyimpan gambar TTD sendiri lewat tautan profil pada form/persetujuan. SCM memeriksa draft kemudian memilih **Tanda tangani dan ajukan CBE**. CBE menjadi final dan isi perbandingannya terkunci. Meyfi, Dipta, dan Lenaldy membuka **Permintaan > Persetujuan**, memilih **CBE**, memeriksa dokumen, lalu menandatangani berurutan sesuai giliran. Nama, tanggal dan versi gambar TTD disimpan pada tindakan masing-masing akun. Pengumpulan legalitas CBE baru menunggu keempat tanda tangan lengkap.
+Tiga pejabat pada master tetap harus berbeda. Jika akun Prepared By sama dengan Acknowledged By pada master, tahap Acknowledged By otomatis berstatus Dilewati dan tidak diberi tanda tangan, nama penandatangan, atau tanggal tanda tangan. Crosschecked By dan Approved By tetap wajib ditandatangani akun yang ditugaskan. Akun Prepared By tidak boleh merangkap Crosschecked By atau Approved By. Sistem mencatat alasan melewati Acknowledged By dan akun pengaju pada audit.
+
+| Pengaju CBE | Prepared By | Acknowledged By | Crosschecked By | Approved By |
+|---|---|---|---|---|
+| Imam | Imam | Meyfi | Dipta / pejabat pada master | Lenaldy / pejabat pada master |
+| Meyfi | Meyfi | Dilewati | Dipta / pejabat pada master | Lenaldy / pejabat pada master |
+
+Setiap akun menyimpan gambar TTD sendiri lewat tautan profil pada form/persetujuan. SCM memeriksa draft kemudian memilih **Tanda tangani dan ajukan CBE**. CBE menjadi final dan isi perbandingannya terkunci. Penandatangan membuka **Permintaan > Persetujuan**, memilih **CBE**, memeriksa dokumen, lalu menandatangani berurutan sesuai giliran. Nama, tanggal dan versi gambar TTD disimpan pada tindakan masing-masing akun. Pengumpulan legalitas menunggu semua tanda tangan wajib selesai, termasuk apabila Acknowledged By dilewati karena pengaju sudah menandatangani Prepared By.
 
 Mengubah master tidak mengganti penugasan CBE yang sedang berjalan. Mengganti gambar profil tidak mengubah tanda tangan dokumen yang sudah ditandatangani. CBE lama tidak diberi TTD otomatis. CBE final lama yang belum masuk legalitas dan belum mempunyai penugasan dapat diajukan secara eksplisit oleh akun SCM pembuat aslinya, dengan harga dan snapshot tetap terkunci.
 

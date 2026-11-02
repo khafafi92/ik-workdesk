@@ -2,6 +2,7 @@
 <section class="scm-panel">
     <h2>Persetujuan CBE</h2>
     <p>Periksa CBE yang ditugaskan kepada akun kamu. Tanda tangan dilakukan berurutan: Prepared, Acknowledged, Crosschecked, lalu Approved by.</p>
+    <p>Jika Prepared by sama dengan Acknowledged by pada master, Acknowledged by dilewati dan proses langsung ke Crosschecked by.</p>
     <p>Sebelum menandatangani, <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">atur TTD di profil (tab baru)</a> menggunakan gambar tanda tangan kamu sendiri.</p>
     <div class="scm-scroll" role="region" aria-label="Daftar persetujuan CBE" tabindex="0">
         <table><thead><tr><th>CBE</th><th>PR/SR</th><th>Penandatangan berikutnya</th><th>Tindakan</th></tr></thead><tbody>
@@ -16,12 +17,14 @@
 @if($cbe)
     <section class="scm-panel" wire:key="cbe-approval-{{ $cbe->id }}">
         <h2>{{ $cbe->number }}</h2>
+        @if($cbe->approvals->contains(fn ($step) => $step->role === 'acknowledged' && $step->status === 'skipped'))<p role="status">Acknowledged by dilewati karena penandatangannya sudah menandatangani Prepared by. Crosschecked by dan Approved by tetap wajib ditandatangani.</p>@endif
         @include('scm.partials.cbe-sheet', ['sheetEditing' => false, 'sheetRequest' => $cbe->snapshot['request'], 'sheetItems' => $cbe->snapshot['items'], 'sheetQuotes' => $cbe->snapshot['quotes'], 'sheetNumber' => $cbe->number, 'sheetDate' => $cbe->date->format('d/m/Y'), 'sheetSelectedVendor' => $cbe->selected_vendor_id, 'sheetReason' => $cbe->selection_reason, 'sheetPreparedName' => $cbe->snapshot['prepared_by_name'] ?? null, 'sheetCbeApprovals' => $cbe->approvals])
         @if($nextStep && ($isSuperuser || (int)$nextStep->user_id === (int)auth()->id()))
             @if($isSuperuser && (int)$nextStep->user_id !== (int)auth()->id())<p>Penugasan asli: {{ $nextStep->assigned_name }}. Tanda tangan menggunakan profil {{ auth()->user()->name }}.</p>@endif
             <button type="button" wire:click="signCbe" wire:confirm="Tanda tangani CBE ini sesuai penugasan kamu?" wire:loading.attr="disabled">Tanda tangani sebagai {{ rtrim(\App\Services\Scm\CbeApprovals::LABELS[$nextStep->role], ':') }}</button>
         @elseif($nextStep)<p role="status">Menunggu {{ $nextStep->assigned_name }} untuk {{ rtrim(\App\Services\Scm\CbeApprovals::LABELS[$nextStep->role], ':') }}.</p>
-        @else<p role="status">Keempat tanda tangan CBE sudah lengkap.</p>@endif
+        @elseif(app(\App\Services\Scm\CbeApprovals::class)->complete($cbe))<p role="status">Persetujuan CBE sudah lengkap.</p>
+        @else<p role="status">Persetujuan CBE belum lengkap. Buka ulang pengadaan untuk memeriksa penugasannya.</p>@endif
         <p role="status" wire:loading wire:target="signCbe">Menyimpan tanda tangan CBE...</p>
         <a href="{{ route('scm.print', $cbe) }}" target="_blank" rel="noopener">Buka CBE untuk cetak / simpan PDF</a>
     </section>

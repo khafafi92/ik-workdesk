@@ -144,6 +144,63 @@ class CbeApprovalsTest extends TestCase
         $this->rejects(fn () => $this->service->sign($this->lenaldy, $cbe->id, $cbe->request()->first()->version));
     }
 
+    public function test_acknowledger_preparing_cbe_skips_only_acknowledgment_and_uses_own_signature(): void
+    {
+        $this->meyfi->directPermissions()->attach(Permission::where('code', 'scm.process')->sole()->id);
+        $cbe = $this->cbe(false);
+        $cbe->newQuery()->whereKey($cbe->id)->update(['prepared_by' => $this->meyfi->id]);
+        $cbe->refresh();
+        $snapshot = $cbe->snapshot;
+        DB::transaction(fn () => $this->service->start($this->meyfi->fresh(), $cbe));
+        $prepared = $cbe->approvals()->where('role', 'prepared')->sole();
+        $skipped = $cbe->approvals()->where('role', 'acknowledged')->sole();
+        $this->assertSame($this->meyfi->id, $prepared->user_id);
+        $this->assertSame($this->meyfi->name, $prepared->signed_name);
+        $this->assertSame(app(Signatures::class)->current($this->meyfi)->id, $prepared->signature_id);
+        $this->assertSame('skipped', $skipped->status);
+        $this->assertSame($this->meyfi->id, $skipped->user_id);
+        $this->assertNull($skipped->signature_id);
+        $this->assertNull($skipped->signed_name);
+        $this->assertNotNull($skipped->acted_at);
+        $this->assertSame($this->dipta->id, $this->service->next($cbe)->user_id);
+        $this->assertSame(0, $this->service->pendingCount($this->meyfi));
+        $this->assertSame(1, $this->service->pendingCount($this->dipta));
+        $this->assertFalse($this->service->complete($cbe));
+        $this->rejects(fn () => $this->service->sign($this->meyfi, $cbe->id, $cbe->request->version));
+        $this->rejects(fn () => $this->service->sign($this->lenaldy, $cbe->id, $cbe->request->version));
+        Livewire::actingAs($this->dipta)->test(ScmApprovals::class)->call('openCbe', $cbe->id)
+            ->assertSee('Acknowledged by dilewati')->assertSee('Dilewati')->assertSee('Tanda tangani sebagai Crosschecked By');
+        $this->actingAs($this->meyfi)->get(route('scm.signature-cbe', $skipped))->assertNotFound();
+        $audit = Audit::where('action', 'mulai_approval_cbe')->sole();
+        $this->assertSame($this->meyfi->id, $audit->actor_id);
+        $this->assertTrue($audit->changes['acknowledged_skipped']);
+        foreach ([$this->dipta, $this->lenaldy] as $actor) {
+            $this->service->sign($actor, $cbe->id, $cbe->request()->first()->version);
+        }
+        $this->assertTrue($this->service->complete($cbe));
+        $this->assertSame(3, $cbe->approvals()->where('status', 'signed')->count());
+        $this->assertSame($snapshot, $cbe->fresh()->snapshot);
+    }
+
+    public function test_preparer_cannot_replace_crosschecker_or_approver_and_other_skips_are_invalid(): void
+    {
+        $cbe = $this->cbe(false);
+        foreach ([$this->dipta, $this->lenaldy] as $actor) {
+            $actor->directPermissions()->attach(Permission::where('code', 'scm.process')->sole()->id);
+            $cbe->newQuery()->whereKey($cbe->id)->update(['prepared_by' => $actor->id]);
+            $this->rejects(fn () => DB::transaction(fn () => $this->service->start($actor->fresh(), $cbe->fresh())));
+            $this->assertSame(0, $cbe->approvals()->count());
+        }
+        $cbe->newQuery()->whereKey($cbe->id)->update(['prepared_by' => $this->scm->id]);
+        DB::transaction(fn () => $this->service->start($this->scm, $cbe->fresh()));
+        $cbe->approvals()->where('role', 'acknowledged')->update(['status' => 'skipped']);
+        $cbe->approvals()->whereIn('role', ['crosschecked', 'approved'])->update(['status' => 'signed']);
+        $this->assertFalse($this->service->complete($cbe));
+        $cbe->approvals()->where('role', 'acknowledged')->update(['status' => 'signed']);
+        $cbe->approvals()->where('role', 'crosschecked')->update(['status' => 'skipped']);
+        $this->assertFalse($this->service->complete($cbe));
+    }
+
     public function test_master_changes_only_affect_future_documents_and_require_configure_access(): void
     {
         $cbe = $this->cbe();

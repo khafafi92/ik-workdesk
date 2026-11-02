@@ -24,6 +24,7 @@
 @endphp
 @if($sheetEditing)
     <p>Prepared By: {{ auth()->user()->name }}. Gunakan <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}">TTD profil</a> akun SCM untuk menandatangani CBE.</p>
+    <p class="scm-help">Jika akun pengaju sama dengan Acknowledged by pada master CBE, Acknowledged by dilewati otomatis. Pengajuan langsung menunggu Crosschecked by, lalu Approved by.</p>
     <p>Pilih satu versi penawaran per vendor dari minimal tiga vendor. SCM menentukan vendor berdasarkan harga, spesifikasi, dan alasan pemilihan.</p>
     @if($chosen->pluck('currency')->unique()->count() > 1)<p class="scm-error" role="status">Belum dapat dibandingkan: mata uang berbeda. Revisi penawaran agar menggunakan satu mata uang.</p>@endif
     @if($chosenCompanies->unique()->count() < $chosen->count())<p class="scm-error" role="status">Perusahaan yang sama hanya boleh muncul satu kali. Pilih satu versi penawaran per perusahaan.</p>@endif
@@ -45,6 +46,7 @@
     </form>
 @else
     @if($priceRecommendation)@include('filament.pages.scm.partials.cbe-recommendation')@endif
+    @if($record->cbe->approvals->contains(fn ($step) => $step->role === 'acknowledged' && $step->status === 'skipped'))<p role="status">Acknowledged by dilewati karena akun tersebut sudah menandatangani Prepared by. Crosschecked by dan Approved by tetap mengikuti penugasan.</p>@endif
     @include('scm.partials.cbe-sheet')
     <p>Harga akhir: {{ \App\Services\Scm\Decimal::money($record->cbe->final_minor, $record->cbe->snapshot['quotes'][0]['currency']) }}</p>
     <p><a href="{{ route('scm.print', $record->cbe) }}" target="_blank" rel="noopener">Buka CBE untuk cetak / simpan PDF</a></p>

@@ -818,6 +818,17 @@ class ProcurementTest extends TestCase
         $page->call('useCbeRecommendation')->assertForbidden();
     }
 
+    public function test_cbe_prepared_by_acknowledger_can_complete_approval_and_start_legal_collection(): void
+    {
+        CbeApprovalPolicy::where('company', 'APCA')->update(['acknowledger_id' => $this->scm->id]);
+        $request = $this->finalized();
+        $this->assertSame('skipped', $request->cbe->approvals()->where('role', 'acknowledged')->sole()->status);
+        $this->assertTrue(app(CbeApprovals::class)->complete($request->cbe));
+        $request = $this->flow->startLegal($this->scm, $request->id, $request->version);
+        $this->assertNotNull($request->legalCase);
+        $this->assertSame($request->cbe->selected_vendor_id, $request->legalCase->vendor_id);
+    }
+
     public function test_tied_recommendation_does_not_choose_arbitrarily_or_change_a_manual_choice(): void
     {
         $request = $this->quoted();

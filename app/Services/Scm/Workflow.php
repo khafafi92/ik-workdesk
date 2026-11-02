@@ -345,7 +345,7 @@ class Workflow
     {
         return $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
             $this->reject($request->status !== 'selected' || $request->cbe?->status !== 'final', 'Legalitas hanya dapat dimulai dari CBE final.');
-            $this->reject(! app(CbeApprovals::class)->complete($request->cbe), 'Tanda tangan CBE belum lengkap. Tunggu Acknowledged, Crosschecked, dan Approved by sebelum memulai legalitas.');
+            $this->reject(! app(CbeApprovals::class)->complete($request->cbe), 'Persetujuan CBE belum lengkap. Tunggu penandatangan yang masih memiliki tahap wajib sebelum memulai legalitas.');
             $case = LegalCase::create(['request_id' => $request->id, 'cbe_id' => $request->cbe->id, 'vendor_id' => $request->cbe->selected_vendor_id,
                 'scm_pic_id' => $actor->id, 'requested_at' => now()]);
             $registration = VendorRegistration::where('vendor_id', $case->vendor_id)->where('status', 'accepted')->latest('id')->first();
