@@ -126,8 +126,7 @@
         @php($signedStep = collect($sheetCbeApprovals ?? [])->firstWhere('role', $key))
         <div class="scm-cbe-signature"><strong>{{ $role }}</strong><div class="scm-cbe-signature-space">
             @if($signedStep?->status === 'signed')<img src="{{ route('scm.signature-cbe', $signedStep) }}" alt="Tanda tangan {{ $signedStep->signed_name }}" width="180" height="60" style="width:100%;height:100%;object-fit:contain">
-            @elseif($signedStep?->status === 'skipped')<span>Dilewati</span>
-            @else<span class="scm-cbe-sr">Belum ditandatangani</span>@endif
+            @elseif($signedStep?->status !== 'skipped')<span class="scm-cbe-sr">Belum ditandatangani</span>@endif
         </div><div>Name: {{ $signedStep?->signed_name ?? ($loop->first ? ($sheetPreparedName ?? '') : '') }}</div><div>Date: {{ $signedStep?->status === 'signed' ? $signedStep->acted_at?->format('d/m/Y') : '' }}</div></div>
         @endforeach
     </div>

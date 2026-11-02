@@ -169,7 +169,7 @@ class CbeApprovalsTest extends TestCase
         $this->rejects(fn () => $this->service->sign($this->meyfi, $cbe->id, $cbe->request->version));
         $this->rejects(fn () => $this->service->sign($this->lenaldy, $cbe->id, $cbe->request->version));
         Livewire::actingAs($this->dipta)->test(ScmApprovals::class)->call('openCbe', $cbe->id)
-            ->assertSee('Acknowledged by dilewati')->assertSee('Dilewati')->assertSee('Tanda tangani sebagai Crosschecked By');
+            ->assertSee('Acknowledged by dilewati')->assertSee('Tanda tangani sebagai Crosschecked By');
         $this->actingAs($this->meyfi)->get(route('scm.signature-cbe', $skipped))->assertNotFound();
         $audit = Audit::where('action', 'mulai_approval_cbe')->sole();
         $this->assertSame($this->meyfi->id, $audit->actor_id);
