@@ -10,6 +10,7 @@ use App\Models\Scm\Category;
 use App\Models\Scm\Cbe;
 use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\Procurement;
+use App\Models\Scm\ProjectNumbering;
 use App\Models\Scm\Quotation;
 use App\Models\User;
 use App\Services\Scm\Approvals;
@@ -99,6 +100,26 @@ class ScmConcurrencyTest extends TestCase
         }
 
         return $results;
+    }
+
+    public function test_simultaneous_project_numbers_use_one_counter_without_consuming_ho_numbers(): void
+    {
+        $actor = User::factory()->create(['is_admin' => true]);
+        $actor->directPermissions()->attach(Permission::where('code', 'scm.request')->sole()->id);
+        $department = Department::create(['code' => 'PROJECT-NUM', 'name' => 'Project numbering test']);
+        $master = ProjectNumbering::where('code', 'COMP-19E001')->sole();
+        $created = $this->workers(['mode' => 'create', 'actor_id' => $actor->id, 'data' => [
+            'company' => 'KPMOG', 'kind' => 'PR', 'need_type' => 'PROJECT', 'project_numbering_id' => $master->id,
+            'date' => today()->toDateString(), 'department_id' => $department->id,
+            'items' => [['name' => 'Concurrent valve', 'specification' => 'Test', 'quantity' => '1', 'unit' => 'unit']],
+        ]]);
+        $numbers = array_column($created, 'number');
+        sort($numbers);
+        $this->assertCount(2, array_unique($numbers));
+        $this->assertStringStartsWith('001/COMP-19E001/PR/', $numbers[0]);
+        $this->assertStringStartsWith('002/COMP-19E001/PR/', $numbers[1]);
+        $this->assertSame(2, DB::table('scm_project_number_sequences')->value('last_number'));
+        $this->assertSame(0, DB::table('scm_number_sequences')->count());
     }
 
     public function test_simultaneous_first_cbe_master_save_returns_a_recoverable_conflict(): void

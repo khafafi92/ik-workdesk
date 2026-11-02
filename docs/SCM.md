@@ -18,11 +18,13 @@ Satu Master Approval mengelola aturan PR/SR dan CBE melalui pemilih dokumen. Mas
 ### 2. Membuat dan mengajukan PR atau SR
 
 1. Buka **Permintaan > PR** untuk barang atau **Permintaan > SR** untuk jasa, lalu buat permintaan baru.
-2. Pilih perusahaan sebelum nomor diterbitkan. Perusahaan tidak dapat diganti setelah nomor terbit.
-3. Pilih kebutuhan HO atau Project, isi tanggal dan rincian barang/jasa, jumlah, satuan, serta informasi kebutuhan yang tersedia. Tandai pengajuan di atas Rp5 juta jika sesuai. Kategori tidak perlu dipilih oleh pemohon.
+2. Pilih kebutuhan HO atau Project. Untuk Project, pilih master kode Project, lalu pilih perusahaan untuk menerbitkan nomor otomatis. Jenis kebutuhan, master nomor, dan perusahaan tidak dapat diganti setelah nomor terbit.
+3. Isi tanggal dan rincian barang/jasa, jumlah, satuan, serta informasi kebutuhan yang tersedia. Tandai pengajuan di atas Rp5 juta jika sesuai. Kategori tidak perlu dipilih oleh pemohon.
 4. Simpan draft, lengkapi lampiran yang diperlukan, lalu **Tanda tangani** pada Requested by. Perubahan isi atau lampiran draft setelah ditandatangani memerlukan tanda tangan ulang.
 5. Ajukan persetujuan sesuai jenis kebutuhan. Pejabat membuka **Permintaan > Persetujuan**, memilih **PR/SR**, memeriksa dokumen yang ditugaskan, lalu menandatangani sesuai urutan atau mengembalikan dengan alasan perbaikan.
 6. Jika dikembalikan, perbaiki draft, tandatangani ulang, lalu ajukan kembali. SCM baru menerima permintaan setelah seluruh tahap persetujuan yang diwajibkan selesai.
+
+Riwayat pemakaian dan master kode Project tersedia di **Permintaan > Nomor PR/SR**. Lihat [panduan nomor HO/Project](SCM-NOMOR-PR-SR-2026-11-02.md) untuk format LTRO, pembatasan akses, serta aturan nomor yang sudah terbit.
 
 ### 3. Menerima permintaan dan mengumpulkan penawaran
 

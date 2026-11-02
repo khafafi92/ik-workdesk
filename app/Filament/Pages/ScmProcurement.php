@@ -12,6 +12,7 @@ use App\Models\Scm\DocumentType;
 use App\Models\Scm\LegalCase;
 use App\Models\Scm\LegalItem;
 use App\Models\Scm\Procurement;
+use App\Models\Scm\ProjectNumbering;
 use App\Models\Scm\Quotation;
 use App\Models\Scm\Requirement;
 use App\Models\Scm\Vendor;
@@ -131,6 +132,8 @@ class ScmProcurement extends Page
     public bool $choosingCompany = false;
 
     public string $newRequestNeedType = '';
+
+    public string $newProjectNumberingId = '';
 
     public array $approvalRoute = ['company' => 'APCA', 'department_id' => '', 'acknowledger_id' => '', 'cbo_id' => '', 'cbo3_id' => '', 'version' => 0];
 
@@ -276,6 +279,7 @@ class ScmProcurement extends Page
         $this->editing = false;
         $this->choosingCompany = true;
         $this->newRequestNeedType = '';
+        $this->newProjectNumberingId = '';
         $this->resetValidation();
     }
 
@@ -284,13 +288,15 @@ class ScmProcurement extends Page
         abort_unless(static::$requestKind !== null && Access::has(auth()->user(), 'scm.request'), 403);
         $needType = $this->newRequestNeedType ?: 'HO';
         abort_unless(array_key_exists($needType, ApprovalPolicies::NEED_TYPES), 422);
-        $number = app(RequestNumbering::class)->reserve(auth()->user(), static::$requestKind, $company);
+        $number = app(RequestNumbering::class)->reserve(auth()->user(), static::$requestKind, $company, $needType,
+            $needType === 'PROJECT' && $this->newProjectNumberingId !== '' ? (int) $this->newProjectNumberingId : null);
         $this->requestNumberId = $number->id;
         $this->requestNumber = $number->number;
         $this->selected = 0;
         $this->editing = true;
         $this->choosingCompany = false;
         $this->draft = ['kind' => static::$requestKind, 'company' => $company, 'need_type' => $needType, 'date' => today()->toDateString(), 'department_id' => auth()->user()->employee?->department_id ?? '',
+            'project_numbering_id' => $number->project_numbering_id,
             'work_project_id' => '', 'instruction_to_vendor' => '', 'procedure_required' => '',
             'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'items' => []];
         $this->addItem();
@@ -301,7 +307,7 @@ class ScmProcurement extends Page
     {
         $record = Procurement::with('items')->findOrFail($this->selected);
         abort_unless(static::$requestKind !== null && $record->kind === static::$requestKind && Access::has(auth()->user(), 'scm.request') && (int) $record->requester_id === (int) auth()->id() && $record->status === 'draft', 403);
-        $this->draft = $record->only(['kind', 'company', 'need_type', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point', 'work_project_id', 'instruction_to_vendor', 'procedure_required']);
+        $this->draft = $record->only(['kind', 'company', 'need_type', 'project_numbering_id', 'department_id', 'title', 'reason', 'notes', 'customer_po', 'job_order', 'delivery_point', 'work_project_id', 'instruction_to_vendor', 'procedure_required']);
         $this->requestNumber = $record->number;
         $this->draft['date'] = $record->date->format('Y-m-d');
         $this->draft['needed_at'] = $record->needed_at?->format('Y-m-d') ?? '';
@@ -734,6 +740,7 @@ class ScmProcurement extends Page
         }
 
         return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
+            'projectNumberingOptions' => static::$requestKind !== null ? ProjectNumbering::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($master) => [$master->id => $master->code.' - '.$master->name])->all() : [],
             'cbeApprovalPolicies' => $configure ? CbeApprovalPolicy::with(['acknowledger', 'crosschecker', 'approver'])->orderBy('company')->get() : collect(),
             'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
             'routingPlan' => $routingPlan, 'routingIssue' => $routingIssue,

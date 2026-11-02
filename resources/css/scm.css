@@ -1,4 +1,5 @@
 @import './scm-cbe.css';
+@import './scm-request-numbers.css';
 
 .scm-workspace{--scm-text:#111827;--scm-muted:#4b5563;--scm-line:#6b7280;--scm-bg:#fff;--scm-soft:#f9fafb;--scm-accent:#9a3412;color:var(--scm-text);display:grid;gap:1.25rem;min-width:0}
 .dark .scm-workspace{--scm-text:#f9fafb;--scm-muted:#d1d5db;--scm-line:#9ca3af;--scm-bg:#111827;--scm-soft:#1f2937;--scm-accent:#fdba74}

@@ -10,6 +10,7 @@ use App\Models\Permission;
 use App\Models\Scm\ApprovalPolicy;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Procurement;
+use App\Models\Scm\ProjectNumbering;
 use App\Models\Scm\UserSignature;
 use App\Models\User;
 use App\Services\Scm\Access;
@@ -82,6 +83,7 @@ class ApprovalPoliciesTest extends TestCase
     {
         $flow = app(Workflow::class);
         $request = $flow->saveDraft($this->staff, ['company' => 'APCA', 'kind' => $kind, 'need_type' => $type,
+            'project_numbering_id' => $type === 'PROJECT' ? ProjectNumbering::where('code', 'COMP-19E001')->sole()->id : null,
             'department_id' => $this->department->id, 'date' => today()->toDateString(), 'requires_cbo3' => $high,
             'items' => [['name' => 'Kebutuhan pengujian', 'specification' => 'Spesifikasi uji', 'quantity' => '1', 'unit' => 'unit']]]);
         $request = app(Signatures::class)->sign($this->staff, $request->id, $request->version);
@@ -238,7 +240,7 @@ class ApprovalPoliciesTest extends TestCase
         $this->assertFalse(Access::has($this->coo, 'scm.configure'));
     }
 
-    public function test_requester_cannot_modify_master_and_type_changes_require_signing_again(): void
+    public function test_requester_cannot_modify_master_or_change_type_after_number_is_issued(): void
     {
         try {
             app(ApprovalPolicies::class)->save($this->staff, $this->data());
@@ -252,9 +254,9 @@ class ApprovalPoliciesTest extends TestCase
             'items' => [['name' => 'Uji', 'specification' => 'Spek', 'quantity' => '1', 'unit' => 'unit']]]);
         $request = app(Signatures::class)->sign($this->staff, $request->id, $request->version);
         Livewire::actingAs($this->staff)->test(PurchaseRequests::class)->call('open', $request->id)->call('editDraft')
-            ->set('draft.need_type', 'PROJECT')->call('saveDraft')->assertHasNoErrors();
-        $this->assertSame('PROJECT', $request->fresh()->need_type);
-        $this->assertNull($request->fresh()->prepared_signed_at);
+            ->set('draft.need_type', 'PROJECT')->call('saveDraft')->assertHasErrors('scm');
+        $this->assertSame('HO', $request->fresh()->need_type);
+        $this->assertNotNull($request->fresh()->prepared_signed_at);
     }
 
     public function test_cbo_crosscheck_cannot_be_skipped_on_ho_when_final_approver_is_coo(): void

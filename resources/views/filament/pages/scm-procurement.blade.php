@@ -43,10 +43,14 @@
         <section class="scm-panel" aria-label="Pilih perusahaan untuk {{ $requestKind }}">
             <h2>Buat {{ $requestKind }} untuk perusahaan</h2>
             <x-scm.select model="newRequestNeedType" label="Jenis kebutuhan" :options="\App\Services\Scm\ApprovalPolicies::NEED_TYPES" :live="true" required />
-            <p>Pilih HO atau Project, lalu pilih perusahaan. Format formulir mengikuti jenis kebutuhan; perusahaan menentukan logo dan nomor {{ $requestKind }}.</p>
+            @if($newRequestNeedType === 'PROJECT')
+                <x-scm.select model="newProjectNumberingId" label="Master kode Project" :options="$projectNumberingOptions" :live="true" required />
+                @if(!$projectNumberingOptions)<p role="alert">Master nomor Project aktif belum tersedia. Minta pengelola SCM menambahkannya di menu Nomor PR/SR.</p>@endif
+            @endif
+            <p>Pilih jenis kebutuhan dan perusahaan. Untuk Project, pilih master kode sebelum nomor diterbitkan.</p>
             <div class="scm-actions">
                 @foreach(['KPMOG', 'APCA'] as $company)
-                <button type="button" wire:click="newDraft('{{ $company }}')" wire:loading.attr="disabled" wire:target="newDraft" @disabled(blank($newRequestNeedType))>{{ $company }}</button>
+                <button type="button" wire:click="newDraft('{{ $company }}')" wire:loading.attr="disabled" wire:target="newDraft" @disabled(blank($newRequestNeedType) || ($newRequestNeedType === 'PROJECT' && blank($newProjectNumberingId)))>{{ $company }}</button>
                 @endforeach
                 <button type="button" wire:click="switchSection('mine')">Batal</button>
             </div>

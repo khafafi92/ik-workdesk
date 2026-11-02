@@ -64,6 +64,7 @@ class Workflow
         abort_unless(Access::has($actor, 'scm.request'), 403);
         $data['company'] ??= 'APCA';
         $data['need_type'] ??= $id ? Procurement::findOrFail($id)->need_type : 'HO';
+        $data['project_numbering_id'] ??= $id ? Procurement::findOrFail($id)->project_numbering_id : null;
         $projectService = $data['need_type'] === 'PROJECT' && ($data['kind'] ?? null) === 'SR';
         if ($projectService && is_array($data['items'] ?? null)) {
             foreach ($data['items'] as &$item) {
@@ -75,10 +76,12 @@ class Workflow
         }
         if ($data['need_type'] !== 'PROJECT') {
             $data['work_project_id'] = null;
+            $data['project_numbering_id'] = null;
         }
         $validated = Validator::make($data, [
             'company' => ['required', Rule::in(array_keys(config('scm.companies')))],
             'need_type' => ['required', Rule::in(array_keys(ApprovalPolicies::NEED_TYPES))],
+            'project_numbering_id' => ['nullable', 'integer', Rule::exists('scm_project_numbering', 'id')],
             'estimated_total' => 'nullable',
             'requires_cbo3' => 'sometimes|boolean',
             'kind' => ['required', Rule::in(['PR', 'SR'])], 'date' => 'required|date',
@@ -116,6 +119,8 @@ class Workflow
                 $validated['version'] = $request->version + 1;
                 $this->reject($validated['kind'] !== $request->kind, 'Jenis permintaan tidak dapat diubah setelah nomor diterbitkan.');
                 $this->reject($validated['company'] !== $request->company, 'Perusahaan tidak dapat diubah setelah nomor diterbitkan. Buat permintaan baru untuk perusahaan lain.');
+                $this->reject($validated['need_type'] !== $request->need_type || (int) $validated['project_numbering_id'] !== (int) $request->project_numbering_id,
+                    'Jenis kebutuhan dan master nomor Project tidak dapat diubah setelah nomor diterbitkan. Buat permintaan baru.');
                 $validated['title'] = $validated['title'] ?? $request->title;
                 $validated['reason'] = $validated['reason'] ?? $request->reason;
                 $validated += ['prepared_signature_id' => null, 'prepared_signed_at' => null, 'prepared_signed_name' => null];
@@ -124,9 +129,11 @@ class Workflow
             } else {
                 $number = $numberId
                     ? RequestNumber::query()->lockForUpdate()->findOrFail($numberId)
-                    : app(RequestNumbering::class)->reserve($actor, $validated['kind'], $validated['company']);
+                    : app(RequestNumbering::class)->reserve($actor, $validated['kind'], $validated['company'], $validated['need_type'], $validated['project_numbering_id']);
                 abort_unless((int) $number->requester_id === (int) $actor->id && $number->kind === $validated['kind'], 403);
                 $this->reject($number->company !== $validated['company'], 'Perusahaan tidak sesuai dengan nomor permintaan yang dipilih.');
+                $this->reject($number->need_type !== $validated['need_type'] || (int) $number->project_numbering_id !== (int) $validated['project_numbering_id'],
+                    'Jenis kebutuhan atau master Project tidak sesuai dengan nomor yang diterbitkan.');
                 $this->reject($number->request_id !== null, 'Nomor sudah digunakan. Muat ulang permintaan.');
                 $validated['title'] ??= Str::limit(collect($items)->pluck('name')->implode(', '), 255, '');
                 $validated['reason'] ??= '';

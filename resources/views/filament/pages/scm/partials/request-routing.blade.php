@@ -1,7 +1,7 @@
 @if($routingEditing)
 <fieldset class="scm-request-routing" wire:loading.attr="disabled" wire:target="saveDraft,signPrepared">
     <legend>Alur persetujuan</legend>
-    <x-scm.select model="draft.need_type" label="Jenis kebutuhan" :options="\App\Services\Scm\ApprovalPolicies::NEED_TYPES" :live="true" required help="Pilih HO untuk kebutuhan kantor pusat atau Project untuk kebutuhan proyek. Alurnya mengikuti master divisi." />
+    <p>Jenis kebutuhan: <strong>{{ \App\Services\Scm\ApprovalPolicies::NEED_TYPES[$draft['need_type'] ?? 'HO'] ?? 'Tidak valid' }}</strong>. Jenis kebutuhan mengikuti nomor yang sudah diterbitkan.</p>
     @if(($draft['need_type'] ?? 'HO') === 'PROJECT')
         <x-scm.select model="draft.work_project_id" label="Nama Project (opsional)" :options="$projectOptions" placeholder="Belum dipilih" help="Nama proyek boleh menyusul. Daftar diambil dari Master Data > Projects." />
         @if(!$projectOptions)<p class="scm-help">Daftar nama proyek belum tersedia. PR/SR Project tetap dapat dibuat.</p>@endif

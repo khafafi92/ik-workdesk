@@ -1,0 +1,132 @@
+.scm-scroll .scm-number-table {
+    min-width: 52rem;
+}
+
+.scm-workspace .scm-number-register {
+    gap: .75rem;
+    border-radius: .125rem;
+}
+
+.scm-register-scroll {
+    max-height: 36rem;
+    border: 1px solid var(--scm-line);
+    isolation: isolate;
+}
+
+.scm-scroll .scm-register-table {
+    min-width: 98rem;
+    border-collapse: separate;
+    border-spacing: 0;
+    table-layout: fixed;
+    line-height: 1.4;
+}
+
+.scm-register-row-number { width: 3rem; }
+.scm-register-document { width: 22rem; }
+.scm-register-company { width: 6rem; }
+.scm-register-kind { width: 4rem; }
+.scm-register-need { width: 6rem; }
+.scm-register-project { width: 9rem; }
+.scm-register-person { width: 9rem; }
+.scm-register-department { width: 8rem; }
+.scm-register-date { width: 10rem; }
+.scm-register-description { width: 22rem; }
+.scm-register-status { width: 10rem; }
+
+.scm-register-scroll .scm-register-table :is(th, td) {
+    padding: .375rem .5rem;
+    border-right: 1px solid var(--scm-line);
+    border-bottom: 1px solid var(--scm-line);
+    background: var(--scm-bg);
+    vertical-align: top;
+}
+
+.scm-register-table thead th {
+    position: sticky;
+    z-index: 2;
+}
+
+.scm-register-scroll .scm-register-letters th {
+    top: 0;
+    height: 1.75rem;
+    padding: .25rem .5rem;
+    background: var(--scm-soft);
+    text-align: center;
+    font-weight: 400;
+    line-height: 1;
+}
+
+.scm-register-scroll .scm-register-headings th {
+    top: 1.75rem;
+    background: var(--scm-soft);
+    white-space: nowrap;
+}
+
+.scm-register-table tr > :first-child:not([colspan]) {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    text-align: center;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    background: var(--scm-soft);
+}
+
+.scm-register-scroll .scm-register-table thead tr > :first-child {
+    z-index: 3;
+}
+
+.scm-workspace .scm-register-table :is(.scm-register-number, .scm-register-timestamp) {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.scm-register-scroll .scm-register-table tbody tr:hover td {
+    background: var(--scm-soft);
+}
+
+@media (min-width: 1000px) {
+    .scm-number-register .scm-register-filters {
+        grid-template-columns: minmax(14rem, 1.5fr) repeat(4, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 700px) {
+    .scm-scroll .scm-number-table,
+    .scm-number-table tbody {
+        display: block;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .scm-number-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+
+    .scm-number-table tr {
+        display: block;
+        padding: .75rem 0;
+        border-bottom: 1px solid var(--scm-line);
+    }
+
+    .scm-scroll .scm-number-table td {
+        display: block;
+        padding: .375rem 0;
+        border: 0;
+    }
+
+    .scm-number-table td[data-label] {
+        display: grid;
+        grid-template-columns: minmax(0, 30%) minmax(0, 1fr);
+        gap: .75rem;
+    }
+
+    .scm-number-table td[data-label]::before {
+        content: attr(data-label);
+        font-weight: 600;
+    }
+}

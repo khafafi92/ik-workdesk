@@ -8,6 +8,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
 use App\Models\Scm\Procurement;
+use App\Models\Scm\ProjectNumbering;
 use App\Models\User;
 use App\Models\WorkProject;
 use App\Services\Scm\Workflow;
@@ -43,6 +44,7 @@ class ProjectRequestFormsTest extends TestCase
     private function data(string $kind = 'PR', array $extra = []): array
     {
         return array_replace(['company' => 'KPMOG', 'kind' => $kind, 'need_type' => 'PROJECT', 'date' => today()->toDateString(),
+            'project_numbering_id' => ProjectNumbering::where('code', 'COMP-19E001')->sole()->id,
             'department_id' => $this->department->id, 'items' => [['name' => 'Valve', 'size' => '2 inch', 'model_part_number' => 'PN-TEST',
                 'specification' => 'Spesifikasi pengujian', 'quantity' => '2,5', 'unit' => 'unit']]], $extra);
     }
@@ -61,7 +63,7 @@ class ProjectRequestFormsTest extends TestCase
     public function test_new_request_selects_ho_or_project_before_company_and_project_name_can_wait(string $page, string $kind): void
     {
         Livewire::test($page)->call('chooseCompany')->assertSet('newRequestNeedType', '')
-            ->assertSee('Jenis kebutuhan')->set('newRequestNeedType', 'PROJECT')->call('newDraft', 'KPMOG')
+            ->assertSee('Jenis kebutuhan')->set('newRequestNeedType', 'PROJECT')->set('newProjectNumberingId', (string) ProjectNumbering::where('code', 'COMP-19E001')->sole()->id)->call('newDraft', 'KPMOG')
             ->assertSet('draft.need_type', 'PROJECT')->assertSee('Nama Project (opsional)')
             ->assertSee('PR/SR Project tetap dapat dibuat')->assertSee($kind === 'PR' ? 'Model/PN' : 'SERVICE REQUEST AND MATERIALS');
         $request = app(Workflow::class)->saveDraft($this->staff, $this->data($kind));
@@ -152,7 +154,7 @@ class ProjectRequestFormsTest extends TestCase
     public function test_inactive_project_cannot_be_selected_and_other_division_names_are_not_offered(): void
     {
         $project = WorkProject::create(['code' => 'QA-CLOSED', 'name' => 'Project selesai', 'status' => 'completed']);
-        Livewire::test(PurchaseRequests::class)->set('newRequestNeedType', 'PROJECT')->call('newDraft', 'KPMOG')->assertDontSee('Project selesai');
+        Livewire::test(PurchaseRequests::class)->set('newRequestNeedType', 'PROJECT')->set('newProjectNumberingId', (string) ProjectNumbering::where('code', 'COMP-19E001')->sole()->id)->call('newDraft', 'KPMOG')->assertDontSee('Project selesai');
         $this->expectException(ValidationException::class);
         app(Workflow::class)->saveDraft($this->staff, $this->data(extra: ['work_project_id' => $project->id]));
     }

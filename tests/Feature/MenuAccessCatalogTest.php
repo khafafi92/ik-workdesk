@@ -7,6 +7,7 @@ use App\Filament\Pages\AiAssistantSettingsPage;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\GlobalChatRoom;
 use App\Filament\Pages\ScmApprovals;
+use App\Filament\Pages\ScmRequestNumbers;
 use App\Filament\Pages\SignatureProfile;
 use App\Filament\Resources\Departments\DepartmentResource;
 use App\Filament\Resources\Employees\EmployeeResource;
@@ -65,6 +66,7 @@ class MenuAccessCatalogTest extends TestCase
             AiAssistantSettingsPage::class => 'System administrator only',
             UserResource::class => 'Administrator access level',
             ScmApprovals::class => 'Assigned PR/SR or CBE approval, SCM processor, or system administrator',
+            ScmRequestNumbers::class => 'SCM requester or processor sees authorized numbers; SCM configurator manages Project numbering',
             SignatureProfile::class => 'SCM requester, processor or assigned approver',
         ];
         $aliases = ['Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
