@@ -11,13 +11,14 @@
     <p class="scm-cbe-sr">Perusahaan: {{ $cbe->snapshot['request']['company'] ?? 'APCA' }}</p>
     @include('scm.partials.cbe-sheet', [
         'sheetEditing' => false,
-        'sheetRequest' => $cbe->snapshot['request'],
+        'sheetRequest' => $cbe->documentRequest(),
         'sheetItems' => $cbe->snapshot['items'],
         'sheetQuotes' => $cbe->snapshot['quotes'],
         'sheetNumber' => $cbe->number,
         'sheetDate' => $cbe->date->format('d/m/Y'),
         'sheetSelectedVendor' => $cbe->selected_vendor_id,
         'sheetReason' => $cbe->selection_reason,
+        'sheetComment' => $cbe->documentComment(),
         'sheetPreparedName' => $cbe->snapshot['prepared_by_name'] ?? null,
         'sheetCbeApprovals' => $cbe->approvals,
     ])

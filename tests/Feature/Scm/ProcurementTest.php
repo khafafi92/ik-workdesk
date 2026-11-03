@@ -5,6 +5,7 @@ namespace Tests\Feature\Scm;
 use App\Filament\Pages\PurchaseRequests;
 use App\Filament\Pages\ScmApprovals;
 use App\Filament\Pages\ScmProcurement;
+use App\Filament\Pages\ScmSelectedVendorItems;
 use App\Filament\Pages\ServiceRequests;
 use App\Filament\Pages\SignatureProfile;
 use App\Models\Department;
@@ -17,6 +18,7 @@ use App\Models\Scm\Category;
 use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\Procurement;
+use App\Models\Scm\ProjectNumbering;
 use App\Models\Scm\Quotation;
 use App\Models\Scm\RequestNumber;
 use App\Models\Scm\Requirement;
@@ -26,8 +28,10 @@ use App\Models\User;
 use App\Services\Scm\Access;
 use App\Services\Scm\Approvals;
 use App\Services\Scm\CbeApprovals;
+use App\Services\Scm\CbePricing;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\RequestNumbering;
+use App\Services\Scm\SelectedVendorItems;
 use App\Services\Scm\Signatures;
 use App\Services\Scm\Validation;
 use App\Services\Scm\Workflow;
@@ -36,6 +40,8 @@ use Database\Seeders\ScmSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -797,6 +803,128 @@ class ProcurementTest extends TestCase
         $this->assertSame($request->cbe->id, $request->legalCase->cbe_id);
     }
 
+    public function test_cbe_uses_request_number_and_freezes_project_name_from_numbering_master(): void
+    {
+        $request = $this->quoted();
+        $master = ProjectNumbering::where('code', 'COMP-19E001')->sole();
+        $request->update(['need_type' => 'PROJECT', 'project_numbering_id' => $master->id, 'location' => 'Lokasi pengiriman']);
+        $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $this->cbeData($request));
+        $this->assertSame('CBE-'.$request->number, $request->cbe->number);
+        $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $this->cbeData($request), true);
+        $this->assertSame('LTRO-1B', $request->cbe->snapshot['request']['project_name']);
+        $master->update(['name' => 'Nama master direvisi']);
+        $this->assertSame('LTRO-1B', $request->cbe->fresh()->snapshot['request']['project_name']);
+        $this->actingAs($this->scm)->get(route('scm.print', $request->cbe))->assertOk()
+            ->assertSee('LTRO-1B')->assertSee('CBE-'.$request->number)->assertDontSee('Nama master direvisi');
+    }
+
+    public function test_cbe_identity_migration_updates_legacy_numbers_without_changing_final_evidence(): void
+    {
+        $request = $this->finalized();
+        $cbe = $request->cbe;
+        $snapshot = $cbe->snapshot;
+        $approvals = $cbe->approvals->toArray();
+        DB::table('scm_cbes')->where('id', $cbe->id)->update(['number' => 'CBE-01M6FKNEN2RRKPSVM1R7F9TADB']);
+        $migration = require database_path('migrations/2026_11_03_100000_align_cbe_document_identity.php');
+        $migration->up();
+        $this->assertSame('CBE-'.$request->number, $cbe->fresh()->number);
+        $this->assertSame($snapshot, $cbe->fresh()->snapshot);
+        $this->assertSame($approvals, $cbe->fresh()->approvals->toArray());
+        $this->assertSame($cbe->finalized_at->toISOString(), $cbe->fresh()->finalized_at->toISOString());
+        $this->assertSame($cbe->version, $cbe->fresh()->version);
+    }
+
+    public function test_selected_vendor_items_use_final_snapshot_and_existing_request_access(): void
+    {
+        $draft = $this->quoted();
+        $this->assertSame(0, SelectedVendorItems::query($this->scm)->count());
+        $draft->items->first()->update(['size' => '2 inch', 'model_part_number' => 'PN-REKAP']);
+        $data = $this->cbeData($draft);
+        $quotes = Quotation::with('candidate')->whereIn('id', $data['quotation_ids'])->get();
+        $data['selected_vendor_id'] = $quotes->last()->candidate->vendor_id;
+        $request = $this->flow->saveCbe($this->scm, $draft->id, $draft->version, $data, true);
+        $rows = SelectedVendorItems::query($this->scm)->get();
+        $this->assertCount(2, $rows);
+        $quote = collect($request->cbe->snapshot['quotes'])->firstWhere('vendor.id', $data['selected_vendor_id']);
+        $row = SelectedVendorItems::row($rows->first());
+        $this->assertSame($quote['vendor']['name'], $row['vendor']);
+        $this->assertSame('2 inch', $row['size']);
+        $this->assertSame('PN-REKAP', $row['model_part_number']);
+        $this->assertSame('Item satu', $row['material']);
+        $this->assertSame('Spesifikasi satu', $row['description']);
+        $this->assertSame(Decimal::money($quote['lines'][0]['price_minor'], $quote['currency']), $row['price']);
+        Vendor::findOrFail($data['selected_vendor_id'])->update(['name' => 'Nama vendor setelah final']);
+        $request->items->first()->update(['name' => 'Nama item setelah final']);
+        $freshRow = SelectedVendorItems::query($this->scm)->first();
+        $this->assertSame($row, SelectedVendorItems::row($freshRow));
+        $this->assertSame(2, SelectedVendorItems::query($this->requester)->count());
+        $other = $this->user('scm.request');
+        $this->assertSame(0, SelectedVendorItems::query($other)->count());
+        $this->assertSame(0, SelectedVendorItems::query($this->scm, 'PR-TIDAK-ADA')->count());
+        $otherDepartment = Department::create(['code' => 'REKAP-OTHER', 'name' => 'Departemen lain']);
+        $request->update(['department_id' => $otherDepartment->id]);
+        $this->assertSame(0, SelectedVendorItems::query($this->scm)->count());
+        $this->assertSame(2, SelectedVendorItems::query($this->requester)->count());
+        $request->update(['kind' => 'SR']);
+        $this->assertSame(0, SelectedVendorItems::query($this->requester)->count());
+    }
+
+    public function test_material_register_page_search_reset_and_access_are_enforced(): void
+    {
+        $request = $this->finalized();
+        Livewire::actingAs($this->scm)->test(ScmSelectedVendorItems::class)
+            ->assertSee($request->number)->assertSee('Item satu')->assertSee('Description general')->assertSee('Harga satuan')
+            ->set('search', 'PR-TIDAK-ADA')->assertDontSee('Item satu')->assertSee('Tidak ada nomor PR yang cocok')
+            ->call('clearFilters')->assertSet('search', '')->assertSee('Item satu');
+        $this->actingAs($this->scm)->get(ScmSelectedVendorItems::getUrl())->assertOk();
+        Livewire::actingAs($this->user('scm.request'))->test(ScmSelectedVendorItems::class)
+            ->assertDontSee($request->number)->assertSee('Belum ada item PR');
+        Livewire::actingAs($this->user('scm.configure'))->test(ScmSelectedVendorItems::class)->assertForbidden();
+    }
+
+    public function test_material_register_reports_query_failure_and_can_reload_after_recovery(): void
+    {
+        $this->finalized();
+        $page = Livewire::actingAs($this->scm)->test(ScmSelectedVendorItems::class)->assertSee('Item satu');
+        Schema::rename('scm_request_items', 'qa_unavailable_request_items');
+        try {
+            $page->call('$refresh')->assertSee('Rekap material PR belum dapat dimuat')->assertSee('Muat ulang data');
+        } finally {
+            Schema::rename('qa_unavailable_request_items', 'scm_request_items');
+        }
+        $page->call('$refresh')->assertDontSee('Rekap material PR belum dapat dimuat')->assertSee('Item satu');
+    }
+
+    public function test_cbe_selected_price_tracks_live_vendor_and_commercial_terms(): void
+    {
+        $request = $this->quoted();
+        $data = $this->cbeData($request);
+        $quotes = Quotation::with(['candidate', 'lines'])->whereIn('id', $data['quotation_ids'])->get();
+        $page = Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)
+            ->call('showTab', 'cbe')->set('cbeForm', $data)->assertSee('CBE-'.$request->number);
+        foreach ($quotes->take(2) as $quote) {
+            $page->set('cbeForm.selected_vendor_id', $quote->candidate->vendor_id)
+                ->set('cbeForm.commercial_terms.'.$quote->id.'.discount', '1,00');
+            $expected = CbePricing::evaluate($quote->toArray(), ['discount' => '1,00', 'non_pkp' => false], (int) config('scm.cbe_vat_percent'));
+            $doc = new \DOMDocument;
+            @$doc->loadHTML($page->html());
+            $cell = (new \DOMXPath($doc))->query('//*[@data-cbe-selected-price]//dd')->item(0);
+            $this->assertNotNull($cell);
+            $this->assertSame(str_replace('IDR ', 'Rp ', Decimal::money($expected['total_minor'], $quote->currency)), trim($cell->textContent));
+        }
+    }
+
+    public function test_legacy_cbe_print_resolves_project_name_without_rewriting_snapshot(): void
+    {
+        $request = $this->finalized();
+        $request->update(['number' => '004/COMP-19E001/PR/XI/2026', 'project_numbering_id' => null]);
+        $snapshot = $request->cbe->snapshot;
+        unset($snapshot['request']['project_name']);
+        DB::table('scm_cbes')->where('id', $request->cbe->id)->update(['snapshot' => json_encode($snapshot)]);
+        $this->actingAs($this->scm)->get(route('scm.print', $request->cbe))->assertOk()->assertSee('LTRO-1B');
+        $this->assertSame($snapshot, $request->cbe->fresh()->snapshot);
+    }
+
     public function test_price_recommendation_is_optional_refreshes_with_terms_and_keeps_the_users_final_choice(): void
     {
         $request = $this->quoted();
@@ -887,6 +1015,71 @@ class ProcurementTest extends TestCase
             ->assertSee('Proyek uji CBE')->assertDontSee('Proyek berubah')->assertDontSee('Simpan draft CBE');
     }
 
+    public function test_cbe_comment_can_be_saved_reopened_and_frozen_without_editing_pr_notes(): void
+    {
+        $request = $this->quoted();
+        $request->update(['notes' => 'Catatan asli PR']);
+        $comment = "Evaluasi teknis telah diperiksa.\nHarga sesuai penawaran terakhir.";
+        $page = Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)->call('showTab', 'cbe')
+            ->assertSet('cbeForm.comment', 'Catatan asli PR')->assertSeeHtml('id="scm-cbeForm-comment"');
+        $page->set('cbeForm', [...$this->cbeData($request), 'comment' => $comment])->call('saveCbe')->assertHasNoErrors()
+            ->call('open', $request->id)->call('showTab', 'cbe')->assertSet('cbeForm.comment', $comment);
+        $this->assertSame($comment, $request->fresh()->cbe->comment);
+        $this->assertSame('Catatan asli PR', $request->fresh()->notes);
+        $request = $request->fresh();
+        $this->rejects(fn () => $this->flow->saveCbe($this->scm, $request->id, $request->version, [...$this->cbeData($request), 'comment' => str_repeat('x', 10001)]));
+        try {
+            $this->flow->saveCbe($this->requester, $request->id, $request->version, [...$this->cbeData($request), 'comment' => 'Tidak berwenang']);
+            $this->fail('Pemohon tidak boleh mengubah COMMENT CBE.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+        $page->call('finalizeCbe')->assertHasNoErrors()->assertDontSeeHtml('id="scm-cbeForm-comment"');
+        $request = $request->fresh();
+        $this->assertSame($comment, $request->cbe->snapshot['comment']);
+        $request->update(['notes' => 'Catatan PR setelah final']);
+        $this->actingAs($this->scm)->get(route('scm.print', $request->cbe))->assertOk()->assertSee($comment)->assertDontSee('Catatan PR setelah final');
+        $this->assertSame($comment, $request->cbe->fresh()->documentComment());
+        $this->rejects(fn () => $this->flow->saveCbe($this->scm, $request->id, $request->version, [...$this->cbeData($request), 'comment' => 'Mengubah final']));
+    }
+
+    public function test_cbe_comment_can_be_cleared_and_legacy_final_comment_keeps_snapshot_notes(): void
+    {
+        $request = $this->quoted();
+        $request->update(['notes' => 'Catatan PR tidak boleh muncul lagi setelah COMMENT dikosongkan']);
+        $data = [...$this->cbeData($request), 'comment' => ''];
+        $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $data);
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)->assertSet('cbeForm.comment', '');
+        $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $this->cbeData($request), true);
+        $this->assertSame('', $request->cbe->documentComment());
+        $snapshot = $request->cbe->snapshot;
+        unset($snapshot['comment']);
+        DB::table('scm_cbes')->where('id', $request->cbe->id)->update(['snapshot' => json_encode($snapshot)]);
+        $this->assertSame($snapshot['request']['notes'], $request->cbe->fresh()->documentComment());
+    }
+
+    public function test_cbe_explains_missing_budget_and_does_not_treat_zero_budget_as_missing(): void
+    {
+        $request = $this->quoted();
+        $request->update(['estimated_total_minor' => null]);
+        $page = Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $request->id)->call('showTab', 'cbe')
+            ->set('cbeForm', $this->cbeData($request))->assertSee('Total Budget pada PR/SR belum diisi.')
+            ->assertDontSee('Belum dapat dibandingkan');
+        $doc = new \DOMDocument;
+        @$doc->loadHTML($page->html());
+        $cells = (new \DOMXPath($doc))->query('//tr[@data-cbe-row="difference"]/td[contains(@class,"scm-cbe-money")]');
+        $this->assertSame(3, $cells->length);
+        foreach ($cells as $cell) {
+            $this->assertStringNotContainsString('Rp ', $cell->textContent);
+            $this->assertStringContainsString('Total Budget PR/SR belum diisi.', $cell->textContent);
+        }
+        $request->update(['estimated_total_minor' => 0]);
+        $page->call('$refresh')->assertDontSee('Total Budget pada PR/SR belum diisi.');
+        @$doc->loadHTML($page->html());
+        $cell = (new \DOMXPath($doc))->query('//tr[@data-cbe-row="difference"]/td[contains(@class,"scm-cbe-money")]')->item(0);
+        $this->assertStringContainsString('Rp 399,90', $cell->textContent);
+    }
+
     public function test_cbe_master_form_does_not_compare_foreign_currency_to_idr_budget(): void
     {
         $request = $this->vendors($this->sourcing());
@@ -896,7 +1089,7 @@ class ProcurementTest extends TestCase
         }
         $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $this->cbeData($request), true);
         $this->actingAs($this->scm)->get(route('scm.print', $request->cbe))->assertOk()
-            ->assertSee('USD 399,90')->assertSee('Belum dikonversi')->assertSee('Belum dapat dibandingkan');
+            ->assertSee('USD 399,90')->assertSee('Belum dikonversi')->assertSee('Kurs IDR belum dicatat');
 
         $legacy = clone $request->cbe;
         $snapshot = $legacy->snapshot;

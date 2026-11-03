@@ -16,6 +16,23 @@ class Cbe extends Record
         return $this->belongsTo(Procurement::class, 'request_id');
     }
 
+    public function documentRequest(): array
+    {
+        $request = $this->snapshot['request'] ?? [];
+        if (! array_key_exists('project_name', $request)) {
+            $request['project_name'] = $this->request?->cbeProjectName() ?? $request['location'] ?? '';
+        }
+
+        return $request;
+    }
+
+    public function documentComment(): string
+    {
+        return $this->status === 'final'
+            ? ($this->snapshot['comment'] ?? $this->snapshot['request']['notes'] ?? '')
+            : ($this->comment ?? $this->request?->notes ?? '');
+    }
+
     protected function casts(): array
     {
         return ['quotation_ids' => 'array', 'commercial_terms' => 'array', 'vat_percent' => 'integer', 'snapshot' => 'array', 'date' => 'date', 'finalized_at' => 'datetime'];

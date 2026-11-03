@@ -277,6 +277,7 @@ class Workflow
     {
         $data = Validator::make($data, ['date' => 'required|date', 'quotation_ids' => 'present|array', 'quotation_ids.*' => 'integer|distinct',
             'selected_vendor_id' => 'nullable|integer', 'selection_reason' => 'nullable|string|max:10000',
+            'comment' => 'sometimes|nullable|string|max:10000',
             'commercial_terms' => 'sometimes|array|max:1000', 'commercial_terms.*' => 'array:non_pkp,discount',
             'commercial_terms.*.non_pkp' => 'sometimes|boolean', 'commercial_terms.*.discount' => 'nullable'])->validate();
 
@@ -284,6 +285,7 @@ class Workflow
             $this->reject(! in_array($request->status, ['sourcing', 'quotations', 'evaluation']), 'CBE tidak dapat diubah pada tahap ini.');
             $cbe = $request->cbe;
             $this->reject($cbe && $cbe->status === 'final', 'CBE final tidak dapat diedit.');
+            $comment = array_key_exists('comment', $data) ? ($data['comment'] ?? '') : ($cbe?->documentComment() ?? $request->notes ?? '');
             $quotes = Quotation::with(['candidate.vendor', 'lines'])->whereIn('id', $data['quotation_ids'])->get();
             $this->reject($quotes->count() !== count($data['quotation_ids']) || $quotes->contains(fn ($q) => (int) $q->candidate->request_id !== (int) $request->id), 'Referensi penawaran tidak sesuai permintaan.');
             $companies = $quotes->map(fn ($quote) => VendorIdentity::companyKey($quote->candidate->vendor->name));
@@ -315,29 +317,29 @@ class Workflow
                 $this->reject(! $winner, 'Pilih satu pemenang dari vendor yang dibandingkan dalam CBE.');
                 $this->reject(mb_strlen(trim($data['selection_reason'] ?? '')) < 10, 'Isi alasan pemilihan minimal 10 karakter, termasuk pertimbangan bila bukan harga terendah.');
                 $snapshot = ['request' => [...$request->only(['number', 'kind', 'company', 'title', 'reason', 'department_id', 'approval_scope', 'estimated_total_minor', 'location', 'notes']),
-                    'department_name' => $request->department->name, 'needed_at' => $request->needed_at?->toDateString()],
-                    'prepared_by_name' => $actor->name, 'approval_required' => true, 'items' => $request->items->toArray(),
+                    'project_name' => $request->cbeProjectName(), 'department_name' => $request->department->name, 'needed_at' => $request->needed_at?->toDateString()],
+                    'comment' => $comment, 'prepared_by_name' => $actor->name, 'approval_required' => true, 'items' => $request->items->toArray(),
                     'quotes' => $quotes->map(fn ($q) => ['id' => $q->id, 'version' => $q->version, 'number' => $q->number, 'currency' => $q->currency,
                         'date' => $q->date?->toDateString(), 'valid_until' => $q->valid_until?->toDateString(), 'notes' => $q->notes,
                         'lead_time' => $q->lead_time, 'payment_terms' => $q->payment_terms, 'total_minor' => $q->total_minor, 'extra_minor' => $q->extra_minor,
                         'evaluation' => $evaluations[$q->id], 'vendor' => $q->candidate->vendor->toArray(), 'lines' => $q->lines->toArray()])->all()];
                 $snapshot['price_recommendation'] = CbeRecommendation::assess($snapshot['quotes'], $snapshot['items']);
             }
-            $values = [...$data, 'selected_vendor_id' => ($data['selected_vendor_id'] ?? null) ?: null, 'status' => $finalize ? 'final' : 'draft',
+            $values = [...$data, 'comment' => $comment, 'number' => 'CBE-'.$request->number, 'selected_vendor_id' => ($data['selected_vendor_id'] ?? null) ?: null, 'status' => $finalize ? 'final' : 'draft',
                 'prepared_by' => $actor->id, 'version' => $cbe ? $cbe->version + 1 : 1, 'snapshot' => $snapshot,
                 'vat_percent' => $vatPercent, 'commercial_terms' => $terms,
                 'final_minor' => $winner ? $evaluations[$winner->id]['total_minor'] : null, 'finalized_at' => $finalize ? now() : null];
             if ($cbe) {
                 $cbe->update($values);
             } else {
-                $cbe = Cbe::create([...$values, 'request_id' => $request->id, 'number' => 'CBE-'.Str::ulid()]);
+                $cbe = Cbe::create([...$values, 'request_id' => $request->id]);
             }
             $request->status = $finalize ? 'selected' : ($request->status === 'sourcing' ? 'sourcing' : 'evaluation');
             if ($finalize) {
                 app(CbeApprovals::class)->start($actor, $cbe);
             }
             $this->audit($actor, $cbe, $finalize ? 'finalisasi_cbe' : 'draft_cbe', ['quotation_ids' => $data['quotation_ids'], 'selected_vendor_id' => $values['selected_vendor_id'], 'final_minor' => $values['final_minor'],
-                'vat_percent' => $vatPercent, 'commercial_terms' => $terms], $request->id, $data['selection_reason'] ?? null);
+                'comment' => $comment, 'vat_percent' => $vatPercent, 'commercial_terms' => $terms], $request->id, $data['selection_reason'] ?? null);
         });
     }
 

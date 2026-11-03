@@ -65,6 +65,21 @@ class Procurement extends Record
         return $this->belongsTo(WorkProject::class, 'work_project_id');
     }
 
+    public function projectNumbering()
+    {
+        return $this->belongsTo(ProjectNumbering::class, 'project_numbering_id');
+    }
+
+    public function cbeProjectName(): string
+    {
+        $name = $this->projectNumbering?->name;
+        if ($name === null && preg_match('~^\d+/(.+)/(?:PR|SR)/[IVX]+/\d{4}$~', $this->number, $parts)) {
+            $name = ProjectNumbering::where('code', $parts[1])->value('name');
+        }
+
+        return $name ?? $this->project?->name ?? $this->location ?? '';
+    }
+
     public function attachments()
     {
         return $this->hasMany(Attachment::class, 'request_id');

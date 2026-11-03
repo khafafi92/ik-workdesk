@@ -248,6 +248,7 @@ class ScmProcurement extends Page
         $allowed = static::$requestKind === null && Access::manages(auth()->user(), $record);
         $this->cbeForm = $allowed ? ['date' => $record->cbe?->date?->format('Y-m-d') ?? now()->toDateString(), 'quotation_ids' => $record->cbe?->quotation_ids ?? [],
             'selected_vendor_id' => $record->cbe?->selected_vendor_id ?? '', 'selection_reason' => $record->cbe?->selection_reason ?? '',
+            'comment' => $record->cbe?->documentComment() ?? $record->notes ?? '',
             'commercial_terms' => $record->cbe?->commercial_terms ?? []] : [];
         $this->legal = $allowed ? ($record->legalCase?->items->mapWithKeys(fn ($i) => [$i->id => ['status' => $i->status, 'vendor_document_id' => $i->vendor_document_id ?? '', 'correction_notes' => $i->correction_notes ?? '']])->all() ?? []) : [];
         $this->alternativeDocumentReason = '';

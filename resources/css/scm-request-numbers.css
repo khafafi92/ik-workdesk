@@ -85,6 +85,15 @@
     background: var(--scm-soft);
 }
 
+.scm-scroll .scm-material-register-table {
+    min-width: 90rem;
+}
+
+.scm-register-table .scm-material-price {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
 @media (min-width: 1000px) {
     .scm-number-register .scm-register-filters {
         grid-template-columns: minmax(14rem, 1.5fr) repeat(4, minmax(0, 1fr));

@@ -6,6 +6,7 @@
     $money = fn ($value, $currency) => ($value < 0 ? '-' : '').str_replace('IDR ', 'Rp ', \App\Services\Scm\Decimal::money(abs($value), $currency));
     $usesCbePricing = $sheetEditing || $sheetQuotes->contains(fn ($quote) => isset($quote['evaluation']));
     $sheetVatPercent = $sheetQuotes->first()['evaluation']['vat_percent'] ?? $sheetVatPercent ?? (int) config('scm.cbe_vat_percent');
+    $selectedQuote = $sheetQuotes->first(fn ($quote) => (int) $quote['vendor']['id'] === (int) $sheetSelectedVendor);
 @endphp
 <p class="scm-cbe-scroll-help">Form mengikuti susunan Excel. Geser lembar ke samping untuk melihat seluruh kolom pada layar kecil.</p>
 <div class="scm-cbe-canvas-scroll" role="region" aria-label="Lembar CBE sesuai master Excel" tabindex="0">
@@ -15,7 +16,7 @@
         <div class="scm-cbe-brand"><img src="{{ asset(($sheetRequest['company'] ?? 'APCA') === 'KPMOG' ? 'img/brands/kpmog-cbe.jpeg' : $sheetBrand['logo']) }}" alt="{{ $sheetBrand['logo_alt'] }}" width="180" height="52"><strong>{{ ($sheetRequest['company'] ?? 'APCA') === 'KPMOG' ? 'PT KPM OIL & GAS' : $sheetBrand['logo_alt'] }}</strong></div>
     </header>
     <div class="scm-cbe-identity">
-        <dl class="scm-cbe-project"><div><dt>PROJECT</dt><dd>{{ $sheetRequest['location'] ?? '' }}</dd></div><div><dt>DEPARTMENT</dt><dd>{{ $sheetRequest['department_name'] ?? '' }}</dd></div></dl>
+        <dl class="scm-cbe-project"><div><dt>PROJECT</dt><dd>{{ $sheetRequest['project_name'] ?? $sheetRequest['location'] ?? '' }}</dd></div><div><dt>DEPARTMENT</dt><dd>{{ $sheetRequest['department_name'] ?? '' }}</dd></div></dl>
         <dl class="scm-cbe-document-meta"><div><dt>Number</dt><dd>{{ $sheetNumber ?? '' }}</dd></div><div><dt>@if($sheetEditing)<label for="scm-cbeForm-date">Date</label>@else Date @endif</dt><dd>@if($sheetEditing)<input id="scm-cbeForm-date" wire:model="cbeForm.date" type="date" required>@else{{ $sheetDate }}@endif</dd></div></dl>
     </div>
     <div class="scm-cbe-scroll" role="region" aria-label="Tabel perbandingan CBE" tabindex="0">
@@ -96,7 +97,11 @@
                                 @case('rate') <span class="scm-cbe-sr">{{ $quote['currency'] === 'USD' ? 'Belum dicatat' : 'Tidak digunakan' }}</span> @break
                                 @case('idr') {{ $pricingError ? 'Periksa diskon' : ($quote['currency'] === 'IDR' ? $money($total, 'IDR') : 'Belum dikonversi') }} @break
                                 @case('budget') {{ $budget !== null ? $money($budget, 'IDR') : '' }} @break
-                                @case('difference') {{ $pricingError ? 'Periksa diskon' : ($budget !== null && $quote['currency'] === 'IDR' ? $money($total - $budget, 'IDR') : 'Belum dapat dibandingkan') }} @break
+                                @case('difference')
+                                    @if($pricingError)Periksa diskon
+                                    @elseif($budget === null)<span class="scm-cbe-sr">Belum dihitung: Total Budget PR/SR belum diisi.</span>
+                                    @elseif($quote['currency'] !== 'IDR')Kurs IDR belum dicatat
+                                    @else{{ $money($total - $budget, 'IDR') }}@endif @break
                                 @case('incoterms') <span class="scm-cbe-sr">Belum dicatat</span> @break
                                 @case('payment') {{ $quote['payment_terms'] }} @break
                                 @case('delivery') {{ $quote['lead_time'] }} @break
@@ -113,13 +118,15 @@
         </table>
     </div>
     <div class="scm-cbe-decision">
-        <dl><div><dt>COMMENT</dt><dd>{{ $sheetRequest['notes'] ?? '' }}</dd></div></dl>
         @if($sheetEditing)
-            <x-scm.select model="cbeForm.selected_vendor_id" label="RECOMMENDED VENDOR" :options="$sheetQuotes->mapWithKeys(fn ($q) => [$q['vendor']['id'] => $q['vendor']['name']])" />
+            <x-scm.field model="cbeForm.comment" label="COMMENT" multiline maxlength="10000" />
+            <x-scm.select model="cbeForm.selected_vendor_id" label="RECOMMENDED VENDOR" :options="$sheetQuotes->mapWithKeys(fn ($q) => [$q['vendor']['id'] => $q['vendor']['name']])" :live="true" />
             <x-scm.field model="cbeForm.selection_reason" label="REASON" multiline />
         @else
+            <dl><div><dt>COMMENT</dt><dd>{{ $sheetComment ?? $sheetRequest['notes'] ?? '' }}</dd></div></dl>
             <dl><div><dt>RECOMMENDED VENDOR</dt><dd>{{ $sheetQuotes->firstWhere('vendor.id', $sheetSelectedVendor)['vendor']['name'] ?? 'Belum dipilih' }}</dd></div><div><dt>REASON</dt><dd>{{ $sheetReason }}</dd></div></dl>
         @endif
+        <dl aria-live="polite" data-cbe-selected-price><div><dt>SELECTED VENDOR PRICE<br>(GRAND TOTAL)</dt><dd>@if($selectedQuote && empty($selectedQuote['evaluation_error'])){{ $money($selectedQuote['evaluation']['total_minor'] ?? $selectedQuote['total_minor'], $selectedQuote['currency']) }}@elseif($selectedQuote)Perbaiki perhitungan harga vendor terpilih.@elseif($sheetEditing)Pilih vendor untuk melihat harga akhir.@else Belum tercatat. @endif</dd></div></dl>
     </div>
     <div class="scm-cbe-signatures" role="group" aria-label="Kolom tanda tangan CBE">
         @foreach(\App\Services\Scm\CbeApprovals::LABELS as $key => $role)
@@ -134,4 +141,5 @@
 </section>
 </div>
 <p class="scm-cbe-source">{{ $sheetRequest['kind'] ?? 'PR/SR' }}: {{ $sheetRequest['number'] }} · {{ $sheetRequest['title'] }}</p>
+@if($budget === null && $sheetQuotes->isNotEmpty())<p class="scm-cbe-note" role="status">Total Budget pada PR/SR belum diisi. Differences dibiarkan kosong sampai anggaran tersedia.</p>@endif
 <p class="scm-cbe-note">{{ $usesCbePricing ? 'Discount menampilkan diskon quotation ditambah diskon tambahan CBE (opsional, kosong berarti nol). PPN master '.$sheetVatPercent.'% dihitung setelah diskon dan biaya tambahan. Non PKP menonaktifkan PPN; pajak nominal quotation tidak ditambahkan lagi.' : 'Total baris sudah termasuk diskon dan pajak nominal quotation.' }} Others mengikuti biaya tambahan quotation; freight belum dirinci terpisah. Kurs dan Incoterms yang kosong belum dicatat. Total Budget memakai estimasi PR/SR (IDR); Differences adalah total CBE dikurangi estimasi. Tanda tangan mengikuti aturan dokumen CBE pada Master Approval. Keputusan PR/SR dan CBE tersedia melalui menu Persetujuan.</p>

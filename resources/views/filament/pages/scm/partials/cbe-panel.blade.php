@@ -3,14 +3,15 @@
     $chosen = $quotes->whereIn('id', $cbeForm['quotation_ids'] ?? []);
     $chosenCompanies = $chosen->map(fn ($quote) => \App\Services\Scm\VendorIdentity::companyKey($quote->candidate->vendor->name));
     $sheetRequest = $sheetEditing
-        ? [...$record->toArray(), 'department_name' => $record->department->name, 'needed_at' => $record->needed_at?->toDateString()]
-        : $record->cbe->snapshot['request'];
+        ? [...$record->toArray(), 'project_name' => $record->cbeProjectName(), 'department_name' => $record->department->name, 'needed_at' => $record->needed_at?->toDateString()]
+        : $record->cbe->documentRequest();
     $sheetItems = $sheetEditing ? $record->items->toArray() : $record->cbe->snapshot['items'];
     $sheetQuotes = $sheetEditing ? $chosen->map(fn ($q) => [...$q->toArray(), 'vendor' => $q->candidate->vendor->toArray()])->values() : $record->cbe->snapshot['quotes'];
-    $sheetNumber = $record->cbe?->number;
+    $sheetNumber = $record->cbe?->number ?? 'CBE-'.$record->number;
     $sheetDate = $record->cbe?->date?->format('d/m/Y');
-    $sheetSelectedVendor = $record->cbe?->selected_vendor_id;
+    $sheetSelectedVendor = $sheetEditing ? ($cbeForm['selected_vendor_id'] ?? null) : $record->cbe->selected_vendor_id;
     $sheetReason = $record->cbe?->selection_reason;
+    $sheetComment = $record->cbe?->documentComment() ?? $record->notes ?? '';
     $sheetPreparedName = $sheetEditing ? auth()->user()->name : ($record->cbe->snapshot['prepared_by_name'] ?? null);
     $sheetCbeApprovals = $sheetEditing ? collect() : $record->cbe->approvals;
     $sheetVatPercent = $record->cbe?->vat_percent ?? (int) config('scm.cbe_vat_percent');
