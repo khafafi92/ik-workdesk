@@ -8,6 +8,7 @@ use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\GlobalChatRoom;
 use App\Filament\Pages\ScmApprovals;
 use App\Filament\Pages\ScmRequestNumbers;
+use App\Filament\Pages\ScmSelectedVendorItems;
 use App\Filament\Pages\SignatureProfile;
 use App\Filament\Resources\Departments\DepartmentResource;
 use App\Filament\Resources\Employees\EmployeeResource;
@@ -67,6 +68,7 @@ class MenuAccessCatalogTest extends TestCase
             UserResource::class => 'Administrator access level',
             ScmApprovals::class => 'Assigned PR/SR or CBE approval, SCM processor, or system administrator',
             ScmRequestNumbers::class => 'SCM requester or processor sees authorized numbers; SCM configurator manages Project numbering',
+            ScmSelectedVendorItems::class => 'SCM requester sees own final PR items; SCM processor sees authorized department items',
             SignatureProfile::class => 'SCM requester, processor or assigned approver',
         ];
         $aliases = ['Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
