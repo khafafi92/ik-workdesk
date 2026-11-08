@@ -1,6 +1,12 @@
 <div
     class="ik-sidebar-collapse-footer"
     x-data="{}"
+    x-on:keydown.escape.window="
+        if (window.matchMedia('(max-width: 1023px)').matches && $store.sidebar.isOpen) {
+            $store.sidebar.close()
+            $nextTick(() => document.querySelector('.fi-topbar-open-sidebar-btn')?.focus())
+        }
+    "
     x-init="
         $nextTick(() => {
             document
@@ -16,6 +22,8 @@
         x-show="$store.sidebar.isOpen"
         x-on:click="$store.sidebar.close()"
         aria-label="Collapse sidebar"
+        aria-controls="fi-main-sidebar"
+        x-bind:aria-expanded="$store.sidebar.isOpen"
         title="Collapse sidebar"
     >
         <x-filament::icon
@@ -33,6 +41,8 @@
         x-show="! $store.sidebar.isOpen"
         x-on:click="$store.sidebar.open()"
         aria-label="Expand sidebar"
+        aria-controls="fi-main-sidebar"
+        x-bind:aria-expanded="$store.sidebar.isOpen"
         title="Expand sidebar"
     >
         <x-filament::icon

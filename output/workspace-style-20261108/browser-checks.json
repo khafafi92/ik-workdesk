@@ -1,0 +1,2244 @@
+[
+  {
+    "name": "desktop",
+    "evidence_id": "ev_b1a5e3282c367795f1de2c2c8fde07cc7fc0a0c46c2551ac4de94b63cd0212f9",
+    "environment": {
+      "color_scheme": "light",
+      "locale": "en-US",
+      "reduced_motion": "no-preference",
+      "service_workers": "block",
+      "timezone": "UTC",
+      "viewport": {
+        "device_scale_factor": 1,
+        "height": 1080,
+        "width": 1440
+      }
+    },
+    "completeness": {
+      "equality_eligible": true,
+      "missing_sections": [],
+      "status": "complete",
+      "truncated_sections": []
+    },
+    "steps": [
+      {
+        "step_id": "scenario_start",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "email",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "password",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "login",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "authenticated",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "login-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "open-panel",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "panel-ready",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "page-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "zoom-0",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "zoom-1",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "zoom-2",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "zoom-3",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "zoom-4",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "zoom-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      }
+    ],
+    "console_errors": []
+  },
+  {
+    "name": "mobile-320",
+    "evidence_id": "ev_19293fc8e689fb2437a24ca84b5a12794a4bd6c386e396b71b5d07e3b1aadd41",
+    "environment": {
+      "color_scheme": "light",
+      "locale": "en-US",
+      "reduced_motion": "no-preference",
+      "service_workers": "block",
+      "timezone": "UTC",
+      "viewport": {
+        "device_scale_factor": 1,
+        "height": 740,
+        "width": 320
+      }
+    },
+    "completeness": {
+      "equality_eligible": true,
+      "missing_sections": [],
+      "status": "complete",
+      "truncated_sections": []
+    },
+    "steps": [
+      {
+        "step_id": "scenario_start",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "email",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "password",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "login",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "authenticated",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "login-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "keyboard-workspace",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "ready",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "drawer-open",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "drawer-visible",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "drawer-escape",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "drawer-closed",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "drawer-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      }
+    ],
+    "console_errors": []
+  },
+  {
+    "name": "modal-320",
+    "evidence_id": "ev_e0207545913b90a1d3ed98271a027d7d4526cf6d2c64aafa97e7785be7eab367",
+    "environment": {
+      "color_scheme": "light",
+      "locale": "en-US",
+      "reduced_motion": "no-preference",
+      "service_workers": "block",
+      "timezone": "UTC",
+      "viewport": {
+        "device_scale_factor": 1,
+        "height": 740,
+        "width": 320
+      }
+    },
+    "completeness": {
+      "equality_eligible": true,
+      "missing_sections": [],
+      "status": "complete",
+      "truncated_sections": []
+    },
+    "steps": [
+      {
+        "step_id": "scenario_start",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "email",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "password",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "login",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "authenticated",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "login-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "keyboard-workspace",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "ready",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "open-settings",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "modal-visible",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "modal-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      }
+    ],
+    "console_errors": []
+  },
+  {
+    "name": "tablet-reduced-motion",
+    "evidence_id": "ev_3759ffcb6c33353f1e1edfd208bcdbfdddc4854a02d7de0986706ecdc47aa8ad",
+    "environment": {
+      "color_scheme": "light",
+      "locale": "en-US",
+      "reduced_motion": "reduce",
+      "service_workers": "block",
+      "timezone": "UTC",
+      "viewport": {
+        "device_scale_factor": 1,
+        "height": 1024,
+        "width": 768
+      }
+    },
+    "completeness": {
+      "equality_eligible": true,
+      "missing_sections": [],
+      "status": "complete",
+      "truncated_sections": []
+    },
+    "steps": [
+      {
+        "step_id": "scenario_start",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "email",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "password",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "login",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "authenticated",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "login-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "open-panel",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "panel-ready",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "page-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      }
+    ],
+    "console_errors": []
+  },
+  {
+    "name": "empty-mobile",
+    "evidence_id": "ev_d9ca9a50fe7ae2c5570ec7f587f597e64648dcbc2e05883681d8e54c1d4e1937",
+    "environment": {
+      "color_scheme": "light",
+      "locale": "en-US",
+      "reduced_motion": "reduce",
+      "service_workers": "block",
+      "timezone": "UTC",
+      "viewport": {
+        "device_scale_factor": 1,
+        "height": 844,
+        "width": 390
+      }
+    },
+    "completeness": {
+      "equality_eligible": true,
+      "missing_sections": [],
+      "status": "complete",
+      "truncated_sections": []
+    },
+    "steps": [
+      {
+        "step_id": "scenario_start",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "email",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "password",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "login",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "empty-dashboard",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      }
+    ],
+    "console_errors": []
+  },
+  {
+    "name": "dashboard-links",
+    "evidence_id": "ev_108d4efd9de50c47787fe74c32886f4faa7697dbb79acf8d43e9ee6d473804e2",
+    "environment": {
+      "color_scheme": "light",
+      "locale": "en-US",
+      "reduced_motion": "no-preference",
+      "service_workers": "block",
+      "timezone": "UTC",
+      "viewport": {
+        "device_scale_factor": 1,
+        "height": 1080,
+        "width": 1440
+      }
+    },
+    "completeness": {
+      "equality_eligible": true,
+      "missing_sections": [],
+      "status": "complete",
+      "truncated_sections": []
+    },
+    "steps": [
+      {
+        "step_id": "scenario_start",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "email",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "password",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "login",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "authenticated",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "login-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "open-panel",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "panel-ready",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "page-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-0",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk"
+        }
+      },
+      {
+        "step_id": "destination-loaded-0",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk"
+        }
+      },
+      {
+        "step_id": "return-0",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk"
+        }
+      },
+      {
+        "step_id": "returned-0",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-1",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks"
+        }
+      },
+      {
+        "step_id": "destination-loaded-1",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks"
+        }
+      },
+      {
+        "step_id": "return-1",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks"
+        }
+      },
+      {
+        "step_id": "returned-1",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-2",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/atk-dashboard"
+        }
+      },
+      {
+        "step_id": "destination-loaded-2",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/atk-dashboard"
+        }
+      },
+      {
+        "step_id": "return-2",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "returned-2",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-3",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/ltro-daily-reports"
+        }
+      },
+      {
+        "step_id": "destination-loaded-3",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/ltro-daily-reports"
+        }
+      },
+      {
+        "step_id": "return-3",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/ltro-daily-reports"
+        }
+      },
+      {
+        "step_id": "returned-3",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-4",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/attendance-report-center"
+        }
+      },
+      {
+        "step_id": "destination-loaded-4",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/attendance-report-center"
+        }
+      },
+      {
+        "step_id": "return-4",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "returned-4",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-5",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders"
+        }
+      },
+      {
+        "step_id": "destination-loaded-5",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders"
+        }
+      },
+      {
+        "step_id": "return-5",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders"
+        }
+      },
+      {
+        "step_id": "returned-5",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-6",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/1"
+        }
+      },
+      {
+        "step_id": "destination-loaded-6",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/1"
+        }
+      },
+      {
+        "step_id": "return-6",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/1"
+        }
+      },
+      {
+        "step_id": "returned-6",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-7",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters%5Bschedule%5D%5Bvalue%5D=today"
+        }
+      },
+      {
+        "step_id": "destination-loaded-7",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters%5Bschedule%5D%5Bvalue%5D=today"
+        }
+      },
+      {
+        "step_id": "return-7",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters[schedule][value]=today"
+        }
+      },
+      {
+        "step_id": "returned-7",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-8",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/2"
+        }
+      },
+      {
+        "step_id": "destination-loaded-8",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/2"
+        }
+      },
+      {
+        "step_id": "return-8",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/2"
+        }
+      },
+      {
+        "step_id": "returned-8",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-9",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters%5Bschedule%5D%5Bvalue%5D=upcoming"
+        }
+      },
+      {
+        "step_id": "destination-loaded-9",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters%5Bschedule%5D%5Bvalue%5D=upcoming"
+        }
+      },
+      {
+        "step_id": "return-9",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters[schedule][value]=upcoming"
+        }
+      },
+      {
+        "step_id": "returned-9",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-10",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/3"
+        }
+      },
+      {
+        "step_id": "destination-loaded-10",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/3"
+        }
+      },
+      {
+        "step_id": "return-10",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders/3"
+        }
+      },
+      {
+        "step_id": "returned-10",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-11",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters%5Bschedule%5D%5Bvalue%5D=overdue"
+        }
+      },
+      {
+        "step_id": "destination-loaded-11",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters%5Bschedule%5D%5Bvalue%5D=overdue"
+        }
+      },
+      {
+        "step_id": "return-11",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [
+            "filters[schedule][value]"
+          ],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/reminders?filters[schedule][value]=overdue"
+        }
+      },
+      {
+        "step_id": "returned-11",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-12",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/6"
+        }
+      },
+      {
+        "step_id": "destination-loaded-12",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/6"
+        }
+      },
+      {
+        "step_id": "return-12",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/6"
+        }
+      },
+      {
+        "step_id": "returned-12",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-13",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/5"
+        }
+      },
+      {
+        "step_id": "destination-loaded-13",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/5"
+        }
+      },
+      {
+        "step_id": "return-13",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/5"
+        }
+      },
+      {
+        "step_id": "returned-13",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-14",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/4"
+        }
+      },
+      {
+        "step_id": "destination-loaded-14",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/4"
+        }
+      },
+      {
+        "step_id": "return-14",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/4"
+        }
+      },
+      {
+        "step_id": "returned-14",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-15",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/3"
+        }
+      },
+      {
+        "step_id": "destination-loaded-15",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/3"
+        }
+      },
+      {
+        "step_id": "return-15",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/3"
+        }
+      },
+      {
+        "step_id": "returned-15",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-16",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/2"
+        }
+      },
+      {
+        "step_id": "destination-loaded-16",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/2"
+        }
+      },
+      {
+        "step_id": "return-16",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk/2"
+        }
+      },
+      {
+        "step_id": "returned-16",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-17",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/4"
+        }
+      },
+      {
+        "step_id": "destination-loaded-17",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/4"
+        }
+      },
+      {
+        "step_id": "return-17",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/4"
+        }
+      },
+      {
+        "step_id": "returned-17",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-18",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/3"
+        }
+      },
+      {
+        "step_id": "destination-loaded-18",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/3"
+        }
+      },
+      {
+        "step_id": "return-18",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/3"
+        }
+      },
+      {
+        "step_id": "returned-18",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-19",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/2"
+        }
+      },
+      {
+        "step_id": "destination-loaded-19",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/2"
+        }
+      },
+      {
+        "step_id": "return-19",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/2"
+        }
+      },
+      {
+        "step_id": "returned-19",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "destination-20",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/1"
+        }
+      },
+      {
+        "step_id": "destination-loaded-20",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/1"
+        }
+      },
+      {
+        "step_id": "return-20",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/work-tasks/1"
+        }
+      },
+      {
+        "step_id": "returned-20",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "final-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      }
+    ],
+    "console_errors": []
+  },
+  {
+    "name": "dashboard-controls",
+    "evidence_id": "ev_cf74eb86f0ba0c4e97df8c9863b91b455750b8e259dad80951da5d12c6cbe01d",
+    "environment": {
+      "color_scheme": "light",
+      "locale": "en-US",
+      "reduced_motion": "no-preference",
+      "service_workers": "block",
+      "timezone": "UTC",
+      "viewport": {
+        "device_scale_factor": 1,
+        "height": 1080,
+        "width": 1440
+      }
+    },
+    "completeness": {
+      "equality_eligible": true,
+      "missing_sections": [],
+      "status": "complete",
+      "truncated_sections": []
+    },
+    "steps": [
+      {
+        "step_id": "scenario_start",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "email",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "password",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "login",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "authenticated",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "login-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "open-panel",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "panel-ready",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "page-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "collapse",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "collapsed",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "expand",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "expanded",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settings-keyboard",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settings-visible",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "escape",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settings-hidden",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settings-pointer",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settings-open-again",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "save",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settings-saved",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      }
+    ],
+    "console_errors": []
+  },
+  {
+    "name": "service-desk",
+    "evidence_id": "ev_764e3b15a59b2f3da0f99c47f1bcf4bd2da1d32ba5487a348b2ac1d028b4a2bd",
+    "environment": {
+      "color_scheme": "light",
+      "locale": "en-US",
+      "reduced_motion": "no-preference",
+      "service_workers": "block",
+      "timezone": "UTC",
+      "viewport": {
+        "device_scale_factor": 1,
+        "height": 1000,
+        "width": 1440
+      }
+    },
+    "completeness": {
+      "equality_eligible": true,
+      "missing_sections": [],
+      "status": "complete",
+      "truncated_sections": []
+    },
+    "steps": [
+      {
+        "step_id": "scenario_start",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "email",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "password",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/login"
+        }
+      },
+      {
+        "step_id": "login",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "authenticated",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "login-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/dashboard"
+        }
+      },
+      {
+        "step_id": "open-panel",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "panel-ready",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "page-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel"
+        }
+      },
+      {
+        "step_id": "tickets-pointer",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk"
+        }
+      },
+      {
+        "step_id": "tickets-table",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk"
+        }
+      },
+      {
+        "step_id": "table-settled",
+        "status": "completed",
+        "error": null,
+        "after_url": {
+          "origin": "http://127.0.0.1:8012",
+          "query_parameter_names": [],
+          "redacted": false,
+          "url": "http://127.0.0.1:8012/panel/service-desk"
+        }
+      }
+    ],
+    "console_errors": []
+  }
+]

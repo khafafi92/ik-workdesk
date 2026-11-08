@@ -24,49 +24,49 @@
 @endphp
 
 <x-filament-panels::page>
-    <div class="ik-dashboard ik-dashboard--minimal">
+    <div class="ik-dashboard ik-dashboard--minimal ik-workspace-dashboard">
         <header class="ik-minimal-hero">
             <div>
                 <span>{{ $greeting }}, {{ $firstName }}</span>
                 <h1>Work Summary</h1>
             </div>
-            <time>{{ now()->format('l, d F Y') }}</time>
+            <time datetime="{{ now()->toDateString() }}">{{ now()->format('l, d F Y') }}</time>
         </header>
 
         @if ($canViewStatistics && in_array('work_overview', $data['visibleSections'], true))
             <div class="ik-overview-grid">
-                <section class="ik-overview-card">
+                <section class="ik-overview-card" aria-labelledby="service-desk-summary">
                     <div class="ik-overview-heading">
-                        <div><h2>Service Desk</h2><p>All time</p></div>
+                        <div><h2 id="service-desk-summary">Service Desk</h2><p>All time</p></div>
                         @if ($data['ticketsUrl'])
                             <a href="{{ $data['ticketsUrl'] }}">View all tickets</a>
                         @endif
                     </div>
-                    <div class="ik-overview-metrics">
+                    <dl class="ik-overview-metrics">
                         @foreach ($data['ticketStats'] as $stat)
-                            <div>
-                                <strong>{{ $stat['value'] }}</strong>
-                                <span>{{ $stat['label'] }}</span>
+                            <div class="ik-work-metric {{ $loop->first ? 'ik-work-metric--total' : 'ik-work-metric--'.$stat['tone'] }} {{ $stat['value'] == 0 ? 'ik-work-metric--empty' : '' }}">
+                                <dt>{{ $stat['label'] }}</dt>
+                                <dd>{{ $stat['value'] }}</dd>
                             </div>
                         @endforeach
-                    </div>
+                    </dl>
                 </section>
 
-                <section class="ik-overview-card">
+                <section class="ik-overview-card" aria-labelledby="work-log-summary">
                     <div class="ik-overview-heading">
-                        <div><h2>Work Logs</h2><p>All time</p></div>
+                        <div><h2 id="work-log-summary">Work Logs</h2><p>All time</p></div>
                         @if ($data['workTasksUrl'])
                             <a href="{{ $data['workTasksUrl'] }}">View all work logs</a>
                         @endif
                     </div>
-                    <div class="ik-overview-metrics">
+                    <dl class="ik-overview-metrics">
                         @foreach ($data['workStats'] as $stat)
-                            <div>
-                                <strong>{{ $stat['value'] }}</strong>
-                                <span>{{ $stat['label'] }}</span>
+                            <div class="ik-work-metric {{ $loop->first ? 'ik-work-metric--total' : 'ik-work-metric--'.$stat['tone'] }} {{ $stat['value'] == 0 ? 'ik-work-metric--empty' : '' }}">
+                                <dt>{{ $stat['label'] }}</dt>
+                                <dd>{{ $stat['value'] }}</dd>
                             </div>
                         @endforeach
-                    </div>
+                    </dl>
                 </section>
             </div>
         @endif
@@ -93,7 +93,7 @@
 
                             <dl class="ik-module-summary-metrics">
                                 @foreach ($module['metrics'] as $metric)
-                                    <div class="ik-module-summary-metric ik-module-summary-metric--{{ $metric['tone'] }}">
+                                    <div class="ik-module-summary-metric ik-module-summary-metric--{{ $metric['tone'] }} {{ in_array($metric['value'], [0, '0', '-'], true) ? 'ik-module-summary-metric--empty' : '' }}">
                                         <dt>{{ $metric['label'] }}</dt>
                                         <dd>{{ $metric['value'] }}</dd>
                                     </div>
@@ -127,7 +127,7 @@
 
             <div class="ik-reminder-grid">
                 @foreach ($reminderGroups as $schedule => $group)
-                    <section class="ik-reminder-lane {{ $schedule === 'overdue' ? 'ik-reminder-lane--danger' : '' }}" aria-labelledby="reminders-{{ $schedule }}">
+                    <section class="ik-reminder-lane {{ $schedule === 'overdue' ? 'ik-reminder-lane--danger' : '' }} {{ $data['reminderCounts'][$schedule] > 0 ? 'ik-reminder-lane--has-items' : '' }}" aria-labelledby="reminders-{{ $schedule }}">
                         <div class="ik-reminder-lane-head">
                             <h3 id="reminders-{{ $schedule }}">{{ $group['label'] }}</h3>
                             <strong>{{ $data['reminderCounts'][$schedule] }}</strong>

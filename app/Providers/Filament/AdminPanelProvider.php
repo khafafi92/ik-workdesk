@@ -123,7 +123,11 @@ class AdminPanelProvider extends PanelProvider
                     '<link rel="stylesheet" href="'.
                     asset('css/filament/admin/it-daily-monitoring.css').
                     '?v='.filemtime(public_path('css/filament/admin/it-daily-monitoring.css')).
-                    '">'.app(Vite::class)(['resources/css/scm.css'])->toHtml(),
+                    '">'.app(Vite::class)(['resources/css/scm.css'])->toHtml().
+                    '<link rel="stylesheet" href="'.
+                    asset('css/workdesk-workspace.css').
+                    '?v='.filemtime(public_path('css/workdesk-workspace.css')).
+                    '">',
             )
             ->renderHook(
                 PanelsRenderHook::SCRIPTS_AFTER,
