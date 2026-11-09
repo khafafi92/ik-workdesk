@@ -18,6 +18,9 @@
     --ik-motion-fast: 160ms;
     --ik-motion-panel: 240ms;
     --ik-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ik-font-copy: 0.8125rem;
+    --ik-font-label: 0.75rem;
+    --ik-font-title: clamp(1.375rem, 1.1rem + 0.8vw, 1.75rem);
 }
 
 .fi-body,
@@ -48,8 +51,8 @@ body.ik-workdesk-dashboard {
 
 .fi-body :is(.fi-header-heading, .ik-page-title h1) {
     color: var(--ik-text) !important;
-    font-size: clamp(1.5rem, 1.1rem + 1vw, 2rem) !important;
-    font-weight: 650 !important;
+    font-size: var(--ik-font-title) !important;
+    font-weight: 500 !important;
     letter-spacing: -0.035em !important;
     line-height: 1.2 !important;
 }
@@ -134,7 +137,7 @@ body.ik-workdesk-dashboard {
 
 .fi-body :is(.fi-section-header-heading, .fi-ta-header-heading, .fi-modal-heading) {
     color: var(--ik-text) !important;
-    font-weight: 650 !important;
+    font-weight: 500 !important;
     letter-spacing: -0.015em !important;
 }
 
@@ -718,5 +721,581 @@ body.ik-workdesk-dashboard {
     .fi-body .fi-sidebar-item.fi-active > .fi-sidebar-item-btn {
         outline: 2px solid Highlight;
         outline-offset: -2px;
+    }
+}
+
+@media screen {
+    .fi-body :is(.fi-ta-text, .fi-ta-text-item, .fi-in-text, .fi-input, .fi-select-input, .fi-select-input-btn, .fi-textarea, .fi-dropdown-list-item-label) {
+        font-size: var(--ik-font-copy) !important;
+        font-weight: 400 !important;
+    }
+
+    .fi-body :is(.fi-ta-header-cell-label, .fi-fo-field-label-content, .fi-in-entry-label, .fi-sc-wizard-step-label) {
+        font-size: var(--ik-font-copy) !important;
+        font-weight: 500 !important;
+        letter-spacing: 0 !important;
+    }
+
+    .fi-body :is(.fi-btn, .fi-tabs-item) {
+        font-size: var(--ik-font-copy) !important;
+        font-weight: 500 !important;
+    }
+
+    .fi-body .fi-tabs {
+        border: 1px solid var(--ik-border) !important;
+        border-radius: 10px !important;
+        background: var(--ik-surface) !important;
+        box-shadow: none !important;
+    }
+
+    .fi-body .fi-tabs-item {
+        min-height: 44px;
+        border-radius: 6px;
+    }
+
+    .fi-body .fi-tabs-item:is(.fi-active, [aria-selected="true"]) {
+        color: var(--ik-primary) !important;
+        background: var(--ik-primary-soft) !important;
+    }
+
+    .fi-body .fi-tabs-item.fi-active :is(.fi-tabs-item-label, .fi-icon) {
+        color: var(--ik-primary) !important;
+    }
+
+    .fi-body .fi-in-entry-wrp {
+        border-radius: 12px !important;
+    }
+
+    .fi-body .fi-wi-stats-overview-stat-value {
+        font-size: 1.75rem !important;
+        font-weight: 500 !important;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .fi-body :is(.scm-workspace, .scm-panel) {
+        --scm-text: var(--ik-text);
+        --scm-muted: var(--ik-muted);
+        --scm-line: var(--ik-border);
+        --scm-bg: var(--ik-surface);
+        --scm-soft: var(--ik-surface-soft);
+        --scm-accent: var(--ik-primary);
+        font-size: var(--ik-font-copy);
+    }
+
+    .fi-body :is(.scm-panel, .ik-atk-dashboard-list, .ik-atk-dashboard-summary > div, .ik-atk-requirement-list, .ik-atk-requirement-filters, .ik-report-overview-filter, .ik-report-overview-metric, .ik-report-overview-breakdowns > article, .att-section, .att-filter-card, .att-stat-card, .mr-calendar-hero, .mr-calendar-scroll, .mr-calendar-empty, .ik-ai-settings-panel, .ik-ai-empty, .ik-ai-conversation, .ik-global-chat-room, .ik-global-chat-no-company, .ik-collab-room, .ik-collab-card, .it-review-section, .it-review > section, .it-review-summary > div, .it-review-counts > div) {
+        border: 1px solid var(--ik-border) !important;
+        border-radius: 12px !important;
+        color: var(--ik-text);
+        background: var(--ik-surface) !important;
+        box-shadow: none !important;
+    }
+
+    .fi-body :is(.scm-panel > h2, .scm-heading > h2, .ik-atk-dashboard-list-toolbar h2, .ik-atk-requirement-list h2, .ik-report-overview-section-heading h2, .ik-report-overview-breakdowns h2, .att-section-title, .ik-ai-settings-panel header h2, .ik-global-chat-heading h2, .ik-collab-header h2, .it-review h2) {
+        color: var(--ik-text);
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.5;
+        letter-spacing: -0.015em;
+    }
+
+    .fi-body :is(.ik-atk-dashboard-summary strong, .ik-report-overview-metric dd:not(.ik-report-overview-metric-text), .att-stat-value, .it-review-summary dd, .it-review-counts dd, .scm-summary dd) {
+        font-size: 1.5rem;
+        font-weight: 500;
+        line-height: 1.3;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .fi-body :is(.scm-help, .scm-next-action p, .ik-report-overview-section-heading p, .ik-atk-dashboard-list-toolbar p, .att-section-desc, .ik-ai-help, .ik-global-chat-help, .ik-global-chat-heading p, .ik-collab-helper, .it-review-help) {
+        color: var(--ik-muted);
+        font-size: var(--ik-font-copy);
+        line-height: 1.6;
+    }
+
+    .fi-body :is(.scm-field, .it-review-field, .ik-ai-field, .ik-report-overview-filter-form) :is(label, label > span) {
+        color: var(--ik-text);
+        font-size: var(--ik-font-copy);
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    .fi-body :is(.scm-field, .it-review-field, .ik-ai-field) :is(input, select, textarea):not([type="checkbox"], [type="radio"], .scm-request-sheet *, .scm-cbe-sheet *),
+    .fi-body .ik-report-overview-filter-form :is(input, select),
+    .fi-body :is(.att-select, .att-input) {
+        min-height: 44px;
+        max-width: 100%;
+        border: 1px solid var(--ik-border-strong) !important;
+        border-radius: 8px !important;
+        color: var(--ik-text);
+        background: var(--ik-surface);
+        font-family: inherit;
+        font-size: var(--ik-font-copy);
+        font-weight: 400;
+    }
+
+    .fi-body :is(.scm-actions > button:not(.fi-btn), .scm-workspace > nav button, .mr-calendar-nav button, .ik-global-chat-companies button, .ik-global-chat-load-older, .ik-global-chat-send, .ik-atk-dashboard-action) {
+        min-height: 44px;
+        border: 1px solid var(--ik-border-strong);
+        border-radius: 8px;
+        color: var(--ik-primary);
+        background: var(--ik-surface);
+        font-family: inherit;
+        font-size: var(--ik-font-copy);
+        font-weight: 500;
+    }
+
+    .fi-body :is(.scm-workspace > nav button[aria-current="page"], .ik-global-chat-companies button[aria-pressed="true"], .mr-calendar-today) {
+        color: var(--ik-primary);
+        background: var(--ik-primary-soft);
+        border-color: var(--ik-primary);
+        font-weight: 500;
+    }
+
+    .fi-body .ik-global-chat-send {
+        color: #fff;
+        background: var(--ik-primary);
+        border-color: var(--ik-primary);
+    }
+
+    .fi-body :is(.scm-scroll:not(.scm-cbe-canvas-scroll), .ik-atk-table-wrap, .ik-atk-requirement-table-wrap, .it-review-table-wrap) table {
+        font-size: var(--ik-font-copy);
+    }
+
+    .fi-body :is(.scm-scroll:not(.scm-cbe-canvas-scroll), .ik-atk-table-wrap, .ik-atk-requirement-table-wrap, .it-review-table-wrap) th {
+        color: var(--ik-muted);
+        background: var(--ik-surface-soft);
+        font-weight: 500;
+    }
+
+    .fi-body :is(.scm-scroll, .ik-atk-table-wrap, .it-review-table-wrap) tbody tr:hover {
+        background: #f4f8ff;
+    }
+
+    .fi-body .scm-check input {
+        border-color: var(--ik-border-strong);
+        accent-color: var(--ik-primary);
+    }
+
+    .fi-body .mr-calendar-hero h1 {
+        color: var(--ik-text);
+        font-size: var(--ik-font-title);
+        font-weight: 500;
+        letter-spacing: -0.03em;
+    }
+
+    .fi-body :is(.mr-calendar-eyebrow, .mr-calendar-room strong, .ik-global-chat-room-heading h3, .ik-ai-provider-legend) {
+        color: var(--ik-muted);
+        font-size: var(--ik-font-copy);
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    .ik-workdesk-account,
+    .ik-workdesk-ltro,
+    .ik-workdesk-error,
+    .vendor-portal {
+        color: var(--ik-text);
+        background: var(--ik-canvas);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-size: var(--ik-font-copy);
+        line-height: 1.6;
+    }
+
+    .wd-login-page {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .wd-login-page :is(.wd-login-input-wrap input, .wd-login-submit, .wd-login-card) {
+        border-radius: var(--ik-radius);
+    }
+
+    .wd-login-page .wd-login-card-heading h2 {
+        font-size: var(--ik-font-title);
+        font-weight: 500;
+    }
+
+    .ik-surface,
+    .ik-workdesk-account .ik-account-main :is(.shadow, .shadow-sm),
+    .ik-workdesk-dashboard .ik-main > .rounded-2xl,
+    .vendor-portal :is(.vp-paper, .vp-upload, .vp-vendor-kind) {
+        border: 1px solid var(--ik-border);
+        border-radius: 12px;
+        background: var(--ik-surface);
+        box-shadow: none;
+    }
+
+    .ik-workdesk-account .ik-account-shell {
+        background: var(--ik-canvas);
+    }
+
+    .ik-workdesk-account .ik-account-page-header {
+        border-bottom: 1px solid var(--ik-border);
+        background: var(--ik-surface);
+        box-shadow: none;
+    }
+
+    .ik-workdesk-account .ik-account-page-header h2,
+    .ik-workdesk-dashboard .ik-page-hero h1,
+    .vendor-portal :is(.vp-header h1, .vp-paper > h1) {
+        color: var(--ik-text);
+        font-size: var(--ik-font-title);
+        font-weight: 500;
+        letter-spacing: -0.03em;
+        line-height: 1.35;
+    }
+
+    .ik-workdesk-account .ik-account-main h2,
+    .ik-workdesk-dashboard .ik-main :is(h2, h3),
+    .ik-surface-title,
+    .vendor-portal :is(.vp-paper h2, .vp-paper h3, .vp-field-group legend) {
+        font-size: 1rem;
+        font-weight: 500;
+        letter-spacing: -0.015em;
+    }
+
+    .ik-workdesk-account .ik-account-main > div {
+        padding-block: 1.5rem;
+    }
+
+    .ik-workdesk-account nav {
+        font-size: var(--ik-font-copy);
+    }
+
+    .ik-workdesk-dashboard .ik-main :is(th, td) {
+        font-size: var(--ik-font-copy);
+        line-height: 1.6;
+    }
+
+    .ik-workdesk-dashboard .ik-main th {
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    body .ik-form-input,
+    .vendor-portal .vp-field :is(input:not([type="checkbox"]), textarea, select) {
+        min-height: 44px;
+        border: 1px solid var(--ik-border-strong);
+        border-radius: 8px;
+        color: var(--ik-text);
+        background: var(--ik-surface);
+        font-size: var(--ik-font-copy);
+        box-shadow: none;
+    }
+
+    body .ik-form-input {
+        border-color: var(--ik-border-strong) !important;
+    }
+
+    body .ik-form-input:focus {
+        border-color: var(--ik-primary) !important;
+    }
+
+    body .ik-form-label,
+    .vendor-portal :is(.vp-field label, .vp-check, .vp-review-answers dt) {
+        color: var(--ik-text);
+        font-size: var(--ik-font-copy);
+        font-weight: 500;
+    }
+
+    body .ik-button,
+    .vendor-portal button {
+        min-height: 44px;
+        justify-content: center;
+        padding: 0.625rem 1rem;
+        border-radius: 8px;
+        font-size: var(--ik-font-copy);
+        font-weight: 500;
+        letter-spacing: 0;
+        text-transform: none;
+        box-shadow: none;
+    }
+
+    body .ik-button.ik-button--primary,
+    .vendor-portal button:not(.vp-secondary) {
+        color: #fff;
+        border-color: var(--ik-primary);
+        background: var(--ik-primary);
+    }
+
+    body .ik-button.ik-button--secondary,
+    .vendor-portal button.vp-secondary {
+        color: var(--ik-text);
+        border-color: var(--ik-border-strong);
+        background: var(--ik-surface);
+    }
+
+    body .ik-button.ik-button--danger {
+        color: #fff;
+        background: var(--ik-danger);
+    }
+
+    body .ik-button.ik-button--light {
+        color: var(--ik-primary);
+        background: var(--ik-primary-soft);
+    }
+
+    .vendor-portal a {
+        color: var(--ik-primary);
+    }
+
+    body .ik-button.ik-button--primary:hover {
+        background: #004fae;
+    }
+
+    .vendor-portal .vp-steps a {
+        border-color: var(--ik-border-strong);
+        border-radius: 8px;
+    }
+
+    .vendor-portal .vp-steps a[aria-current] {
+        border-color: var(--ik-primary);
+        color: var(--ik-primary);
+        background: var(--ik-primary-soft);
+        font-weight: 500;
+    }
+
+    .vendor-portal :is(.vp-status, .vp-section-header, .vp-review-section, .vp-upload-content) {
+        border-color: var(--ik-border);
+    }
+
+    .vendor-portal :is(.vp-note, .vp-footer, .vp-upload-state) {
+        color: var(--ik-muted);
+        font-size: var(--ik-font-label);
+    }
+
+    .ik-workdesk-account :is(a, button, input, select, textarea, summary):focus-visible,
+    .ik-workdesk-error a:focus-visible,
+    .vendor-portal :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible,
+    .ik-workdesk-ltro :is(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+        outline: 3px solid var(--ik-primary);
+        outline-offset: 3px;
+    }
+
+    html:has(.ik-workdesk-ltro) {
+        font-size: 16px;
+    }
+
+    .ik-workdesk-ltro :is(.ltro-page, .availability-page, .daily-input-component) {
+        color: var(--ik-text);
+        background: var(--ik-canvas);
+        font-family: inherit;
+    }
+
+    .ik-workdesk-ltro .header {
+        background: var(--ik-surface);
+        border-bottom: 1px solid var(--ik-border);
+        box-shadow: none;
+    }
+
+    .ik-workdesk-ltro :is(.header-title, .section-title, .form-title, .panel-title) {
+        color: var(--ik-text);
+        font-size: 1.125rem;
+        font-weight: 500;
+        letter-spacing: -0.015em;
+    }
+
+    .ik-workdesk-ltro .header-title .accent {
+        color: var(--ik-primary);
+        background: none;
+        -webkit-text-fill-color: currentColor;
+    }
+
+    .ik-workdesk-ltro :is(.header-sub, .clock, .stat-label, .summary-label, .summary-caption, .panel-sub, .donut-card-sub, .scroll-hint, .import-sub, .legend-name) {
+        color: var(--ik-muted);
+        font-size: var(--ik-font-label);
+        font-weight: 400;
+        letter-spacing: 0;
+    }
+
+    .ik-workdesk-ltro :is(.panel, .stat-card, .summary-card, .donut-card, .availability-panel, .form-section) {
+        color: var(--ik-text);
+        background: var(--ik-surface);
+        border: 1px solid var(--ik-border);
+        border-radius: 12px;
+        box-shadow: none;
+    }
+
+    .ik-workdesk-ltro :is(.stat-value, .summary-value) {
+        color: var(--ik-text);
+        font-size: 1.75rem;
+        font-weight: 500;
+        letter-spacing: -0.025em;
+    }
+
+    .ik-workdesk-ltro :is(.ltro-page, .availability-page) :is(.btn, .btn-input, .btn-import, .btn-save, .btn-view-data) {
+        min-height: 44px;
+        padding: 0.625rem 0.875rem;
+        border: 1px solid var(--ik-border-strong);
+        border-radius: 8px;
+        color: var(--ik-primary) !important;
+        background: var(--ik-surface);
+        font-family: inherit;
+        font-size: var(--ik-font-copy);
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    .ik-workdesk-ltro :is(.ltro-page, .availability-page) :is(.btn, .btn-input, .btn-import, .btn-save, .btn-view-data),
+    .ik-workdesk-ltro :is(.ltro-page, .availability-page) :is(.btn, .btn-input, .btn-import, .btn-save, .btn-view-data) * {
+        -webkit-text-fill-color: currentColor !important;
+    }
+
+    .ik-workdesk-ltro :is(.ltro-page, .availability-page) :is(.btn-input, .btn-save) *,
+    .ik-workdesk-ltro :is(.ltro-page, .availability-page) :is(.btn-primary, .btn-blue) *,
+    .ik-workdesk-ltro :is(.ltro-page, .availability-page) :is(.btn-primary, .btn-blue, .btn-save, .btn-input) {
+        color: #fff !important;
+        background: var(--ik-primary);
+        border-color: var(--ik-primary);
+    }
+
+    .ik-workdesk-ltro :is(.ltro-page, .availability-page) .btn-danger {
+        color: var(--ik-danger) !important;
+        background: #fff;
+    }
+
+    .ik-workdesk-ltro :is(.table-wrap, .form-table-wrap) {
+        border: 1px solid var(--ik-border);
+        border-radius: 12px;
+        background: var(--ik-surface);
+        max-width: 100%;
+        overflow: auto;
+    }
+
+    .ik-workdesk-ltro .dark-table :is(th, td),
+    .ik-workdesk-ltro .form-table :is(th, td) {
+        color: var(--ik-text);
+        background: var(--ik-surface);
+        border-color: var(--ik-border);
+        font-size: var(--ik-font-copy);
+        line-height: 1.6;
+    }
+
+    .ik-workdesk-ltro :is(.dark-table, .form-table) th {
+        background: var(--ik-surface-soft);
+        color: var(--ik-muted);
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    .ik-workdesk-ltro :is(.field, .form-table) :is(input, select, textarea) {
+        min-height: 44px;
+        border: 1px solid var(--ik-border-strong);
+        border-radius: 8px;
+        color: var(--ik-text);
+        background: var(--ik-surface);
+        font-family: inherit;
+        font-size: var(--ik-font-copy);
+    }
+
+    .ik-workdesk-ltro .field label {
+        color: var(--ik-muted);
+        font-size: var(--ik-font-label);
+        font-weight: 500;
+        letter-spacing: 0;
+    }
+
+    .ik-workdesk-error {
+        display: grid;
+        min-height: 100dvh;
+        margin: 0;
+        padding: 1rem;
+        place-items: center;
+        box-sizing: border-box;
+    }
+
+    .ik-error-panel {
+        width: min(100%, 30rem);
+        padding: clamp(1.25rem, 4vw, 2.5rem);
+        border: 1px solid var(--ik-border);
+        border-radius: 14px;
+        background: var(--ik-surface);
+        box-sizing: border-box;
+    }
+
+    .ik-error-panel img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin-bottom: 2rem;
+    }
+
+    .ik-error-panel h1 {
+        margin: 0 0 0.75rem;
+        font-size: var(--ik-font-title);
+        line-height: 1.4;
+        font-weight: 500;
+    }
+
+    .ik-error-panel p {
+        margin: 0 0 1.5rem;
+        color: var(--ik-muted);
+    }
+
+    .ik-error-panel .ik-error-code {
+        margin-bottom: 0.5rem;
+        color: var(--ik-primary);
+        font-size: var(--ik-font-label);
+    }
+
+    .ik-error-panel a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        box-sizing: border-box;
+        text-decoration: none;
+    }
+
+    @media (max-width: 639px) {
+        .ik-workdesk-account .ik-account-main > div {
+            padding-block: 1rem;
+        }
+
+        .ik-workdesk-ltro .header {
+            padding: 0.75rem 1rem;
+        }
+
+        .ik-workdesk-ltro .header-right {
+            width: 100%;
+        }
+
+        .ik-workdesk-ltro .header-right .btn {
+            flex: 1 1 auto;
+        }
+
+        .ik-workdesk-ltro .field :is(input, select) {
+            min-width: 0;
+            width: 100%;
+        }
+
+        .ik-workdesk-ltro .availability-controls .field {
+            flex: 1 1 100%;
+        }
+    }
+}
+
+@media screen and (prefers-reduced-motion: no-preference) {
+    .ik-workdesk-account .ik-account-page-header h2,
+    .ik-workdesk-dashboard .ik-page-hero h1,
+    .vendor-portal .vp-header h1,
+    .ik-workdesk-ltro .header-title {
+        animation: ik-workspace-arrive var(--ik-motion-panel) var(--ik-ease) both;
+    }
+
+    .fi-body :is(.scm-actions > button, .mr-calendar-nav button, .ik-global-chat-companies button),
+    .ik-button,
+    .vendor-portal :is(button, .vp-steps a),
+    .ik-workdesk-ltro .btn {
+        transition: color var(--ik-motion-fast) ease, background-color var(--ik-motion-fast) ease,
+            border-color var(--ik-motion-fast) ease;
+    }
+}
+
+@media screen and (prefers-reduced-motion: reduce) {
+    .ik-workdesk-account *,
+    .ik-workdesk-ltro *,
+    .vendor-portal * {
+        animation: none !important;
+        transition: none !important;
+        scroll-behavior: auto !important;
     }
 }

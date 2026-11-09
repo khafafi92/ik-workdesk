@@ -8,8 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>{!! file_get_contents(resource_path('css/ltro-legacy.css')) !!}</style>
     @livewireStyles
+    <x-workspace-styles />
 </head>
-<body class="bg-gray-100 min-h-screen p-0 m-0">
+<body class="ik-workdesk-ltro bg-gray-100 min-h-screen p-0 m-0">
     {{ $slot }}
     @livewireScripts
 </body>

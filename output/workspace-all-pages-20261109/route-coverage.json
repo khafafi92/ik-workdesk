@@ -1,0 +1,962 @@
+[
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\AiAssistantChat",
+    "url": "http://127.0.0.1:8012/panel/ask-me",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ask-me",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\AiAssistantSettingsPage",
+    "url": "http://127.0.0.1:8012/panel/ai-assistant-settings",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ai-assistant-settings",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\AtkDashboard",
+    "url": "http://127.0.0.1:8012/panel/atk-dashboard",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-dashboard",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\AtkReports",
+    "url": "http://127.0.0.1:8012/panel/atk-reports",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-reports",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\AtkRequirementSummary",
+    "url": "http://127.0.0.1:8012/panel/atk-requirement-summary",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-requirement-summary",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\AttendanceReportCenter",
+    "url": "http://127.0.0.1:8012/panel/attendance-report-center",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/attendance-report-center",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\Dashboard",
+    "url": "http://127.0.0.1:8012/panel",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\GlobalChatRoom",
+    "url": "http://127.0.0.1:8012/panel/global-chat-room",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/global-chat-room",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\Inventory",
+    "url": "http://127.0.0.1:8012/panel/inventori",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/inventori",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ItInfrastructureReportPage",
+    "url": "http://127.0.0.1:8012/panel/it-infrastructure-reports",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/it-infrastructure-reports",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ItInspectionPage",
+    "url": "http://127.0.0.1:8012/panel/it-inspections",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/it-inspections",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ManagementSummary",
+    "url": "http://127.0.0.1:8012/panel/management-summary",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/management-summary",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\MeetingRoomCalendar",
+    "url": "http://127.0.0.1:8012/panel/meeting-room-calendar",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/meeting-room-calendar",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\PurchaseRequests",
+    "url": "http://127.0.0.1:8012/panel/permintaan/pr",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/permintaan/pr",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\PurchasingOfficer",
+    "url": "http://127.0.0.1:8012/panel/purchasing-officer/pengadaan",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/purchasing-officer/pengadaan",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ScmApprovals",
+    "url": "http://127.0.0.1:8012/panel/permintaan/persetujuan",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/permintaan/persetujuan",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ScmCbeApprovals",
+    "url": "http://127.0.0.1:8012/panel/scm/persetujuan-cbe",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/permintaan/persetujuan?dokumen=CBE",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ScmProcurement",
+    "url": "http://127.0.0.1:8012/panel/scm/pengadaan",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/scm/pengadaan",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ScmRequestNumbers",
+    "url": "http://127.0.0.1:8012/panel/permintaan/nomor-pr-sr",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/permintaan/nomor-pr-sr",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ScmSelectedVendorItems",
+    "url": "http://127.0.0.1:8012/panel/scm/rekap-material-pr",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/scm/rekap-material-pr",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ScmVendorRegistrations",
+    "url": "http://127.0.0.1:8012/panel/scm/data-vendor",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/scm/data-vendor",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\ServiceRequests",
+    "url": "http://127.0.0.1:8012/panel/permintaan/sr",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/permintaan/sr",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\SignatureProfile",
+    "url": "http://127.0.0.1:8012/panel/profil/tanda-tangan",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/profil/tanda-tangan",
+    "workspace_styles": true
+  },
+  {
+    "type": "page",
+    "class": "App\\Filament\\Pages\\VehicleBookingCalendar",
+    "url": "http://127.0.0.1:8012/panel/vehicle-booking-calendar",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/vehicle-booking-calendar",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\ActivityCategories\\ActivityCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/activity-categories",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/activity-categories",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\ActivityCategories\\ActivityCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/activity-categories/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/activity-categories/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\ActivityReports\\ActivityReportResource",
+    "url": "http://127.0.0.1:8012/panel/activity-reports",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/activity-reports",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AteGeneralLetters\\AteGeneralLetterResource",
+    "url": "http://127.0.0.1:8012/panel/ate-general-letters",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ate-general-letters",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkCategories\\AtkCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/atk-categories",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-categories",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\AtkCategories\\AtkCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/atk-categories/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-categories/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkDepartmentBalances\\AtkDepartmentBalanceResource",
+    "url": "http://127.0.0.1:8012/panel/atk-department-balances",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-department-balances",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkDepartmentStockMovements\\AtkDepartmentStockMovementResource",
+    "url": "http://127.0.0.1:8012/panel/atk-department-stock-movements",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-department-stock-movements",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkItems\\AtkItemResource",
+    "url": "http://127.0.0.1:8012/panel/atk-items",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-items",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\AtkItems\\AtkItemResource",
+    "url": "http://127.0.0.1:8012/panel/atk-items/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-items/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkRequestHistories\\AtkRequestHistoryResource",
+    "url": "http://127.0.0.1:8012/panel/atk-request-histories",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-request-histories",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkRequests\\AtkRequestResource",
+    "url": "http://127.0.0.1:8012/panel/atk-requests",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-requests",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\AtkRequests\\AtkRequestResource",
+    "url": "http://127.0.0.1:8012/panel/atk-requests/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-requests/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkStockMovements\\AtkStockMovementResource",
+    "url": "http://127.0.0.1:8012/panel/atk-stock-movements",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-stock-movements",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkUnits\\AtkUnitResource",
+    "url": "http://127.0.0.1:8012/panel/atk-units",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-units",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\AtkUnits\\AtkUnitResource",
+    "url": "http://127.0.0.1:8012/panel/atk-units/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-units/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AtkUsageTransactions\\AtkUsageTransactionResource",
+    "url": "http://127.0.0.1:8012/panel/atk-usage-transactions",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-usage-transactions",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\AtkUsageTransactions\\AtkUsageTransactionResource",
+    "url": "http://127.0.0.1:8012/panel/atk-usage-transactions/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/atk-usage-transactions/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AttendanceImports\\AttendanceImportResource",
+    "url": "http://127.0.0.1:8012/panel/attendance-imports",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/attendance-imports",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\AttendanceImports\\AttendanceImportResource",
+    "url": "http://127.0.0.1:8012/panel/attendance-imports/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/attendance-imports/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\AttendanceResults\\AttendanceResultResource",
+    "url": "http://127.0.0.1:8012/panel/attendance-results",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/attendance-results",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\AttendanceResults\\AttendanceResultResource",
+    "url": "http://127.0.0.1:8012/panel/attendance-results/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/attendance-results/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\DailyActivities\\DailyActivityResource",
+    "url": "http://127.0.0.1:8012/panel/daily-activities",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/daily-activities",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\DailyActivities\\DailyActivityResource",
+    "url": "http://127.0.0.1:8012/panel/daily-activities/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/daily-activities/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Departments\\DepartmentResource",
+    "url": "http://127.0.0.1:8012/panel/departments",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/departments",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\Departments\\DepartmentResource",
+    "url": "http://127.0.0.1:8012/panel/departments/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/departments/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\DocumentNumberingTemplates\\DocumentNumberingTemplateResource",
+    "url": "http://127.0.0.1:8012/panel/document-numbering-templates",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/document-numbering-templates",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\DocumentNumberingTemplates\\DocumentNumberingTemplateResource",
+    "url": "http://127.0.0.1:8012/panel/document-numbering-templates/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/document-numbering-templates/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\DocumentTypes\\DocumentTypeResource",
+    "url": "http://127.0.0.1:8012/panel/document-types",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/document-types",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\DocumentTypes\\DocumentTypeResource",
+    "url": "http://127.0.0.1:8012/panel/document-types/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/document-types/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Employees\\EmployeeResource",
+    "url": "http://127.0.0.1:8012/panel/employees",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/employees",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\Employees\\EmployeeResource",
+    "url": "http://127.0.0.1:8012/panel/employees/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/employees/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\HrApcaLetters\\HrApcaLetterResource",
+    "url": "http://127.0.0.1:8012/panel/hr-apca-letters",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/hr-apca-letters",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\HrKpmogLetters\\HrKpmogLetterResource",
+    "url": "http://127.0.0.1:8012/panel/hr-kpmog-letters",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/hr-kpmog-letters",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\ItDailyMonitorings\\ItDailyMonitoringResource",
+    "url": "http://127.0.0.1:8012/panel/it-daily-monitoring",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/it-daily-monitoring",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\ItDevices\\ItDeviceResource",
+    "url": "http://127.0.0.1:8012/panel/it-devices",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/it-devices",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\ItDevices\\ItDeviceResource",
+    "url": "http://127.0.0.1:8012/panel/it-devices/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/it-devices/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\KpmogProjectLetters\\KpmogProjectLetterResource",
+    "url": "http://127.0.0.1:8012/panel/kpmog-project-letters",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/kpmog-project-letters",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\LegalSubjectCategories\\LegalSubjectCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/legal-subject-categories",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/legal-subject-categories",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\LegalSubjectCategories\\LegalSubjectCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/legal-subject-categories/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/legal-subject-categories/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\LetterProfiles\\LetterProfileResource",
+    "url": "http://127.0.0.1:8012/panel/letter-profiles",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/letter-profiles",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\LetterProfiles\\LetterProfileResource",
+    "url": "http://127.0.0.1:8012/panel/letter-profiles/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/letter-profiles/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\LtroAvailabilityRecords\\LtroAvailabilityRecordResource",
+    "url": "http://127.0.0.1:8012/panel/ltro-availability-records",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ltro-availability-records",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\LtroDailyReports\\LtroDailyReportResource",
+    "url": "http://127.0.0.1:8012/panel/ltro-daily-reports",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ltro-daily-reports",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\LtroMttrRecords\\LtroMttrRecordResource",
+    "url": "http://127.0.0.1:8012/panel/ltro-mttr-records",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ltro-mttr-records",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\LtroMttrRecords\\LtroMttrRecordResource",
+    "url": "http://127.0.0.1:8012/panel/ltro-mttr-records/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ltro-mttr-records/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\MeetingBookings\\MeetingBookingResource",
+    "url": "http://127.0.0.1:8012/panel/meeting-bookings",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/meeting-bookings",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\MeetingBookings\\MeetingBookingResource",
+    "url": "http://127.0.0.1:8012/panel/meeting-bookings/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/meeting-bookings/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\MeetingRooms\\MeetingRoomResource",
+    "url": "http://127.0.0.1:8012/panel/meeting-rooms",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/meeting-rooms",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\MeetingRooms\\MeetingRoomResource",
+    "url": "http://127.0.0.1:8012/panel/meeting-rooms/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/meeting-rooms/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\OutgoingLetters\\OutgoingLetterResource",
+    "url": "http://127.0.0.1:8012/panel/outgoing-letters",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/outgoing-letters",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\OutgoingLetters\\OutgoingLetterResource",
+    "url": "http://127.0.0.1:8012/panel/outgoing-letters/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/outgoing-letters/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\PermitCompanies\\PermitCompanyResource",
+    "url": "http://127.0.0.1:8012/panel/permit-companies",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/permit-companies",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\PermitCompanies\\PermitCompanyResource",
+    "url": "http://127.0.0.1:8012/panel/permit-companies/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/permit-companies/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Reminders\\ReminderResource",
+    "url": "http://127.0.0.1:8012/panel/reminders",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/reminders",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\Reminders\\ReminderResource",
+    "url": "http://127.0.0.1:8012/panel/reminders/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/reminders/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Reports\\DepartmentActivityReportResource",
+    "url": "http://127.0.0.1:8012/panel/reports/department-activity",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/reports/department-activity",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Reports\\ServiceDeskReportResource",
+    "url": "http://127.0.0.1:8012/panel/reports/service-desk",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/reports/service-desk",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Reports\\SlaTicketAgingReportResource",
+    "url": "http://127.0.0.1:8012/panel/reports/sla-ticket-aging",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/reports/sla-ticket-aging",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Reports\\WorkLogsReportResource",
+    "url": "http://127.0.0.1:8012/panel/reports/work-logs",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/reports/work-logs",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Reports\\WorkloadReportResource",
+    "url": "http://127.0.0.1:8012/panel/reports/workload",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/reports/workload",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\TaskCategories\\TaskCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/task-categories",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/task-categories",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\TaskCategories\\TaskCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/task-categories/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/task-categories/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\TicketCategories\\TicketCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/ticket-categories",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ticket-categories",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\TicketCategories\\TicketCategoryResource",
+    "url": "http://127.0.0.1:8012/panel/ticket-categories/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/ticket-categories/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Tickets\\TicketResource",
+    "url": "http://127.0.0.1:8012/panel/service-desk",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/service-desk",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\Tickets\\TicketResource",
+    "url": "http://127.0.0.1:8012/panel/service-desk/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/service-desk/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Users\\UserResource",
+    "url": "http://127.0.0.1:8012/panel/users",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/users",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\Users\\UserResource",
+    "url": "http://127.0.0.1:8012/panel/users/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/users/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\VehicleBookings\\VehicleBookingResource",
+    "url": "http://127.0.0.1:8012/panel/vehicle-bookings",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/vehicle-bookings",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\VehicleBookings\\VehicleBookingResource",
+    "url": "http://127.0.0.1:8012/panel/vehicle-bookings/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/vehicle-bookings/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\Vehicles\\VehicleResource",
+    "url": "http://127.0.0.1:8012/panel/vehicles",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/vehicles",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\Vehicles\\VehicleResource",
+    "url": "http://127.0.0.1:8012/panel/vehicles/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/vehicles/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\WorkLocations\\WorkLocationResource",
+    "url": "http://127.0.0.1:8012/panel/work-locations",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/work-locations",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\WorkLocations\\WorkLocationResource",
+    "url": "http://127.0.0.1:8012/panel/work-locations/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/work-locations/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\WorkProjects\\WorkProjectResource",
+    "url": "http://127.0.0.1:8012/panel/work-projects",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/work-projects",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\WorkProjects\\WorkProjectResource",
+    "url": "http://127.0.0.1:8012/panel/work-projects/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/work-projects/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "index",
+    "class": "App\\Filament\\Resources\\WorkTasks\\WorkTaskResource",
+    "url": "http://127.0.0.1:8012/panel/work-tasks",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/work-tasks",
+    "workspace_styles": true
+  },
+  {
+    "type": "create",
+    "class": "App\\Filament\\Resources\\WorkTasks\\WorkTaskResource",
+    "url": "http://127.0.0.1:8012/panel/work-tasks/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/work-tasks/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "standalone",
+    "url": "http://127.0.0.1:8012/dashboard",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/dashboard",
+    "workspace_styles": true
+  },
+  {
+    "type": "standalone",
+    "url": "http://127.0.0.1:8012/admin/departments",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/admin/departments",
+    "workspace_styles": true
+  },
+  {
+    "type": "standalone",
+    "url": "http://127.0.0.1:8012/admin/departments/create",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/admin/departments/create",
+    "workspace_styles": true
+  },
+  {
+    "type": "standalone",
+    "url": "http://127.0.0.1:8012/profile",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/profile",
+    "workspace_styles": true
+  },
+  {
+    "type": "standalone",
+    "url": "http://127.0.0.1:8012/ltro/monitoring",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/ltro/monitoring",
+    "workspace_styles": true
+  },
+  {
+    "type": "standalone",
+    "url": "http://127.0.0.1:8012/ltro/daily-input",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/ltro/daily-input",
+    "workspace_styles": true
+  },
+  {
+    "type": "standalone",
+    "url": "http://127.0.0.1:8012/ltro/availability",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/ltro/availability",
+    "workspace_styles": true
+  },
+  {
+    "type": "view",
+    "class": "App\\Filament\\Resources\\Tickets\\TicketResource",
+    "url": "http://127.0.0.1:8012/panel/service-desk/1",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/service-desk/1",
+    "workspace_styles": true
+  },
+  {
+    "type": "edit",
+    "class": "App\\Filament\\Resources\\Tickets\\TicketResource",
+    "url": "http://127.0.0.1:8012/panel/service-desk/1/edit",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/service-desk/1/edit",
+    "workspace_styles": true
+  },
+  {
+    "type": "view",
+    "class": "App\\Filament\\Resources\\WorkTasks\\WorkTaskResource",
+    "url": "http://127.0.0.1:8012/panel/work-tasks/1",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/work-tasks/1",
+    "workspace_styles": true
+  },
+  {
+    "type": "view",
+    "url": "http://127.0.0.1:8012/panel/it-devices/1",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/it-devices/1",
+    "workspace_styles": true
+  },
+  {
+    "type": "edit",
+    "url": "http://127.0.0.1:8012/panel/it-devices/1/edit",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/it-devices/1/edit",
+    "workspace_styles": true
+  },
+  {
+    "type": "detail",
+    "url": "http://127.0.0.1:8012/panel/it-inspection-summary?inspection=1",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/panel/it-inspection-summary?inspection=1",
+    "workspace_styles": true
+  },
+  {
+    "type": "vendor-form",
+    "url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/1",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/1",
+    "workspace_styles": true
+  },
+  {
+    "type": "vendor-form",
+    "url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/2",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/2",
+    "workspace_styles": true
+  },
+  {
+    "type": "vendor-form",
+    "url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/3",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/3",
+    "workspace_styles": true
+  },
+  {
+    "type": "vendor-form",
+    "url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/4",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/4",
+    "workspace_styles": true
+  },
+  {
+    "type": "vendor-form",
+    "url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/5",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/vendor/form-005/[QA-TOKEN]/bagian/5",
+    "workspace_styles": true
+  },
+  {
+    "type": "vendor-form",
+    "url": "http://127.0.0.1:8012/scm/vendor-form/1",
+    "status": 200,
+    "final_url": "http://127.0.0.1:8012/scm/vendor-form/1",
+    "workspace_styles": true
+  }
+]

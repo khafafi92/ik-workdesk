@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="id">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Portal Vendor · IK WorkDesk</title>@vite('resources/css/vendor-portal.css')</head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Portal Vendor · IK WorkDesk</title>@vite('resources/css/vendor-portal.css')<x-workspace-styles /></head>
 <body class="vendor-portal">
 <a class="vp-skip" href="#main">Langsung ke portal vendor</a>
 <div class="vp-shell">

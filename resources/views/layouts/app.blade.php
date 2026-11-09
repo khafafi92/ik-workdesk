@@ -13,14 +13,15 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        <x-workspace-styles />
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
+    <body class="ik-workdesk-account font-sans antialiased">
+        <div class="ik-account-shell min-h-screen bg-gray-100">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
             @isset($header)
-                <header class="bg-white shadow">
+                <header class="ik-account-page-header bg-white shadow">
                     <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         {{ $header }}
                     </div>
@@ -28,7 +29,7 @@
             @endisset
 
             <!-- Page Content -->
-            <main>
+            <main class="ik-account-main">
                 {{ $slot }}
             </main>
         </div>

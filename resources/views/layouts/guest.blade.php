@@ -9,6 +9,7 @@
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="stylesheet" href="{{ asset('css/workdesk-upgrade.css') }}?v={{ filemtime(public_path('css/workdesk-upgrade.css')) }}">
+    <x-workspace-styles />
 </head>
 
 <body class="wd-login-page">
