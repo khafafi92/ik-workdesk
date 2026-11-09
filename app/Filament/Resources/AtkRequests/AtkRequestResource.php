@@ -27,6 +27,7 @@ use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
+use Filament\Tables\Columns\ViewColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -111,6 +112,7 @@ class AtkRequestResource extends Resource
                         ->columnSpanFull(),
                 ]),
             Section::make('Daftar barang')
+                ->extraAttributes(['class' => 'atk-request-items'])
                 ->description('Pilih barang dan jumlah yang dibutuhkan. Setelah dikirim, penyerahan dapat dilakukan bertahap dan progresnya terlihat di daftar permintaan.')
                 ->columnSpanFull()
                 ->schema([
@@ -135,11 +137,18 @@ class AtkRequestResource extends Resource
                                     fn (Builder $query): Builder => $query
                                         ->where('is_active', true)
                                         ->orderBy('name')
+                                        ->orderBy('size')
+                                        ->orderBy('code')
                                 )
                                 ->getOptionLabelFromRecordUsing(
-                                    fn (AtkItem $record): string => "{$record->code} — {$record->name}"
+                                    fn (AtkItem $record): string => implode(' - ', array_filter([
+                                        $record->code,
+                                        $record->name,
+                                        filled($record->size) ? 'Ukuran '.$record->size : null,
+                                        $record->unit,
+                                    ]))
                                 )
-                                ->searchable()
+                                ->searchable(['code', 'name', 'size', 'unit'])
                                 ->preload()
                                 ->disableOptionsWhenSelectedInSiblingRepeaterItems()
                                 ->live()
@@ -201,11 +210,10 @@ class AtkRequestResource extends Resource
                     ->listWithLineBreaks()
                     ->wrap()
                     ->tooltip(fn (AtkRequest $record): string => static::requestedItemsSummary($record)),
-                TextColumn::make('item_progress')
+                ViewColumn::make('item_progress')
                     ->label('Progres barang')
-                    ->state(fn (AtkRequest $record): array => static::itemProgressList($record))
-                    ->listWithLineBreaks()
-                    ->wrap()
+                    ->extraCellAttributes(['style' => 'min-width: 26rem'])
+                    ->view('filament.tables.columns.atk-request-progress')
                     ->tooltip('Diminta adalah total kebutuhan. Diserahkan adalah jumlah dari Gudang Utama. Diterima adalah jumlah yang sudah dikonfirmasi peminta.'),
                 TextColumn::make('next_step')
                     ->label('Langkah berikutnya')
@@ -425,23 +433,28 @@ class AtkRequestResource extends Resource
         return implode('; ', static::requestedItemsList($request));
     }
 
-    private static function itemProgressList(AtkRequest $request): array
+    public static function itemProgressList(AtkRequest $request): array
     {
         return $request->items
-            ->map(function (AtkRequestItem $item): string {
-                $requested = (float) $item->qty_requested;
-                $issued = (float) $item->qty_issued;
-                $received = (float) $item->qty_received;
-                $format = fn (float $quantity): string => number_format($quantity, 0, ',', '.');
+            ->map(function (AtkRequestItem $item): array {
+                $available = (float) ($item->item?->current_stock ?? 0);
+                $shortage = max(0, $item->outstandingRequested() - $available);
 
-                return sprintf(
-                    '%s: diminta %s, diserahkan %s, belum diserahkan %s, diterima %s',
-                    $item->item?->name ?? 'Barang',
-                    $format($requested),
-                    $format($issued),
-                    $format($item->outstandingRequested()),
-                    $format($received),
-                );
+                return [
+                    'name' => implode(' - ', array_filter([
+                        $item->item?->name ?? 'Barang',
+                        $item->item?->size,
+                    ])),
+                    'shortage' => $shortage,
+                    'metrics' => [
+                        'Diminta' => (float) $item->qty_requested,
+                        'Diserahkan' => (float) $item->qty_issued,
+                        'Belum diserahkan' => $item->outstandingRequested(),
+                        'Diterima' => (float) $item->qty_received,
+                        'Stok tersedia' => $available,
+                        'Kekurangan' => $shortage,
+                    ],
+                ];
             })
             ->values()
             ->all();
@@ -468,7 +481,7 @@ class AtkRequestResource extends Resource
             return 'Menunggu peminta mengonfirmasi penerimaan.';
         }
 
-        return 'Menunggu GA memproses atau menyerahkan barang.';
+        return 'Menunggu GA Proses';
     }
 
     private static function statusLabel(string $status): string

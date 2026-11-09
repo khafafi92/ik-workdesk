@@ -2,7 +2,7 @@
     class="ik-sidebar-collapse-footer"
     x-data="{}"
     x-on:keydown.escape.window="
-        if (window.matchMedia('(max-width: 1023px)').matches && $store.sidebar.isOpen) {
+        if (window.matchMedia('(max-width: 1023px)').matches && $store.sidebar.isOpen && ! $event.ikSidebarFlyoutHandled && ! document.querySelector('.ik-sidebar-group-trigger[aria-expanded=true]')) {
             $store.sidebar.close()
             $nextTick(() => document.querySelector('.fi-topbar-open-sidebar-btn')?.focus())
         }

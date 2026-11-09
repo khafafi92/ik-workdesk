@@ -262,6 +262,8 @@ class AtkManagementTest extends TestCase
             ->assertSeeText($requester->name)
             ->assertSeeText('Pulpen Hitam')
             ->assertSeeText('Barang dan progres')
+            ->assertSeeText('Stok tersedia:')
+            ->assertSeeText('Kekurangan:')
             ->assertSeeText('Perlu ditinjau GA');
 
         $this->actingAs($manager)
@@ -358,7 +360,15 @@ class AtkManagementTest extends TestCase
             ->assertOk()
             ->assertSeeText('Konfirmasi barang diterima')
             ->assertSeeText('Konfirmasi penerimaan barang yang sudah diserahkan.')
-            ->assertSeeText('Map Dokumen: diminta 2, diserahkan 2, belum diserahkan 0, diterima 0');
+            ->assertSeeInOrder([
+                'ik-atk-progress-name', 'Map Dokumen',
+                'Diminta:', '<dd>2</dd>',
+                'Diserahkan:', '<dd>2</dd>',
+                'Belum diserahkan:', '<dd>0</dd>',
+                'Diterima:', '<dd>0</dd>',
+                'Stok tersedia:', '<dd>0</dd>',
+                'Kekurangan:', '<dd>0</dd>',
+            ], false);
     }
 
     public function test_partial_issue_receive_and_usage_keep_each_stock_ledger_correct(): void

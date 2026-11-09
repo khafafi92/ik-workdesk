@@ -2147,29 +2147,29 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     .ik-report-overview-metric { border-right: 0; }
 }
 
+.atk-request-items .fi-section {
+    overflow: visible;
+}
+
 .ik-atk-dashboard {
     display: grid;
-    gap: 16px;
+    gap: 24px;
+    min-width: 0;
     color: #172b4d;
 }
 
 .ik-atk-dashboard-summary {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    overflow: hidden;
-    border: 1px solid var(--ik-border);
-    border-radius: 6px;
-    background: #fff;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+    gap: 16px;
 }
 
 .ik-atk-dashboard-summary > div {
     min-width: 0;
-    padding: 14px 16px;
-    border-right: 1px solid var(--ik-border);
-}
-
-.ik-atk-dashboard-summary > div:last-child {
-    border-right: 0;
+    padding: 18px 20px;
+    border: 1px solid var(--ik-border);
+    border-radius: 6px;
+    background: #fff;
 }
 
 .ik-atk-dashboard-summary span,
@@ -2205,8 +2205,8 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     min-width: 0;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    padding: 14px 16px;
+    gap: 20px;
+    padding: 20px;
     border-bottom: 1px solid var(--ik-border);
 }
 
@@ -2241,6 +2241,83 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
 .ik-atk-dashboard-list-footer a:focus-visible {
     outline: 3px solid #0057b8;
     outline-offset: 2px;
+}
+
+.ik-atk-dashboard-action {
+    flex-shrink: 0;
+    justify-content: center;
+    padding: 10px 16px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.ik-atk-dashboard-action:hover {
+    background: var(--ik-primary-soft, #eaf2ff);
+}
+
+.ik-atk-progress-cell {
+    padding: 12px 16px;
+}
+
+.ik-atk-progress-list {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+}
+
+.ik-atk-progress-name {
+    margin: 0 0 8px;
+    color: var(--ik-text, #292d3e);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+.ik-atk-progress-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+}
+
+.ik-atk-progress-metric {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px;
+    max-width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--ik-border, #dce0e9);
+    border-radius: 6px;
+    color: var(--ik-text, #292d3e);
+    background: var(--ik-surface-soft, #f6f7fb);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
+.ik-atk-progress-metric :is(dt, dd) {
+    margin: 0;
+}
+
+.ik-atk-progress-metric dd {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.ik-atk-progress-metric.is-shortage {
+    border-color: #bf790f;
+    color: #8a5200;
+    background: #fff4e5;
+}
+
+.ik-atk-dashboard-progress {
+    min-width: 26rem;
+}
+
+.ik-atk-progress-empty {
+    color: var(--ik-muted, #5b6070);
+    font-size: 0.8125rem;
 }
 
 .ik-atk-table-wrap {
@@ -2628,44 +2705,19 @@ body[data-attendance-flow] main :is(a, button, input):focus-visible {
     .ik-atk-requirement-empty::before { display: none; }
 }
 
-@media (max-width: 1020px) {
-    .ik-atk-dashboard-summary {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .ik-atk-dashboard-summary > div:nth-child(3) {
-        border-right: 0;
-    }
-
-    .ik-atk-dashboard-summary > div:nth-child(-n + 3) {
-        border-bottom: 1px solid var(--ik-border);
-    }
-}
-
 @media (max-width: 620px) {
-    .ik-atk-dashboard-summary {
-        grid-template-columns: 1fr;
-    }
-
-    .ik-atk-dashboard-summary > div,
-    .ik-atk-dashboard-summary > div:nth-child(3) {
-        border-right: 0;
-        border-bottom: 1px solid var(--ik-border);
-    }
-
-    .ik-atk-dashboard-summary > div:last-child {
-        border-bottom: 0;
-    }
-
     .ik-atk-dashboard-list-toolbar,
     .ik-atk-dashboard-list-footer {
         flex-direction: column;
-        gap: 6px;
+        align-items: stretch;
+        gap: 12px;
+        padding: 16px;
     }
 
     .ik-atk-dashboard-action,
     .ik-atk-dashboard-list-footer a {
         align-self: flex-start;
+        max-width: 100%;
     }
 }
 

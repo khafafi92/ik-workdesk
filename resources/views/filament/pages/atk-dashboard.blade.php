@@ -22,7 +22,7 @@
             <div class="ik-atk-dashboard-list-toolbar">
                 <div>
                     <h2 id="atk-request-queue-heading">Permintaan yang perlu ditindak</h2>
-                    <p>Kolom progres menunjukkan jumlah diminta, diserahkan, yang masih perlu diserahkan, dan yang telah dikonfirmasi peminta.</p>
+                    <p>Lihat progres penyerahan, penerimaan, stok tersedia, dan kekurangan setiap barang.</p>
                 </div>
                 @if ($requestsUrl)
                     <a class="ik-atk-dashboard-action" href="{{ $requestsUrl }}">Buka semua permintaan</a>
@@ -53,7 +53,7 @@
                                     </td>
                                     <td>{{ $request->department?->name ?? '-' }}</td>
                                     <td>{{ $request->company?->code ?? '-' }}</td>
-                                    <td>{{ $this->requestItemProgressSummary($request) }}</td>
+                                    <td class="ik-atk-dashboard-progress"><x-atk-request-progress :request="$request" /></td>
                                     <td><span class="ik-atk-status">{{ $this->requestStatusLabel($request->status) }}</span></td>
                                     <td>{{ $request->purpose }}</td>
                                 </tr>
