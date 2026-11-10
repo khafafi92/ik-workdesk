@@ -322,7 +322,7 @@ class HoApprovalsTest extends TestCase
         $r->refresh();
         $step = $this->approvals->next($r);
         Livewire::actingAs($this->cbo)->test(ScmApprovals::class)->call('open', $r->id)
-            ->call('decide', $step->id, 'sign')->assertHasNoErrors()->assertDontSee('Giliran Anda:')->assertSee('Menunggu SCM');
+            ->call('decide', $step->id, 'sign')->assertHasNoErrors()->assertDontSee('Giliran Anda:')->assertSee('Menunggu penerimaan Purchasing Officer');
         $this->assertSame('submitted', $r->fresh()->status);
     }
 
