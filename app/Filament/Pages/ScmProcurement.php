@@ -26,6 +26,7 @@ use App\Services\Scm\Approvals;
 use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\CbeRecommendation;
 use App\Services\Scm\Decimal;
+use App\Services\Scm\PurchaseOrders;
 use App\Services\Scm\RequestNumbering;
 use App\Services\Scm\Signatures;
 use App\Services\Scm\Validation as Validator;
@@ -248,7 +249,7 @@ class ScmProcurement extends Page
         $this->editing = false;
         $this->tab = 'request';
         $allowed = static::$requestKind === null && Access::manages(auth()->user(), $record);
-        $this->purchaseOrderForm = $allowed && $record->cbe ? app(\App\Services\Scm\PurchaseOrders::class)->defaults($record) : [];
+        $this->purchaseOrderForm = $allowed && $record->cbe ? app(PurchaseOrders::class)->defaults($record) : [];
         $this->cbeForm = $allowed ? ['date' => $record->cbe?->date?->format('Y-m-d') ?? now()->toDateString(), 'quotation_ids' => $record->cbe?->quotation_ids ?? [],
             'selected_vendor_id' => $record->cbe?->selected_vendor_id ?? '', 'selection_reason' => $record->cbe?->selection_reason ?? '',
             'comment' => $record->cbe?->documentComment() ?? $record->notes ?? '',
@@ -467,7 +468,7 @@ class ScmProcurement extends Page
     public function savePurchaseOrder(): void
     {
         abort_unless(static::$requestKind === null, 403);
-        $record = app(\App\Services\Scm\PurchaseOrders::class)->save(auth()->user(), $this->selected, $this->version, $this->purchaseOrderForm);
+        $record = app(PurchaseOrders::class)->save(auth()->user(), $this->selected, $this->version, $this->purchaseOrderForm);
         $this->refreshed($record, 'po');
     }
 
