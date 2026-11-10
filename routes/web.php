@@ -132,4 +132,5 @@ Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void 
     Route::get('/cbe/{cbe}/cetak', [ScmDocumentController::class, 'print'])->name('print');
     Route::get('/cbe-persetujuan/{cbeApproval}/ttd', [ScmDocumentController::class, 'cbeSignature'])->name('signature-cbe');
     Route::get('/cbe/{cbe}/penawaran-terpilih', [ScmDocumentController::class, 'selectedQuotation'])->name('selected-quotation');
+    Route::get('/purchase-order/{purchaseOrder}/cetak', [ScmDocumentController::class, 'purchaseOrder'])->name('purchase-order-print');
 });

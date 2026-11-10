@@ -6,6 +6,7 @@ use App\Models\Scm\Attachment;
 use App\Models\Scm\Cbe;
 use App\Models\Scm\CbeApproval;
 use App\Models\Scm\Procurement;
+use App\Models\Scm\PurchaseOrder;
 use App\Models\Scm\Quotation;
 use App\Models\Scm\RequestApproval;
 use App\Models\Scm\UserSignature;
@@ -102,5 +103,12 @@ class ScmDocumentController extends Controller
         abort_unless($quote, 404);
 
         return response()->view('scm.selected-quotation-print', ['cbe' => $cbe, 'quote' => $quote])->header('Cache-Control', 'private, no-store');
+    }
+
+    public function purchaseOrder(Request $http, PurchaseOrder $purchaseOrder)
+    {
+        abort_unless(Access::manages($http->user(), $purchaseOrder->request), 403);
+
+        return response()->view('scm.purchase-order-print', ['order' => $purchaseOrder])->header('Cache-Control', 'private, no-store');
     }
 }

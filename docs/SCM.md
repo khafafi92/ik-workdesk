@@ -1,6 +1,6 @@
 # Modul SCM: PR/SR, CBE, dan legalitas vendor
 
-Modul terintegrasi dengan pengguna, departemen, Filament, dan hak akses IK WorkDesk. Sidebar menyediakan **Permintaan > PR** dan **Permintaan > SR** untuk permintaan user, serta **SCM > SCM** untuk penerimaan dan pemrosesan oleh tim SCM. Vendor mengisi Form 005 melalui Portal Vendor dengan pendaftaran mandiri dan Vendor ID, atau melalui undangan dari SCM. SCM meninjau kiriman sebelum menerima profil dan dokumen ke master. Modul tidak menambahkan PO, kontrak, penerimaan barang, invoice, pembayaran, atau pesan otomatis.
+Modul terintegrasi dengan pengguna, departemen, Filament, dan hak akses IK WorkDesk. Sidebar menyediakan **Permintaan > PR** dan **Permintaan > SR** untuk permintaan user, serta **SCM > SCM** untuk penerimaan dan pemrosesan oleh tim SCM. Vendor mengisi Form 005 melalui Portal Vendor dengan pendaftaran mandiri dan Vendor ID, atau melalui undangan dari SCM. SCM meninjau kiriman sebelum menerima profil dan dokumen ke master. Modul tidak menambahkan kontrak, penerimaan barang, invoice, pembayaran, atau pesan otomatis.
 
 ## Panduan penggunaan langkah demi langkah
 
@@ -68,6 +68,12 @@ Tautan berisi token khusus vendor dan berlaku 30 hari. Simpan serta sampaikan ha
 
 CBE final terkunci. Periksa isinya sebelum pengajuan; versi ini belum menyediakan pembukaan ulang/revisi CBE final. Pada CBE lama yang masih berada di tahap vendor terpilih dan belum mempunyai penugasan TTD, akun SCM pembuat aslinya dapat memilih **Tanda tangani dan ajukan persetujuan CBE lama**. Harga dan snapshot lama tetap tersimpan. Dokumen historis tidak diberi tanda tangan otomatis.
 
+### Purchase Order setelah persetujuan CBE
+
+Setelah semua tahap CBE selesai, Approved By sudah menandatangani, dan legalitas vendor terpilih selesai, petugas yang berhak memproses pengadaan dapat membuka tab **Purchase Order**. Isi nomor PO secara manual, tanggal, tujuan dan waktu pengiriman, serta syarat pembayaran. Alamat dan kontak pemasok dapat dilengkapi; waktu pengiriman dan pembayaran awal berasal dari quotation vendor terpilih. Satu pengadaan memiliki satu draft PO, dan nomor PO tidak boleh sama dalam perusahaan yang sama.
+
+Barang, harga, diskon, biaya tambahan, dan PPN diambil dari snapshot CBE final. Total diperiksa terhadap nilai CBE sebelum draft disimpan. Draft dapat diubah setelah legalitas selesai dan dibuka untuk cetak atau disimpan sebagai PDF. Dokumen ditandai belum ditandatangani; tanda tangan dan penerbitan PO belum dicatat oleh fitur ini. Pembuatan PO tidak otomatis mengubah status pengadaan. CBE lama tanpa bukti Approved By perlu diajukan untuk persetujuan sebelum PO dapat dibuat.
+
 ### 6. Melengkapi legalitas dan melihat hasil
 
 1. Sesudah keempat TTD CBE baru lengkap, SCM membuka pengadaan dan memilih **Mulai pengumpulan legalitas**.
@@ -110,6 +116,7 @@ php artisan migrate --path=database/migrations/2026_10_27_110000_create_scm_appr
 php artisan migrate --path=database/migrations/2026_10_27_140000_add_project_request_form_fields.php
 php artisan migrate --path=database/migrations/2026_10_27_170000_add_foreign_vendor_document_types.php
 php artisan migrate --path=database/migrations/2026_10_28_100000_create_scm_cbe_approvals.php
+php artisan migrate --path=database/migrations/2026_11_10_000001_create_scm_purchase_orders.php
 php artisan db:seed --class=ScmSeeder
 npm run build
 php artisan config:cache

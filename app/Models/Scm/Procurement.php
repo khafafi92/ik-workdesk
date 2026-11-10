@@ -35,6 +35,11 @@ class Procurement extends Record
         return $this->hasMany(Candidate::class, 'request_id');
     }
 
+    public function purchaseOrder()
+    {
+        return $this->hasOne(PurchaseOrder::class, 'request_id');
+    }
+
     public function cbe()
     {
         return $this->hasOne(Cbe::class, 'request_id');

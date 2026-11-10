@@ -68,6 +68,8 @@ class ScmProcurement extends Page
 
     public string $tab = 'request';
 
+    public array $purchaseOrderForm = [];
+
     public string $search = '';
 
     public string $vendorSearch = '';
@@ -233,7 +235,7 @@ class ScmProcurement extends Page
 
     public function open(int $id): void
     {
-        $record = Procurement::with(['items', 'cbe', 'legalCase.items'])->findOrFail($id);
+        $record = Procurement::with(['items', 'cbe', 'purchaseOrder', 'legalCase.items'])->findOrFail($id);
         abort_unless(static::$requestKind !== null
             ? Access::authors(auth()->user(), $record) && $record->kind === static::$requestKind
             : Access::manages(auth()->user(), $record), 403);
@@ -246,6 +248,7 @@ class ScmProcurement extends Page
         $this->editing = false;
         $this->tab = 'request';
         $allowed = static::$requestKind === null && Access::manages(auth()->user(), $record);
+        $this->purchaseOrderForm = $allowed && $record->cbe ? app(\App\Services\Scm\PurchaseOrders::class)->defaults($record) : [];
         $this->cbeForm = $allowed ? ['date' => $record->cbe?->date?->format('Y-m-d') ?? now()->toDateString(), 'quotation_ids' => $record->cbe?->quotation_ids ?? [],
             'selected_vendor_id' => $record->cbe?->selected_vendor_id ?? '', 'selection_reason' => $record->cbe?->selection_reason ?? '',
             'comment' => $record->cbe?->documentComment() ?? $record->notes ?? '',
@@ -259,7 +262,7 @@ class ScmProcurement extends Page
 
     public function showTab(string $tab): void
     {
-        abort_unless(in_array($tab, ['request', 'quotes', 'cbe', 'legal', 'history']), 404);
+        abort_unless(in_array($tab, ['request', 'quotes', 'cbe', 'po', 'legal', 'history']), 404);
         $request = Procurement::findOrFail($this->selected);
         abort_unless(Access::views(auth()->user(), $request), 403);
         abort_if($tab !== 'request' && (static::$requestKind !== null || ! Access::manages(auth()->user(), $request)), 403);
@@ -459,6 +462,13 @@ class ScmProcurement extends Page
     public function startLegal(): void
     {
         $this->refreshed($this->workflow()->startLegal(auth()->user(), $this->selected, $this->version), 'legal');
+    }
+
+    public function savePurchaseOrder(): void
+    {
+        abort_unless(static::$requestKind === null, 403);
+        $record = app(\App\Services\Scm\PurchaseOrders::class)->save(auth()->user(), $this->selected, $this->version, $this->purchaseOrderForm);
+        $this->refreshed($record, 'po');
     }
 
     public function updateLegal(int $itemId): void
@@ -746,7 +756,7 @@ class ScmProcurement extends Page
             $this->quotation = [];
         }
         if ($canManage) {
-            $record->load(['candidates.vendor', 'candidates.quotations.lines', 'candidates.quotations.attachments', 'cbe', 'legalCase.items.document.attachments', 'audits.actor']);
+            $record->load(['candidates.vendor', 'candidates.quotations.lines', 'candidates.quotations.attachments', 'cbe', 'purchaseOrder', 'legalCase.items.document.attachments', 'audits.actor']);
         }
         $finalCbe = $record?->cbe()->where('status', 'final')->first();
         $selectedQuote = $finalCbe ? collect($finalCbe->snapshot['quotes'])->firstWhere('vendor.id', $finalCbe->selected_vendor_id) : null;

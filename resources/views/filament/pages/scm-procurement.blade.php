@@ -69,7 +69,7 @@
         </form>
         @elseif($record)
         <section class="{{ $tab === 'request' ? 'scm-request-view' : 'scm-panel' }}"><header class="scm-heading"><div>@if($tab !== 'request')<h2>{{ $record->number }}</h2>@endif<p>{{ $record->title }} · {{ $statuses[$record->status] }}</p></div><button type="button" wire:click="switchSection('{{ $section === 'queue' ? 'queue' : 'mine' }}')">Kembali ke daftar</button></header>
-            @if($canManage)<nav class="scm-actions" aria-label="Rincian pengadaan">@foreach(['request' => 'Permintaan', 'quotes' => 'Vendor & penawaran', 'cbe' => 'CBE', 'legal' => 'Legalitas', 'history' => 'Riwayat'] as $key => $label)
+            @if($canManage)<nav class="scm-actions" aria-label="Rincian pengadaan">@foreach(['request' => 'Permintaan', 'quotes' => 'Vendor & penawaran', 'cbe' => 'CBE', 'po' => 'Purchase Order', 'legal' => 'Legalitas', 'history' => 'Riwayat'] as $key => $label)
             @if($key === 'request' || $canManage)<button type="button" wire:click="showTab('{{ $key }}')" @if($tab === $key) aria-current="page" @endif>{{ $label }}</button>@endif
             @endforeach</nav>@endif
             @if($canManage)
@@ -139,6 +139,8 @@
                 @else
                     @include('filament.pages.scm.partials.cbe-panel')
                 @endif
+            @elseif($tab === 'po' && $canManage)
+                @include('filament.pages.scm.partials.purchase-order')
             @elseif($tab === 'legal' && $canManage)
                 <h3>Kelengkapan administratif vendor terpilih</h3><p>Checklist menggunakan persyaratan saat pengumpulan dimulai. Kelengkapan ini tidak memverifikasi keaslian dokumen ke instansi penerbit.</p><p class="scm-help">Dokumen Form 005 yang diterima SCM tersedia sebagai versi dokumen vendor. Pilih versinya dan simpan status Diterima pada setiap checklist yang sesuai. Penerimaan Form 005 tidak otomatis menyelesaikan checklist pengadaan.</p>
                 @if(!$record->legalCase)<p>Finalkan CBE lalu mulai pengumpulan legalitas dari tab CBE.</p>@else
