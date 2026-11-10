@@ -101,6 +101,30 @@ class CbeApprovalsTest extends TestCase
         return $cbe;
     }
 
+    public function test_deleting_cbe_master_preserves_started_approval_and_checks_access(): void
+    {
+        $cbe = $this->cbe();
+        $policy = CbeApprovalPolicy::sole();
+        $before = $cbe->approvals()->orderBy('id')->get()->toArray();
+        try {
+            $this->service->deletePolicy($this->outsider, $policy->id, $policy->version);
+            $this->fail('Unauthorized user deleted CBE master.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+        try {
+            $this->service->deletePolicy($this->scm, $policy->id, $policy->version + 1);
+            $this->fail('Stale CBE master was deleted.');
+        } catch (ValidationException $exception) {
+            $this->assertNotEmpty($exception->errors());
+        }
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->set('section', 'settings')
+            ->call('deleteCbeApprovalPolicy', $policy->id, $policy->version)->assertHasNoErrors();
+        $this->assertDatabaseMissing('scm_cbe_approval_policies', ['id' => $policy->id]);
+        $this->assertSame($before, $cbe->fresh()->approvals()->orderBy('id')->get()->toArray());
+        $this->assertDatabaseHas('scm_audits', ['entity_id' => $policy->id, 'action' => 'hapus_master_approval_cbe']);
+    }
+
     private function rejects(callable $action): void
     {
         try {

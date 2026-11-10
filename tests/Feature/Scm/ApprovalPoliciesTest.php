@@ -240,6 +240,75 @@ class ApprovalPoliciesTest extends TestCase
         $this->assertFalse(Access::has($this->coo, 'scm.configure'));
     }
 
+    public function test_editing_an_existing_master_saves_a_new_signer(): void
+    {
+        $policy = app(ApprovalPolicies::class)->save($this->scm, $this->data());
+        $replacement = $this->actor('Penandatangan pengganti', 'manager');
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->set('section', 'settings')
+            ->call('editApprovalPolicy', $policy->id)->set('approvalPolicy.version', (string) $policy->version)
+            ->set('approvalPolicy.acknowledger_id', (string) $replacement->id)
+            ->call('saveApprovalPolicy')->assertHasNoErrors();
+        $this->assertSame($replacement->id, $policy->fresh()->acknowledger_id);
+    }
+
+    public function test_deleting_master_keeps_existing_approval_steps_and_disables_legacy_fallback(): void
+    {
+        app(Approvals::class)->saveRoute($this->scm, ['company' => 'APCA', 'department_id' => $this->department->id,
+            'acknowledger_id' => $this->manager->id, 'cbo_id' => $this->cbo->id, 'cbo3_id' => $this->coo->id, 'version' => 0]);
+        $policy = ApprovalPolicy::sole();
+        $request = $this->pending('HO');
+        $before = $request->approvals()->orderBy('id')->get()->toArray();
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->set('section', 'settings')
+            ->call('deleteApprovalPolicy', $policy->id, $policy->version)->assertHasNoErrors();
+        $this->assertDatabaseMissing('scm_approval_policies', ['id' => $policy->id]);
+        $this->assertDatabaseCount('scm_approval_routes', 0);
+        $this->assertSame($before, $request->fresh()->approvals()->orderBy('id')->get()->toArray());
+        $this->assertDatabaseHas('scm_audits', ['entity_id' => $policy->id, 'action' => 'hapus_master_approval']);
+        try {
+            app(Approvals::class)->submissionPlan($this->staff, 'APCA', $this->department->id, false, 'HO', 'PR');
+            $this->fail('A removed legacy master must not be used.');
+        } catch (ValidationException $exception) {
+            $this->assertNotEmpty($exception->errors());
+        }
+    }
+
+    public function test_deleting_legacy_route_cannot_remove_the_only_cbo_marker_used_by_another_master(): void
+    {
+        $implicitCbo = $this->actor('CBO lama', 'manager');
+        app(Approvals::class)->saveRoute($this->scm, ['company' => 'APCA', 'department_id' => $this->department->id,
+            'acknowledger_id' => $this->manager->id, 'cbo_id' => $implicitCbo->id, 'cbo3_id' => null, 'version' => 0]);
+        $legacy = ApprovalPolicy::sole();
+        $other = Department::create(['code' => 'SECOND-TEAM', 'name' => 'Departemen lainnya']);
+        app(ApprovalPolicies::class)->save($this->scm, $this->data(['department_id' => $other->id, 'need_type' => 'HO',
+            'approver_id' => $implicitCbo->id]));
+        try {
+            app(ApprovalPolicies::class)->delete($this->scm, $legacy->id, $legacy->version);
+            $this->fail('Another HO master must retain its CBO classification.');
+        } catch (ValidationException $exception) {
+            $this->assertStringContainsString('master HO lain', $exception->errors()['scm'][0]);
+        }
+        $this->assertDatabaseHas('scm_approval_policies', ['id' => $legacy->id]);
+        $this->assertDatabaseCount('scm_approval_routes', 1);
+    }
+
+    public function test_deleting_master_requires_permission_and_current_version(): void
+    {
+        $policy = app(ApprovalPolicies::class)->save($this->scm, $this->data());
+        try {
+            app(ApprovalPolicies::class)->delete($this->staff, $policy->id, $policy->version);
+            $this->fail('Unauthorized user deleted master.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+        try {
+            app(ApprovalPolicies::class)->delete($this->scm, $policy->id, $policy->version + 1);
+            $this->fail('Stale master was deleted.');
+        } catch (ValidationException $exception) {
+            $this->assertNotEmpty($exception->errors());
+        }
+        $this->assertDatabaseHas('scm_approval_policies', ['id' => $policy->id]);
+    }
+
     public function test_requester_cannot_modify_master_or_change_type_after_number_is_issued(): void
     {
         try {

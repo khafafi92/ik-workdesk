@@ -10,7 +10,7 @@
     <p>Atur penandatangan per perusahaan, divisi, jenis kebutuhan, dan PR/SR. Kebutuhan HO dan Project memakai master terpisah. CBO hanya untuk HO. Perubahan berlaku saat pengajuan berikutnya diajukan.</p>
     <p class="scm-help">Pada HO, CBO tetap wajib menyetujui. Jika Approved by diisi pejabat selain CBO, pilih CBO pada Crosschecked by; tahap tersebut wajib.</p>
     <form wire:submit="saveApprovalPolicy">
-        <fieldset wire:loading.attr="disabled" wire:target="saveApprovalPolicy">
+        <fieldset wire:loading.attr="disabled" wire:target="saveApprovalPolicy,editApprovalPolicy">
             <legend>{{ ($approvalPolicy['version'] ?? 0) ? 'Edit master approval' : 'Tambah master approval' }}</legend>
             <div class="scm-grid">
                 <x-scm.select model="approvalPolicy.company" label="Perusahaan" :options="['APCA'=>'APCA','KPMOG'=>'KPMOG']" :disabled="($approvalPolicy['version'] ?? 0) > 0" required />
@@ -34,6 +34,7 @@
         </fieldset>
     </form>
     <p role="status" wire:loading wire:target="saveApprovalPolicy">Menyimpan master approval...</p>
+    <p role="status" wire:loading wire:target="editApprovalPolicy">Membuka master approval...</p>
     <p class="scm-help">Master khusus PR atau SR didahulukan dari master PR dan SR pada perusahaan, divisi, dan jenis kebutuhan yang sama. Jika pembuat juga Acknowledged by, tahap tersebut tidak ditandatangani sendiri.</p>
     <div class="scm-scroll" role="region" aria-label="Daftar master approval" tabindex="0">
         <table><thead><tr><th>Perusahaan / divisi</th><th>Kebutuhan / form</th><th>SPV</th><th>Acknowledged by</th><th>Crosschecked by</th><th>Approved by</th><th>Tindakan</th></tr></thead><tbody>
@@ -42,7 +43,7 @@
                 <td>{{ $policy->supervisor?->name ?? 'Kosong' }}</td><td>{{ $policy->acknowledger?->name ?? 'Kosong' }}</td>
                 <td>{{ $policy->crosschecker?->name ?? 'Kosong' }}@if($policy->crosschecker)<br>{{ \App\Services\Scm\ApprovalPolicies::CROSSCHECK_MODES[$policy->crosscheck_mode] }}@endif</td>
                 <td>{{ $policy->approver->name }}@if($policy->use_amount_escalation)<br>Di atas Rp5 juta: {{ $policy->highApprover?->name ?? 'belum ditetapkan' }}@endif</td>
-                <td><button type="button" wire:click="editApprovalPolicy({{ $policy->id }})" aria-label="Edit {{ $policy->company }} {{ $policy->department->name }} {{ $policy->need_type }} {{ $policy->request_kind }}">Edit</button> <button type="button" wire:click="copyApprovalPolicy({{ $policy->id }})" aria-label="Salin master #{{ $policy->id }}">Salin</button></td></tr>
+                <td><button type="button" wire:click="editApprovalPolicy({{ $policy->id }})" wire:loading.attr="disabled" wire:target="editApprovalPolicy" aria-label="Edit {{ $policy->company }} {{ $policy->department->name }} {{ $policy->need_type }} {{ $policy->request_kind }}">Edit</button> <button type="button" wire:click="copyApprovalPolicy({{ $policy->id }})" aria-label="Salin master #{{ $policy->id }}">Salin</button> <button type="button" wire:click="deleteApprovalPolicy({{ $policy->id }}, {{ $policy->version }})" wire:confirm="Hapus master approval ini? Pengajuan baru akan memakai aturan lain yang sesuai atau memerlukan master baru. Pengajuan yang sudah berjalan tetap tersimpan." wire:loading.attr="disabled" wire:target="deleteApprovalPolicy" aria-label="Hapus master {{ $policy->company }} {{ $policy->department->name }} {{ $policy->need_type }} {{ $policy->request_kind }}">Hapus</button></td></tr>
         @empty<tr><td colspan="7">Belum ada master approval. Tambahkan aturan HO atau Project untuk divisi yang akan mengajukan PR/SR.</td></tr>@endforelse
         </tbody></table>
     </div>

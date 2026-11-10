@@ -18,7 +18,7 @@
     <div class="scm-scroll" role="region" aria-label="Aturan CBE pada Master Approval" tabindex="0">
         <table><thead><tr><th>Perusahaan</th><th>Prepared By</th><th>Acknowledged By</th><th>Crosschecked By</th><th>Approved By</th><th>Tindakan</th></tr></thead><tbody>
         @forelse($cbeApprovalPolicies as $policy)
-            <tr><td>{{ $policy->company }}</td><td>Akun SCM pengaju</td><td>{{ $policy->acknowledger->name }}</td><td>{{ $policy->crosschecker->name }}</td><td>{{ $policy->approver->name }}</td><td><button type="button" wire:click="editCbeApprovalPolicy({{ $policy->id }})" aria-label="Edit aturan CBE {{ $policy->company }}">Edit</button></td></tr>
+            <tr><td>{{ $policy->company }}</td><td>Akun SCM pengaju</td><td>{{ $policy->acknowledger->name }}</td><td>{{ $policy->crosschecker->name }}</td><td>{{ $policy->approver->name }}</td><td><button type="button" wire:click="editCbeApprovalPolicy({{ $policy->id }})" aria-label="Edit aturan CBE {{ $policy->company }}">Edit</button> <button type="button" wire:click="deleteCbeApprovalPolicy({{ $policy->id }}, {{ $policy->version }})" wire:confirm="Hapus aturan CBE {{ $policy->company }}? CBE yang telah diajukan tetap tersimpan; CBE baru memerlukan aturan baru." wire:loading.attr="disabled" wire:target="deleteCbeApprovalPolicy" aria-label="Hapus aturan CBE {{ $policy->company }}">Hapus</button></td></tr>
         @empty<tr><td colspan="6">Belum ada aturan CBE. Tetapkan penandatangan sebelum SCM mengajukan CBE baru.</td></tr>@endforelse
         </tbody></table>
     </div>

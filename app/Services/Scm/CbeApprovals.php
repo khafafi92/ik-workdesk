@@ -54,6 +54,17 @@ class CbeApprovals
         }
     }
 
+    public function deletePolicy(User $actor, int $id, int $version): void
+    {
+        abort_unless(Access::has($actor, 'scm.configure'), 403);
+        DB::transaction(function () use ($actor, $id, $version): void {
+            $policy = CbeApprovalPolicy::query()->lockForUpdate()->findOrFail($id);
+            $this->reject((int) $policy->version !== $version, 'Aturan CBE berubah. Muat ulang sebelum menghapus.');
+            app(Workflow::class)->audit($actor, $policy, 'hapus_master_approval_cbe', ['before' => $policy->getAttributes()]);
+            $policy->delete();
+        });
+    }
+
     public function start(User $actor, Cbe $cbe): void
     {
         $request = $cbe->request;

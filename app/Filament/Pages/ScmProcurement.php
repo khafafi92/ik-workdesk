@@ -187,6 +187,13 @@ class ScmProcurement extends Page
         $this->resetValidation();
     }
 
+    public function deleteCbeApprovalPolicy(int $id, int $version): void
+    {
+        app(CbeApprovals::class)->deletePolicy(auth()->user(), $id, $version);
+        $this->newCbeApprovalPolicy();
+        $this->success('Aturan CBE dihapus. Persetujuan yang sudah diajukan tetap tersimpan.');
+    }
+
     public function requestCbeApproval(): void
     {
         $this->assertProcessingContext();
@@ -693,6 +700,7 @@ class ScmProcurement extends Page
         $this->approvalPolicy = ApprovalPolicy::findOrFail($id)->only(array_keys(ApprovalPolicies::defaults()));
         $this->approvalPolicyError = '';
         $this->resetValidation();
+        $this->dispatch('scm-focus', id: 'scm-approvalPolicy-supervisor_id');
     }
 
     public function saveApprovalPolicy(): void
@@ -705,6 +713,13 @@ class ScmProcurement extends Page
         }
         $this->newApprovalPolicy();
         $this->success('Master approval tersimpan. Pengajuan yang sudah berjalan tetap memakai penugasan sebelumnya.');
+    }
+
+    public function deleteApprovalPolicy(int $id, int $version): void
+    {
+        app(ApprovalPolicies::class)->delete(auth()->user(), $id, $version);
+        $this->newApprovalPolicy();
+        $this->success('Master approval dihapus. Pengajuan yang sudah berjalan tetap memakai penugasan sebelumnya.');
     }
 
     public function copyApprovalPolicy(int $id): void

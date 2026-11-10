@@ -53,7 +53,7 @@ class ApprovalPolicies
     private function requireHoCbo(?User $crosschecker, User $approver): void
     {
         if (! $this->isCbo($approver) && (! $crosschecker || ! $this->isCbo($crosschecker))) {
-            throw ValidationException::withMessages(['scm' => 'Kebutuhan HO harus melibatkan CBO pada Crosschecked by atau Approved by. Petakan jabatan CBO pada master Employee.']);
+            throw ValidationException::withMessages(['scm' => 'Untuk HO, pilih CBO pada Crosschecked by jika Approved by bukan CBO. Pastikan jabatan CBO sudah tercatat pada master Employee.']);
         }
     }
 
@@ -70,6 +70,7 @@ class ApprovalPolicies
             'use_amount_escalation' => 'required|boolean', 'high_approver_id' => 'nullable|integer|exists:users,id',
             'crosscheck_mode' => ['required', Rule::in(array_keys(self::CROSSCHECK_MODES))], 'version' => 'required|integer|min:0',
         ])->validate();
+        $data['version'] = (int) $data['version'];
         if (! $data['use_amount_escalation']) {
             $data['high_approver_id'] = null;
         }
@@ -102,6 +103,30 @@ class ApprovalPolicies
             app(Workflow::class)->audit($actor, $policy, 'pengaturan_master_approval', ['before' => $before, 'after' => $policy->getAttributes()]);
 
             return $policy;
+        });
+    }
+
+    public function delete(User $actor, int $id, int $version): void
+    {
+        abort_unless(Access::has($actor, 'scm.configure'), 403);
+        DB::transaction(function () use ($actor, $id, $version): void {
+            $policy = ApprovalPolicy::query()->lockForUpdate()->findOrFail($id);
+            if ((int) $policy->version !== $version) {
+                throw ValidationException::withMessages(['scm' => 'Master approval berubah. Muat ulang sebelum menghapus.']);
+            }
+            $legacy = $policy->need_type === 'HO' && $policy->request_kind === 'ALL'
+                ? ApprovalRoute::where('company', $policy->company)->where('department_id', $policy->department_id)->lockForUpdate()->first()
+                : null;
+            $legacyCbo = $legacy ? User::find($legacy->cbo_id) : null;
+            $wasCbo = $legacyCbo && $this->isCbo($legacyCbo);
+            app(Workflow::class)->audit($actor, $policy, 'hapus_master_approval', ['before' => $policy->getAttributes(), 'legacy_route' => $legacy?->getAttributes()]);
+            $policy->delete();
+            $legacy?->delete();
+            if ($wasCbo && ! $this->isCbo($legacyCbo) && ApprovalPolicy::where('need_type', 'HO')
+                ->where(fn ($query) => $query->where('crosschecker_id', $legacyCbo->id)->orWhere('approver_id', $legacyCbo->id)
+                    ->orWhere('high_approver_id', $legacyCbo->id))->exists()) {
+                throw ValidationException::withMessages(['scm' => 'Penandatangan CBO masih dipakai master HO lain. Tetapkan jabatan CBO di data Employee sebelum menghapus master ini.']);
+            }
         });
     }
 
