@@ -11,7 +11,9 @@ class ScmSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (['scm.request' => 'Buat PR/SR sendiri', 'scm.process' => 'Proses pengadaan SCM', 'scm.configure' => 'Kelola konfigurasi SCM'] as $code => $name) {
+        foreach (['scm.request' => 'Buat PR/SR sendiri', 'scm.process' => 'Proses pengadaan SCM', 'ga.process' => 'Proses pengadaan GA khusus HO',
+            'scm.process-kpmog' => 'Proses pengadaan Project KPMOG', 'scm.process-apca' => 'Proses pengadaan Project APCA',
+            'scm.configure' => 'Kelola konfigurasi SCM'] as $code => $name) {
             Permission::firstOrCreate(['code' => $code], ['name' => $name, 'module' => 'SCM', 'is_active' => true]);
         }
         foreach (['NPWP' => false, 'NIB' => false, 'SBU' => true, 'KTP' => false] as $code => $expiry) {

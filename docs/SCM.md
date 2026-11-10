@@ -1,6 +1,10 @@
 # Modul SCM: PR/SR, CBE, dan legalitas vendor
 
-Modul terintegrasi dengan pengguna, departemen, Filament, dan hak akses IK WorkDesk. Sidebar menyediakan **Permintaan > PR** dan **Permintaan > SR** untuk permintaan user, serta **SCM > SCM** untuk penerimaan dan pemrosesan oleh tim SCM. Vendor mengisi Form 005 melalui Portal Vendor dengan pendaftaran mandiri dan Vendor ID, atau melalui undangan dari SCM. SCM meninjau kiriman sebelum menerima profil dan dokumen ke master. Modul tidak menambahkan kontrak, penerimaan barang, invoice, pembayaran, atau pesan otomatis.
+Modul terintegrasi dengan pengguna, departemen, Filament, dan hak akses IK WorkDesk. Sidebar menyediakan **Permintaan > PR** dan **Permintaan > SR** untuk permintaan user, serta **Pengadaan > Purchasing Officer** untuk pengadaan HO dan **Pengadaan > SCM** untuk pengadaan Project. Vendor mengisi Form 005 melalui Portal Vendor dengan pendaftaran mandiri dan Vendor ID, atau melalui undangan dari SCM. SCM meninjau kiriman sebelum menerima profil dan dokumen ke master. Modul tidak menambahkan kontrak, penerimaan barang, invoice, pembayaran, atau pesan otomatis.
+
+## Hak akses tim pengadaan
+
+Pengajuan PR/SR tetap dibuat melalui menu Permintaan. Setelah disetujui, permintaan HO diproses pada Purchasing Officer, sedangkan permintaan Project diproses pada SCM sesuai perusahaan dan departemen yang dapat diakses. Izin `ga.process` membuka HO; `scm.process-kpmog` dan `scm.process-apca` membuka Project sesuai perusahaan. Izin lama `scm.process` tetap dapat memproses kedua jenis. Migrasi membuat pilihan izin, tetapi tidak memberikannya otomatis kepada pengguna atau role.
 
 ## Panduan penggunaan langkah demi langkah
 
@@ -9,7 +13,7 @@ Diperbarui 29 Oktober 2026. Buka alamat IK WorkDesk yang diberikan pengelola dan
 ### 1. Menyiapkan tanda tangan dan master
 
 1. Setiap penandatangan membuka tautan **Atur TTD di profil (tab baru)** pada halaman persetujuan atau form PR/SR. SCM juga dapat memakai tautan **TTD profil** pada tab CBE. Simpan gambar tanda tangan sendiri pada halaman **Tanda tangan profil**. Gunakan PNG/JPG maksimal 2 MB dan 4096 × 4096 piksel. Menyimpan profil belum menandatangani dokumen.
-2. Pengelola berizin konfigurasi membuka **SCM > Pengaturan > Master Approval**. Pilihan **Dokumen persetujuan** awalnya **PR/SR**; atur perusahaan, divisi, HO/Project, dan jenis form pada pilihan tersebut. Ikuti [panduan master approval](SCM-APPROVAL-MASTER-2026-10-27.md).
+2. Pengelola berizin konfigurasi membuka **Pengadaan > SCM > Pengaturan > Master Approval**. Pilihan **Dokumen persetujuan** awalnya **PR/SR**; atur perusahaan, divisi, HO/Project, dan jenis form pada pilihan tersebut. Ikuti [panduan master approval](SCM-APPROVAL-MASTER-2026-10-27.md).
 3. Pada panel **Master Approval** yang sama, ubah **Dokumen persetujuan** menjadi **CBE**, lalu pilih perusahaan. Isi **Acknowledged By: Meyfi**, **Crosschecked By: Dipta**, dan **Approved By: Lenaldy** menggunakan akun aktif yang sesuai, lalu tekan **Simpan master approval**. Atur perusahaan lain jika digunakan. Ganti kembali pilihan ke PR/SR untuk melihat atau mengedit aturan PR/SR.
 4. **Prepared By** memakai akun SCM yang benar-benar menandatangani dan mengajukan CBE. Jika Imam yang memproses, masuk sebagai Imam. Jika akun pengaju sama dengan Acknowledged By pada master, tahap Acknowledged By otomatis dilewati; Crosschecked By dan Approved By tetap wajib ditandatangani akun berbeda. Pembuat mengikuti izin proses SCM. Nama contoh tidak membuat akun atau gambar tanda tangan secara otomatis.
 
@@ -30,7 +34,7 @@ Sysadmin/pemilik sistem dapat memilih **Requestor** dan seluruh departemen pada 
 
 ### 3. Menerima permintaan dan mengumpulkan penawaran
 
-1. Petugas membuka **SCM > SCM**, mencari nomor PR/SR pada antrean, lalu membuka detail dan memilih **Terima oleh SCM**.
+1. Petugas membuka **Pengadaan > Purchasing Officer** untuk HO atau **Pengadaan > SCM** untuk Project, mencari nomor PR/SR pada antrean, lalu membuka detail dan memilih tombol penerimaan.
 2. Di **Vendor & penawaran**, pilih minimal tiga vendor berbeda. Buat data vendor terlebih dahulu pada **Vendor & dokumen** bila belum tersedia.
 3. Catat nomor/tanggal quotation, mata uang, syarat komersial, rincian harga, diskon dan pajak, lalu lampirkan file quotation. Cocokkan barang/jasa, jumlah, dan satuan dengan permintaan.
 4. Jika vendor merevisi quotation, simpan versi baru. Saat menyusun CBE, pilih satu versi untuk setiap vendor dengan mata uang yang sama.

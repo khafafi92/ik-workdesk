@@ -29,7 +29,58 @@ class Access
 
     public static function manages(?User $user, ?Procurement $request = null): bool
     {
-        return $user?->isSystemAdministrator() || (self::has($user, 'scm.process') && (! $request || (! in_array($request->status, ['draft', 'approval']) && $user->canAccessDepartment($request->department_id))));
+        if ($user?->isSystemAdministrator()) {
+            return true;
+        }
+        if (! $user || ! self::hasProcessingPermission($user)) {
+            return false;
+        }
+
+        return ! $request || (! in_array($request->status, ['draft', 'approval'], true)
+            && $user->canAccessDepartment($request->department_id)
+            && (self::has($user, 'scm.process')
+                || ($request->need_type === 'HO' && self::has($user, 'ga.process'))
+                || ($request->need_type === 'PROJECT' && self::has($user, 'scm.process-'.strtolower($request->company)))));
+    }
+
+    private static function hasProcessingPermission(User $user): bool
+    {
+        return self::has($user, 'scm.process') || self::has($user, 'ga.process')
+            || self::has($user, 'scm.process-kpmog') || self::has($user, 'scm.process-apca');
+    }
+
+    public static function canProcessNeedType(?User $user, string $needType): bool
+    {
+        return self::has($user, 'scm.process') || ($needType === 'HO'
+            ? self::has($user, 'ga.process')
+            : self::has($user, 'scm.process-kpmog') || self::has($user, 'scm.process-apca'));
+    }
+
+    public static function scopeProcessing(Builder $query, User $user, ?string $needType = null): Builder
+    {
+        if ($needType !== null) {
+            $query->where('need_type', $needType);
+        }
+        if ($user->isSystemAdministrator()) {
+            return $query;
+        }
+        if (! self::manages($user)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereNotIn('status', ['draft', 'approval'])
+            ->whereIn('department_id', $user->accessibleDepartmentIds())
+            ->when(! self::has($user, 'scm.process'), fn ($query) => $query->where(function ($scope) use ($user): void {
+                $scope->whereRaw('1 = 0');
+                if (self::has($user, 'ga.process')) {
+                    $scope->orWhere('need_type', 'HO');
+                }
+                foreach (['KPMOG', 'APCA'] as $company) {
+                    if (self::has($user, 'scm.process-'.strtolower($company))) {
+                        $scope->orWhere(fn ($project) => $project->where('need_type', 'PROJECT')->where('company', $company));
+                    }
+                }
+            }));
     }
 
     public static function canChooseRequester(?User $user, string $kind): bool
@@ -76,7 +127,7 @@ class Access
 
     public static function signs(?User $user): bool
     {
-        return self::has($user, 'scm.request') || self::has($user, 'scm.process') || self::approves($user);
+        return self::has($user, 'scm.request') || self::manages($user) || self::approves($user);
     }
 
     public static function viewsRequest(User $user, Procurement $request): bool
@@ -99,7 +150,7 @@ class Access
         return $query->where(function ($query) use ($user): void {
             $query->where(fn ($own) => self::scopeMine($own, $user));
             if (self::manages($user)) {
-                $query->orWhere(fn ($q) => $q->whereNotIn('status', ['draft', 'approval'])->whereIn('department_id', $user->accessibleDepartmentIds()));
+                $query->orWhere(fn ($q) => self::scopeProcessing($q, $user));
             }
         });
     }

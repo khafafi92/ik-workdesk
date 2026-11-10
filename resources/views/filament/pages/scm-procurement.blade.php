@@ -1,9 +1,9 @@
 <x-filament-panels::page>
 <div class="scm-workspace" x-on:scm-focus.window="$nextTick(() => document.getElementById($event.detail.id)?.focus())">
     @if($isSuperuser)<p class="scm-help">Akses superuser: seluruh pengguna dan departemen. Tanda tangan dan riwayat tindakan memakai identitas {{ auth()->user()->name }}.</p>@endif
-    @if(!$requestKind)<nav class="scm-actions" aria-label="Bagian pengadaan">
-        @foreach(['queue' => 'Antrean SCM', 'vendors' => 'Vendor & dokumen', 'settings' => 'Pengaturan'] as $key => $label)
-            @if((in_array($key, ['queue', 'vendors']) && $isScm) || ($key === 'settings' && $configure))
+    @if($isScm || $configure)<nav class="scm-actions" aria-label="Bagian pengadaan">
+        @foreach([($requestKind ? 'mine' : 'queue') => ($requestKind ?? 'Permintaan'), 'vendors' => 'Vendor & dokumen', 'settings' => 'Pengaturan'] as $key => $label)
+            @if((in_array($key, ['mine', 'queue', 'vendors']) && $isScm) || ($key === 'settings' && $configure))
             <button type="button" wire:click="switchSection('{{ $key }}')" @if($section === $key) aria-current="page" @endif>{{ $label }}</button>
             @endif
         @endforeach
@@ -21,21 +21,24 @@
         @endif
         @if(!$selected && !$editing && !$choosingCompany)
         <section class="scm-panel">
-            <header class="scm-heading"><h2>{{ $section === 'queue' ? 'Antrean pengadaan SCM' : $requestKind.($isSuperuser ? ' seluruh pengguna' : ' saya') }}</h2>@if($canRequest)<x-filament::button wire:click="chooseCompany">Buat {{ $requestKind }}</x-filament::button>@endif</header>
+            <header class="scm-heading"><h2>{{ $requestKind ?? 'Daftar permintaan' }}</h2>@if($canRequest)<x-filament::button wire:click="chooseCompany">Buat {{ $requestKind }}</x-filament::button>@endif</header>
+            @if($requestKind)<p class="scm-help">Ajukan PR/SR dari menu Permintaan. Setelah disetujui, HO diproses Purchasing Officer dan Project diproses SCM sesuai entitas.</p>
+            @else<p class="scm-help">{{ $processorLabel === 'SCM' ? 'Antrean Project sesuai entitas dan akses departemen Anda.' : 'Antrean HO KPMOG/APCA sesuai akses departemen Anda.' }} Pengajuan PR/SR tetap dibuat melalui menu Permintaan.</p>@endif
             <div class="scm-grid">
                 <x-scm.field model="search" label="Cari nomor atau judul" :live="true" />
                 <x-scm.select model="statusFilter" label="Status" :options="$statusOptions" :live="true" />
                 @if(!$requestKind)<x-scm.select model="kindFilter" label="Jenis" :options="['PR' => 'PR', 'SR' => 'SR']" :live="true" />@endif
+                <x-scm.select model="companyFilter" label="Entitas" :options="['KPMOG' => 'KPMOG', 'APCA' => 'APCA']" :live="true" />
+                @if($requestKind)<x-scm.select model="needTypeFilter" label="Jenis kebutuhan" :options="['HO' => 'HO', 'PROJECT' => 'Project']" :live="true" />@endif
                 <x-scm.select model="departmentFilter" label="Departemen" :options="$departments" :live="true" />
-                @if($isScm)<x-scm.select model="picFilter" label="PIC SCM" :options="$pics" :live="true" />@endif
+                @if($isScm)<x-scm.select model="picFilter" :label="'PIC '.$processorLabel" :options="$pics" :live="true" />@endif
                 <x-scm.field model="dateFrom" label="Dari tanggal" type="date" :live="true" />
                 <x-scm.field model="dateUntil" label="Sampai tanggal" type="date" :live="true" />
             </div>
             <div class="scm-actions"><button type="button" wire:click="clearFilters">Hapus semua filter</button></div>
-            @if($isScm && !$isSuperuser)<p class="scm-help">Tahap Draft pada antrean ini berarti persetujuan HO sudah lengkap dan menunggu penerimaan SCM.</p>@endif
-            <div class="scm-scroll" role="region" aria-label="Daftar permintaan" tabindex="0"><table><thead><tr><th>Permintaan</th><th>Departemen</th><th>Tanggal</th><th>Tahap</th><th>Tindak lanjut</th></tr></thead><tbody>
-            @forelse($records as $r)<tr><td>{{ $r->number }}<br>{{ $r->title }}</td><td>{{ $r->department->name }}</td><td>{{ $r->date->format('d/m/Y') }}</td><td>{{ $statuses[$r->status] }}</td><td><button type="button" wire:click="open({{ $r->id }})">Buka permintaan</button></td></tr>
-            @empty<tr><td colspan="5">Belum ada permintaan sesuai filter. @if($canRequest)Gunakan Buat {{ $requestKind }} untuk mengajukan permintaan.@else Permintaan yang dikirim dan sesuai akses departemen akan tampil di sini.@endif</td></tr>@endforelse
+            <div class="scm-scroll" role="region" aria-label="Daftar permintaan" tabindex="0"><table class="scm-number-table"><thead><tr><th>Permintaan</th><th>Entitas dan kebutuhan</th><th>Departemen</th><th>Tanggal</th><th>Tahap</th><th>Tindak lanjut</th></tr></thead><tbody>
+            @forelse($records as $r)<tr><td>{{ $r->number }}<br>{{ $r->title }}</td><td>{{ $r->company }} / {{ $r->need_type === 'HO' ? 'HO' : 'Project' }}<br>Penangan: {{ $r->need_type === 'HO' ? 'Purchasing Officer' : 'SCM' }}</td><td>{{ $r->department->name }}</td><td>{{ $r->date->format('d/m/Y') }}</td><td>{{ match ($r->status) { 'submitted' => 'Menunggu penerimaan '.($r->need_type === 'HO' ? 'Purchasing Officer' : 'SCM'), 'sourcing' => 'Diterima '.($r->need_type === 'HO' ? 'Purchasing Officer' : 'SCM'), default => $statuses[$r->status] } }}</td><td><button type="button" wire:click="open({{ $r->id }})">Buka permintaan</button></td></tr>
+            @empty<tr><td colspan="6">Belum ada permintaan sesuai filter. @if($canRequest)Gunakan Buat {{ $requestKind }} untuk mengajukan permintaan.@else Permintaan yang dikirim dan sesuai akses departemen akan tampil di sini.@endif</td></tr>@endforelse
             </tbody></table></div>{{ $records->links() }}
         </section>
         @endif
@@ -65,10 +68,10 @@
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => true])
             </fieldset>
             <div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled" wire:target="saveDraft,signPrepared">Simpan draft</x-filament::button><button type="button" wire:click="switchSection('mine')">Kembali ke daftar</button></div>
-            <p class="scm-help">Nomor tetap sama sejak draft. Lengkapi isi dan lampiran, pilih alur persetujuan, lalu tanda tangani Requested by. Seluruh persetujuan harus selesai sebelum masuk antrean SCM.</p>
+            <p class="scm-help">Nomor tetap sama sejak draft. Lengkapi isi dan lampiran, pilih alur persetujuan, lalu tanda tangani Requested by. Seluruh persetujuan harus selesai sebelum masuk antrean pengadaan.</p>
         </form>
         @elseif($record)
-        <section class="{{ $tab === 'request' ? 'scm-request-view' : 'scm-panel' }}"><header class="scm-heading"><div>@if($tab !== 'request')<h2>{{ $record->number }}</h2>@endif<p>{{ $record->title }} · {{ $statuses[$record->status] }}</p></div><button type="button" wire:click="switchSection('{{ $section === 'queue' ? 'queue' : 'mine' }}')">Kembali ke daftar</button></header>
+        <section class="{{ $tab === 'request' ? 'scm-request-view' : 'scm-panel' }}"><header class="scm-heading"><div>@if($tab !== 'request')<h2>{{ $record->number }}</h2>@endif<p>{{ $record->title }} · {{ $recordStatus }}</p></div><button type="button" wire:click="switchSection('{{ $section === 'queue' ? 'queue' : 'mine' }}')">Kembali ke daftar</button></header>
             @if($canManage)<nav class="scm-actions" aria-label="Rincian pengadaan">@foreach(['request' => 'Permintaan', 'quotes' => 'Vendor & penawaran', 'cbe' => 'CBE', 'po' => 'Purchase Order', 'legal' => 'Legalitas', 'history' => 'Riwayat'] as $key => $label)
             @if($key === 'request' || $canManage)<button type="button" wire:click="showTab('{{ $key }}')" @if($tab === $key) aria-current="page" @endif>{{ $label }}</button>@endif
             @endforeach</nav>@endif
@@ -76,7 +79,7 @@
                 @include('filament.pages.scm.partials.next-action')
             @endif
             @if($tab === 'request')
-                @if($record->status === 'submitted')<p role="status">Sudah dikirim ke SCM pada {{ $record->submitted_at?->format('d/m/Y H:i') }}. Menunggu penerimaan SCM.</p>@endif
+                @if($record->status === 'submitted')<p role="status">Sudah dikirim pada {{ $record->submitted_at?->format('d/m/Y H:i') }}. Menunggu penerimaan {{ $processorLabel }}.</p>@endif
                 @if($record->numberReservation && (int) $record->numberReservation->requester_id !== (int) $record->requester_id)
                     <p class="scm-help">Permintaan dibuat oleh {{ $record->numberReservation->requester->name }} untuk pemohon {{ $record->requester->name }}.</p>
                 @endif
@@ -110,7 +113,7 @@
                 </div>
                 @if($record->status === 'draft' && $submissionIssue)<p class="scm-help">Pengajuan belum dapat dikirim. Minta administrator melengkapi pemetaan atasan dan penandatangan yang ditampilkan di atas.</p>@endif
                 @if($canManage && $record->status === 'submitted')
-                <form wire:submit="receiveRequest" class="scm-item"><h3>Penerimaan SCM</h3><x-filament::button type="submit" wire:loading.attr="disabled">Terima oleh SCM</x-filament::button></form>
+                <form wire:submit="receiveRequest" class="scm-item"><h3>Penerimaan {{ $processorLabel }}</h3><x-filament::button type="submit" wire:loading.attr="disabled">Terima oleh {{ $processorLabel }}</x-filament::button></form>
                 @endif
                 <h3>Lampiran permintaan</h3>@forelse($record->attachments as $file)<p><a href="{{ route('scm.download', $file) }}">Unduh {{ $file->original_name }}</a></p>@empty<p>Belum ada lampiran permintaan.</p>@endforelse
                 @include('filament.pages.scm.partials.procurement-result')
@@ -119,7 +122,7 @@
                 @forelse($record->candidates as $c)<section class="scm-item" wire:key="candidate-{{ $c->id }}"><h4>{{ $c->vendor->name }}</h4><p>Tindak lanjut: {{ str_replace('_', ' ', $c->followup_status) }}. @if($c->requested_at)Diminta: {{ $c->requested_at }}.@endif</p>
                     @if(in_array($record->status, ['sourcing', 'quotations', 'evaluation']))<button type="button" wire:click="prepareQuotation({{ $c->id }})">{{ $c->quotations->isEmpty() ? 'Masukkan penawaran' : 'Buat revisi penawaran' }}</button>@endif
                     @forelse($c->quotations as $q)<p>Versi {{ $q->version }} · {{ $q->number }} · {{ \App\Services\Scm\Decimal::money($q->total_minor, $q->currency) }}</p>@foreach($q->attachments as $file)<p><a href="{{ route('scm.download', $file) }}">Quotation: {{ $file->original_name }}</a></p>@endforeach @empty<p>Penawaran belum dicatat.</p>@endforelse
-                </section>@empty<p>Belum ada kandidat vendor. {{ $record->status === 'submitted' ? 'Terima permintaan oleh SCM terlebih dahulu melalui tab Permintaan.' : 'Tambahkan kandidat melalui form berikut untuk mulai mencatat penawaran.' }}</p>@endforelse
+                </section>@empty<p>Belum ada kandidat vendor. {{ $record->status === 'submitted' ? 'Terima permintaan oleh '.$processorLabel.' terlebih dahulu melalui tab Permintaan.' : 'Tambahkan kandidat melalui form berikut untuk mulai mencatat penawaran.' }}</p>@endforelse
                 @if(in_array($record->status, ['sourcing', 'quotations', 'evaluation']))
                 <form wire:submit="addCandidate" class="scm-item"><div class="scm-grid"><x-scm.select model="candidate.vendor_id" label="Vendor kandidat" :options="$candidateVendors->where('is_active', true)->pluck('name', 'id')" help="Perusahaan yang sudah menjadi kandidat tidak dapat ditambahkan lagi, meskipun kode vendornya berbeda." required /><x-scm.field model="candidate.requested_at" label="Tanggal diminta penawaran" type="date" /><x-scm.select model="candidate.followup_status" label="Tindak lanjut" :options="['belum_diminta'=>'Belum diminta','diminta'=>'Diminta','diterima'=>'Diterima','ditindaklanjuti'=>'Ditindaklanjuti']" required /></div><x-filament::button type="submit">Tambah kandidat</x-filament::button></form>
                 @endif
@@ -135,16 +138,16 @@
                 @endif
             @elseif($tab === 'cbe' && $canManage)
                 @if($record->status === 'submitted')
-                    <p>Terima permintaan oleh SCM terlebih dahulu melalui tab Permintaan. Setelah penawaran vendor dicatat, CBE dapat disusun di sini.</p>
+                    <p>Terima permintaan oleh {{ $processorLabel }} terlebih dahulu melalui tab Permintaan. Setelah penawaran vendor dicatat, CBE dapat disusun di sini.</p>
                 @else
                     @include('filament.pages.scm.partials.cbe-panel')
                 @endif
             @elseif($tab === 'po' && $canManage)
                 @include('filament.pages.scm.partials.purchase-order')
             @elseif($tab === 'legal' && $canManage)
-                <h3>Kelengkapan administratif vendor terpilih</h3><p>Checklist menggunakan persyaratan saat pengumpulan dimulai. Kelengkapan ini tidak memverifikasi keaslian dokumen ke instansi penerbit.</p><p class="scm-help">Dokumen Form 005 yang diterima SCM tersedia sebagai versi dokumen vendor. Pilih versinya dan simpan status Diterima pada setiap checklist yang sesuai. Penerimaan Form 005 tidak otomatis menyelesaikan checklist pengadaan.</p>
+                <h3>Kelengkapan administratif vendor terpilih</h3><p>Checklist menggunakan persyaratan saat pengumpulan dimulai. Kelengkapan ini tidak memverifikasi keaslian dokumen ke instansi penerbit.</p><p class="scm-help">Dokumen Form 005 yang diterima {{ $processorLabel }} tersedia sebagai versi dokumen vendor. Pilih versinya dan simpan status Diterima pada setiap checklist yang sesuai. Penerimaan Form 005 tidak otomatis menyelesaikan checklist pengadaan.</p>
                 @if(!$record->legalCase)<p>Finalkan CBE lalu mulai pengumpulan legalitas dari tab CBE.</p>@else
-                @if(($record->legalCase->document_basis_snapshot['source'] ?? null) === 'form005')<p class="scm-help" role="status">Checklist mengikuti Form 005 yang sudah diterima SCM untuk {{ $record->legalCase->document_basis === 'foreign_company' ? 'perusahaan luar Indonesia' : 'vendor Indonesia' }}. Dokumen tetap diperiksa dan diterima satu per satu pada pengadaan ini.</p>@endif
+                @if(($record->legalCase->document_basis_snapshot['source'] ?? null) === 'form005')<p class="scm-help" role="status">Checklist mengikuti Form 005 yang sudah diterima {{ $processorLabel }} untuk {{ $record->legalCase->document_basis === 'foreign_company' ? 'perusahaan luar Indonesia' : 'vendor Indonesia' }}. Dokumen tetap diperiksa dan diterima satu per satu pada pengadaan ini.</p>@endif
                 @if($record->legalCase->document_basis === 'npwp_ktp')
                     <p class="scm-help" role="status">{{ ($record->legalCase->document_basis_snapshot['source'] ?? null) === 'form005' ? 'Vendor Indonesia tanpa dokumen perusahaan: NPWP dan KTP wajib diterima beserta file.' : 'Pengganti SBU/NIB: NPWP dan KTP wajib diterima beserta file. SBU/NIB menjadi opsional; persyaratan lain pada checklist tetap berlaku.' }}</p>
                 @elseif($record->status === 'legal' && $record->legalCase->document_basis !== 'foreign_company')
@@ -159,7 +162,7 @@
                     @if($record->status === 'completed')<p>{{ str_replace('_', ' ', $item->status) }} · Versi dokumen {{ $item->document?->version ?? '-' }}</p>
                     @else<div class="scm-grid"><x-scm.select model="legal.{{ $item->id }}.status" label="Status dokumen" :options="['belum_diminta'=>'Belum diminta','diminta'=>'Diminta','diterima'=>'Diterima','perlu_perbaikan'=>'Perlu perbaikan']" required /><x-scm.select model="legal.{{ $item->id }}.vendor_document_id" label="Versi dokumen vendor" :options="$documents->where('document_type_id',$item->document_type_id)->mapWithKeys(fn($d)=>[$d->id => $d->title.' · versi '.$d->version.' · '.$d->number.($d->expires_at ? ' · berlaku '.$d->expires_at->format('d/m/Y') : '')])" /><x-scm.field model="legal.{{ $item->id }}.correction_notes" label="Catatan / alasan perbaikan" multiline /></div><button type="submit" wire:loading.attr="disabled">Simpan checklist {{ $item->document_name }}</button>@endif
                     @foreach($item->document?->attachments ?? [] as $file)<p><a href="{{ route('scm.download',$file) }}">Unduh {{ $file->original_name }}</a></p>@endforeach
-                </form>@empty<p>Belum ada persyaratan pada pengadaan ini. SCM dapat menambahkan persyaratan dengan alasan sebelum penyelesaian.</p>@endforelse
+                </form>@empty<p>Belum ada persyaratan pada pengadaan ini. {{ $processorLabel }} dapat menambahkan persyaratan dengan alasan sebelum penyelesaian.</p>@endforelse
                 @if($record->status === 'legal')<form wire:submit="changeRequirement" class="scm-item"><h4>Ubah persyaratan proses ini</h4><div class="scm-grid"><x-scm.select model="requirementChange.document_type_id" label="Jenis dokumen" :options="$types->where('is_active',true)->pluck('name','id')" required /><x-scm.check model="requirementChange.is_required" label="Wajib untuk pengadaan ini" /><x-scm.field model="requirementChange.reason" label="Alasan perubahan persyaratan" required /></div><button type="submit">Simpan perubahan persyaratan</button></form><x-filament::button wire:click="completeRequest" wire:confirm="Selesaikan pengadaan dalam cakupan PR/SR, CBE, dan legalitas?" wire:loading.attr="disabled">Selesaikan pengadaan</x-filament::button>@endif
                 @endif
             @elseif($tab === 'history' && $canManage)

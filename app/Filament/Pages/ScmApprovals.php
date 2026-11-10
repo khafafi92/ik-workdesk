@@ -152,7 +152,7 @@ class ScmApprovals extends Page
         $record = app(Approvals::class)->decide(auth()->user(), $this->selected, $this->version, $stepId, $decision, $this->returnReason);
         $this->open($record->id);
         $this->dispatch('refresh-sidebar');
-        Notification::make()->title($record->status === 'submitted' ? 'Persetujuan lengkap. Permintaan sudah masuk antrean SCM.' : 'Keputusan tersimpan.')->success()->send();
+        Notification::make()->title($record->status === 'submitted' ? 'Persetujuan lengkap. Permintaan siap diproses melalui menu '.($record->need_type === 'HO' ? 'Purchasing Officer' : 'SCM').'.' : 'Keputusan tersimpan.')->success()->send();
     }
 
     protected function getViewData(): array
@@ -171,6 +171,6 @@ class ScmApprovals extends Page
         return ['records' => $this->assigned()->with(['requester', 'department', 'approvals.user'])->latest('id')->paginate(15),
             'isSuperuser' => auth()->user()->isSystemAdministrator(),
             'record' => $record, 'canRequest' => false, 'nextApproval' => $record ? app(Approvals::class)->next($record) : null,
-            'statuses' => array_replace(Workflow::STATUSES, ['submitted' => 'Menunggu SCM'])];
+            'statuses' => array_replace(Workflow::STATUSES, ['submitted' => 'Menunggu penerimaan Purchasing Officer/SCM'])];
     }
 }

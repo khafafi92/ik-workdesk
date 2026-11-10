@@ -1,6 +1,6 @@
 @php
     [$nextTab, $nextLabel, $nextHelp] = match ($record->status) {
-        'submitted' => ['request', 'Terima permintaan', 'Periksa permintaan dan persetujuan HO, lalu tekan Terima oleh SCM.'],
+        'submitted' => ['request', 'Terima permintaan', 'Periksa permintaan dan persetujuan, lalu tekan Terima oleh '.$processorLabel.'.'],
         'sourcing', 'quotations' => ['quotes', 'Lengkapi penawaran vendor', 'Catat penawaran dari minimal tiga vendor sebelum menyusun CBE.'],
         'evaluation' => ['cbe', 'Periksa dan finalkan CBE', 'Pilih satu versi per vendor, periksa diskon serta PPN, lalu tetapkan vendor terpilih.'],
         'selected' => ['cbe', 'Mulai legalitas', 'CBE sudah final. Mulai pengumpulan legalitas untuk membuat checklist vendor terpilih.'],

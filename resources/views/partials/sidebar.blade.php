@@ -34,7 +34,7 @@
             Daily Activity Report
         </a>
 
-        @foreach([\App\Filament\Pages\PurchaseRequests::class, \App\Filament\Pages\ServiceRequests::class, \App\Filament\Pages\ScmProcurement::class] as $procurementPage)
+        @foreach([\App\Filament\Pages\PurchaseRequests::class, \App\Filament\Pages\ServiceRequests::class, \App\Filament\Pages\ScmProcurement::class, \App\Filament\Pages\PurchasingOfficer::class] as $procurementPage)
             @if($procurementPage::canAccess())
             <a href="{{ $procurementPage::getUrl() }}"
                 class="ik-sidebar-link flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-slate-300 hover:bg-slate-900 hover:text-white">

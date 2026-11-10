@@ -10,6 +10,9 @@ class UserAdditionalAccessService
     private const MENU_ITEMS = [
         'scm-requests' => ['label' => 'PR dan SR', 'access' => 'scm-requests'],
         'scm-process' => ['label' => 'Proses Pengadaan SCM', 'access' => 'scm-process'],
+        'ga-process' => ['label' => 'Purchasing Officer (HO KPMOG/APCA)', 'access' => 'ga-process'],
+        'scm-process-kpmog' => ['label' => 'Pengadaan Project KPMOG', 'access' => 'scm-process-kpmog'],
+        'scm-process-apca' => ['label' => 'Pengadaan Project APCA', 'access' => 'scm-process-apca'],
         'scm-configure' => ['label' => 'Pengaturan SCM', 'access' => 'scm-configure'],
         'it-devices-view' => ['label' => 'Lihat Master Perangkat', 'access' => 'it-devices-view'],
         'it-devices-manage' => ['label' => 'Kelola Master Perangkat', 'access' => 'it-devices-manage'],
@@ -82,6 +85,9 @@ class UserAdditionalAccessService
     private const ACCESS_GROUPS = [
         'scm-requests' => ['scm.request'],
         'scm-process' => ['scm.process'],
+        'ga-process' => ['ga.process', 'scm.request'],
+        'scm-process-kpmog' => ['scm.process-kpmog'],
+        'scm-process-apca' => ['scm.process-apca'],
         'scm-configure' => ['scm.configure'],
         'it-devices-view' => ['it.devices.view'],
         'it-devices-manage' => ['it.devices.manage'],
@@ -230,6 +236,9 @@ class UserAdditionalAccessService
         return [
             'scm-requests' => 'Permintaan - PR dan SR sendiri',
             'scm-process' => 'SCM - Proses pengadaan',
+            'ga-process' => 'Purchasing Officer - Proses HO KPMOG/APCA',
+            'scm-process-kpmog' => 'SCM - Project KPMOG',
+            'scm-process-apca' => 'SCM - Project APCA',
             'scm-configure' => 'SCM - Pengaturan master',
             'it-devices-view' => 'Infrastruktur IT - Lihat Master Perangkat',
             'it-devices-manage' => 'Infrastruktur IT - Kelola Master Perangkat',
@@ -307,8 +316,9 @@ class UserAdditionalAccessService
     public function menuGroups(): array
     {
         return [
-            'procurement_requests' => ['label' => 'Permintaan', 'description' => 'Menu PR dan SR untuk membuat serta memantau permintaan sendiri.', 'items' => ['scm-requests']],
-            'scm' => ['label' => 'SCM', 'description' => 'Penerimaan permintaan, pencarian vendor, CBE, legalitas, dan pengaturan master.', 'items' => ['scm-process', 'scm-configure']],
+            'procurement_requests' => ['label' => 'Permintaan', 'description' => 'Semua pengajuan PR/SR dibuat melalui menu Permintaan.', 'items' => ['scm-requests']],
+            'scm' => ['label' => 'SCM', 'description' => 'Memproses PR/SR Project sesuai entitas dan akses departemen. Izin SCM lama juga membuka Purchasing Officer untuk HO.', 'items' => ['scm-process-kpmog', 'scm-process-apca', 'scm-process', 'scm-configure']],
+            'purchasing_officer' => ['label' => 'Purchasing Officer', 'description' => 'Memproses PR/SR HO KPMOG/APCA sesuai akses departemen melalui menu Purchasing Officer.', 'items' => ['ga-process']],
             'approvals' => [
                 'label' => 'Kewenangan Persetujuan',
                 'description' => 'Centang untuk CBO yang menyetujui pengajuan Service Desk ke Legal. Work Logs dan riwayat keputusan tersedia otomatis.',

@@ -53,13 +53,17 @@ class ScmProcurement extends Page
 
     protected static ?string $navigationLabel = 'SCM';
 
-    protected static string|UnitEnum|null $navigationGroup = 'SCM';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengadaan';
+
+    protected static ?int $navigationSort = 1;
 
     protected string $view = 'filament.pages.scm-procurement';
 
     protected static ?string $title = 'SCM';
 
     protected static ?string $requestKind = null;
+
+    protected static string $processingNeedType = 'PROJECT';
 
     #[Url(as: 'bagian')]
     public string $section = 'queue';
@@ -80,6 +84,10 @@ class ScmProcurement extends Page
     public string $statusFilter = '';
 
     public string $kindFilter = '';
+
+    public string $companyFilter = '';
+
+    public string $needTypeFilter = '';
 
     public string $departmentFilter = '';
 
@@ -181,6 +189,7 @@ class ScmProcurement extends Page
 
     public function requestCbeApproval(): void
     {
+        $this->assertProcessingContext();
         $this->refreshed(app(CbeApprovals::class)->startExisting(auth()->user(), $this->selected, $this->version), 'cbe');
     }
 
@@ -197,14 +206,19 @@ class ScmProcurement extends Page
     {
         return static::$requestKind !== null
             ? Access::has(auth()->user(), 'scm.request')
-            : Access::manages(auth()->user()) || Access::has(auth()->user(), 'scm.configure');
+            : Access::canProcessNeedType(auth()->user(), static::$processingNeedType) || Access::has(auth()->user(), 'scm.configure');
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return true;
     }
 
     public function mount(): void
     {
         if (static::$requestKind !== null) {
             $this->section = 'mine';
-        } elseif (! Access::manages(auth()->user()) && Access::has(auth()->user(), 'scm.configure')) {
+        } elseif (! Access::canProcessNeedType(auth()->user(), static::$processingNeedType) && Access::has(auth()->user(), 'scm.configure')) {
             $this->section = 'settings';
         }
         if ($this->selected) {
@@ -218,7 +232,7 @@ class ScmProcurement extends Page
     {
         abort_unless(in_array($section, ['mine', 'queue', 'vendors', 'settings']), 404);
         abort_if(static::$requestKind !== null ? $section !== 'mine' : $section === 'mine', 403);
-        abort_if(in_array($section, ['queue', 'vendors']) && ! Access::manages(auth()->user()), 403);
+        abort_if(in_array($section, ['queue', 'vendors']) && ! Access::canProcessNeedType(auth()->user(), static::$processingNeedType), 403);
         abort_if($section === 'settings' && ! Access::has(auth()->user(), 'scm.configure'), 403);
         $this->section = $section;
         $this->selected = 0;
@@ -230,7 +244,7 @@ class ScmProcurement extends Page
 
     public function clearFilters(): void
     {
-        $this->reset('search', 'statusFilter', 'kindFilter', 'departmentFilter', 'picFilter', 'dateFrom', 'dateUntil');
+        $this->reset('search', 'statusFilter', 'kindFilter', 'companyFilter', 'needTypeFilter', 'departmentFilter', 'picFilter', 'dateFrom', 'dateUntil');
         $this->resetPage();
     }
 
@@ -239,7 +253,7 @@ class ScmProcurement extends Page
         $record = Procurement::with(['items', 'cbe', 'purchaseOrder', 'legalCase.items'])->findOrFail($id);
         abort_unless(static::$requestKind !== null
             ? Access::authors(auth()->user(), $record) && $record->kind === static::$requestKind
-            : Access::manages(auth()->user(), $record), 403);
+            : $record->need_type === static::$processingNeedType && Access::manages(auth()->user(), $record), 403);
         $this->selected = $id;
         $this->choosingCompany = false;
         $this->version = $record->version;
@@ -265,7 +279,8 @@ class ScmProcurement extends Page
     {
         abort_unless(in_array($tab, ['request', 'quotes', 'cbe', 'po', 'legal', 'history']), 404);
         $request = Procurement::findOrFail($this->selected);
-        abort_unless(Access::views(auth()->user(), $request), 403);
+        $this->assertSelectedKind();
+        abort_unless(static::$requestKind !== null ? Access::authors(auth()->user(), $request) : Access::manages(auth()->user(), $request), 403);
         abort_if($tab !== 'request' && (static::$requestKind !== null || ! Access::manages(auth()->user(), $request)), 403);
         $this->tab = $tab;
         if (in_array($tab, ['quotes', 'cbe'])) {
@@ -342,7 +357,31 @@ class ScmProcurement extends Page
 
     private function workflow(): Workflow
     {
+        $this->assertSelectedKind();
+
         return app(Workflow::class);
+    }
+
+    private function assertSelectedKind(): void
+    {
+        if ($this->selected) {
+            $query = Procurement::whereKey($this->selected);
+            static::$requestKind !== null ? $query->where('kind', static::$requestKind) : $query->where('need_type', static::$processingNeedType);
+            abort_unless($query->exists(), 403);
+        }
+    }
+
+    private function assertProcessingContext(): void
+    {
+        abort_unless(static::$requestKind === null && Access::canProcessNeedType(auth()->user(), static::$processingNeedType), 403);
+        $this->assertSelectedKind();
+    }
+
+    private function processingWorkflow(): Workflow
+    {
+        $this->assertProcessingContext();
+
+        return $this->workflow();
     }
 
     private function success(string $message = 'Perubahan tersimpan.'): void
@@ -392,16 +431,17 @@ class ScmProcurement extends Page
 
     public function receiveRequest(): void
     {
-        $this->refreshed($this->workflow()->receive(auth()->user(), $this->selected, $this->version), 'quotes');
+        $this->refreshed($this->processingWorkflow()->receive(auth()->user(), $this->selected, $this->version), 'quotes');
     }
 
     public function addCandidate(): void
     {
-        $this->refreshed($this->workflow()->addCandidate(auth()->user(), $this->selected, $this->version, $this->candidate), 'quotes');
+        $this->refreshed($this->processingWorkflow()->addCandidate(auth()->user(), $this->selected, $this->version, $this->candidate), 'quotes');
     }
 
     public function prepareQuotation(int $candidateId): void
     {
+        $this->assertProcessingContext();
         $request = Procurement::with('items')->findOrFail($this->selected);
         abort_unless(Access::manages(auth()->user(), $request), 403);
         $candidate = $request->candidates()->findOrFail($candidateId);
@@ -420,7 +460,7 @@ class ScmProcurement extends Page
 
     public function saveQuotation(): void
     {
-        $this->refreshed($this->workflow()->saveQuotation(auth()->user(), $this->selected, $this->version, $this->quotation), 'quotes');
+        $this->refreshed($this->processingWorkflow()->saveQuotation(auth()->user(), $this->selected, $this->version, $this->quotation), 'quotes');
     }
 
     public function cancelQuotation(): void
@@ -431,11 +471,12 @@ class ScmProcurement extends Page
 
     public function saveCbe(): void
     {
-        $this->refreshed($this->workflow()->saveCbe(auth()->user(), $this->selected, $this->version, $this->cbeForm), 'cbe');
+        $this->refreshed($this->processingWorkflow()->saveCbe(auth()->user(), $this->selected, $this->version, $this->cbeForm), 'cbe');
     }
 
     public function useCbeRecommendation(): void
     {
+        $this->assertProcessingContext();
         $request = Procurement::with(['items', 'cbe'])->findOrFail($this->selected);
         abort_unless(Access::manages(auth()->user(), $request), 403);
         abort_unless(in_array($request->status, ['sourcing', 'quotations', 'evaluation']) && $request->cbe?->status !== 'final', 403);
@@ -457,44 +498,48 @@ class ScmProcurement extends Page
 
     public function finalizeCbe(): void
     {
-        $this->refreshed($this->workflow()->saveCbe(auth()->user(), $this->selected, $this->version, $this->cbeForm, true), 'cbe');
+        $this->refreshed($this->processingWorkflow()->saveCbe(auth()->user(), $this->selected, $this->version, $this->cbeForm, true), 'cbe');
     }
 
     public function startLegal(): void
     {
-        $this->refreshed($this->workflow()->startLegal(auth()->user(), $this->selected, $this->version), 'legal');
+        $this->refreshed($this->processingWorkflow()->startLegal(auth()->user(), $this->selected, $this->version), 'legal');
     }
 
     public function savePurchaseOrder(): void
     {
         abort_unless(static::$requestKind === null, 403);
+        $this->assertSelectedKind();
         $record = app(PurchaseOrders::class)->save(auth()->user(), $this->selected, $this->version, $this->purchaseOrderForm);
         $this->refreshed($record, 'po');
     }
 
     public function updateLegal(int $itemId): void
     {
-        $this->refreshed($this->workflow()->updateLegal(auth()->user(), $this->selected, $this->version, $itemId, $this->legal[$itemId] ?? []), 'legal');
+        $this->refreshed($this->processingWorkflow()->updateLegal(auth()->user(), $this->selected, $this->version, $itemId, $this->legal[$itemId] ?? []), 'legal');
     }
 
     public function useAlternativeDocuments(): void
     {
-        $this->refreshed($this->workflow()->useAlternativeDocuments(auth()->user(), $this->selected, $this->version, $this->alternativeDocumentReason), 'legal');
+        $this->refreshed($this->processingWorkflow()->useAlternativeDocuments(auth()->user(), $this->selected, $this->version, $this->alternativeDocumentReason), 'legal');
     }
 
     public function changeRequirement(): void
     {
         $data = $this->requirementChange;
-        $this->refreshed($this->workflow()->changeRequirement(auth()->user(), $this->selected, $this->version, (int) $data['document_type_id'], (bool) $data['is_required'], $data['reason']), 'legal');
+        $this->refreshed($this->processingWorkflow()->changeRequirement(auth()->user(), $this->selected, $this->version, (int) $data['document_type_id'], (bool) $data['is_required'], $data['reason']), 'legal');
     }
 
     public function completeRequest(): void
     {
-        $this->refreshed($this->workflow()->complete(auth()->user(), $this->selected, $this->version), 'legal');
+        $this->refreshed($this->processingWorkflow()->complete(auth()->user(), $this->selected, $this->version), 'legal');
     }
 
     public function uploadAttachment(): void
     {
+        if ($this->attachmentTarget !== 'request') {
+            $this->assertProcessingContext();
+        }
         $this->validate(['attachmentFile' => 'required|file|max:'.config('scm.upload_max_kb')], ['required' => 'Pilih file lampiran.', 'file' => 'Lampiran harus berupa file.', 'max' => 'Ukuran lampiran melebihi batas SCM.']);
         $request = $this->workflow()->attach(auth()->user(), $this->selected, $this->version, $this->attachmentTarget, $this->attachmentTargetId, $this->attachmentFile);
         $this->attachmentFile = null;
@@ -522,7 +567,7 @@ class ScmProcurement extends Page
 
     public function editVendor(int $id): void
     {
-        abort_unless(Access::manages(auth()->user()), 403);
+        $this->assertProcessingContext();
         $this->newVendor(false);
         $vendor = Vendor::findOrFail($id);
         $this->vendorId = $id;
@@ -535,13 +580,14 @@ class ScmProcurement extends Page
 
     public function saveVendor(): void
     {
-        $vendor = $this->workflow()->saveVendor(auth()->user(), $this->vendor, $this->vendorId ?: null, $this->vendorVersion);
+        $vendor = $this->processingWorkflow()->saveVendor(auth()->user(), $this->vendor, $this->vendorId ?: null, $this->vendorVersion);
         $this->editVendor($vendor->id);
         $this->success('Profil vendor tersimpan.');
     }
 
     public function inviteVendor(): void
     {
+        $this->assertProcessingContext();
         [$registration, $url] = app(VendorEnrollment::class)->invite(auth()->user(), $this->vendorId, $this->portalInvitation);
         $this->vendorPortalUrl = $url;
         $this->success('Tautan Form 005 dibuat. Kirim tautan ini kepada vendor melalui saluran Anda.');
@@ -549,6 +595,7 @@ class ScmProcurement extends Page
 
     public function saveDocument(): void
     {
+        $this->assertProcessingContext();
         $this->validate(['documentFile' => 'required|file|max:'.config('scm.upload_max_kb')], ['required' => 'Pilih file dokumen.', 'file' => 'Dokumen harus berupa file.', 'max' => 'Ukuran dokumen melebihi batas SCM.']);
         $this->workflow()->saveDocument(auth()->user(), $this->document, $this->documentFile);
         $this->documentFile = null;
@@ -690,7 +737,7 @@ class ScmProcurement extends Page
                 }
             }
         }
-        if (in_array($property, ['search', 'statusFilter', 'kindFilter', 'departmentFilter', 'picFilter', 'dateFrom', 'dateUntil'], true)) {
+        if (in_array($property, ['search', 'statusFilter', 'kindFilter', 'companyFilter', 'needTypeFilter', 'departmentFilter', 'picFilter', 'dateFrom', 'dateUntil'], true)) {
             $this->resetPage();
         }
         if ($property === 'vendorSearch') {
@@ -710,7 +757,7 @@ class ScmProcurement extends Page
         abort_unless(static::canAccess(), 403);
         $user = auth()->user();
         $isSuperuser = $user->isSystemAdministrator();
-        $isScm = static::$requestKind === null && Access::manages($user);
+        $isScm = static::$requestKind === null && Access::canProcessNeedType($user, static::$processingNeedType);
         $configure = static::$requestKind === null && Access::has($user, 'scm.configure');
         $canChooseRequester = Access::canChooseRequester($user, static::$requestKind ?? '');
         $requesterCandidates = $this->editing && $canChooseRequester ? $this->requesterCandidates() : collect();
@@ -723,26 +770,22 @@ class ScmProcurement extends Page
             }
         }
         $requestDepartmentIds = $user->accessibleDepartmentIds();
+        abort_unless(in_array($this->section, ['mine', 'queue', 'vendors', 'settings'], true), 404);
         abort_if(static::$requestKind !== null ? $this->section !== 'mine' : $this->section === 'mine', 403);
         abort_if(in_array($this->section, ['queue', 'vendors']) && ! $isScm, 403);
         abort_if($this->section === 'settings' && ! $configure, 403);
         $visible = static::$requestKind !== null
             ? Access::scopeMine(Procurement::query(), $user)->where('kind', static::$requestKind)
-            : Procurement::when(! $isSuperuser, fn ($query) => $query->whereNotIn('status', ['draft', 'approval']))->whereIn('department_id', $isScm ? $user->accessibleDepartmentIds() : []);
+            : Access::scopeProcessing(Procurement::query(), $user, static::$processingNeedType)->whereNotIn('status', ['draft', 'approval']);
         $query = clone $visible;
         $summary = (clone $query)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
-        if (! $isSuperuser) {
-            $summary['draft'] = ($summary['draft'] ?? 0) + ($summary['submitted'] ?? 0);
-            unset($summary['submitted']);
-        }
         $missingDocuments = $isScm ? LegalItem::whereIn('legal_case_id', LegalCase::whereNull('completed_at')->whereIn('request_id', (clone $visible)->select('id'))->select('id'))
             ->where('is_required', true)->where(fn ($q) => $q->where('status', '!=', 'diterima')->orWhereNull('vendor_document_id')
             ->orWhereHas('document', fn ($d) => $d->whereDate('expires_at', '<', today())))->count() : null;
-        if ($this->section === 'queue' && ! $isSuperuser) {
-            $query->whereNotIn('status', ['draft', 'approval']);
-        }
         $query->when($this->search !== '', fn ($q) => $q->where(fn ($q) => $q->where('number', 'like', '%'.$this->search.'%')->orWhere('title', 'like', '%'.$this->search.'%')))
-            ->when($this->statusFilter, fn ($q) => $q->whereIn('status', $this->statusFilter === 'draft' && ! $isSuperuser ? ['draft', 'submitted'] : [$this->statusFilter]))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
+            ->when($this->statusFilter, fn ($q) => $q->where('status', $this->statusFilter))->when($this->kindFilter, fn ($q) => $q->where('kind', $this->kindFilter))
+            ->when($this->companyFilter, fn ($q) => $q->where('company', $this->companyFilter))
+            ->when($this->needTypeFilter, fn ($q) => $q->where('need_type', $this->needTypeFilter))
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))->when($this->picFilter, fn ($q) => $q->where('scm_pic_id', $this->picFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
         $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'numberReservation.requester', 'department', 'project', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
@@ -769,13 +812,15 @@ class ScmProcurement extends Page
         $documents = $isScm ? VendorDocument::with(['documentType', 'attachments'])->when($record?->legalCase, fn ($q) => $q->where('vendor_id', $record->legalCase->vendor_id))->orderByDesc('id')->get() : collect();
         $duplicate = $isScm && filled($this->vendor['name'] ?? '') ? Vendor::where('id', '!=', $this->vendorId)->where(fn ($q) => $q->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($this->vendor['name']))])->when(filled($this->vendor['email'] ?? ''), fn ($q) => $q->orWhere('email', $this->vendor['email'])))->pluck('name') : collect();
         $statuses = Workflow::STATUSES;
-        if ($isSuperuser) {
-            $statuses['submitted'] = 'Menunggu SCM';
-        }
-        $statusOptions = $isSuperuser ? $statuses : array_diff_key($statuses, ['submitted' => true]);
-        if ($isScm && ! $isSuperuser) {
-            unset($statusOptions['approval']);
-        }
+        $processorLabel = ($record?->need_type ?? static::$processingNeedType) === 'HO' ? 'Purchasing Officer' : 'SCM';
+        $statuses['submitted'] = 'Menunggu penerimaan';
+        $statuses['sourcing'] = static::$requestKind !== null ? 'Diterima tim pengadaan' : 'Diterima '.$processorLabel;
+        $statusOptions = static::$requestKind !== null ? $statuses : array_diff_key($statuses, ['draft' => true, 'approval' => true]);
+        $recordStatus = $record ? match ($record->status) {
+            'submitted' => 'Menunggu penerimaan '.$processorLabel,
+            'sourcing' => 'Diterima '.$processorLabel,
+            default => $statuses[$record->status],
+        } : null;
         $approvalTarget = null;
         if ($this->editing && static::$requestKind !== null && $draftRequester && ($isSuperuser || $draftRequester->canAccessDepartment((int) ($this->draft['department_id'] ?? 0)))) {
             $approvalTarget = app(Approvals::class)->route($this->draft['company'] ?? 'APCA', (int) $this->draft['department_id'])?->cbo3?->name;
@@ -801,12 +846,12 @@ class ScmProcurement extends Page
             }
         }
 
-        return ['requestKind' => static::$requestKind, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
+        return ['requestKind' => static::$requestKind, 'processorLabel' => $processorLabel, 'recordStatus' => $recordStatus, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
             'canChooseRequester' => $canChooseRequester, 'canEditDraft' => $canEditDraft, 'canSignPrepared' => $canSignPrepared,
             'isSuperuser' => $isSuperuser,
             'preparedSignatureLabel' => $isSuperuser && (int) ($this->editing ? ($this->draft['requester_id'] ?? $user->id) : $record?->requester_id) !== (int) $user->id ? 'Tanda tangani sebagai '.$user->name : 'Tanda tangani',
             'draftRequesterName' => $draftRequester?->name ?? '',
-            'requesterOptions' => $requesterCandidates->mapWithKeys(fn ($account) => [$account->id => $account->name.($account->employee?->department ? ' - '.$account->employee->department->name : '').($account->isActiveForAccess() ? '' : ' (nonaktif)')])->all(),
+            'requesterOptions' => $requesterCandidates->mapWithKeys(fn ($account) => [$account->id => $account->name])->all(),
             'projectNumberingOptions' => static::$requestKind !== null ? ProjectNumbering::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($master) => [$master->id => $master->code.' - '.$master->name])->all() : [],
             'cbeApprovalPolicies' => $configure ? CbeApprovalPolicy::with(['acknowledger', 'crosschecker', 'approver'])->orderBy('company')->get() : collect(),
             'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
@@ -830,7 +875,7 @@ class ScmProcurement extends Page
             'approvalUsers' => $configure ? User::with('employee')->orderBy('name')->get()->filter(fn ($account) => $account->isActiveForAccess())->pluck('name', 'id') : collect(),
             'types' => ($isScm || $configure) ? DocumentType::orderBy('name')->get() : collect(), 'categories' => Category::orderBy('name')->get(),
             'requirements' => $configure ? Requirement::with('documentType')->get() : collect(), 'departments' => Department::whereIn('id', $requestDepartmentIds)->pluck('name', 'id'),
-            'pics' => $isScm ? Procurement::whereIn('department_id', $user->accessibleDepartmentIds())->whereNotNull('scm_pic_id')->join('users', 'users.id', '=', 'scm_requests.scm_pic_id')->distinct()->pluck('users.name', 'users.id') : collect(),
+            'pics' => $isScm ? (clone $visible)->whereNotNull('scm_pic_id')->join('users', 'users.id', '=', 'scm_requests.scm_pic_id')->distinct()->pluck('users.name', 'users.id') : collect(),
             'finalCbe' => $finalCbe, 'selectedQuote' => $selectedQuote, 'selectedQuotation' => $selectedQuotation,
             'finalCbeAttachments' => $finalCbe ? Attachment::where('cbe_id', $finalCbe->id)->get() : collect(),
             'cbeAttachments' => $canManage && $record->cbe ? Attachment::where('cbe_id', $record->cbe->id)->get() : collect()];

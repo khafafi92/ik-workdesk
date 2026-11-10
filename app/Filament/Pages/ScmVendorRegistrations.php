@@ -24,9 +24,9 @@ class ScmVendorRegistrations extends Page
 
     protected static ?string $navigationLabel = 'Data Vendor';
 
-    protected static string|UnitEnum|null $navigationGroup = 'SCM';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengadaan';
 
-    protected static ?int $navigationSort = 2;
+    protected static ?int $navigationSort = 4;
 
     protected string $view = 'filament.pages.scm-vendor-registrations';
 

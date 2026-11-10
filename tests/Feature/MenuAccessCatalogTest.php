@@ -6,9 +6,12 @@ use App\Filament\Pages\AiAssistantChat;
 use App\Filament\Pages\AiAssistantSettingsPage;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\GlobalChatRoom;
+use App\Filament\Pages\PurchasingOfficer;
 use App\Filament\Pages\ScmApprovals;
+use App\Filament\Pages\ScmProcurement;
 use App\Filament\Pages\ScmRequestNumbers;
 use App\Filament\Pages\ScmSelectedVendorItems;
+use App\Filament\Pages\ScmVendorRegistrations;
 use App\Filament\Pages\SignatureProfile;
 use App\Filament\Resources\Departments\DepartmentResource;
 use App\Filament\Resources\Employees\EmployeeResource;
@@ -67,6 +70,9 @@ class MenuAccessCatalogTest extends TestCase
             AiAssistantSettingsPage::class => 'System administrator only',
             UserResource::class => 'Administrator access level',
             ScmApprovals::class => 'Assigned PR/SR or CBE approval, SCM processor, or system administrator',
+            ScmProcurement::class => 'Project processing permissions or SCM configuration',
+            PurchasingOfficer::class => 'HO processing permissions or SCM configuration',
+            ScmVendorRegistrations::class => 'SCM processing permissions',
             ScmRequestNumbers::class => 'SCM requester or processor sees authorized numbers; SCM configurator manages Project numbering',
             ScmSelectedVendorItems::class => 'SCM requester sees own final PR items; SCM processor sees authorized department items',
             SignatureProfile::class => 'SCM requester, processor or assigned approver',
