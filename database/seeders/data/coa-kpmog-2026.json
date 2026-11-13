@@ -1,0 +1,2588 @@
+[
+  {
+    "code": "1000000",
+    "name": "CASH & BANK",
+    "account_type": "Kas/Bank",
+    "parent_code": null
+  },
+  {
+    "code": "1000001",
+    "name": "KAS IDR",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000002",
+    "name": "KAS USD",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000003",
+    "name": "KAS SGD",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000004",
+    "name": "PETTY CASH",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000100",
+    "name": "BCA 5325341839",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000101",
+    "name": "BCA",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000202",
+    "name": "BNI IDR 196455341",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000203",
+    "name": "BNI USD 196456605",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000204",
+    "name": "BNI USD 084.2185.696",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000205",
+    "name": "BNI 841858199",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000206",
+    "name": "BNI 0620363639",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000207",
+    "name": "BNI 0978485607 KMK",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000208",
+    "name": "BNI 978495058 KI",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000209",
+    "name": "BNI OPR 8889100084",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000301",
+    "name": "BANK PERMATA IDR 701220633",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000302",
+    "name": "BANK PERMATA USD 701809033",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000303",
+    "name": "BANK PERMATA SYARIAH 971155477",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000401",
+    "name": "BANK MANDIRI IDR 1010000001030",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000402",
+    "name": "BANK MANDIRI USD 1010000001089",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000403",
+    "name": "BANK MANDIRI CAB PU",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000501",
+    "name": "BANK MAYORA IDR 5300180778",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000502",
+    "name": "BANK MAYORA USD 5300515977",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000601",
+    "name": "BTN 00419-01-30-000010-5",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000702",
+    "name": "BANK DKI USD",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000801",
+    "name": "BANK PANIN IDR",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000901",
+    "name": "BANK NIAGA IDR 185-01-00884-00-3",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000902",
+    "name": "BANK NIAGA USD 185-02-00504-008",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000903",
+    "name": "BANK NIAGA 185-02-00506-00-0",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000904",
+    "name": "BANK DKI IDR",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000905",
+    "name": "BANK BUKOPIN AKTIF",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000906",
+    "name": "BANK BUKOPIN ESCROW (Retensi Anjak Piutang)",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000907",
+    "name": "BCA USD 532588854",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000908",
+    "name": "BANK MANDIRI IDR 126-00-1014629-7",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000909",
+    "name": "BCA 5325111221 (COPI)",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000910",
+    "name": "BCA 5325111337",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000911",
+    "name": "Bank BRI IDR 39501001306309",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000912",
+    "name": "Bank Mandiri IDR 1010021210800",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000913",
+    "name": "Bank Mandiri IDR 1010009010909",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000914",
+    "name": "Bank Mandiri IDR 1010099259929",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000915",
+    "name": "Bank Mandiri IDR 1260012780499 - PELINDO 1",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000916",
+    "name": "Bank Mandiri IDR 1260013124366 - PELINDO 2",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1000917",
+    "name": "Bank Mandiri IDR 1260013364590",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1001000",
+    "name": "Deposito",
+    "account_type": "Kas/Bank",
+    "parent_code": "1000000"
+  },
+  {
+    "code": "1100",
+    "name": "Piutang",
+    "account_type": "Akun Piutang",
+    "parent_code": null
+  },
+  {
+    "code": "110302",
+    "name": "Account Receivable IDR",
+    "account_type": "Akun Piutang",
+    "parent_code": null
+  },
+  {
+    "code": "110303",
+    "name": "Account Receivable USD",
+    "account_type": "Akun Piutang",
+    "parent_code": null
+  },
+  {
+    "code": "110304",
+    "name": "Account Receivable SGD",
+    "account_type": "Akun Piutang",
+    "parent_code": null
+  },
+  {
+    "code": "110403",
+    "name": "Advance Purchase USD",
+    "account_type": "Akun Piutang",
+    "parent_code": null
+  },
+  {
+    "code": "110404",
+    "name": "Advance Purchase SGD",
+    "account_type": "Akun Piutang",
+    "parent_code": null
+  },
+  {
+    "code": "1200",
+    "name": "Persediaan Barang Dagang",
+    "account_type": "Persediaan",
+    "parent_code": null
+  },
+  {
+    "code": "1201",
+    "name": "Barang Terkirim",
+    "account_type": "Persediaan",
+    "parent_code": null
+  },
+  {
+    "code": "1400",
+    "name": "PIUTANG LAIN LAIN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "1401",
+    "name": "PIUTANG PEMEGANG SAHAM",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1400"
+  },
+  {
+    "code": "1401001",
+    "name": "PIUTANG PEMEGANG SAHAM - PIETER",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1401"
+  },
+  {
+    "code": "1401002",
+    "name": "PIUTANG PEMEGANG SAHAM - SETIAWAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1401"
+  },
+  {
+    "code": "1401003",
+    "name": "PIUTANG PEMEGANG SAHAM - WANTYA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1401"
+  },
+  {
+    "code": "1401004",
+    "name": "PIUTANG PEMEGANG SAHAM PIETER (USD)",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1401"
+  },
+  {
+    "code": "1402",
+    "name": "PIUTANG PIHAK BERELASI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1400"
+  },
+  {
+    "code": "1402001",
+    "name": "PIUTANG KPMOG KELOLA LIMBAH INDONESIA (KKLI)",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402002",
+    "name": "PIUTANG PT SIWICS",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402003",
+    "name": "PIUTANG PT PKPI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402004",
+    "name": "Piutang PSW Hotel Antasari",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402005",
+    "name": "Piutang PT BAKTI BINTANG ANDALAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402006",
+    "name": "Piutang PSW Investama",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402007",
+    "name": "Piutang PT. ANA UGINA BATAM",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402008",
+    "name": "Piutang KESATRIA KENCANA LINTAS INDONESIA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402009",
+    "name": "PIutang PT. PLOMO TEKNOKREASI PRIMA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402010",
+    "name": "PIutang KPMOG Investama",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402011",
+    "name": "PIUTANG ESTU - BTG",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402012",
+    "name": "Piutang  PT Harmoni Drilling Services",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402013",
+    "name": "PIUTANG DONI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1402014",
+    "name": "Piutang GSI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1402"
+  },
+  {
+    "code": "1403",
+    "name": "PIUTANG KARYAWAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1400"
+  },
+  {
+    "code": "1403001",
+    "name": "PIUTANG DEDE",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403002",
+    "name": "PIUTANG TERE",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403003",
+    "name": "PIUTANG IDA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403004",
+    "name": "PIUTANG SARAH",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403005",
+    "name": "PIUTANG GODLIEF",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403006",
+    "name": "PIUTANG JACKY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403007",
+    "name": "PIUTANG UDIN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403008",
+    "name": "PIUTANG INDAH",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403009",
+    "name": "PIUTANG AGUS",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403010",
+    "name": "PIUTANG IWAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403011",
+    "name": "PIUTANG ALDO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403012",
+    "name": "PIUTANG JUNAIDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403013",
+    "name": "PIUTANG BPJS Karyawan",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403014",
+    "name": "PIUTANG DEDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403015",
+    "name": "PIUTANG JULI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403016",
+    "name": "PIUTANG Shella",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403018",
+    "name": "PIUTANG DITO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403019",
+    "name": "PIUTANG TAUFIK/UPAK",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403020",
+    "name": "PIUTANG TAUFAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403021",
+    "name": "PIUTANG PIPIT",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403022",
+    "name": "PIUTANG ANHAR",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403023",
+    "name": "PIUTANG UPAK",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403024",
+    "name": "PIUTANG UHAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403025",
+    "name": "PIUTANG REZTY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403026",
+    "name": "PIUTANG TOMI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403027",
+    "name": "PIUTANG FARINO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403028",
+    "name": "PIUTANG WIRDA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403029",
+    "name": "PIUTANG AEP",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403030",
+    "name": "PIUTANG MARIA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403031",
+    "name": "PIUTANG AYIP",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403032",
+    "name": "PIUTANG SONNY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403033",
+    "name": "PIUTANG ARI HAMDANI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403034",
+    "name": "PIUTANG ZAINAL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403035",
+    "name": "PIUTANG DINDA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403036",
+    "name": "PIUTANG RIZAL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403037",
+    "name": "PIUTANG TITO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403038",
+    "name": "PIUTANG RURU",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403039",
+    "name": "PIUTANG AGUNG",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403040",
+    "name": "PIUTANG HERLINDA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403041",
+    "name": "PIUTANG LENALDY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403042",
+    "name": "PIUTANG MAXI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403043",
+    "name": "PIUTANG ASEP",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403044",
+    "name": "PIUTANG OCTO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403045",
+    "name": "PIUTANG ZULFIQRI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403048",
+    "name": "PIUTANG RONAL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403049",
+    "name": "PIUTANG ARISMAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403050",
+    "name": "PIUTANG PURWO HARYANTO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403051",
+    "name": "PIUTANG AGIL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403052",
+    "name": "PIUTANG RIYAN KAFAFI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1403999",
+    "name": "PIUTANG LAINNYA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1403"
+  },
+  {
+    "code": "1500",
+    "name": "PREPAID EXPENSE",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "1500001",
+    "name": "PREPAID INSURANCE - Aset",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1500002",
+    "name": "PREPAID INSURANCE - Karyawan",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1500003",
+    "name": "Biaya Project dibayar dimuka",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1500004",
+    "name": "Biaya dibayar dimuka Project C",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1500005",
+    "name": "Other prepaid Compressor",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1500006",
+    "name": "Bunga Dibayar dimuka",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1500007",
+    "name": "Sewa Dibayar Dimuka",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1500099",
+    "name": "Other Prepaid Expense",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1501",
+    "name": "ADVANCE KARYAWAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1500"
+  },
+  {
+    "code": "1501000",
+    "name": "ADVANCE GA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501001",
+    "name": "ADVANCE ASEP",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501002",
+    "name": "ADVANCE HARUN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501003",
+    "name": "ADVANCE YANDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501004",
+    "name": "ADVANCE EMIL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501005",
+    "name": "ADVANCE LILIK",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501006",
+    "name": "ADVANCE SANTOSO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501007",
+    "name": "ADVANCE JOKO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501008",
+    "name": "ADVANCE GUFRION",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501009",
+    "name": "ADVANCE KEZIA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501010",
+    "name": "ADVANCE AYIP",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501011",
+    "name": "ADVANCE IWAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501012",
+    "name": "ADVANCE BANAR",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501013",
+    "name": "ADVANCE TERE",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501014",
+    "name": "ADVANCE AUZAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501015",
+    "name": "ADVANCE LISA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501016",
+    "name": "ADVANCE AGUNG RW",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501017",
+    "name": "ADVANCE LEO AGUNG",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501018",
+    "name": "ADVANCE AYIP SEPTIONO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501019",
+    "name": "ADVANCE PURWO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501020",
+    "name": "ADVANCE NURSALIM",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501021",
+    "name": "ADVANCE RYAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501022",
+    "name": "ADVANCE AYU",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501023",
+    "name": "ADVANCE NANDUNG",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501024",
+    "name": "ADVANCE FAJAR",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501025",
+    "name": "ADVANCE BUDY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501026",
+    "name": "ADVANCE JACKY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501027",
+    "name": "ADVANCE KIKI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501028",
+    "name": "ADVANCE DEDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501029",
+    "name": "ADVANCE TAUFIK/UPAK",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501030",
+    "name": "ADVANCE SARAH",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501031",
+    "name": "ADVANCE ALDO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501032",
+    "name": "ADVANCE UJANG",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501033",
+    "name": "ADVANCE TIMBUL/SELLY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501034",
+    "name": "ADVANCE MAUL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501035",
+    "name": "ADVANCE RIZAL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501036",
+    "name": "ADVANCE PRASETYO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501037",
+    "name": "ADVANCE DEDE",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501038",
+    "name": "ADVANCE TARINA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501039",
+    "name": "ADVANCE AGUS",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501040",
+    "name": "ADVANCE IRFAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501041",
+    "name": "ADVANCE INDAH",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501042",
+    "name": "ADVANCE ZAINAL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501043",
+    "name": "ADVANCE STEFANUS",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501044",
+    "name": "ADVANCE WEDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501045",
+    "name": "ADVANCE TOMI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501046",
+    "name": "ADVANCE PIPIT",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501047",
+    "name": "ADVANCE ONIL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501048",
+    "name": "ADVANCE REZTY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501049",
+    "name": "ADVANCE WAHID",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501050",
+    "name": "ADVANCE AHMAD FAIZ",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501051",
+    "name": "ADVANCE SONNY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501052",
+    "name": "ADVANCE NUR FARDHIANSYAH",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501053",
+    "name": "ADVANCE ADAM NORRIEGA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501054",
+    "name": "ADVANCE AINUR ROSYID",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501055",
+    "name": "ADVANCE AHMAD KHORUDIN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501056",
+    "name": "ADVANCE MARDIYANTO DANU",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501057",
+    "name": "ADVANCE SUCIPTO BAYU AJI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501058",
+    "name": "ADVANCE RAHMAT",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501059",
+    "name": "ADVANCE AMRIL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501060",
+    "name": "ADVANCE PRANDONO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501061",
+    "name": "ADVANCE EDDY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501062",
+    "name": "ADVANCE KURNIAWAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501063",
+    "name": "ADVANCE ARGO BAYU",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501064",
+    "name": "ADVANCE FANZI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501065",
+    "name": "ADVANCE HEDDLEY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501066",
+    "name": "ADVANCE FADLY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501067",
+    "name": "ADVANCE SIWADI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501068",
+    "name": "ADVANCE ANTHONY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501069",
+    "name": "ADVANCE MARIA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501070",
+    "name": "ADVANCE SRI YANTI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501071",
+    "name": "ADVANCE DONALD",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501072",
+    "name": "ADVANCE ANHAR",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501073",
+    "name": "ADVANCE ISWADI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501074",
+    "name": "ADVANCE WIRDA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501075",
+    "name": "ADVANCE SUTEDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501076",
+    "name": "ADVANCE SHELLA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501077",
+    "name": "ADVANCE KARIH",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501078",
+    "name": "ADVANCE SAEPUL ANAM",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501080",
+    "name": "ADVANCE IMAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501081",
+    "name": "ADVANCE BAMBANG",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501082",
+    "name": "ADVANCE HENDY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501083",
+    "name": "ADVANCE GUNAWAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501084",
+    "name": "ADVANCE CUDIN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501085",
+    "name": "ADVANCE ZULFIQRI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501086",
+    "name": "ADVANCE WAHYUDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501087",
+    "name": "ADVANCE ACHMAD ZAID",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501088",
+    "name": "ADVANCE RUSDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501089",
+    "name": "ADVANCE HENDRA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501090",
+    "name": "ADVANCE GODLIEF",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501091",
+    "name": "ADVANCE NANDA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501092",
+    "name": "ADVANCE SYAIFUL BAHRI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501093",
+    "name": "ADVANCE ASTRID",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501094",
+    "name": "ADVANCE MITCHEL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501095",
+    "name": "ADVANCE SYIFA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501096",
+    "name": "ADVANCE COKRO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501097",
+    "name": "ADVANCE EDI SUPRIADI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501098",
+    "name": "ADVANCE MUHAMMAD LUQMAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501100",
+    "name": "ADVANCE NURUDDIN MACHRUS",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501101",
+    "name": "ADVANCE RONALD BATUBARA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501102",
+    "name": "ADVANCE FITRI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501103",
+    "name": "ADVANCE OKKY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501104",
+    "name": "ADVANCE ABDROMEDHA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501105",
+    "name": "ADVANCE ARY KURNIAWAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501106",
+    "name": "ADVANCE DONNY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501107",
+    "name": "ADVANCE DINDA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501108",
+    "name": "ADVANCE HERMAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501109",
+    "name": "ADVANCE GATOT",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501110",
+    "name": "ADVANCE UHAN SUJANA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501111",
+    "name": "ADVANCE BOWO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501112",
+    "name": "ADVANCE JAMALI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501113",
+    "name": "ADVANCE RICO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501114",
+    "name": "ADVANCE RIZKY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501115",
+    "name": "ADVANCE ZULFIKAR",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501116",
+    "name": "ADVANCE ZULKIFFLI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501117",
+    "name": "ADVANCE JULI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501118",
+    "name": "ADVANCE LENALDY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501119",
+    "name": "ADVANCE SAMUEL",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501120",
+    "name": "ADVANCE BAHARUDDIN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501121",
+    "name": "ADVANCE MEYFI JOSEPHINE",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501122",
+    "name": "ADVANCE AZRI H",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501123",
+    "name": "ADVANCE RIYAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501124",
+    "name": "ADVANCE HELINDA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501125",
+    "name": "ADVANCE BAGAS",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501126",
+    "name": "ADVANCE DIDIK",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501127",
+    "name": "ADVANCE MELA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501128",
+    "name": "ADVANCE TASRIM",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501129",
+    "name": "ADVANCE OKTOVIANUS",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501130",
+    "name": "ADVANCE OESMAN HIDAYAT",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501131",
+    "name": "ADVANCE RAHARDIAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501132",
+    "name": "ADVANCE MERISTA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501133",
+    "name": "ADVANCE MAXI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501134",
+    "name": "ADVANCE FARAH",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501135",
+    "name": "ADVANCE BUDHI PERDIN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501136",
+    "name": "ADVANCE YOGI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501137",
+    "name": "ADVANCE EPRI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501138",
+    "name": "ADVANCE FANDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501139",
+    "name": "ADVANCE YERRI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501140",
+    "name": "ADVANCE ALDI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501141",
+    "name": "ADVANCE ANGGI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501142",
+    "name": "ADVANCE PERDIN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501143",
+    "name": "ADVANCE SALSA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501144",
+    "name": "ADVANCE",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501145",
+    "name": "ADVANCE MARDANI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501146",
+    "name": "ADVANCE ARISMAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501147",
+    "name": "ADVANCE ALVITA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501148",
+    "name": "ADVANCE ALNOOR",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501149",
+    "name": "ADVANCE AZHAR",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501150",
+    "name": "ADVANCE YUSMAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501151",
+    "name": "ADVANCE RUZIA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501152",
+    "name": "ADVANCE RUDY",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501153",
+    "name": "ADVANCE AVITA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501154",
+    "name": "ADVANCE AISYA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501155",
+    "name": "ADVANCE MEGAWATI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1501999",
+    "name": "ADVANCE KARYAWAN LAINNYA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1501"
+  },
+  {
+    "code": "1600",
+    "name": "PREPAID TAX",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "1600002",
+    "name": "Prepaid PPH 22",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1600"
+  },
+  {
+    "code": "1600003",
+    "name": "Prepaid PPH 23",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1600"
+  },
+  {
+    "code": "1600004",
+    "name": "Prepaid PPH 25",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1600"
+  },
+  {
+    "code": "1600006",
+    "name": "PPn Masukan",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1600"
+  },
+  {
+    "code": "1700",
+    "name": "OTHER CURRENT ASSETS",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "1700100",
+    "name": "Working In Progress NSO",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700101",
+    "name": "Working In Progress COPI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700102",
+    "name": "Working In Progress CMB",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700103",
+    "name": "Working In Progress PGN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700104",
+    "name": "Working In Progress HCML",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700105",
+    "name": "Working In Progress CONSORSIUM",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700106",
+    "name": "Working In Progress PELINDO 1",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700107",
+    "name": "Working In Progress PELINDO 2",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700108",
+    "name": "Working In Progress SULUKU",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700200",
+    "name": "FIXED ASSET TRANSACTION",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700300",
+    "name": "Piutang Penjualan Saham",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700400",
+    "name": "Jaminan/Deposit",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700500",
+    "name": "Building in Construction",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700600",
+    "name": "BANK GARANSI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700700",
+    "name": "Uang Muka Pembelian Aset",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700800",
+    "name": "Uang Muka Biaya",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700900",
+    "name": "Kredit Pajak Lebih Bayar",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1700999",
+    "name": "Piutang Lainnya",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1700"
+  },
+  {
+    "code": "1800",
+    "name": "INVESTMENT IN SHARE",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "1800101",
+    "name": "INVESTMENT PT BAKTI BINTANG ANDALAN",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1800"
+  },
+  {
+    "code": "1800102",
+    "name": "INVESTMENT PT SIWICS METACOMPRESI PRATAMA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1800"
+  },
+  {
+    "code": "1800103",
+    "name": "INVESTMENT PT PKPI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1800"
+  },
+  {
+    "code": "1800104",
+    "name": "INVESTMENT PT KPMOG KELOLA LIMBAH INDONESIA KKLI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1800"
+  },
+  {
+    "code": "1800105",
+    "name": "INVESTMENT PSW HOTEL ANTASARI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1800"
+  },
+  {
+    "code": "1800106",
+    "name": "INVESTMENT GSI",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1800"
+  },
+  {
+    "code": "1800107",
+    "name": "INVESTMENT PSW INVESTAMA",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1800"
+  },
+  {
+    "code": "1800108",
+    "name": "INVESTMENT PT. ANA UGINA BATAM",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": "1800"
+  },
+  {
+    "code": "1801",
+    "name": "Cadangan Biaya Imbalan Pasca Kerja",
+    "account_type": "Aktiva Lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "1900",
+    "name": "Aktiva Tetap",
+    "account_type": "Aktiva Tetap",
+    "parent_code": null
+  },
+  {
+    "code": "1910",
+    "name": "Akumulasi Depresiasi Fixed Asset",
+    "account_type": "Akumulasi Penyusutan",
+    "parent_code": null
+  },
+  {
+    "code": "1910006",
+    "name": "Akumulasi Penyusutan Peralatan",
+    "account_type": "Akumulasi Penyusutan",
+    "parent_code": "1910"
+  },
+  {
+    "code": "1920",
+    "name": "Aset Pajak Tangguhan",
+    "account_type": "Aktiva Lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2000",
+    "name": "Hutang",
+    "account_type": "Akun Hutang",
+    "parent_code": null
+  },
+  {
+    "code": "2100",
+    "name": "TAX LIABILITY",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2100001",
+    "name": "Hutang PPh 23",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2100"
+  },
+  {
+    "code": "2100002",
+    "name": "Hutang PPh 21",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2100"
+  },
+  {
+    "code": "2100003",
+    "name": "Hutang PPh 25",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2100"
+  },
+  {
+    "code": "2100004",
+    "name": "Hutang PPh 29",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2100"
+  },
+  {
+    "code": "2100005",
+    "name": "PPH FINAL PENJUALAN TANAH",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2100"
+  },
+  {
+    "code": "2100006",
+    "name": "PPh  4 Ayat (2)",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2100"
+  },
+  {
+    "code": "2100007",
+    "name": "PPN KELUARAN",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2100"
+  },
+  {
+    "code": "210102",
+    "name": "Account Payable IDR",
+    "account_type": "Akun Hutang",
+    "parent_code": null
+  },
+  {
+    "code": "210103",
+    "name": "Account Payable USD",
+    "account_type": "Akun Hutang",
+    "parent_code": null
+  },
+  {
+    "code": "210104",
+    "name": "Account Payable SGD",
+    "account_type": "Akun Hutang",
+    "parent_code": null
+  },
+  {
+    "code": "210202",
+    "name": "Advance Sales IDR",
+    "account_type": "Akun Hutang",
+    "parent_code": null
+  },
+  {
+    "code": "210203",
+    "name": "Advance Sales USD",
+    "account_type": "Akun Hutang",
+    "parent_code": null
+  },
+  {
+    "code": "210204",
+    "name": "Advance Sales SGD",
+    "account_type": "Akun Hutang",
+    "parent_code": null
+  },
+  {
+    "code": "2200",
+    "name": "HUTANG BANK",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2200001",
+    "name": "Hutang Bank Mayora",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2200"
+  },
+  {
+    "code": "2200002",
+    "name": "Hutang Bank BNI",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2200"
+  },
+  {
+    "code": "2200003",
+    "name": "Hutang Bank BNI KMK",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2200"
+  },
+  {
+    "code": "2200004",
+    "name": "Hutang Bank BNI KI",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2200"
+  },
+  {
+    "code": "2200005",
+    "name": "Hutang Bank BCA",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2200"
+  },
+  {
+    "code": "2200007",
+    "name": "Hutang Anjak Piutang",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2200"
+  },
+  {
+    "code": "2300",
+    "name": "DUE TO RELATED PARTIES",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2300001",
+    "name": "PT BAKTI BINTANG ANDALAN",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2300"
+  },
+  {
+    "code": "2300002",
+    "name": "Utang Kutilang OG",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2300"
+  },
+  {
+    "code": "2300003",
+    "name": "Hutang Direksi",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2300"
+  },
+  {
+    "code": "2400",
+    "name": "LEASING",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2400003",
+    "name": "LEASING MTF - LEXUS",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2400"
+  },
+  {
+    "code": "2400004",
+    "name": "LEASING MTF - MASERATI (2 Unit)",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2400"
+  },
+  {
+    "code": "2400005",
+    "name": "LEASING MTF - PORCHE",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2400"
+  },
+  {
+    "code": "2400006",
+    "name": "LEASING MTF - TRITON",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2400"
+  },
+  {
+    "code": "2400007",
+    "name": "LEASING BCA - ERTIGA (3 Unit)",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2400"
+  },
+  {
+    "code": "2400008",
+    "name": "LEASING MAF - PORCHE (Refinance)",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2400"
+  },
+  {
+    "code": "2400009",
+    "name": "LEASING MAF - MERCY (Refinance)",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2400"
+  },
+  {
+    "code": "2400099",
+    "name": "LEASING",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2400"
+  },
+  {
+    "code": "2500",
+    "name": "HUTANG LAIN LAIN",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2501",
+    "name": "Hutang Advance Karyawan",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2502",
+    "name": "Uang Muka Penjualan Aset",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2503",
+    "name": "Hutang Arohera",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2504",
+    "name": "Hutang Biaya Yang Masih Harus Dibayar",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2505",
+    "name": "Hutang lainnya",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2507",
+    "name": "Hutang Gaji",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2508",
+    "name": "Hutang - Wantya",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2509",
+    "name": "Hutang - Setiawan",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2510",
+    "name": "Hutang - Pieter",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2511",
+    "name": "Hutang Konsorsium",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2500"
+  },
+  {
+    "code": "2600",
+    "name": "HUTANG PEMEGANG SAHAM",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2506",
+    "name": "Hutang Pemegang Saham - PT ApcaTirta Engineering",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": "2600"
+  },
+  {
+    "code": "2700",
+    "name": "Hutang PT. KPMOG Investama",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2701",
+    "name": "Hutang Prima Maret",
+    "account_type": "Hutang lancar lainnya",
+    "parent_code": null
+  },
+  {
+    "code": "2800",
+    "name": "Liabilitas Imbalan Paskakerja",
+    "account_type": "Hutang Jangka Panjang",
+    "parent_code": null
+  },
+  {
+    "code": "3000",
+    "name": "Modal",
+    "account_type": "Ekuitas",
+    "parent_code": null
+  },
+  {
+    "code": "3100",
+    "name": "Tambahan Modal Disetor",
+    "account_type": "Ekuitas",
+    "parent_code": null
+  },
+  {
+    "code": "310001",
+    "name": "OPENING BALANCE EQUITY",
+    "account_type": "Ekuitas",
+    "parent_code": null
+  },
+  {
+    "code": "320001",
+    "name": "RETAINED EARNING",
+    "account_type": "Ekuitas",
+    "parent_code": null
+  },
+  {
+    "code": "4000",
+    "name": "Pendapatan",
+    "account_type": "Pendapatan",
+    "parent_code": null
+  },
+  {
+    "code": "410104",
+    "name": "Sales Term Discount IDR",
+    "account_type": "Pendapatan",
+    "parent_code": null
+  },
+  {
+    "code": "410105",
+    "name": "Sales Term Discount USD",
+    "account_type": "Pendapatan",
+    "parent_code": null
+  },
+  {
+    "code": "410106",
+    "name": "Sales Term Discount SGD",
+    "account_type": "Pendapatan",
+    "parent_code": null
+  },
+  {
+    "code": "5000",
+    "name": "Harga Pokok Penjualan",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": null
+  },
+  {
+    "code": "5000001",
+    "name": "COGS",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000002",
+    "name": "Biaya Angkut dan Pengiriman Barang",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000003",
+    "name": "Biaya Sparepart",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000004",
+    "name": "Biaya Perlengkapan",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000005",
+    "name": "Biaya Jaminan",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000006",
+    "name": "Biaya Jasa Konsultan. Survey, Test dan Jasa Lainnya",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000007",
+    "name": "Biaya Pengolahan Limbah",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000008",
+    "name": "Biaya Operasional",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000009",
+    "name": "Biaya Reparasi, Maintanance dan Pemeliharaan",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000010",
+    "name": "Biaya Kompressor",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000011",
+    "name": "Biaya Pemeliharaan Mesin",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000012",
+    "name": "Beban Penyusutan Mesin",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000013",
+    "name": "Bea Masuk",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000014",
+    "name": "Biaya Gaji",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "5000099",
+    "name": "Biaya Lainnya",
+    "account_type": "Harga Pokok Penjualan",
+    "parent_code": "5000"
+  },
+  {
+    "code": "6000",
+    "name": "BIAYA PEMASARAN UMUM & ADM",
+    "account_type": "Beban",
+    "parent_code": null
+  },
+  {
+    "code": "6000100",
+    "name": "Biaya Pemasaran Hotel",
+    "account_type": "Beban",
+    "parent_code": "6000"
+  },
+  {
+    "code": "6100",
+    "name": "Biaya Pemasaran",
+    "account_type": "Beban",
+    "parent_code": "6000"
+  },
+  {
+    "code": "6101",
+    "name": "Biaya Iklan",
+    "account_type": "Beban",
+    "parent_code": "6100"
+  },
+  {
+    "code": "6102",
+    "name": "Biaya Komisi",
+    "account_type": "Beban",
+    "parent_code": "6100"
+  },
+  {
+    "code": "6199",
+    "name": "Biaya Pemasaran Lainnya",
+    "account_type": "Beban",
+    "parent_code": "6100"
+  },
+  {
+    "code": "6200",
+    "name": "Biaya Umum & Administrasi",
+    "account_type": "Beban",
+    "parent_code": null
+  },
+  {
+    "code": "6201",
+    "name": "Gaji & Tunjangan Karyawan",
+    "account_type": "Beban",
+    "parent_code": "6200"
+  },
+  {
+    "code": "6203",
+    "name": "Beban Utiliti, Adm, Sewa & Lainnya",
+    "account_type": "Beban",
+    "parent_code": "6200"
+  },
+  {
+    "code": "6204",
+    "name": "Repair & Maintenance Expense",
+    "account_type": "Beban",
+    "parent_code": "6200"
+  },
+  {
+    "code": "6205",
+    "name": "Beban Penyusutan & Amortisasi",
+    "account_type": "Beban",
+    "parent_code": "6200"
+  },
+  {
+    "code": "6205001",
+    "name": "Beban Penyusutan Gedung",
+    "account_type": "Beban",
+    "parent_code": "6205"
+  },
+  {
+    "code": "6205002",
+    "name": "Beban Penyusutan Kendaraan",
+    "account_type": "Beban",
+    "parent_code": "6205"
+  },
+  {
+    "code": "6205004",
+    "name": "Beban Penyusutan Inventaris kantor",
+    "account_type": "Beban",
+    "parent_code": "6205"
+  },
+  {
+    "code": "6205006",
+    "name": "Beban Penyusutan Peralatan",
+    "account_type": "Beban",
+    "parent_code": "6205"
+  },
+  {
+    "code": "7100",
+    "name": "PENDAPATAN DILUAR USAHA",
+    "account_type": "Pendapatan lain",
+    "parent_code": null
+  },
+  {
+    "code": "7200",
+    "name": "BIAYA DILUAR USAHA",
+    "account_type": "Beban lain-lain",
+    "parent_code": null
+  },
+  {
+    "code": "8000",
+    "name": "Biaya Pajak Penghasilan Tahun Berjalan",
+    "account_type": "Beban lain-lain",
+    "parent_code": null
+  },
+  {
+    "code": "8100",
+    "name": "Gain/Loss Dispossal F.A",
+    "account_type": "Pendapatan lain",
+    "parent_code": null
+  },
+  {
+    "code": "8200",
+    "name": "Gain/Loss Revaluation FA",
+    "account_type": "Pendapatan lain",
+    "parent_code": null
+  },
+  {
+    "code": "8300",
+    "name": "Manfaat (Beban) Pajak Tangguhan",
+    "account_type": "Beban lain-lain",
+    "parent_code": null
+  },
+  {
+    "code": "8400",
+    "name": "Pajak Terkait Komprehensive income",
+    "account_type": "Beban lain-lain",
+    "parent_code": null
+  },
+  {
+    "code": "8500",
+    "name": "Penghasilan (beban) komprehensif lain",
+    "account_type": "Beban lain-lain",
+    "parent_code": null
+  },
+  {
+    "code": "910002",
+    "name": "Realize Gain or Loss IDR",
+    "account_type": "Beban",
+    "parent_code": null
+  },
+  {
+    "code": "910003",
+    "name": "Unrealize Gain or Loss IDR",
+    "account_type": "Beban",
+    "parent_code": null
+  },
+  {
+    "code": "910004",
+    "name": "Realize Gain or Loss Foreign Currency",
+    "account_type": "Beban",
+    "parent_code": null
+  },
+  {
+    "code": "910005",
+    "name": "Unrealize Gain or Loss Foreign Currency",
+    "account_type": "Beban",
+    "parent_code": null
+  },
+  {
+    "code": "910006",
+    "name": "Realize Gain or Loss SGD",
+    "account_type": "Beban",
+    "parent_code": null
+  },
+  {
+    "code": "910007",
+    "name": "Unrealize Gain or Loss SGD",
+    "account_type": "Beban",
+    "parent_code": null
+  }
+]
