@@ -73,6 +73,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Infrastruktur IT'),
                 NavigationGroup::make()->label('Permintaan'),
                 NavigationGroup::make()->label('Pengadaan'),
+                NavigationGroup::make()->label('Perjalanan Dinas')->collapsed(),
                 NavigationGroup::make()->label('Meeting Room')->collapsed(),
                 NavigationGroup::make()->label('Vehicle Booking')->collapsed(),
                 NavigationGroup::make()->label('Notifications')->collapsed(),

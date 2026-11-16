@@ -40,4 +40,9 @@ class Decimal
     {
         return $currency.' '.number_format(intdiv($value, 100), 0, ',', '.').','.str_pad((string) ($value % 100), 2, '0', STR_PAD_LEFT);
     }
+
+    public static function quantityInput(int $value): string
+    {
+        return rtrim(rtrim(self::input($value, 3), '0'), ',');
+    }
 }

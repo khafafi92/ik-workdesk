@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScmDocumentController;
 use App\Http\Controllers\TicketAttachmentDownloadController;
 use App\Http\Controllers\TicketCommentAttachmentDownloadController;
+use App\Http\Controllers\TravelDocumentController;
 use App\Http\Controllers\VendorPortalController;
 use App\Http\Controllers\VendorPublicPortalController;
 use App\Http\Controllers\WorkTaskPermitResultDownloadController;
@@ -133,4 +134,9 @@ Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void 
     Route::get('/cbe-persetujuan/{cbeApproval}/ttd', [ScmDocumentController::class, 'cbeSignature'])->name('signature-cbe');
     Route::get('/cbe/{cbe}/penawaran-terpilih', [ScmDocumentController::class, 'selectedQuotation'])->name('selected-quotation');
     Route::get('/purchase-order/{purchaseOrder}/cetak', [ScmDocumentController::class, 'purchaseOrder'])->name('purchase-order-print');
+});
+
+Route::middleware('auth')->prefix('perjalanan-dinas')->name('travel.')->group(function (): void {
+    Route::get('/dokumen/{document}/cetak', [TravelDocumentController::class, 'print'])->whereNumber('document')->name('print');
+    Route::get('/lampiran/{file}', [TravelDocumentController::class, 'file'])->whereNumber('file')->name('file');
 });

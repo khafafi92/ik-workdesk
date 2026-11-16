@@ -8,6 +8,14 @@ use App\Models\User;
 class UserAdditionalAccessService
 {
     private const MENU_ITEMS = [
+        'travel-spd-create' => ['label' => 'Buat SPD sendiri', 'access' => 'travel-spd-create'],
+        'travel-spd-view' => ['label' => 'Lihat SPD departemen', 'access' => 'travel-spd-view'],
+        'travel-spd-manage' => ['label' => 'Kelola draft SPD departemen', 'access' => 'travel-spd-manage'],
+        'travel-lpj-create' => ['label' => 'Buat LPJ sendiri', 'access' => 'travel-lpj-create'],
+        'travel-lpj-view' => ['label' => 'Lihat LPJ departemen', 'access' => 'travel-lpj-view'],
+        'travel-lpj-manage' => ['label' => 'Kelola draft LPJ departemen', 'access' => 'travel-lpj-manage'],
+        'travel-approve' => ['label' => 'Setujui SPD dan LPJ yang ditugaskan', 'access' => 'travel-approve'],
+        'travel-configure' => ['label' => 'Kelola Master Approval SPD/LPJ', 'access' => 'travel-configure'],
         'scm-requests' => ['label' => 'PR dan SR', 'access' => 'scm-requests'],
         'scm-process' => ['label' => 'Proses Pengadaan SCM', 'access' => 'scm-process'],
         'ga-process' => ['label' => 'Purchasing Officer (HO KPMOG/APCA)', 'access' => 'ga-process'],
@@ -83,6 +91,14 @@ class UserAdditionalAccessService
     ];
 
     private const ACCESS_GROUPS = [
+        'travel-spd-create' => ['travel.spd.create'],
+        'travel-spd-view' => ['travel.spd.view'],
+        'travel-spd-manage' => ['travel.spd.manage'],
+        'travel-lpj-create' => ['travel.lpj.create'],
+        'travel-lpj-view' => ['travel.lpj.view'],
+        'travel-lpj-manage' => ['travel.lpj.manage'],
+        'travel-approve' => ['travel.approve'],
+        'travel-configure' => ['travel.configure'],
         'scm-requests' => ['scm.request'],
         'scm-process' => ['scm.process'],
         'ga-process' => ['ga.process', 'scm.request'],
@@ -234,6 +250,14 @@ class UserAdditionalAccessService
     public function options(): array
     {
         return [
+            'travel-spd-create' => 'Perjalanan Dinas - Buat SPD sendiri',
+            'travel-spd-view' => 'Perjalanan Dinas - Lihat SPD departemen',
+            'travel-spd-manage' => 'Perjalanan Dinas - Kelola draft SPD departemen',
+            'travel-lpj-create' => 'Perjalanan Dinas - Buat LPJ sendiri',
+            'travel-lpj-view' => 'Perjalanan Dinas - Lihat LPJ departemen',
+            'travel-lpj-manage' => 'Perjalanan Dinas - Kelola draft LPJ departemen',
+            'travel-approve' => 'Perjalanan Dinas - Persetujuan yang ditugaskan',
+            'travel-configure' => 'Perjalanan Dinas - Kelola Master Approval SPD/LPJ',
             'scm-requests' => 'Permintaan - PR dan SR sendiri',
             'scm-process' => 'SCM - Proses pengadaan',
             'ga-process' => 'Purchasing Officer - Proses HO KPMOG/APCA',
@@ -316,6 +340,8 @@ class UserAdditionalAccessService
     public function menuGroups(): array
     {
         return [
+            'travel' => ['label' => 'Perjalanan Dinas', 'description' => 'SPD dan LPJ sesuai perusahaan dan cakupan departemen. LPJ mengacu SPD yang sudah disetujui. Persetujuan hanya untuk pemeriksa yang ditugaskan.',
+                'items' => ['travel-spd-create', 'travel-spd-view', 'travel-spd-manage', 'travel-lpj-create', 'travel-lpj-view', 'travel-lpj-manage', 'travel-approve', 'travel-configure']],
             'procurement_requests' => ['label' => 'Permintaan', 'description' => 'Semua pengajuan PR/SR dibuat melalui menu Permintaan.', 'items' => ['scm-requests']],
             'scm' => ['label' => 'SCM', 'description' => 'Memproses PR/SR Project sesuai entitas dan akses departemen. Izin SCM lama juga membuka Purchasing Officer untuk HO.', 'items' => ['scm-process-kpmog', 'scm-process-apca', 'scm-process', 'scm-configure']],
             'purchasing_officer' => ['label' => 'Purchasing Officer', 'description' => 'Memproses PR/SR HO KPMOG/APCA sesuai akses departemen melalui menu Purchasing Officer.', 'items' => ['ga-process']],
