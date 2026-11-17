@@ -3,6 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Models\Department;
+use App\Models\FinanceBudgetApprovalPolicy;
+use App\Models\InventoryItem;
 use App\Models\Scm\ApprovalPolicy;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Attachment;
@@ -11,6 +13,7 @@ use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\DocumentType;
 use App\Models\Scm\LegalCase;
 use App\Models\Scm\LegalItem;
+use App\Models\Scm\PoApprovalPolicy;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\ProjectNumbering;
 use App\Models\Scm\Quotation;
@@ -20,16 +23,20 @@ use App\Models\Scm\VendorDocument;
 use App\Models\Scm\VendorRegistration;
 use App\Models\User;
 use App\Models\WorkProject;
+use App\Services\Finance\BudgetApprovalPolicies;
+use App\Services\Inventory\InventoryCatalogue;
 use App\Services\Scm\Access;
 use App\Services\Scm\ApprovalPolicies;
 use App\Services\Scm\Approvals;
 use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\CbeRecommendation;
 use App\Services\Scm\Decimal;
+use App\Services\Scm\PoApprovals;
 use App\Services\Scm\PurchaseOrders;
 use App\Services\Scm\RequestNumbering;
 use App\Services\Scm\Signatures;
 use App\Services\Scm\Validation as Validator;
+use App\Services\Scm\VendorDeletion;
 use App\Services\Scm\VendorEnrollment;
 use App\Services\Scm\VendorIdentity;
 use App\Services\Scm\Workflow;
@@ -37,6 +44,7 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
@@ -161,15 +169,69 @@ class ScmProcurement extends Page
     public function updatedApprovalDocument(): void
     {
         abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
-        abort_unless(in_array($this->approvalDocument, ['PRSR', 'CBE'], true), 422);
+        abort_unless(in_array($this->approvalDocument, ['PRSR', 'CBE', 'PO', 'BUDGET'], true), 422);
         if ($this->approvalDocument === 'CBE') {
             $this->newCbeApprovalPolicy();
+        } elseif ($this->approvalDocument === 'PO') {
+            $this->newPoApprovalPolicy();
+        } elseif ($this->approvalDocument === 'BUDGET') {
+            $this->newBudgetApprovalPolicy();
         } else {
             $this->newApprovalPolicy();
         }
     }
 
     public array $cbeApprovalPolicy = ['company' => 'KPMOG', 'acknowledger_id' => '', 'crosschecker_id' => '', 'approver_id' => '', 'version' => 0];
+
+    public array $poApprovalPolicy = ['company' => 'KPMOG', 'buyer_id' => '', 'buyer_position' => '', 'second_buyer_id' => '', 'second_buyer_position' => '', 'version' => 0];
+
+    public array $budgetApprovalPolicy = ['company' => 'KPMOG', 'need_type' => 'HO', 'finance_manager_id' => '', 'cbo_id' => '', 'coo_id' => '', 'version' => 0];
+
+    public function newBudgetApprovalPolicy(): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalDocument = 'BUDGET';
+        $this->budgetApprovalPolicy = BudgetApprovalPolicies::defaults();
+        $this->resetValidation();
+    }
+
+    public function editBudgetApprovalPolicy(int $id): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalDocument = 'BUDGET';
+        $this->budgetApprovalPolicy = FinanceBudgetApprovalPolicy::findOrFail($id)->only(array_keys(BudgetApprovalPolicies::defaults()));
+        $this->resetValidation();
+    }
+
+    public function saveBudgetApprovalPolicy(): void
+    {
+        app(BudgetApprovalPolicies::class)->save(auth()->user(), $this->budgetApprovalPolicy);
+        $this->newBudgetApprovalPolicy();
+        $this->success('Aturan persetujuan anggaran tersimpan.');
+    }
+
+    public function newPoApprovalPolicy(): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalDocument = 'PO';
+        $this->poApprovalPolicy = PoApprovals::defaults();
+        $this->resetValidation();
+    }
+
+    public function editPoApprovalPolicy(int $id): void
+    {
+        abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
+        $this->approvalDocument = 'PO';
+        $this->poApprovalPolicy = PoApprovalPolicy::findOrFail($id)->only(array_keys(PoApprovals::defaults()));
+        $this->resetValidation();
+    }
+
+    public function savePoApprovalPolicy(): void
+    {
+        app(PoApprovals::class)->savePolicy(auth()->user(), $this->poApprovalPolicy);
+        $this->newPoApprovalPolicy();
+        $this->success('Master Approval PO tersimpan.');
+    }
 
     public function editCbeApprovalPolicy(int $id): void
     {
@@ -198,6 +260,17 @@ class ScmProcurement extends Page
     {
         $this->assertProcessingContext();
         $this->refreshed(app(CbeApprovals::class)->startExisting(auth()->user(), $this->selected, $this->version), 'cbe');
+    }
+
+    public function signCbe(): void
+    {
+        $this->assertProcessingContext();
+        $request = Procurement::with('cbe')->findOrFail($this->selected);
+        abort_unless(Access::manages(auth()->user(), $request), 403);
+        abort_unless($request->cbe, 404);
+        app(CbeApprovals::class)->sign(auth()->user(), $request->cbe->id, $this->version);
+        $this->refreshed($request->fresh(), 'cbe');
+        $this->dispatch('refresh-sidebar');
     }
 
     public function saveCbeApprovalPolicy(): void
@@ -271,10 +344,18 @@ class ScmProcurement extends Page
         $this->tab = 'request';
         $allowed = static::$requestKind === null && Access::manages(auth()->user(), $record);
         $this->purchaseOrderForm = $allowed && $record->cbe ? app(PurchaseOrders::class)->defaults($record) : [];
+        $terms = $record->cbe?->commercial_terms ?? [];
+        if ($allowed && $record->cbe?->status !== 'final') {
+            $quotes = Quotation::with('candidate')->whereHas('candidate', fn ($query) => $query->where('request_id', $record->id))->get();
+            $defaults = VendorIdentity::nonPkpDefaults($quotes->pluck('candidate.vendor_id')->all());
+            foreach ($quotes as $quote) {
+                $terms[$quote->id] = ['non_pkp' => $defaults[$quote->candidate->vendor_id] ?? false, ...($terms[$quote->id] ?? [])];
+            }
+        }
         $this->cbeForm = $allowed ? ['date' => $record->cbe?->date?->format('Y-m-d') ?? now()->toDateString(), 'quotation_ids' => $record->cbe?->quotation_ids ?? [],
             'selected_vendor_id' => $record->cbe?->selected_vendor_id ?? '', 'selection_reason' => $record->cbe?->selection_reason ?? '',
             'comment' => $record->cbe?->documentComment() ?? $record->notes ?? '',
-            'commercial_terms' => $record->cbe?->commercial_terms ?? []] : [];
+            'commercial_terms' => $terms] : [];
         $this->legal = $allowed ? ($record->legalCase?->items->mapWithKeys(fn ($i) => [$i->id => ['status' => $i->status, 'vendor_document_id' => $i->vendor_document_id ?? '', 'correction_notes' => $i->correction_notes ?? '']])->all() ?? []) : [];
         $this->alternativeDocumentReason = '';
         $this->quotation = [];
@@ -289,6 +370,15 @@ class ScmProcurement extends Page
         $this->assertSelectedKind();
         abort_unless(static::$requestKind !== null ? Access::authors(auth()->user(), $request) : Access::manages(auth()->user(), $request), 403);
         abort_if($tab !== 'request' && (static::$requestKind !== null || ! Access::manages(auth()->user(), $request)), 403);
+        if (static::$requestKind === null && in_array($tab, ['po', 'legal'], true)) {
+            if ($request->status === 'selected' && $request->cbe && app(PurchaseOrders::class)->approved($request->cbe)
+                && VendorDocument::where('vendor_id', $request->cbe->selected_vendor_id)->exists()) {
+                $request = $this->processingWorkflow()->startLegal(auth()->user(), $request->id, $this->version);
+            } elseif ($request->status === 'legal') {
+                $request = $this->processingWorkflow()->reuseVendorDocuments(auth()->user(), $request->id, $this->version);
+            }
+            $this->version = $request->version;
+        }
         $this->tab = $tab;
         if (in_array($tab, ['quotes', 'cbe'])) {
             $target = $tab === 'cbe' ? 'cbe' : 'quotation';
@@ -328,7 +418,7 @@ class ScmProcurement extends Page
             'requester_id' => auth()->id(),
             'project_numbering_id' => $number->project_numbering_id,
             'work_project_id' => '', 'instruction_to_vendor' => '', 'procedure_required' => '',
-            'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'items' => []];
+            'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'budget_currency' => 'IDR', 'budget_estimate' => '', 'items' => []];
         $this->addItem();
         $this->resetValidation();
     }
@@ -342,8 +432,10 @@ class ScmProcurement extends Page
         $this->draft['date'] = $record->date->format('Y-m-d');
         $this->draft['needed_at'] = $record->needed_at?->format('Y-m-d') ?? '';
         $this->draft['estimated_total'] = $record->estimated_total_minor ? Decimal::input($record->estimated_total_minor) : '';
+        $this->draft['budget_currency'] = $record->budget_currency ?? 'IDR';
+        $this->draft['budget_estimate'] = $record->budget_estimate_minor !== null ? Decimal::input($record->budget_estimate_minor) : '';
         $this->draft['requires_cbo3'] = app(Approvals::class)->requiresCbo3($record);
-        $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['name', 'brand', 'item_reference', 'size', 'model_part_number', 'specification', 'unit', 'notes']),
+        $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['inventory_item_id', 'name', 'brand', 'item_reference', 'size', 'model_part_number', 'specification', 'unit', 'notes']),
             'materials_needed' => $i->materials_needed ?? ($record->need_type === 'PROJECT' && $record->kind === 'SR' ? $i->name : ''),
             'quantity' => Decimal::input($i->quantity_milli, 3)])->all();
         $this->version = $record->version;
@@ -458,7 +550,7 @@ class ScmProcurement extends Page
             'notes' => '', 'extra' => Decimal::input($quote?->extra_minor ?? 0), 'lines' => $request->items->map(function ($item) use ($quote) {
                 $line = $quote?->lines->firstWhere('request_item_id', $item->id);
 
-                return ['request_item_id' => $item->id, 'description' => $line?->description ?? $item->specification, 'quantity' => Decimal::input($line?->quantity_milli ?? $item->quantity_milli, 3),
+                return ['request_item_id' => $item->id, 'description' => $line?->description ?? $item->specification, 'quantity' => Decimal::quantityInput($line?->quantity_milli ?? $item->quantity_milli),
                     'unit' => $line?->unit ?? $item->unit, 'price' => $line ? Decimal::input($line->price_minor) : '', 'discount' => Decimal::input($line?->discount_minor ?? 0), 'tax' => Decimal::input($line?->tax_minor ?? 0)];
             })->all()];
         $this->resetValidation();
@@ -558,7 +650,7 @@ class ScmProcurement extends Page
         $this->vendorPortalUrl = '';
         $this->vendorId = 0;
         $this->vendorVersion = 0;
-        $this->vendor = array_fill_keys(['code', 'name', 'business_category', 'address', 'phone', 'email', 'pic_name', 'pic_position', 'pic_phone', 'pic_email', 'notes'], '');
+        $this->vendor = array_fill_keys(['code', 'name', 'business_category', 'address', 'phone', 'email', 'pic_name', 'pic_position', 'pic_phone', 'pic_email', 'bank_name', 'bank_account_number', 'bank_account_name', 'notes'], '');
         $this->vendor['provider_type'] = 'keduanya';
         $this->vendor['is_active'] = true;
         $this->portalInvitation = ['company' => 'KPMOG', 'is_construction' => false, 'amount' => '', 'duration_months' => ''];
@@ -576,7 +668,7 @@ class ScmProcurement extends Page
     {
         $this->assertProcessingContext();
         $this->newVendor(false);
-        $vendor = Vendor::findOrFail($id);
+        $vendor = Vendor::whereNull('archived_at')->findOrFail($id);
         $this->vendorId = $id;
         $this->vendorVersion = $vendor->version;
         $this->vendor = $vendor->only(array_keys($this->vendor));
@@ -590,6 +682,19 @@ class ScmProcurement extends Page
         $vendor = $this->processingWorkflow()->saveVendor(auth()->user(), $this->vendor, $this->vendorId ?: null, $this->vendorVersion);
         $this->editVendor($vendor->id);
         $this->success('Profil vendor tersimpan.');
+    }
+
+    public function deleteVendor(int $id, int $version): void
+    {
+        $this->assertProcessingContext();
+        $this->resetErrorBag('scm');
+        app(VendorDeletion::class)->delete(auth()->user(), $id, $version);
+        if ($this->vendorId === $id) {
+            $this->newVendor(false);
+            $this->document['vendor_id'] = '';
+            $this->documentVendorFilter = '';
+        }
+        $this->success('Vendor dihapus dari daftar master. Riwayatnya tetap tersimpan.');
     }
 
     public function inviteVendor(): void
@@ -730,6 +835,15 @@ class ScmProcurement extends Page
 
     public function updated(string $property): void
     {
+        if (preg_match('/^draft\.items\.(\d+)\.inventory_item_id$/', $property, $match) && static::$requestKind === 'PR') {
+            $index = (int) $match[1];
+            if ($id = $this->draft['items'][$index]['inventory_item_id'] ?? null) {
+                $item = InventoryItem::where('is_active', true)->findOrFail($id);
+                $this->draft['items'][$index] = [...$this->draft['items'][$index], 'name' => $item->name, 'brand' => $item->brand ?? '',
+                    'item_reference' => $item->code, 'size' => $item->size ?? '', 'model_part_number' => $item->model ?? '',
+                    'specification' => $item->specification ?: $item->name, 'unit' => $item->unit];
+            }
+        }
         if ($property === 'draft.requester_id') {
             abort_unless(Access::canChooseRequester(auth()->user(), static::$requestKind ?? ''), 403);
             $requester = $this->requesterCandidates()->get((int) $this->draft['requester_id']);
@@ -803,7 +917,7 @@ class ScmProcurement extends Page
             ->when($this->needTypeFilter, fn ($q) => $q->where('need_type', $this->needTypeFilter))
             ->when($this->departmentFilter, fn ($q) => $q->where('department_id', $this->departmentFilter))->when($this->picFilter, fn ($q) => $q->where('scm_pic_id', $this->picFilter))
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
-        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'numberReservation.requester', 'department', 'project', 'attachments', 'approvals.user'])->findOrFail($this->selected) : null;
+        $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'numberReservation.requester', 'department', 'project', 'attachments', 'approvals.user', 'sourceAtkRequest'])->findOrFail($this->selected) : null;
         $canEditDraft = static::$requestKind !== null && $record?->status === 'draft' && Access::authors($user, $record);
         $canSignPrepared = static::$requestKind !== null && Access::has($user, 'scm.request')
             && ($this->editing ? ($isSuperuser || (int) ($this->draft['requester_id'] ?? $user->id) === (int) $user->id) : ($record?->status === 'draft' && ($isSuperuser || (int) $record->requester_id === (int) $user->id)));
@@ -821,7 +935,7 @@ class ScmProcurement extends Page
         $selectedQuote = $finalCbe ? collect($finalCbe->snapshot['quotes'])->firstWhere('vendor.id', $finalCbe->selected_vendor_id) : null;
         $selectedQuotation = $selectedQuote ? Quotation::with('attachments')->whereHas('candidate', fn ($q) => $q->where('request_id', $record->id)->where('vendor_id', $finalCbe->selected_vendor_id))->find($selectedQuote['id']) : null;
         $quotes = $canManage ? $record->candidates->flatMap(fn ($c) => $c->quotations) : collect();
-        $vendors = $isScm ? Vendor::orderBy('name')->get() : collect();
+        $vendors = $isScm ? Vendor::whereNull('archived_at')->orderBy('name')->get() : collect();
         $candidateCompanies = $canManage ? $record->candidates->map(fn ($candidate) => VendorIdentity::companyKey($candidate->vendor->name)) : collect();
         $candidateVendors = $vendors->reject(fn ($vendor) => $candidateCompanies->contains(VendorIdentity::companyKey($vendor->name)));
         $documents = $isScm ? VendorDocument::with(['documentType', 'attachments'])->when($record?->legalCase, fn ($q) => $q->where('vendor_id', $record->legalCase->vendor_id))->orderByDesc('id')->get() : collect();
@@ -866,9 +980,15 @@ class ScmProcurement extends Page
             'isSuperuser' => $isSuperuser,
             'preparedSignatureLabel' => $isSuperuser && (int) ($this->editing ? ($this->draft['requester_id'] ?? $user->id) : $record?->requester_id) !== (int) $user->id ? 'Tanda tangani sebagai '.$user->name : 'Tanda tangani',
             'draftRequesterName' => $draftRequester?->name ?? '',
+            'inventoryItemOptions' => $this->editing && static::$requestKind === 'PR' && InventoryCatalogue::installed() ? InventoryItem::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($item) => [$item->id => $item->code.' / '.$item->name.' / '.$item->unit])->all() : [],
             'requesterOptions' => $requesterCandidates->mapWithKeys(fn ($account) => [$account->id => $account->name])->all(),
             'projectNumberingOptions' => static::$requestKind !== null ? ProjectNumbering::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($master) => [$master->id => $master->code.' - '.$master->name])->all() : [],
             'cbeApprovalPolicies' => $configure ? CbeApprovalPolicy::with(['acknowledger', 'crosschecker', 'approver'])->orderBy('company')->get() : collect(),
+            'poApprovalAvailable' => $configure && Schema::hasTable('scm_po_approval_policies') && Schema::hasColumn('scm_po_approval_policies', 'second_buyer_id'),
+            'poApprovalPolicies' => $configure && Schema::hasTable('scm_po_approval_policies') && Schema::hasColumn('scm_po_approval_policies', 'second_buyer_id') ? PoApprovalPolicy::with(['buyer', 'secondBuyer'])->orderBy('company')->get() : collect(),
+            'budgetApprovalAvailable' => $configure && Schema::hasTable('finance_budget_approval_policies'),
+            'budgetApprovalPolicies' => $configure && Schema::hasTable('finance_budget_approval_policies') ? FinanceBudgetApprovalPolicy::with(['financeManager', 'cbo', 'coo'])->orderBy('company')->orderBy('need_type')->get() : collect(),
+            'poPolicyUsers' => $configure ? User::with('employee')->orderBy('name')->get()->filter(fn ($account) => $account->isActiveForAccess())->pluck('name', 'id')->all() : [],
             'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
             'routingPlan' => $routingPlan, 'routingIssue' => $routingIssue,
             'approvalPolicies' => $configure ? ApprovalPolicy::with(['department', 'supervisor', 'acknowledger', 'crosschecker', 'approver', 'highApprover'])->orderBy('need_type')->orderBy('company')->orderBy('department_id')->get() : collect(),
@@ -882,7 +1002,7 @@ class ScmProcurement extends Page
             'vendors' => $vendors, 'candidateVendors' => $candidateVendors,
             'vendorRegistrations' => $isScm && $this->vendorId ? VendorRegistration::where('vendor_id', $this->vendorId)->latest('id')->get() : collect(),
             'pendingRegistrations' => $isScm && $this->section === 'vendors' ? VendorRegistration::with('vendor')->where('status', 'submitted')->whereNull('revoked_at')->orderBy('submitted_at')->paginate(5, ['*'], 'registrationPage') : null,
-            'vendorRows' => $isScm ? Vendor::when($this->vendorSearch, fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$this->vendorSearch.'%')->orWhere('code', 'like', '%'.$this->vendorSearch.'%')))->orderBy('name')->paginate(15, ['*'], 'vendorPage') : null,
+            'vendorRows' => $isScm ? Vendor::whereNull('archived_at')->when($this->vendorSearch, fn ($q) => $q->where(fn ($q) => $q->where('name', 'like', '%'.$this->vendorSearch.'%')->orWhere('code', 'like', '%'.$this->vendorSearch.'%')))->orderBy('name')->paginate(15, ['*'], 'vendorPage') : null,
             'documents' => $documents, 'quotes' => $quotes, 'duplicateVendors' => $duplicate,
             'documentRows' => $isScm ? VendorDocument::with(['vendor', 'documentType', 'attachments'])->when($this->documentVendorFilter, fn ($q) => $q->where('vendor_id', $this->documentVendorFilter))->orderByDesc('id')->paginate(15, ['*'], 'documentPage') : null,
             'missingDocuments' => $missingDocuments,

@@ -19,11 +19,11 @@ class AtkStockMovementResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
-    protected static ?string $navigationLabel = 'Mutasi Gudang Utama';
+    protected static ?string $navigationLabel = 'Mutasi Stok ATK';
 
-    protected static ?string $modelLabel = 'Mutasi Gudang Utama ATK';
+    protected static ?string $modelLabel = 'Mutasi Stok ATK';
 
-    protected static ?string $pluralModelLabel = 'Mutasi Gudang Utama ATK';
+    protected static ?string $pluralModelLabel = 'Mutasi Stok ATK';
 
     protected static ?int $navigationSort = 10;
 

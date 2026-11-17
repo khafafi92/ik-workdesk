@@ -9,6 +9,7 @@ use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\RequestApproval;
 use App\Models\User;
+use App\Services\Travel\TravelAccess;
 use Illuminate\Database\Eloquent\Builder;
 
 class Access
@@ -127,7 +128,9 @@ class Access
 
     public static function signs(?User $user): bool
     {
-        return self::has($user, 'scm.request') || self::manages($user) || self::approves($user);
+        return self::has($user, 'scm.request') || self::manages($user) || self::approves($user)
+            || TravelAccess::canCreate($user, 'spd') || TravelAccess::canCreate($user, 'lpj')
+            || self::has($user, 'travel.approve');
     }
 
     public static function viewsRequest(User $user, Procurement $request): bool

@@ -2,6 +2,8 @@
 
 namespace App\Services\Travel;
 
+use App\Filament\Pages\TravelLpj;
+use App\Filament\Pages\TravelSpd;
 use App\Models\Scm\ProjectNumbering;
 use App\Models\TravelDocument;
 use App\Models\TravelEvent;
@@ -9,6 +11,8 @@ use App\Models\User;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\Signatures;
 use Carbon\CarbonImmutable;
+use Filament\Actions\Action;
+use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -136,6 +140,10 @@ class TravelWorkflow
                     'total_minor' => $document->total_minor, 'requester_id' => $document->data['requester_id'],
                     'approval_override' => $document->data['approval_override'], 'before' => $before]);
 
+                if ((int) $document->data['requester_id'] !== (int) $actor->id) {
+                    $this->notifySigner(User::findOrFail($document->data['requester_id']), $document, true);
+                }
+
                 return $document->fresh();
             });
         } catch (\Throwable $exception) {
@@ -240,7 +248,7 @@ class TravelWorkflow
         $data['approver_ids'] = $preview['plan']['ids'] ?? [];
         $data['approval_policy'] = null;
 
-        return ['company' => $company, 'number' => $number, 'number_key' => mb_strtolower($number), 'revision' => $header['revision'],
+        return ['company' => $company, 'number' => $number, 'number_key' => mb_strtolower($number), 'revision' => $document && $document->approval_round > 0 ? $document->revision : $header['revision'],
             'issued_on' => $header['issued_on'], 'applied_on' => $header['applied_on'], 'employee_id' => $employeeId,
             'department_id' => $departmentId, 'employee_snapshot' => $employeeSnapshot, 'spd_id' => $spd?->id,
             'project_numbering_id' => $projectNumberingId,
@@ -262,6 +270,11 @@ class TravelWorkflow
             $plan = app(TravelDocumentAdministration::class)->plan($document->company, (int) $document->department_id,
                 $document->kind, $document->employee_snapshot, (int) ($document->data['requester_id'] ?? $document->created_by),
                 $document->data['approval_override'] ?? null, true, self::travelType($document->project_numbering_id));
+            $requesterId = (int) ($document->data['requester_id'] ?? $document->created_by);
+            if ($requesterId !== (int) $actor->id) {
+                throw ValidationException::withMessages(['travel' => 'Pembuat / pengaju harus membuka dan mengajukan dokumen sendiri untuk menandatanganinya.']);
+            }
+            $signature = $this->signature($actor);
             $approvers = [];
             foreach ($plan['users'] as $role => $user) {
                 $approvers[] = ['id' => (int) $user->id, 'name' => $user->name, 'position' => $user->employee?->position, 'role' => $role];
@@ -272,14 +285,11 @@ class TravelWorkflow
                     'user_id' => $user['id'], 'assigned_name' => $user['name'], 'assigned_position' => $user['position']]);
             }
             $data = [...$document->data, 'approver_ids' => $plan['ids'], 'approval_policy' => $plan['policy']];
-            $requesterId = (int) ($data['requester_id'] ?? $document->created_by);
-            $requesterSnapshot = $data['requester_snapshot'] ?? ['name' => $document->creator->name, 'position' => $document->creator->employee?->position];
-            $signature = $requesterId === (int) $actor->id ? $this->signature($actor)
-                : [...$requesterSnapshot, 'signed_at' => null, 'path' => null, 'mime' => null, 'submitted_by' => $actor->name];
             $document->update(['status' => 'submitted', 'submitted_at' => now(), 'approval_round' => $round, 'data' => $data,
                 'prepared_signature' => $signature, 'version' => $version + 1]);
             $this->event($actor, $document, 'submitted', ['round' => $round, 'requester_id' => $requesterId,
                 'approvers' => array_column($approvers, 'id'), 'approval_policy' => $plan['policy']]);
+            $this->notifySigner($plan['users'][array_key_first($plan['users'])], $document);
 
             return $document->fresh();
         });
@@ -306,12 +316,20 @@ class TravelWorkflow
             }
             $next = $document->currentApprovals()->where('status', 'pending')->orderBy('step')->firstOrFail();
             $next->update(['status' => $approve ? 'approved' : 'returned', 'decided_at' => now(),
-                'reason' => $approve ? null : trim($reason), 'signature' => $this->signature($actor)]);
+                'reason' => $approve ? null : trim($reason), 'signature' => $approve ? $this->signature($actor) : null]);
             $finished = $approve && ! $document->currentApprovals()->where('status', 'pending')->exists();
-            $document->update(['status' => ! $approve ? 'returned' : ($finished ? 'approved' : 'submitted'),
+            $revision = ! $approve ? (string) ($document->events()->where('action', 'returned')->count() + 1) : $document->revision;
+            $document->update(['status' => ! $approve ? 'returned' : ($finished ? 'approved' : 'submitted'), 'revision' => $revision,
                 'approved_at' => $finished ? now() : null, 'version' => $version + 1]);
             $this->event($actor, $document, $approve ? 'step_approved' : 'returned', ['round' => $document->approval_round,
                 'role' => $next->role, 'reason' => $approve ? null : trim($reason)]);
+
+            if ($approve && ! $finished) {
+                $nextUser = User::findOrFail($document->currentApprovals()->where('status', 'pending')->orderBy('step')->value('user_id'));
+                $this->notifySigner($nextUser, $document);
+            } elseif (! $approve) {
+                $this->notifySigner(User::findOrFail($document->data['requester_id'] ?? $document->created_by), $document, true);
+            }
 
             return $document->fresh();
         });
@@ -341,9 +359,21 @@ class TravelWorkflow
     private function signature(User $actor): array
     {
         $signature = app(Signatures::class)->current($actor);
+        if (! $signature || ! Storage::disk('scm')->exists($signature->path)) {
+            throw ValidationException::withMessages(['travel' => 'Simpan gambar tanda tangan di profil terlebih dahulu.']);
+        }
 
         return ['name' => $actor->name, 'position' => $actor->employee?->position, 'signed_at' => now()->toIso8601String(),
             'path' => $signature?->path, 'mime' => $signature?->mime];
+    }
+
+    private function notifySigner(User $user, TravelDocument $document, bool $requester = false): void
+    {
+        $page = $document->kind === 'spd' ? TravelSpd::class : TravelLpj::class;
+        Notification::make()->title(strtoupper($document->kind).' menunggu tanda tangan')
+            ->body('Dokumen '.$document->displayNumber().($requester ? ' siap diperiksa dan diajukan oleh Anda.' : ' menunggu persetujuan Anda.'))
+            ->actions([Action::make('open')->label('Buka dokumen')->url($page::getUrl(['dokumen' => $document->id]))->markAsRead()])
+            ->sendToDatabase($user);
     }
 
     private function assertEditable(User $actor, TravelDocument $document, int $version): void

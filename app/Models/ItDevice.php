@@ -10,6 +10,7 @@ use App\Enums\ItObjectKind;
 use App\Enums\ItPermission;
 use App\Enums\ItSwitchFloor;
 use App\Rules\ItAssetNumber;
+use App\Services\Inventory\InventoryCatalogue;
 use App\Services\ItInfrastructure\ItInfrastructureAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -24,9 +25,19 @@ class ItDevice extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'work_location_id', 'location_name', 'location_detail', 'floor', 'managing_department_id', 'assigned_employee_id', 'assigned_user_name', 'parent_device_id', 'lifecycle_status', 'disposed_at', 'disposal_reason', 'is_active', 'notes', 'created_by', 'updated_by'];
+    protected $fillable = ['code', 'category', 'device_type', 'object_kind', 'name', 'asset_number', 'serial_number', 'manufacturer', 'model_name', 'specifications', 'work_location_id', 'location_name', 'location_detail', 'floor', 'managing_department_id', 'assigned_employee_id', 'assigned_user_name', 'parent_device_id', 'lifecycle_status', 'disposed_at', 'disposal_reason', 'is_active', 'notes', 'created_by', 'updated_by', 'inventory_item_id', 'inventory_warehouse_id', 'inventory_movement_id'];
 
     protected $attributes = ['is_active' => true];
+
+    public function inventoryItem(): BelongsTo
+    {
+        return $this->belongsTo(InventoryItem::class);
+    }
+
+    public function inventoryWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(InventoryWarehouse::class, 'inventory_warehouse_id');
+    }
 
     protected function casts(): array
     {
@@ -35,7 +46,11 @@ class ItDevice extends Model
 
     protected static function booted(): void
     {
+        static::saved(fn (self $device) => app(InventoryCatalogue::class)->linkDevice($device));
         static::saving(function (self $device): void {
+            if ($device->inventory_item_id && ! InventoryItem::whereKey($device->inventory_item_id)->where('kind', 'device')->exists()) {
+                throw ValidationException::withMessages(['inventory_item_id' => 'Pilih Master Barang jenis Perangkat/aset.']);
+            }
             if (! $device->device_type || blank($device->code) || blank($device->name) || ! $device->managing_department_id) {
                 throw ValidationException::withMessages(['device_type' => 'Jenis, kode, nama, dan department pengelola wajib diisi.']);
             }

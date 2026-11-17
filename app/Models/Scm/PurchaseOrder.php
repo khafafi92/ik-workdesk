@@ -2,6 +2,9 @@
 
 namespace App\Models\Scm;
 
+use App\Models\FinancePoPayment;
+use App\Models\InventoryReceipt;
+
 class PurchaseOrder extends Record
 {
     protected $table = 'scm_purchase_orders';
@@ -19,5 +22,15 @@ class PurchaseOrder extends Record
     public function cbe()
     {
         return $this->belongsTo(Cbe::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(FinancePoPayment::class, 'purchase_order_id');
+    }
+
+    public function receipts()
+    {
+        return $this->hasMany(InventoryReceipt::class, 'purchase_order_id');
     }
 }

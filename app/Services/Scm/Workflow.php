@@ -2,6 +2,7 @@
 
 namespace App\Services\Scm;
 
+use App\Models\InventoryItem;
 use App\Models\Scm\Attachment;
 use App\Models\Scm\Audit;
 use App\Models\Scm\Cbe;
@@ -89,6 +90,8 @@ class Workflow
             'project_numbering_id' => ['nullable', 'integer', Rule::exists('scm_project_numbering', 'id')],
             'requester_id' => 'required|integer|exists:users,id',
             'estimated_total' => 'nullable',
+            'budget_estimate' => 'nullable',
+            'budget_currency' => ['nullable', Rule::in(config('scm.currencies'))],
             'requires_cbo3' => 'sometimes|boolean',
             'kind' => ['required', Rule::in(['PR', 'SR'])], 'date' => 'required|date',
             'department_id' => ['required', Rule::exists('departments', 'id')],
@@ -100,6 +103,7 @@ class Workflow
             'instruction_to_vendor' => 'nullable|string|max:10000', 'procedure_required' => 'nullable|string|max:10000',
             'location' => 'nullable|string|max:255', 'notes' => 'nullable|string|max:10000', 'items' => 'required|array|min:1|max:100',
             'items.*.name' => 'required|string|max:255', 'items.*.specification' => 'required|string|max:10000',
+            'items.*.inventory_item_id' => 'nullable|integer|exists:inventory_items,id',
             'items.*.brand' => 'nullable|string|max:255', 'items.*.item_reference' => 'nullable|string|max:255',
             'items.*.size' => 'nullable|string|max:255', 'items.*.model_part_number' => 'nullable|string|max:255',
             'items.*.materials_needed' => 'nullable|string|max:10000',
@@ -112,6 +116,12 @@ class Workflow
             $this->reject($validated['estimated_total_minor'] !== null && $validated['estimated_total_minor'] <= 0, 'Estimasi total harus lebih dari nol.');
         }
         unset($validated['estimated_total']);
+        if (array_key_exists('budget_estimate', $validated)) {
+            $validated['budget_estimate_minor'] = filled($validated['budget_estimate']) ? Decimal::parse($validated['budget_estimate']) : null;
+            $this->reject($validated['budget_estimate_minor'] !== null && $validated['budget_estimate_minor'] <= 0, 'Estimasi anggaran harus lebih dari nol.');
+            $this->reject($validated['budget_estimate_minor'] !== null && blank($validated['budget_currency'] ?? null), 'Pilih mata uang estimasi anggaran.');
+            unset($validated['budget_estimate']);
+        }
         // Preserve the four-column document workflow; need_type selects the HO or Project policy.
         $validated['approval_scope'] = 'HO';
 
@@ -147,6 +157,11 @@ class Workflow
                 $number->update(['request_id' => $request->id]);
             }
             foreach (array_values($items) as $index => $item) {
+                if (filled($item['inventory_item_id'] ?? null)) {
+                    $catalogue = InventoryItem::findOrFail($item['inventory_item_id']);
+                    $this->reject($request->kind !== 'PR' || ! $catalogue->is_active, 'Pilih master barang aktif untuk PR. SR tetap merupakan permintaan jasa.');
+                    $this->reject(strcasecmp(trim($item['unit']), trim($catalogue->unit)) !== 0, 'Satuan PR harus sama dengan satuan Master Barang.');
+                }
                 if ($request->need_type === 'PROJECT' && $request->kind === 'SR') {
                     $item['materials_needed'] = $item['materials_needed'] ?? '';
                 }
@@ -197,11 +212,16 @@ class Workflow
             'name' => 'required|string|max:255', 'provider_type' => ['required', Rule::in(['barang', 'jasa', 'keduanya'])],
             'business_category' => 'nullable|string|max:255', 'address' => 'nullable|string|max:2000', 'phone' => 'nullable|string|max:100',
             'email' => 'nullable|email|max:255', 'pic_name' => 'nullable|string|max:255', 'pic_position' => 'nullable|string|max:255',
-            'pic_phone' => 'nullable|string|max:100', 'pic_email' => 'nullable|email|max:255', 'is_active' => 'required|boolean', 'notes' => 'nullable|string|max:10000'])->validate();
+            'pic_phone' => 'nullable|string|max:100', 'pic_email' => 'nullable|email|max:255',
+            'bank_name' => 'nullable|string|max:255', 'bank_account_number' => 'nullable|string|max:100', 'bank_account_name' => 'nullable|string|max:255',
+            'is_active' => 'required|boolean', 'notes' => 'nullable|string|max:10000'])->validate();
 
         return DB::transaction(function () use ($actor, $data, $id, $version): Vendor {
             $vendor = $id ? Vendor::query()->lockForUpdate()->findOrFail($id) : new Vendor;
             $this->reject($id && $vendor->version !== $version, 'Profil vendor berubah. Muat ulang profil.');
+            $this->reject($id && $vendor->archived_at !== null, 'Vendor sudah dihapus dari master dan tidak dapat diubah.');
+            $this->reject($id && $data['code'] !== $vendor->code && DB::table('scm_vendor_portal_accesses')->where('vendor_id', $id)->exists(),
+                'Kode vendor terhubung dengan Vendor ID portal. Terbitkan Vendor ID pengganti untuk mengubahnya.');
             $before = $vendor->getAttributes();
             $vendor->fill($data);
             $vendor->created_by ??= $actor->id;
@@ -294,9 +314,10 @@ class Workflow
             $this->reject($vatPercent < 0 || $vatPercent > 100, 'Master PPN CBE harus antara 0 dan 100 persen.');
             $terms = [];
             $evaluations = [];
+            $defaults = VendorIdentity::nonPkpDefaults($quotes->pluck('candidate.vendor_id')->all());
             foreach ($quotes as $quote) {
                 $input = $data['commercial_terms'][$quote->id] ?? $cbe?->commercial_terms[$quote->id] ?? [];
-                $input = ['non_pkp' => (bool) ($input['non_pkp'] ?? false), 'discount' => filled($input['discount'] ?? null) ? $input['discount'] : '0'];
+                $input = ['non_pkp' => (bool) ($input['non_pkp'] ?? $defaults[$quote->candidate->vendor_id] ?? false), 'discount' => filled($input['discount'] ?? null) ? $input['discount'] : '0'];
                 $evaluations[$quote->id] = CbePricing::evaluate($quote->toArray(), $input, $vatPercent);
                 $terms[$quote->id] = ['non_pkp' => $input['non_pkp'], 'discount' => Decimal::input($evaluations[$quote->id]['additional_discount_minor'])];
             }
@@ -345,7 +366,7 @@ class Workflow
 
     public function startLegal(User $actor, int $id, int $version): Procurement
     {
-        return $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
+        $request = $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
             $this->reject($request->status !== 'selected' || $request->cbe?->status !== 'final', 'Legalitas hanya dapat dimulai dari CBE final.');
             $this->reject(! app(CbeApprovals::class)->complete($request->cbe), 'Persetujuan CBE belum lengkap. Tunggu penandatangan yang masih memiliki tahap wajib sebelum memulai legalitas.');
             $case = LegalCase::create(['request_id' => $request->id, 'cbe_id' => $request->cbe->id, 'vendor_id' => $request->cbe->selected_vendor_id,
@@ -389,6 +410,59 @@ class Workflow
             $request->status = 'legal';
             $this->audit($actor, $case, 'snapshot_persyaratan', ['items' => $case->items->toArray()], $request->id);
         });
+
+        return $this->reuseVendorDocuments($actor, $request->id, $request->version);
+    }
+
+    public function reuseVendorDocuments(User $actor, int $id, int $version): Procurement
+    {
+        return DB::transaction(function () use ($actor, $id, $version): Procurement {
+            $request = Procurement::lockForUpdate()->findOrFail($id);
+            abort_unless(Access::manages($actor, $request), 403);
+            $this->reject($request->version !== $version, 'Data pengadaan berubah. Buka ulang sebelum memeriksa legalitas.');
+            $case = $request->legalCase()->lockForUpdate()->first();
+            if ($request->status !== 'legal' || ! $case) {
+                return $request;
+            }
+            $items = $case->items()->with('document.attachments')->lockForUpdate()->get();
+            $documents = VendorDocument::with('attachments')->where('vendor_id', $case->vendor_id)
+                ->whereIn('document_type_id', $items->pluck('document_type_id'))->orderByDesc('version')->orderByDesc('id')->get()
+                ->unique('document_type_id')->keyBy('document_type_id');
+            $reused = [];
+            foreach ($items as $item) {
+                if (! in_array($item->status, ['belum_diminta', 'diminta'], true) || $item->vendor_document_id) {
+                    continue;
+                }
+                $document = $documents->get($item->document_type_id);
+                if (! $document || ($document->expires_at && $document->expires_at->lt(today())) || $document->attachments->isEmpty()
+                    || $document->attachments->contains(fn ($file) => ! Storage::disk('scm')->exists($file->path))) {
+                    continue;
+                }
+                $item->update(['vendor_document_id' => $document->id, 'status' => 'diterima', 'requested_at' => now(), 'received_at' => now()]);
+                $item->setRelation('document', $document);
+                $reused[$item->id] = $document->id;
+            }
+            if ($reused) {
+                $request->increment('version');
+                $this->audit($actor, $case, 'gunakan_dokumen_vendor', ['documents' => $reused], $request->id);
+            }
+            $required = $items->where('is_required', true);
+            $basis = $case->document_basis === 'npwp_ktp' ? ($case->document_basis_snapshot ?? []) : null;
+            $basisValid = $basis === null || (count(array_unique($basis['required'] ?? [])) === 2
+                && $required->whereIn('document_type_id', $basis['required'])->count() === 2);
+            $ready = $required->isNotEmpty() && $basisValid && ! $items->contains('status', 'perlu_perbaikan')
+                && $required->every(function ($item) use ($case): bool {
+                    $document = $item->document;
+
+                    return $item->status === 'diterima' && $document && (int) $document->vendor_id === (int) $case->vendor_id
+                        && (int) $document->document_type_id === (int) $item->document_type_id
+                        && (! $document->expires_at || ! $document->expires_at->lt(today()))
+                        && $document->attachments->isNotEmpty()
+                        && ! $document->attachments->contains(fn ($file) => ! Storage::disk('scm')->exists($file->path));
+                });
+
+            return $ready ? $this->complete($actor, $request->id, $request->version) : $request->fresh();
+        }, 3);
     }
 
     public function useAlternativeDocuments(User $actor, int $id, int $version, string $reason): Procurement

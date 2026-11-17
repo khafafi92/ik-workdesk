@@ -7,8 +7,8 @@
         <div class="travel-logo"><img src="{{ asset($logo) }}" alt="{{ $brand }}" width="160" height="96"></div>
         <div class="travel-spd-heading"><strong>{{ $brand }}</strong><h2>FORMULIR PERMOHONAN PERJALANAN DINAS</h2></div>
         <table class="travel-document-meta"><tbody>
-            <tr><th>No. Dokumen</th><td>@include('travel.partials.field', ['field' => 'number', 'label' => 'Nomor Dokumen SPD', 'placeholder' => 'Otomatis saat disimpan'])</td></tr>
-            <tr><th>Revisi</th><td>@include('travel.partials.field', ['field' => 'revision', 'label' => 'Revisi SPD'])</td></tr>
+            <tr><th>No. Dokumen</th><td>@include('travel.partials.field', ['field' => 'number', 'label' => 'Nomor Dokumen SPD', 'placeholder' => 'Otomatis saat disimpan', 'display' => $record?->displayNumber() ?? ($values['number'] ?? '')])@if($editable && $record && $record->approval_round > 0)<small>Nomor cetak: {{ $record->displayNumber() }}</small>@endif</td></tr>
+            <tr><th>Revisi</th><td>@if($record && $record->approval_round > 0)<span class="travel-value">{{ $record->revision }}</span>@else@include('travel.partials.field', ['field' => 'revision', 'label' => 'Revisi SPD'])@endif</td></tr>
             <tr><th>Tgl Issue</th><td>@include('travel.partials.field', ['field' => 'issued_on', 'label' => 'Tanggal Issue SPD', 'type' => 'date', 'display' => \App\Services\Travel\TravelPresentation::date($values['issued_on'] ?? null)])</td></tr>
             <tr><th>Kategori</th><td>@include('travel.partials.field', ['field' => 'urgency', 'label' => 'Kategori', 'options' => ['urgent' => 'Urgent', 'normal' => 'Non Urgent']])</td></tr>
         </tbody></table>

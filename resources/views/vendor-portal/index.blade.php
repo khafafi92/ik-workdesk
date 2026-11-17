@@ -17,7 +17,7 @@
         </section>
         <section class="vp-paper"><h2>Lanjutkan atau perbarui data vendor</h2><p>Masukkan Vendor ID untuk menampilkan data perusahaan beserta berkas Anda. Setelah data diterima SCM, pembaruan disiapkan dari data dan berkas sebelumnya.</p>
             <form method="post" action="{{ route('vendor.resume') }}">@csrf
-                <div class="vp-field"><label for="vendor-code">Vendor ID</label><input id="vendor-code" name="access_code" type="text" maxlength="100" required autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="vendor-code-help"><p id="vendor-code-help">Masukkan ID berawalan VND yang diberikan saat pendaftaran.</p></div>
+                <div class="vp-field"><label for="vendor-code">Vendor ID</label><input id="vendor-code" name="access_code" type="text" maxlength="100" required autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="vendor-code-help"><p id="vendor-code-help">Masukkan Vendor ID yang diberikan saat pendaftaran.</p></div>
                 <div class="vp-actions"><button type="submit">Buka data vendor</button></div>
             </form>
         </section>

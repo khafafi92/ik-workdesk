@@ -8,10 +8,12 @@ use App\Enums\ItDeviceType;
 use App\Enums\ItLicenseStatus;
 use App\Enums\ItSwitchFloor;
 use App\Models\Employee;
+use App\Models\InventoryItem;
 use App\Models\ItDevice;
 use App\Models\ItDeviceTransfer;
 use App\Models\User;
 use App\Rules\ItAssetNumber;
+use App\Services\Inventory\AssetRegistration;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -119,6 +121,8 @@ class ItDeviceService
                 $data['asset_number'] ??= $device->asset_number;
                 $generateAssetNumber = ! $room && blank($data['asset_number']) && (! $device->exists || filled($data['asset_company'] ?? null));
                 $rules = [
+                    'inventory_item_id' => ['nullable', 'integer', Rule::exists('inventory_items', 'id')->where('kind', 'device')],
+                    'inventory_balance_id' => ['nullable', 'integer', Rule::exists('inventory_balances', 'id')],
                     'code' => ['required', 'string', 'max:80', Rule::unique('it_devices', 'code')->ignore($device->id)],
                     'name' => ['required', 'string', 'max:255'],
                     'device_type' => ['required', Rule::enum(ItDeviceType::class)],
@@ -163,6 +167,17 @@ class ItDeviceService
                     ];
                 }
                 $validated = Validator::make($data, $rules)->validate();
+                $catalogueId = $room ? null : ($validated['inventory_item_id'] ?? $device->inventory_item_id);
+                if ($catalogueId) {
+                    $catalogue = InventoryItem::findOrFail($catalogueId);
+                    if ((! $catalogue->is_active && (int) $device->inventory_item_id !== (int) $catalogueId)
+                        || ($device->inventory_movement_id && (int) $device->inventory_item_id !== (int) $catalogueId)) {
+                        throw ValidationException::withMessages(['inventory_item_id' => 'Master barang nonaktif atau unit sudah terhubung dengan penerimaan stok.']);
+                    }
+                    $device->inventory_item_id = $catalogueId;
+                    $device->manufacturer = $catalogue->brand;
+                    $device->model_name = $catalogue->model;
+                }
                 Gate::forUser($actor)->authorize('assignDepartment', [ItDevice::class, (int) $validated['managing_department_id']]);
                 if ($generateAssetNumber) {
                     $validated['asset_number'] = app(ItAssetNumberGenerator::class)->next($validated['asset_company'], (int) $validated['asset_year']);
@@ -191,6 +206,9 @@ class ItDeviceService
                 $device->created_by ??= $actor->id;
                 $device->updated_by = $actor->id;
                 $device->save();
+                if (filled($validated['inventory_balance_id'] ?? null)) {
+                    app(AssetRegistration::class)->consume($actor, $device, (int) $validated['inventory_balance_id']);
+                }
                 $device->unsetRelation('assignedEmployee');
                 $assigneeChanged = (int) $beforeEmployeeId !== (int) $device->assigned_employee_id
                     || (! $beforeEmployeeId && ! $device->assigned_employee_id && $beforeUserName !== trim($device->assigned_user_name ?? ''));

@@ -24,6 +24,7 @@ use App\Models\Scm\RequestNumber;
 use App\Models\Scm\Requirement;
 use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
+use App\Models\Scm\VendorRegistration;
 use App\Models\User;
 use App\Services\Scm\Access;
 use App\Services\Scm\Approvals;
@@ -123,6 +124,18 @@ class ProcurementTest extends TestCase
             ]];
     }
 
+    public function test_budget_estimate_uses_its_own_currency_and_preserves_legacy_estimate(): void
+    {
+        $data = [...$this->draftData(), 'budget_currency' => 'USD', 'budget_estimate' => '250,50'];
+        $request = $this->flow->saveDraft($this->requester, $data);
+        $this->assertSame('USD', $request->budget_currency);
+        $this->assertSame(25050, $request->budget_estimate_minor);
+        $this->assertSame(100000, (int) $request->estimated_total_minor);
+        $updated = $this->flow->saveDraft($this->requester, $this->draftData(), $request->id, $request->version);
+        $this->assertSame('USD', $updated->budget_currency);
+        $this->assertSame(25050, $updated->budget_estimate_minor);
+    }
+
     private function sourcing(string $kind = 'PR'): Procurement
     {
         $r = $this->draft($kind);
@@ -203,6 +216,63 @@ class ProcurementTest extends TestCase
         }
 
         return $request;
+    }
+
+    public function test_assigned_signer_can_sign_cbe_from_procurement_in_order(): void
+    {
+        $request = $this->quoted();
+        $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $this->cbeData($request), true);
+        $steps = $request->cbe->approvals()->where('status', 'pending')->orderBy('position')->get();
+        $first = $steps[0]->user;
+        $later = $steps[1]->user;
+        foreach ([$first, $later] as $user) {
+            $user->directPermissions()->attach(Permission::where('code', 'scm.process')->sole()->id);
+            app(Signatures::class)->upload($user->fresh(), $this->signatureFile());
+        }
+
+        Livewire::actingAs($later->fresh())->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'cbe')
+            ->assertDontSee('Tanda tangani sebagai Crosschecked By')->call('signCbe')->assertForbidden();
+        Livewire::actingAs($first->fresh())->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'cbe')
+            ->assertSee('Tanda tangani sebagai Acknowledged By')->call('signCbe')->assertHasNoErrors()
+            ->assertSee('Menunggu '.$later->name);
+        $this->assertSame('signed', $steps[0]->fresh()->status);
+        $this->assertSame('pending', $steps[1]->fresh()->status);
+    }
+
+    public function test_opening_po_reuses_reviewed_vendor_documents_after_cbe_approval(): void
+    {
+        $request = $this->finalized();
+        $vendor = $request->cbe->selected_vendor_id;
+        VendorRegistration::create(['vendor_id' => $vendor, 'company' => 'APCA', 'token_hash' => hash('sha256', 'po-vendor-documents'),
+            'status' => 'accepted', 'answers' => [1 => ['company_origin' => 'indonesia', 'document_basis' => 'npwp_ktp']],
+            'context' => [], 'expires_at' => now()->addDay()]);
+        foreach (['NPWP', 'KTP'] as $code) {
+            $this->flow->saveDocument($this->scm, ['vendor_id' => $vendor, 'document_type_id' => DocumentType::where('code', $code)->sole()->id,
+                'number' => 'QA-'.$code, 'title' => $code], $this->pdf());
+        }
+
+        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'po')
+            ->assertHasNoErrors()->assertSee('Nomor Purchase Order');
+        $this->assertSame('completed', $request->fresh()->status);
+        $this->assertNotNull($request->fresh()->legalCase->completed_at);
+    }
+
+    public function test_existing_checklist_reuses_master_document_for_vendor_without_form005(): void
+    {
+        $type = DocumentType::where('code', 'NIB')->sole();
+        Requirement::create(['category_id' => $this->category->id, 'document_type_id' => $type->id, 'is_required' => true]);
+        $request = $this->finalized();
+        $request = $this->flow->startLegal($this->scm, $request->id, $request->version);
+        $item = $request->legalCase->items()->where('document_type_id', $type->id)->sole();
+        $request = $this->flow->updateLegal($this->scm, $request->id, $request->version, $item->id, ['status' => 'diminta']);
+        $document = $this->flow->saveDocument($this->scm, ['vendor_id' => $request->legalCase->vendor_id,
+            'document_type_id' => $type->id, 'number' => 'NIB-01', 'title' => 'NIB'], $this->pdf());
+
+        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'po')
+            ->assertHasNoErrors()->assertSee('Nomor Purchase Order');
+        $this->assertSame('completed', $request->fresh()->status);
+        $this->assertSame($document->id, $item->fresh()->vendor_document_id);
+        $this->assertSame(1, VendorDocument::where('vendor_id', $document->vendor_id)->where('document_type_id', $type->id)->count());
     }
 
     private function pdf(string $name = 'dokumen.pdf'): UploadedFile
@@ -896,12 +966,15 @@ class ProcurementTest extends TestCase
     public function test_material_register_page_search_reset_and_access_are_enforced(): void
     {
         $request = $this->finalized();
+        $this->scm->directPermissions()->attach(Permission::where('code', 'scm.material-register')->firstOrFail());
+        $this->scm = $this->scm->fresh();
         Livewire::actingAs($this->scm)->test(ScmSelectedVendorItems::class)
             ->assertSee($request->number)->assertSee('Item satu')->assertSee('Description general')->assertSee('Harga satuan')
             ->set('search', 'PR-TIDAK-ADA')->assertDontSee('Item satu')->assertSee('Tidak ada nomor PR yang cocok')
             ->call('clearFilters')->assertSet('search', '')->assertSee('Item satu');
         $this->actingAs($this->scm)->get(ScmSelectedVendorItems::getUrl())->assertOk();
-        Livewire::actingAs($this->user('scm.request'))->test(ScmSelectedVendorItems::class)
+        Livewire::actingAs($this->user('scm.request'))->test(ScmSelectedVendorItems::class)->assertForbidden();
+        Livewire::actingAs($this->user('scm.material-register'))->test(ScmSelectedVendorItems::class)
             ->assertDontSee($request->number)->assertSee('Belum ada item PR');
         Livewire::actingAs($this->user('scm.configure'))->test(ScmSelectedVendorItems::class)->assertForbidden();
     }
@@ -909,6 +982,8 @@ class ProcurementTest extends TestCase
     public function test_material_register_reports_query_failure_and_can_reload_after_recovery(): void
     {
         $this->finalized();
+        $this->scm->directPermissions()->attach(Permission::where('code', 'scm.material-register')->firstOrFail());
+        $this->scm = $this->scm->fresh();
         $page = Livewire::actingAs($this->scm)->test(ScmSelectedVendorItems::class)->assertSee('Item satu');
         Schema::rename('scm_request_items', 'qa_unavailable_request_items');
         try {
@@ -1148,6 +1223,11 @@ class ProcurementTest extends TestCase
             ->assertSet('cbeForm.commercial_terms.'.$first.'.discount', '10,00');
         $page->call('finalizeCbe')->assertHasNoErrors()->assertDontSee('Simpan draft CBE');
         $request = $request->fresh();
+        $pendingNames = $request->cbe->approvals()->where('status', 'pending')->pluck('assigned_name');
+        $printed = $this->actingAs($this->scm)->get(route('scm.print', $request->cbe))->assertOk();
+        foreach ($pendingNames as $pendingName) {
+            $printed->assertSee($pendingName.' (Menunggu)');
+        }
         $this->assertSame(35027, $request->cbe->final_minor);
         $quotes = collect($request->cbe->snapshot['quotes']);
         $this->assertSame(0, $quotes->firstWhere('id', $first)['evaluation']['tax_minor']);
@@ -1160,6 +1240,28 @@ class ProcurementTest extends TestCase
         $this->get(route('scm.selected-quotation', $request->cbe))->assertOk()
             ->assertSee('Total setelah evaluasi CBE: IDR 350,27')->assertSee('Total penawaran: IDR 362,37');
         $this->rejects(fn () => $this->flow->saveCbe($this->scm, $request->id, $request->version, $data));
+    }
+
+    public function test_non_pkp_registration_defaults_cbe_but_keeps_explicit_overrides(): void
+    {
+        $request = $this->quoted();
+        $data = $this->cbeData($request);
+        $quote = Quotation::with('candidate')->findOrFail($data['quotation_ids'][0]);
+        VendorRegistration::create(['vendor_id' => $quote->candidate->vendor_id, 'company' => 'APCA',
+            'token_hash' => hash('sha256', 'non-pkp-test'), 'status' => 'accepted', 'answers' => [1 => ['non_pkp' => 'yes']],
+            'context' => [], 'expires_at' => now()->addDay()]);
+
+        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)
+            ->assertSet('cbeForm.commercial_terms.'.$quote->id.'.non_pkp', true)
+            ->call('prepareQuotation', $quote->candidate_id)->assertSet('quotation.lines.0.quantity', '1,5')
+            ->assertSet('quotation.lines.1.quantity', '2');
+        $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $data);
+        $this->assertTrue($request->cbe->commercial_terms[$quote->id]['non_pkp']);
+        $data['commercial_terms'][$quote->id] = ['non_pkp' => false];
+        $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $data);
+        $this->assertFalse($request->cbe->commercial_terms[$quote->id]['non_pkp']);
+        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)
+            ->assertSet('cbeForm.commercial_terms.'.$quote->id.'.non_pkp', false);
     }
 
     public function test_cbe_recalculates_ppn_when_non_pkp_is_unchecked_and_rejects_invalid_discounts(): void
@@ -1500,7 +1602,8 @@ class ProcurementTest extends TestCase
         $second = $this->flow->saveCbe($this->scm, $second->id, $second->version, $data, true);
         $second = $this->approveCbe($second);
         $second = $this->flow->startLegal($this->scm, $second->id, $second->version);
-        $second = $this->flow->updateLegal($this->scm, $second->id, $second->version, $second->legalCase->items->first()->id, ['status' => 'diterima', 'vendor_document_id' => $doc->id]);
+        $this->assertSame('completed', $second->status);
+        $this->assertSame($doc->id, $second->legalCase->items->first()->vendor_document_id);
         Storage::disk('scm')->delete($doc->attachments->first()->path);
         $this->rejects(fn () => $this->flow->complete($this->scm, $second->id, $second->version));
         $this->assertSame($doc->id, $r->legalCase->items->first()->vendor_document_id);

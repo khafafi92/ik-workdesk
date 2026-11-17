@@ -2,14 +2,32 @@
 
 namespace App\Models;
 
+use App\Models\Scm\Procurement;
+use App\Models\Scm\ProjectNumbering;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\DB;
 
 class AtkRequest extends Model
 {
-    protected $fillable = ['request_number', 'request_date', 'requester_id', 'department_id', 'permit_company_id', 'purpose', 'status', 'submitted_at', 'processing_at', 'completed_at', 'cancelled_at', 'created_by', 'updated_by'];
+    protected $fillable = ['request_number', 'request_date', 'requester_id', 'department_id', 'permit_company_id', 'need_type', 'project_numbering_id', 'purpose', 'status', 'submitted_at', 'processing_at', 'completed_at', 'cancelled_at', 'created_by', 'updated_by', 'inventory_warehouse_id'];
+
+    public function inventoryWarehouse(): BelongsTo
+    {
+        return $this->belongsTo(InventoryWarehouse::class, 'inventory_warehouse_id');
+    }
+
+    public function procurement(): HasOne
+    {
+        return $this->hasOne(Procurement::class, 'source_atk_request_id');
+    }
+
+    public function projectNumbering(): BelongsTo
+    {
+        return $this->belongsTo(ProjectNumbering::class);
+    }
 
     protected function casts(): array
     {

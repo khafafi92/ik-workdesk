@@ -143,7 +143,7 @@ class PublicVendorPortalTest extends TestCase
         $response = $this->post(route('vendor.register'), ['name' => 'Vendor baru pengujian', 'company' => 'KPMOG', 'provider_type' => 'barang']);
         $response->assertRedirect()->assertSessionHas('vendor_access_code');
         $code = session('vendor_access_code');
-        $this->assertMatchesRegularExpression('/^VND-[A-F0-9]{8}(-[A-F0-9]{8}){3}$/', $code);
+        $this->assertMatchesRegularExpression('/^[A-HJ-NP-Z2-9]{8}$/', $code);
         $this->get($response->headers->get('Location'))->assertOk()->assertSee($code);
         $record = VendorRegistration::sole();
         $this->assertNull($record->vendor_id);
@@ -215,9 +215,20 @@ class PublicVendorPortalTest extends TestCase
         $this->post(route('vendor.resume'), ['access_code' => 'VND-'.str_repeat('0', 32)])->assertRedirect(route('vendor.index'))->assertSessionHasErrors('access_code');
     }
 
-    public function test_public_submission_is_reviewed_before_creating_vendor_and_files_are_grouped_under_that_vendor(): void
+    public function test_existing_long_vendor_id_can_still_open_its_form(): void
     {
         [$record] = $this->register();
+        $secret = strtoupper(bin2hex(random_bytes(16)));
+        $legacyCode = 'VND-'.implode('-', str_split($secret, 8));
+        $record->portalAccess->update(['code_hash' => hash('sha256', $secret), 'access_code' => $legacyCode]);
+
+        [$reopened] = $this->portal->resume(strtolower($legacyCode));
+        $this->assertSame($record->id, $reopened->id);
+    }
+
+    public function test_public_submission_is_reviewed_before_creating_vendor_and_files_are_grouped_under_that_vendor(): void
+    {
+        [$record, , $code] = $this->register();
         $record = $this->submit($record);
         $this->assertSame(0, Vendor::count());
         Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('switchSection', 'vendors')->assertSee('Pendaftaran baru')->assertSee('Vendor publik pengujian');
@@ -227,6 +238,7 @@ class PublicVendorPortalTest extends TestCase
         $this->assertSame('accepted', $record->status);
         $this->assertSame(1, Vendor::count());
         $this->assertSame($record->vendor_id, $record->portalAccess->vendor_id);
+        $this->assertSame($code, $record->vendor->code);
         $this->assertTrue($record->vendor->documents()->exists());
         $this->assertSame('Vendor publik pengujian', $record->vendor->name);
     }
@@ -257,6 +269,37 @@ class PublicVendorPortalTest extends TestCase
         $this->assertSame($draft->id, $sameDraft->id);
         $this->assertSame($newToken, $sameToken);
         $this->get(route('vendor.portal', ['token' => $oldToken, 'step' => 1]))->assertOk();
+    }
+
+    public function test_reissued_portal_id_updates_the_linked_master_code(): void
+    {
+        [$record, , $oldCode] = $this->register();
+        $record = $this->submit($record);
+        $this->enrollment->review($this->scm, $record->id, $record->version, 'accept', null);
+        $record->refresh();
+        $owner = User::factory()->create(['is_admin' => true]);
+
+        $this->portal->reissueAccessCode($owner, $record->id, $record->version);
+        $newCode = $record->portalAccess()->first()->access_code;
+        $this->assertNotSame($oldCode, $newCode);
+        $this->assertSame($newCode, $record->vendor()->first()->code);
+        $this->assertSame($record->vendor_id, $this->portal->resume($newCode)[0]->vendor_id);
+    }
+
+    public function test_existing_web_master_code_is_aligned_without_changing_portal_access(): void
+    {
+        [$record, $token, $code] = $this->register();
+        $record = $this->submit($record);
+        $this->enrollment->review($this->scm, $record->id, $record->version, 'accept', null);
+        $record->refresh();
+        $record->vendor->update(['code' => 'WEB-OLD-CODE']);
+
+        $migration = require database_path('migrations/2026_11_12_000001_align_portal_vendor_codes.php');
+        $migration->up();
+
+        $this->assertSame($code, $record->vendor()->first()->code);
+        $this->assertSame($record->vendor_id, $this->portal->resume($code)[0]->vendor_id);
+        $this->get(route('vendor.portal', ['token' => $token, 'step' => 1]))->assertOk();
     }
 
     public function test_scm_correction_can_be_fixed_using_the_same_number_and_revocation_blocks_all_public_access(): void

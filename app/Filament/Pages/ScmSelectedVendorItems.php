@@ -30,7 +30,7 @@ class ScmSelectedVendorItems extends Page
 
     public static function canAccess(): bool
     {
-        return Access::has(auth()->user(), 'scm.request') || Access::manages(auth()->user());
+        return Access::has(auth()->user(), 'scm.material-register');
     }
 
     public function updatedSearch(): void

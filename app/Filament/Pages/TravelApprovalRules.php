@@ -119,7 +119,7 @@ class TravelApprovalRules extends Page
                     if (! $canAssignActive && ! TravelAccess::approver($user)) {
                         $reasons[] = 'Belum memiliki izin persetujuan SPD/LPJ';
                     }
-                    if ($role === 'hr' && ! in_array($user->employee?->position_level, TravelAccess::MANAGER_LEVELS, true)) {
+                    if ($role === 'hr' && ! TravelAccess::manager($user)) {
                         $reasons[] = 'Jenjang belum minimal Manager';
                     }
                 }

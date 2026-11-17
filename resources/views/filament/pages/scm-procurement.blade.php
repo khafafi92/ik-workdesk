@@ -80,6 +80,9 @@
             @endif
             @if($tab === 'request')
                 @if($record->status === 'submitted')<p role="status">Sudah dikirim pada {{ $record->submitted_at?->format('d/m/Y H:i') }}. Menunggu penerimaan {{ $processorLabel }}.</p>@endif
+                @if($record->sourceAtkRequest)
+                    <p class="scm-help">Sumber permintaan ATK: {{ $record->sourceAtkRequest->request_number }}. Jumlah awal PR berasal dari kekurangan stok saat draft dibuat; periksa kembali sebelum mengajukan persetujuan.</p>
+                @endif
                 @if($record->numberReservation && (int) $record->numberReservation->requester_id !== (int) $record->requester_id)
                     <p class="scm-help">Permintaan dibuat oleh {{ $record->numberReservation->requester->name }} untuk pemohon {{ $record->requester->name }}.</p>
                 @endif
@@ -117,6 +120,9 @@
                 @endif
                 <h3>Lampiran permintaan</h3>@forelse($record->attachments as $file)<p><a href="{{ route('scm.download', $file) }}">Unduh {{ $file->original_name }}</a></p>@empty<p>Belum ada lampiran permintaan.</p>@endforelse
                 @include('filament.pages.scm.partials.procurement-result')
+                @if($canManage && $record->kind === 'PR' && $record->purchaseOrder)
+                    <a href="{{ \App\Filament\Pages\Inventory::getUrl(['data'=>'requests','cari'=>$record->number]) }}">Lihat penerimaan barang di Inventori</a>
+                @endif
             @elseif($tab === 'quotes' && $canManage)
                 <h3>Kandidat vendor</h3><p>Bandingkan penawaran dari minimal tiga vendor. Pilih vendor yang sudah terdaftar atau tambahkan melalui Vendor & dokumen. Kandidat tercatat: <strong>{{ $record->candidates->count() }}</strong>.</p>
                 @forelse($record->candidates as $c)<section class="scm-item" wire:key="candidate-{{ $c->id }}"><h4>{{ $c->vendor->name }}</h4><p>Tindak lanjut: {{ str_replace('_', ' ', $c->followup_status) }}. @if($c->requested_at)Diminta: {{ $c->requested_at }}.@endif</p>

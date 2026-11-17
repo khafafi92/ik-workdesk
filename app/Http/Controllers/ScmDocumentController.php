@@ -10,6 +10,7 @@ use App\Models\Scm\PurchaseOrder;
 use App\Models\Scm\Quotation;
 use App\Models\Scm\RequestApproval;
 use App\Models\Scm\UserSignature;
+use App\Services\Finance\PoPayments;
 use App\Services\Scm\Access;
 use App\Services\Scm\CbeApprovals;
 use Illuminate\Http\Request;
@@ -107,7 +108,9 @@ class ScmDocumentController extends Controller
 
     public function purchaseOrder(Request $http, PurchaseOrder $purchaseOrder)
     {
-        abort_unless(Access::manages($http->user(), $purchaseOrder->request), 403);
+        if (! Access::manages($http->user(), $purchaseOrder->request)) {
+            app(PoPayments::class)->order($http->user(), $purchaseOrder->id);
+        }
 
         return response()->view('scm.purchase-order-print', ['order' => $purchaseOrder])->header('Cache-Control', 'private, no-store');
     }

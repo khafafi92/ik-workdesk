@@ -16,6 +16,11 @@ class Cbe extends Record
         return $this->belongsTo(Procurement::class, 'request_id');
     }
 
+    public function selectedVendor()
+    {
+        return $this->belongsTo(Vendor::class, 'selected_vendor_id');
+    }
+
     public function documentRequest(): array
     {
         $request = $this->snapshot['request'] ?? [];

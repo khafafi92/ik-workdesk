@@ -23,10 +23,13 @@ use App\Models\User;
 use App\Services\AtkDepartmentStockService;
 use App\Services\AtkItemImportService;
 use App\Services\AtkWarehouseStockService;
+use App\Services\Inventory\InventoryStock;
+use App\Services\Inventory\Warehouses;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Maatwebsite\Excel\Facades\Excel;
@@ -49,6 +52,7 @@ class AtkManagementTest extends TestCase
                 'size' => 'A4',
                 'atk_unit_id' => $unit->id,
                 'current_stock' => 23,
+                'initial_warehouse_id' => app(Warehouses::class)->forContext('KPMOG', 'HO', null)->id,
                 'actual_stock' => 19,
                 'is_active' => true,
             ])
@@ -271,7 +275,7 @@ class AtkManagementTest extends TestCase
             ->assertOk()
             ->assertSeeText('Progres barang')
             ->assertSeeText('Pulpen Hitam')
-            ->assertSeeText('Serahkan sisa barang dari Gudang Utama jika stok tersedia.');
+            ->assertSeeText('Serahkan barang yang tersedia. Gunakan Ajukan PR kekurangan untuk stok yang belum cukup.');
     }
 
     public function test_atk_requirement_summary_shows_request_context_and_delivery_progress(): void
@@ -347,6 +351,7 @@ class AtkManagementTest extends TestCase
             'unit' => 'PCS',
         ]);
 
+        $this->allocateStock($item, $ga);
         app(AtkWarehouseStockService::class)->issue($requestItem, 2, $ga);
 
         $notification = $requester->notifications()->latest()->first();
@@ -390,6 +395,7 @@ class AtkManagementTest extends TestCase
             'unit' => 'Pcs',
         ]);
 
+        $this->allocateStock($item, $ga);
         app(AtkWarehouseStockService::class)->issue($requestItem, 6, $ga);
         $this->assertSame('0.00', $item->fresh()->current_stock);
         $this->assertSame('6.00', $requestItem->fresh()->qty_issued);
@@ -418,6 +424,7 @@ class AtkManagementTest extends TestCase
 
         $warehouse = app(AtkWarehouseStockService::class);
         $warehouse->markWaitingProcurement($unavailableItem, $ga, 'Menunggu pembelian.');
+        $this->allocateStock($available, $ga);
         $warehouse->issue($availableItem, 5, $ga);
 
         $this->assertSame('waiting_procurement', $unavailableItem->fresh()->status);
@@ -426,7 +433,7 @@ class AtkManagementTest extends TestCase
         app(AtkDepartmentStockService::class)->receive($availableItem, $requester);
         $this->assertSame('partially_fulfilled', $request->fresh()->status);
 
-        $warehouse->incoming($unavailable, 1, $ga, 'Pembelian baru.');
+        $warehouse->incoming($unavailable, 1, $ga, 'Pembelian baru.', app(Warehouses::class)->forContext('KPMOG', 'HO', null));
         $warehouse->markReady($unavailableItem, $ga);
         $warehouse->issue($unavailableItem, 1, $ga);
         app(AtkDepartmentStockService::class)->receive($unavailableItem, $requester);
@@ -507,6 +514,7 @@ class AtkManagementTest extends TestCase
 
         $request = $this->request($requester, $department);
         $requestItem = AtkRequestItem::query()->create(['atk_request_id' => $request->id, 'atk_item_id' => $item->id, 'qty_requested' => 2, 'unit' => 'Pcs']);
+        $this->allocateStock($item, $ga);
         app(AtkWarehouseStockService::class)->issue($requestItem, 2, $ga);
         app(AtkDepartmentStockService::class)->receive($requestItem, $requester);
         app(AtkDepartmentStockService::class)->receive($requestItem, $requester);
@@ -876,6 +884,11 @@ class AtkManagementTest extends TestCase
         Employee::query()->create(['user_id' => $user->id, 'department_id' => $department->id, 'name' => 'Requester ATK', 'is_active' => true]);
 
         return [$user, $department];
+    }
+
+    private function allocateStock(AtkItem $item, User $actor): void
+    {
+        app(InventoryStock::class)->allocateLegacy($actor, $item, ['KPMOG' => (string) $item->current_stock, 'APCA' => '0'], (string) Str::uuid());
     }
 
     private function request(User $requester, Department $department): AtkRequest

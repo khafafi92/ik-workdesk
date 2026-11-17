@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\User;
+use App\Services\Inventory\InventoryStock;
+use App\Services\Inventory\ProcurementReceipt;
 use App\Services\Scm\Approvals;
 use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\VendorPublicPortal;
@@ -28,7 +30,13 @@ while (! is_file($job['gate'])) {
 }
 $actor = User::findOrFail($job['actor_id']);
 try {
-    if ($job['mode'] === 'resume_public_vendor') {
+    if ($job['mode'] === 'inventory_receipt') {
+        $receipt = app(ProcurementReceipt::class)->receive($actor, $job['request_id'], $job['data']);
+        echo json_encode(['result' => 'received', 'id' => $receipt->id]), PHP_EOL;
+    } elseif ($job['mode'] === 'inventory_stock') {
+        app(InventoryStock::class)->transact($actor, 'outgoing', $job['data']);
+        echo json_encode(['result' => 'stock_moved']), PHP_EOL;
+    } elseif ($job['mode'] === 'resume_public_vendor') {
         [$registration] = app(VendorPublicPortal::class)->resume($job['access_code']);
         echo json_encode(['result' => 'resumed', 'registration_id' => $registration->id]), PHP_EOL;
     } elseif ($job['mode'] === 'save_cbe_policy') {

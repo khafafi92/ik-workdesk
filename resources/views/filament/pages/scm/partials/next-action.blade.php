@@ -10,7 +10,7 @@
     if ($record->cbe && app(\App\Services\Scm\PurchaseOrders::class)->approved($record->cbe)
         && app(\App\Services\Scm\PurchaseOrders::class)->legalComplete($record, $record->cbe)) {
         [$nextTab, $nextLabel, $nextHelp] = $record->purchaseOrder
-            ? ['po', 'Periksa draft PO', 'Draft PO tersimpan dan belum ditandatangani. Periksa sebelum dicetak.']
+            ? ['po', 'Periksa Purchase Order', 'Periksa PO dan status tanda tangan buyer.']
             : ['po', 'Buat Purchase Order', 'CBE dan legalitas vendor selesai. Isi nomor PO dan periksa syarat pengiriman serta pembayaran.'];
     }
 @endphp

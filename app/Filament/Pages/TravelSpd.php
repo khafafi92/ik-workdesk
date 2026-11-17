@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Scm\ProjectNumbering;
+use App\Services\Scm\Decimal;
 use App\Services\Travel\TravelAccess;
 use App\Services\Travel\TravelAmounts;
 use App\Services\Travel\TravelDocumentAdministration;
@@ -183,6 +184,7 @@ class TravelSpd extends Page
         abort_if($this->selected !== 0, 403);
         if (empty($this->input['spd_id'])) {
             $this->input['advance_one'] = '0';
+
             return;
         }
         $spd = app(TravelWorkflow::class)->eligibleSpds(auth()->user())->findOrFail($this->input['spd_id']);
@@ -193,7 +195,7 @@ class TravelSpd extends Page
         $this->input['company'] = $spd->company;
         $this->input['project_numbering_id'] = (string) ($spd->project_numbering_id ?? '');
         $this->input['employee_id'] = (string) $spd->employee_id;
-        $this->input['advance_one'] = \App\Services\Scm\Decimal::input($spd->total_minor);
+        $this->input['advance_one'] = Decimal::input($spd->total_minor);
         if (TravelAccess::canArrangeDocument(auth()->user())) {
             $this->input['requester_id'] = (string) ($spd->data['requester_id'] ?? $spd->created_by);
         }
@@ -334,6 +336,7 @@ class TravelSpd extends Page
             }
         }
         $records = $missing ? null : TravelAccess::query(auth()->user(), $kind)
+            ->withCount(['events as returned_events_count' => fn ($events) => $events->where('action', 'returned')])
             ->when(trim($this->search) !== '', fn ($query) => $query->where(fn ($search) => $search->where('number', 'like', '%'.trim($this->search).'%')->orWhere('employee_snapshot->name', 'like', '%'.trim($this->search).'%')))
             ->when($this->statusFilter !== '', fn ($query) => $query->where('status', $this->statusFilter))->latest('id')->paginate(15);
 

@@ -13,9 +13,12 @@ class ScmSeeder extends Seeder
     {
         foreach (['scm.request' => 'Buat PR/SR sendiri', 'scm.process' => 'Proses pengadaan SCM', 'ga.process' => 'Proses pengadaan GA khusus HO',
             'scm.process-kpmog' => 'Proses pengadaan Project KPMOG', 'scm.process-apca' => 'Proses pengadaan Project APCA',
-            'scm.configure' => 'Kelola konfigurasi SCM'] as $code => $name) {
+            'scm.configure' => 'Kelola konfigurasi SCM', 'scm.material-register' => 'Lihat Rekap Material PR'] as $code => $name) {
             Permission::firstOrCreate(['code' => $code], ['name' => $name, 'module' => 'SCM', 'is_active' => true]);
         }
+        Permission::firstOrCreate(['code' => 'finance.payments'], ['name' => 'Kelola pembayaran PO', 'module' => 'Finance', 'is_active' => true]);
+        Permission::firstOrCreate(['code' => 'finance.coa.manage'], ['name' => 'Kelola master COA', 'module' => 'Finance', 'is_active' => true]);
+        Permission::firstOrCreate(['code' => 'finance.budget.manage'], ['name' => 'Kelola master anggaran', 'module' => 'Finance', 'is_active' => true]);
         foreach (['NPWP' => false, 'NIB' => false, 'SBU' => true, 'KTP' => false] as $code => $expiry) {
             DocumentType::firstOrCreate(['code' => $code], ['name' => $code, 'has_expiry' => $expiry, 'is_active' => true]);
         }

@@ -99,7 +99,6 @@
                 class="ik-sidebar-flyout"
                 aria-label="{{ $label }}"
             >
-                <div class="ik-sidebar-flyout-title">{{ $label }}</div>
                 <ul class="ik-sidebar-flyout-list">
                     @foreach ($items as $item)
                         @include('filament.components.sidebar-flyout-item', ['item' => $item, 'nested' => false])

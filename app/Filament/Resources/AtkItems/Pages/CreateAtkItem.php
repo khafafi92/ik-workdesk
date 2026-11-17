@@ -5,15 +5,25 @@ namespace App\Filament\Resources\AtkItems\Pages;
 use App\Filament\Resources\AtkItems\AtkItemResource;
 use App\Models\AtkCategory;
 use App\Models\AtkUnit;
+use App\Models\InventoryWarehouse;
 use App\Services\AtkWarehouseStockService;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Support\Facades\Validator;
 
 class CreateAtkItem extends CreateRecord
 {
     protected static string $resource = AtkItemResource::class;
 
+    protected ?int $initialWarehouseId = null;
+
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        if ((float) ($data['current_stock'] ?? 0) > 0) {
+            Validator::make($data, ['initial_warehouse_id' => 'required|integer|exists:inventory_warehouses,id'])->validate();
+            $this->initialWarehouseId = (int) $data['initial_warehouse_id'];
+        }
+        unset($data['initial_warehouse_id']);
+
         return $this->syncMasterLabels($data);
     }
 
@@ -31,6 +41,7 @@ class CreateAtkItem extends CreateRecord
             $quantity,
             auth()->user(),
             'Stok awal master barang',
+            InventoryWarehouse::findOrFail($this->initialWarehouseId),
         );
     }
 

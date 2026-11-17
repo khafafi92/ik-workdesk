@@ -57,6 +57,23 @@ class VendorDocumentProfilesTest extends TestCase
         return [$registration->fresh(), $matches[1]];
     }
 
+    public function test_vendor_bank_details_are_saved_as_text_and_preserved_when_omitted(): void
+    {
+        $workflow = app(Workflow::class);
+        $vendor = $workflow->saveVendor($this->scm, [
+            'code' => $this->vendor->code, 'name' => $this->vendor->name,
+            'provider_type' => 'keduanya', 'is_active' => true,
+            'bank_name' => 'Bank QA', 'bank_account_number' => '0012345678', 'bank_account_name' => 'PT Vendor QA',
+        ], $this->vendor->id, $this->vendor->version);
+
+        $this->assertSame('0012345678', $vendor->fresh()->bank_account_number);
+        $vendor = $workflow->saveVendor($this->scm, [
+            'code' => $vendor->code, 'name' => $vendor->name, 'provider_type' => 'keduanya', 'is_active' => true,
+        ], $vendor->id, $vendor->version);
+        $this->assertSame('Bank QA', $vendor->fresh()->bank_name);
+        $this->assertSame('PT Vendor QA', $vendor->fresh()->bank_account_name);
+    }
+
     private function answers(int $step, string $origin = 'indonesia', string $basis = 'company'): array
     {
         $answers = [];
@@ -229,5 +246,68 @@ class VendorDocumentProfilesTest extends TestCase
             $this->expectException(ValidationException::class);
             app(Workflow::class)->useAlternativeDocuments($this->scm, $request->id, $request->version, 'Tidak boleh mengubah perusahaan asing menjadi pengganti Indonesia.');
         }
+    }
+
+    public function test_reviewed_mandatory_documents_are_reused_and_complete_legal_automatically(): void
+    {
+        [$registration] = $this->invite();
+        $registration = $this->completeForm($registration, 'indonesia', 'company');
+        $request = $this->selectedRequest();
+
+        $request = app(Workflow::class)->startLegal($this->scm, $request->id, $request->version);
+
+        $this->assertSame('completed', $request->status);
+        $this->assertNotNull($request->legalCase->completed_at);
+        $this->assertSame($registration->id, $request->legalCase->document_basis_snapshot['registration_id']);
+        foreach ($request->legalCase->items()->where('is_required', true)->get() as $item) {
+            $this->assertSame('diterima', $item->status);
+            $this->assertSame($this->vendor->id, $item->document->vendor_id);
+            $this->assertTrue(Storage::disk('scm')->exists($item->document->attachments->first()->path));
+        }
+        $this->assertDatabaseHas('scm_audits', ['request_id' => $request->id, 'action' => 'gunakan_dokumen_vendor']);
+    }
+
+    public function test_existing_checklist_waits_for_missing_files_then_reuses_them(): void
+    {
+        [$registration] = $this->invite();
+        $this->completeForm($registration, 'indonesia', 'npwp_ktp');
+        $document = VendorDocument::where('vendor_id', $this->vendor->id)->whereHas('documentType', fn ($query) => $query->where('code', 'KTP'))->sole();
+        $path = $document->attachments->sole()->path;
+        $contents = Storage::disk('scm')->get($path);
+        Storage::disk('scm')->delete($path);
+        $request = $this->selectedRequest();
+
+        $request = app(Workflow::class)->startLegal($this->scm, $request->id, $request->version);
+        $this->assertSame('legal', $request->status);
+        $this->assertSame('belum_diminta', $request->legalCase->items()->where('document_type_id', $document->document_type_id)->sole()->status);
+        Storage::disk('scm')->put($path, $contents);
+        $request = app(Workflow::class)->reuseVendorDocuments($this->scm, $request->id, $request->version);
+        $this->assertSame('completed', $request->status);
+        $this->assertSame($document->id, $request->legalCase->items()->where('document_type_id', $document->document_type_id)->sole()->vendor_document_id);
+    }
+
+    public function test_expired_mandatory_document_does_not_complete_legal(): void
+    {
+        [$registration] = $this->invite();
+        $this->completeForm($registration, 'indonesia', 'company');
+        $document = VendorDocument::where('vendor_id', $this->vendor->id)->whereHas('documentType', fn ($query) => $query->where('code', 'IZIN_USAHA'))->sole();
+        $document->update(['expires_at' => today()->subDay()]);
+        $request = $this->selectedRequest();
+
+        $request = app(Workflow::class)->startLegal($this->scm, $request->id, $request->version);
+        $this->assertSame('legal', $request->status);
+        $this->assertSame('belum_diminta', $request->legalCase->items()->where('document_type_id', $document->document_type_id)->sole()->status);
+        $this->assertNull($request->legalCase->completed_at);
+    }
+
+    private function selectedRequest(): Procurement
+    {
+        $request = Procurement::create(['number' => 'QA-REUSE-PR', 'kind' => 'PR', 'company' => 'KPMOG', 'need_type' => 'PROJECT',
+            'date' => today(), 'requester_id' => $this->scm->id, 'department_id' => $this->department->id,
+            'title' => 'QA', 'reason' => 'QA', 'status' => 'selected']);
+        Cbe::create(['request_id' => $request->id, 'number' => 'QA-REUSE-CBE', 'date' => today(), 'status' => 'final',
+            'selected_vendor_id' => $this->vendor->id, 'prepared_by' => $this->scm->id]);
+
+        return $request->fresh();
     }
 }

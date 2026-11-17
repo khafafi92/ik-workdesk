@@ -13,6 +13,16 @@ class TravelAccess
 {
     public const MANAGER_LEVELS = ['manager', 'general-manager', 'director', 'cbo', 'coo-1', 'coo-2', 'coo-3', 'chairman', 'vice-chairman'];
 
+    public static function manager(User $user): bool
+    {
+        $employee = $user->employee;
+        if (filled($employee?->position_level)) {
+            return in_array($employee->position_level, self::MANAGER_LEVELS, true);
+        }
+
+        return (bool) preg_match('/^(?:hrga|hr|human resources(?: and general affairs)?|general affairs)\s+manager$/i', trim($employee?->position ?? ''));
+    }
+
     public static function has(?User $user, string $permission): bool
     {
         return Access::has($user, $permission);

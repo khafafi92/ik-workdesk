@@ -6,7 +6,9 @@ use App\Imports\AtkItemRowsImport;
 use App\Models\AtkCategory;
 use App\Models\AtkItem;
 use App\Models\AtkUnit;
+use App\Models\InventoryWarehouse;
 use App\Models\User;
+use App\Services\Inventory\InventoryStock;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +20,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class AtkItemImportService
 {
-    public function import(string|UploadedFile|TemporaryUploadedFile $path, User $actor): array
+    public function import(string|UploadedFile|TemporaryUploadedFile $path, User $actor, ?InventoryWarehouse $inventoryWarehouse = null): array
     {
         $resolvedPath = $path instanceof UploadedFile ? $path : $this->resolveImportPath($path);
 
@@ -63,7 +65,7 @@ class AtkItemImportService
 
         $this->validateRows($normalizedRows);
 
-        return DB::transaction(function () use ($normalizedRows, $actor): array {
+        return DB::transaction(function () use ($normalizedRows, $actor, $inventoryWarehouse): array {
             $created = 0;
             $updated = 0;
             $stockAdjusted = 0;
@@ -129,7 +131,7 @@ class AtkItemImportService
                 }
 
                 $targetStock = round((float) $row['current_stock'], 2);
-                $difference = $targetStock - (float) $item->current_stock;
+                $difference = $targetStock - ($inventoryWarehouse ? app(InventoryStock::class)->availableAtk($item, $inventoryWarehouse->id) : (float) $item->current_stock);
 
                 if ($difference === 0.0) {
                     continue;
@@ -137,9 +139,9 @@ class AtkItemImportService
 
                 $warehouse = app(AtkWarehouseStockService::class);
                 if ($difference > 0) {
-                    $warehouse->incoming($item, $difference, $actor, 'Impor stok ATK');
+                    $warehouse->incoming($item, $difference, $actor, 'Impor stok ATK', $inventoryWarehouse);
                 } else {
-                    $warehouse->adjust($item, $difference, $actor, 'Penyesuaian dari impor stok ATK');
+                    $warehouse->adjust($item, $difference, $actor, 'Penyesuaian dari impor stok ATK', $inventoryWarehouse);
                 }
                 $stockAdjusted++;
             }

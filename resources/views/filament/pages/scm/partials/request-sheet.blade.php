@@ -57,7 +57,7 @@
                     @if($sheetEditing)
                         <td><x-scm.field model="draft.items.{{ $index }}.brand" label="Brand" /></td>
                         <td><x-scm.field model="draft.items.{{ $index }}.item_reference" label="Item" /></td>
-                        <td><x-scm.field model="draft.items.{{ $index }}.name" label="Material" required /></td>
+                        <td>@if($sheetKind === 'PR')<x-scm.select model="draft.items.{{ $index }}.inventory_item_id" label="Master Barang" :options="$inventoryItemOptions ?? []" :live="true" placeholder="Pilih barang atau isi usulan baru" />@endif<x-scm.field model="draft.items.{{ $index }}.name" label="Material" required /></td>
                         <td class="scm-sheet-description"><x-scm.field model="draft.items.{{ $index }}.specification" label="Description General" multiline required /></td>
                         <td><x-scm.field model="draft.items.{{ $index }}.quantity" label="Qty" inputmode="decimal" required /></td>
                         <td><x-scm.field model="draft.items.{{ $index }}.unit" label="Unit" required /></td>

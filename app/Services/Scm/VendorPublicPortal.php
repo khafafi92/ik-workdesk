@@ -2,6 +2,7 @@
 
 namespace App\Services\Scm;
 
+use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorPortalAccess;
 use App\Models\Scm\VendorRegistration;
 use App\Models\User;
@@ -17,8 +18,8 @@ class VendorPublicPortal
     {
         $data = Validation::make($input, ['company' => ['required', Rule::in(array_keys(config('scm.companies')))],
             'name' => 'required|string|min:2|max:255', 'provider_type' => 'required|in:barang,jasa,keduanya'])->validate();
-        $secret = strtoupper(bin2hex(random_bytes(16)));
-        $code = 'VND-'.implode('-', str_split($secret, 8));
+        $secret = $this->newSecret();
+        $code = $secret;
         [$record, $token] = DB::transaction(function () use ($data, $secret, $code): array {
             $access = VendorPortalAccess::create(['code_hash' => hash('sha256', $secret), 'access_code' => $code]);
 
@@ -44,8 +45,12 @@ class VendorPublicPortal
             if ($access->revoked_at || $record->revoked_at) {
                 throw ValidationException::withMessages(['vendorAccess' => 'Akses vendor sudah dicabut. Vendor ID pengganti tidak dapat diterbitkan.']);
             }
-            $secret = strtoupper(bin2hex(random_bytes(16)));
-            $access->update(['code_hash' => hash('sha256', $secret), 'access_code' => 'VND-'.implode('-', str_split($secret, 8))]);
+            $secret = $this->newSecret();
+            $access->update(['code_hash' => hash('sha256', $secret), 'access_code' => $secret]);
+            if ($access->vendor_id) {
+                $vendor = Vendor::lockForUpdate()->findOrFail($access->vendor_id);
+                $vendor->update(['code' => $secret, 'version' => $vendor->version + 1, 'updated_by' => $actor->id]);
+            }
             foreach ($access->registrations()->lockForUpdate()->get() as $form) {
                 $form->update(['token_hash' => hash('sha256', random_bytes(32)), 'version' => $form->version + 1]);
             }
@@ -58,8 +63,11 @@ class VendorPublicPortal
     public function resume(string $code): array
     {
         $secret = strtoupper(preg_replace('/[\s-]/', '', trim($code)));
-        $secret = str_starts_with($secret, 'VND') ? substr($secret, 3) : '';
-        $this->reject(! preg_match('/^[A-F0-9]{32}$/D', $secret));
+        $legacy = str_starts_with($secret, 'VND') && strlen($secret) === 35;
+        if ($legacy) {
+            $secret = substr($secret, 3);
+        }
+        $this->reject(! preg_match($legacy ? '/^[A-F0-9]{32}$/D' : '/^[A-Z0-9]{8}$/D', $secret));
         $createdPaths = [];
         try {
             return DB::transaction(function () use ($secret, &$createdPaths): array {
@@ -114,6 +122,18 @@ class VendorPublicPortal
             'action' => $access->vendor_id ? 'public_update_started' : 'public_registration_started', 'details' => '{}', 'created_at' => now()]);
 
         return [$record, $token];
+    }
+
+    private function newSecret(): string
+    {
+        do {
+            $secret = '';
+            for ($i = 0; $i < 8; $i++) {
+                $secret .= 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[random_int(0, 31)];
+            }
+        } while (VendorPortalAccess::where('code_hash', hash('sha256', $secret))->exists() || Vendor::where('code', $secret)->exists());
+
+        return $secret;
     }
 
     private function token(string $secret, int $registrationId): string

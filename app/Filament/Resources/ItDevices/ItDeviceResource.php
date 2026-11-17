@@ -16,9 +16,13 @@ use App\Filament\Resources\ItDevices\Pages\ListItDevices;
 use App\Filament\Resources\ItDevices\Pages\ViewItDevice;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\InventoryBalance;
+use App\Models\InventoryItem;
 use App\Models\ItDevice;
 use App\Models\ItInspection;
 use App\Rules\ItAssetNumber;
+use App\Services\Inventory\InventoryAccess;
+use App\Services\Inventory\InventoryCatalogue;
 use App\Services\ItInfrastructure\ItDeviceService;
 use BackedEnum;
 use Filament\Actions\Action;
@@ -81,6 +85,16 @@ class ItDeviceResource extends Resource
             Hidden::make('assignment_version'),
             Tabs::make('Data perangkat')->tabs([
                 Tab::make('Identitas')->columns(['md' => 2, 'xl' => 3])->schema([
+                    Select::make('inventory_item_id')->label('Master Barang Inventori')
+                        ->options(fn () => InventoryCatalogue::installed() ? InventoryItem::where('kind', 'device')->where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($item) => [$item->id => $item->code.' / '.$item->name]) : [])
+                        ->searchable()->live()->hidden(fn (Get $get) => $isRoom($get) || ! InventoryCatalogue::installed())
+                        ->helperText('Pilih jenis barang yang sama untuk unit dengan merek dan model yang sama. Nomor aset serta serial number tetap dicatat per unit.'),
+                    Select::make('inventory_balance_id')->label('Ambil unit dari stok gudang')
+                        ->options(fn (Get $get) => InventoryAccess::scopeBalances(InventoryBalance::query(), auth()->user())
+                            ->where('inventory_item_id', $get('inventory_item_id'))->where('quantity_milli', '>=', 1000)
+                            ->with(['warehouse.project', 'department'])->get()->mapWithKeys(fn ($balance) => [$balance->id => $balance->warehouse->label().' / '.$balance->department?->name.' / '.($balance->quantity_milli / 1000).' unit']))
+                        ->searchable()->visible(fn (Get $get, ?ItDevice $record) => ! $record && ! $isRoom($get) && filled($get('inventory_item_id')))
+                        ->helperText('Pilih sumber jika unit berasal dari penerimaan gudang. Kosongkan untuk pendataan unit lama; stok gudang tidak berubah.'),
                     TextInput::make('asset_number')->label('Nomor Aset')->readOnly(fn (?ItDevice $record) => ! $record?->exists)->placeholder('Dibuat otomatis saat disimpan')
                         ->helperText(fn (?ItDevice $record) => $record?->exists
                             ? 'Dapat dikoreksi sesuai label aset. Format: 00035/APCA/IT/2025 atau 00037/KPMOG/IT/2025.'

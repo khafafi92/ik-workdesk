@@ -33,3 +33,10 @@
 .travel-spd-project small{grid-column:3}
 .travel-spd-department{align-items:center}
 @media print{.travel-sheet-spd .travel-spd-body{--travel-spd-label:34mm;--travel-spd-colon:4mm}.travel-sheet-spd .travel-spd-identity{min-height:12mm}}
+@media print{
+    .travel-print main{width:194mm;max-width:194mm}
+    .travel-print .travel-sheet{width:100%;max-width:100%;min-width:0;box-sizing:border-box}
+    .travel-sheet :is(.travel-spd-header,.travel-spd-body,.travel-lpj-purpose,.travel-lpj-person,.travel-lpj-bottom)>*{min-width:0}
+    .travel-sheet :is(.travel-document-meta,.travel-grid,.travel-signatures){max-width:100%}
+    .travel-sheet .travel-money{overflow-wrap:anywhere}
+}

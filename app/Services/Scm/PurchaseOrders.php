@@ -2,12 +2,15 @@
 
 namespace App\Services\Scm;
 
+use App\Models\InventoryReceipt;
 use App\Models\Scm\Cbe;
+use App\Models\Scm\PoApprovalPolicy;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\PurchaseOrder;
 use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
@@ -87,7 +90,19 @@ class PurchaseOrders
                     throw ValidationException::withMessages(['scm' => 'Selesaikan legalitas vendor terpilih sebelum membuat PO.']);
                 }
                 $order = $request->purchaseOrder()->lockForUpdate()->first();
+                if ($order && InventoryReceipt::where('purchase_order_id', $order->id)->exists()) {
+                    throw ValidationException::withMessages(['scm' => 'PO tidak dapat diubah setelah penerimaan barang tercatat.']);
+                }
                 $snapshot = $order?->snapshot ?? $this->snapshot($cbe);
+                if ((! array_key_exists('buyer_signer', $snapshot) || ! array_key_exists('second_buyer_signer', $snapshot)) && Schema::hasTable('scm_po_approval_policies')) {
+                    $policy = PoApprovalPolicy::with('buyer')->where('company', $request->company)->first();
+                    if ($policy) {
+                        $snapshot['buyer_signer'] ??= ['name' => $policy->buyer->name, 'position' => $policy->buyer_position];
+                        if (Schema::hasColumn('scm_po_approval_policies', 'second_buyer_id') && $policy->secondBuyer) {
+                            $snapshot['second_buyer_signer'] ??= ['name' => $policy->secondBuyer->name, 'position' => $policy->second_buyer_position];
+                        }
+                    }
+                }
                 $numberKey = mb_strtolower($data['number']);
                 $duplicate = PurchaseOrder::where('company', $request->company)->where('number_key', $numberKey)
                     ->when($order, fn ($query) => $query->whereKeyNot($order->id))->exists();

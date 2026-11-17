@@ -10,11 +10,14 @@ use App\Models\Scm\Cbe;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\Vendor;
 use App\Models\User;
+use App\Services\Scm\AmountInWords;
+use App\Services\Scm\PoApprovals;
 use App\Services\Scm\PurchaseOrders;
 use Database\Seeders\ScmSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -216,10 +219,90 @@ class PurchaseOrderTest extends TestCase
         $updated = app(PurchaseOrders::class)->save($this->scm, $this->request->id, $this->request->version, $this->form());
         Livewire::actingAs($this->scm)->test(ScmProcurement::class)
             ->call('open', $updated->id)->call('showTab', 'po')
-            ->assertSee('Purchase Order')->assertSee('PO/TEST/001')->assertSee('Buka draft PO untuk cetak / simpan PDF');
+            ->assertSee('Purchase Order')->assertSee('PO/TEST/001')->assertSee('Buka PO untuk cetak / simpan PDF');
         $url = route('scm.purchase-order-print', $updated->purchaseOrder);
-        $this->actingAs($this->scm)->get($url)->assertOk()->assertSeeText('Vendor Pengujian')
-            ->assertSeeText('PO/TEST/001')->assertSeeText('IDR 233,10')->assertSeeText('Belum ditandatangani');
+        $response = $this->actingAs($this->scm)->get($url)->assertOk()->assertSeeText('Vendor Pengujian')
+            ->assertSeeText('PO/TEST/001')->assertSeeText('Rp 233,10')->assertSeeText('November 10, 2026')->assertDontSeeText('Belum ditandatangani')
+            ->assertSeeText('Two hundred thirty-three rupiah and ten sen')
+            ->assertSeeText('Terms & Conditions applied as attachment this Purchase Order')
+            ->assertSeeText('KPM-FRM-058, 23 April 2024, Rev.2')->assertSee('aria-label="Paraf persetujuan PO"', false)
+            ->assertSee('img/brands/kpmog-po-letterhead.png')->assertDontSee('class="scm-po-brand"', false)
+            ->assertDontSee('class="scm-po-footer"', false);
+        $this->assertSame(8, substr_count($response->getContent(), 'class="scm-po-amount-symbol"'));
         $this->actingAs($this->outsider)->get($url)->assertForbidden();
+    }
+
+    public function test_other_company_po_does_not_use_kpmog_letterhead(): void
+    {
+        $this->approve();
+        $updated = app(PurchaseOrders::class)->save($this->scm, $this->request->id, $this->request->version, $this->form());
+        $order = $updated->purchaseOrder;
+        $order->update(['snapshot' => [...$order->snapshot, 'company' => 'APCA', 'company_name' => 'APCA']]);
+
+        $this->actingAs($this->scm)->get(route('scm.purchase-order-print', $order))->assertOk()
+            ->assertDontSee('kpmog-po-letterhead.png')->assertSee('img/brands/apca.png');
+    }
+
+    public function test_rupiah_amount_in_words_preserves_fractional_values(): void
+    {
+        $this->assertSame('Nol rupiah', AmountInWords::rupiah(0));
+        $this->assertSame('Seribu satu rupiah satu sen', AmountInWords::rupiah(100101));
+        $this->assertSame('Enam puluh empat juta sembilan ratus lima puluh tujuh ribu dua ratus rupiah', AmountInWords::rupiah(6495720000));
+        $this->assertSame('Zero rupiah', AmountInWords::english(0, 'IDR'));
+        $this->assertSame('Sixty-four million nine hundred fifty-seven thousand two hundred rupiah', AmountInWords::english(6495720000, 'IDR'));
+        $this->assertSame('Twelve US dollars and one cent', AmountInWords::english(1201, 'USD'));
+    }
+
+    public function test_master_selects_two_buyers_for_wet_signature_and_preserves_saved_po_names(): void
+    {
+        $this->approve();
+        $updated = app(PurchaseOrders::class)->save($this->scm, $this->request->id, $this->request->version, $this->form());
+        $this->scm->directPermissions()->attach(Permission::where('code', 'scm.configure')->sole()->id);
+        $admin = $this->scm->fresh();
+        $buyer = User::factory()->create(['name' => 'Direktur Pengujian', 'is_admin' => true]);
+        $secondBuyer = User::factory()->create(['name' => 'Direktur Utama Pengujian', 'is_admin' => true]);
+        try {
+            app(PoApprovals::class)->savePolicy($admin, ['company' => 'KPMOG', 'buyer_id' => $buyer->id, 'second_buyer_id' => $buyer->id, 'version' => 0]);
+            $this->fail('Kedua penandatangan harus berbeda.');
+        } catch (ValidationException $error) {
+            $this->assertArrayHasKey('second_buyer_id', $error->errors());
+        }
+        Livewire::actingAs($admin)->test(ScmProcurement::class)->call('switchSection', 'settings')
+            ->set('approvalDocument', 'PO')->set('poApprovalPolicy.buyer_id', $buyer->id)
+            ->set('poApprovalPolicy.buyer_position', 'Director')->set('poApprovalPolicy.second_buyer_id', $secondBuyer->id)
+            ->set('poApprovalPolicy.second_buyer_position', 'President Director')->call('savePoApprovalPolicy')->assertHasNoErrors();
+        $url = route('scm.purchase-order-print', $updated->purchaseOrder);
+        $this->actingAs($admin)->get($url)->assertOk()->assertSeeText('Direktur Pengujian')->assertSeeText('Director')
+            ->assertSeeText('Direktur Utama Pengujian')->assertSeeText('President Director')->assertDontSeeText('Belum ditandatangani');
+        $updated = app(PurchaseOrders::class)->save($admin, $updated->id, $updated->version, $this->form());
+        $other = User::factory()->create(['name' => 'Direktur Baru', 'is_admin' => true]);
+        app(PoApprovals::class)->savePolicy($admin, ['company' => 'KPMOG', 'buyer_id' => $other->id, 'buyer_position' => 'Direktur',
+            'second_buyer_id' => $secondBuyer->id, 'second_buyer_position' => 'President Director', 'version' => 1]);
+        $this->get($url)->assertSeeText('Direktur Pengujian')->assertDontSeeText('Direktur Baru');
+        $this->assertSame('Direktur Pengujian', $updated->purchaseOrder->snapshot['buyer_signer']['name']);
+        $this->assertSame('Direktur Utama Pengujian', $updated->purchaseOrder->snapshot['second_buyer_signer']['name']);
+        try {
+            app(PoApprovals::class)->savePolicy($this->outsider, ['company' => 'KPMOG', 'buyer_id' => $other->id, 'version' => 2]);
+            $this->fail('Akun tanpa izin tidak boleh mengubah Master Approval PO.');
+        } catch (HttpException $error) {
+            $this->assertSame(403, $error->getStatusCode());
+        }
+    }
+
+    public function test_po_remains_accessible_when_master_table_has_not_been_migrated(): void
+    {
+        $this->approve();
+        $updated = app(PurchaseOrders::class)->save($this->scm, $this->request->id, $this->request->version, $this->form());
+        Schema::drop('scm_po_approval_policies');
+
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)->call('open', $updated->id)->call('showTab', 'po')
+            ->assertHasNoErrors()->assertSee('PO/TEST/001');
+        $response = $this->actingAs($this->scm)->get(route('scm.purchase-order-print', $updated->purchaseOrder))->assertOk()->assertSeeText('Nama / tanda tangan');
+        $this->assertSame(2, substr_count($response->getContent(), 'class="scm-po-signature-empty"'));
+        $updated = app(PurchaseOrders::class)->save($this->scm, $updated->id, $updated->version, $this->form());
+        $this->assertSame('PO/TEST/001', $updated->purchaseOrder->number);
+        $this->scm->directPermissions()->attach(Permission::where('code', 'scm.configure')->sole()->id);
+        Livewire::actingAs($this->scm->fresh())->test(ScmProcurement::class)->call('switchSection', 'settings')
+            ->set('approvalDocument', 'PO')->assertSee('Master Approval PO belum dipasang atau diperbarui di database.');
     }
 }

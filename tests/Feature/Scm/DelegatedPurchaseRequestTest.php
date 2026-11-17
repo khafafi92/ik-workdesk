@@ -130,6 +130,7 @@ class DelegatedPurchaseRequestTest extends TestCase
             ->set('newProjectNumberingId', (string) ProjectNumbering::where('code', 'COMP-19E001')->sole()->id)->call('newDraft', 'KPMOG')
             ->assertSeeHtml('id="scm-draft-requester_id"')
             ->assertViewHas('requesterOptions', fn ($options) => isset($options[$inactive->id], $options[$noPermission->id], $options[$this->requester->id]))
+            ->assertViewHas('requesterOptions', fn ($options) => $options[$this->requester->id] === $this->requester->name && $options[$inactive->id] === $inactive->name)
             ->set('draft.requester_id', (string) $this->requester->id)->assertSet('draft.department_id', $this->department->id)
             ->assertViewHas('departments', fn ($departments) => $departments->has($this->department->id) && $departments->has($this->home->id))
             ->assertViewHas('routingPlan', fn ($plan) => $plan['manager_request'] && $plan['approver']->id === $approver->id)

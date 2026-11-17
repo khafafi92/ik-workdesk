@@ -6,9 +6,11 @@
 </section>
 <section class="scm-panel"><header class="scm-heading"><h2>Vendor</h2><button type="button" wire:click="newVendor">Buat vendor baru</button></header>
     <p>Vendor baru dapat mendaftar melalui Portal Vendor di atas. Untuk undangan bagi vendor yang sudah ada, buka Edit vendor lalu buat tautan Form 005. Kelengkapan pengadaan ditentukan oleh checklist masing-masing pengadaan.</p>
+    <p>Vendor yang dihapus tidak tampil di daftar master. Riwayat pengadaan dan dokumennya tetap tersimpan.</p>
     <x-scm.field model="vendorSearch" label="Cari kode atau nama vendor" :live="true" />
-    <div class="scm-scroll" role="region" aria-label="Daftar vendor" tabindex="0"><table><thead><tr><th>Kode & perusahaan</th><th>Jenis penyedia</th><th>PIC</th><th>Aktif</th><th>Profil</th></tr></thead><tbody>
-    @forelse($vendorRows as $v)<tr><td>{{ $v->code }}<br>{{ $v->name }}</td><td>{{ ['barang'=>'Barang','jasa'=>'Jasa','keduanya'=>'Barang dan jasa'][$v->provider_type] ?? $v->provider_type }}</td><td>{{ $v->pic_name ?: '-' }}</td><td>{{ $v->is_active ? 'Aktif' : 'Nonaktif' }}</td><td><button type="button" wire:click="editVendor({{ $v->id }})">Edit {{ $v->code }}</button></td></tr>@empty<tr><td colspan="5">Tidak ada vendor sesuai pencarian. Sesuaikan pencarian atau lengkapi profil perusahaan pada form berikut.</td></tr>@endforelse
+    @error('scm')<p class="scm-error" role="alert">{{ $message }}</p>@enderror
+    <div class="scm-scroll" role="region" aria-label="Daftar vendor" tabindex="0"><table><thead><tr><th>Kode & perusahaan</th><th>Jenis penyedia</th><th>PIC</th><th>Aktif</th><th>Tindakan</th></tr></thead><tbody>
+    @forelse($vendorRows as $v)<tr><td>{{ $v->code }}<br>{{ $v->name }}</td><td>{{ ['barang'=>'Barang','jasa'=>'Jasa','keduanya'=>'Barang dan jasa'][$v->provider_type] ?? $v->provider_type }}</td><td>{{ $v->pic_name ?: '-' }}</td><td>{{ $v->is_active ? 'Aktif' : 'Nonaktif' }}</td><td><div class="scm-actions"><button type="button" wire:click="editVendor({{ $v->id }})">Edit {{ $v->code }}</button><button type="button" wire:click="deleteVendor({{ $v->id }}, {{ $v->version }})" wire:confirm="Hapus vendor {{ $v->code }}? Vendor hilang dari daftar master, tetapi riwayatnya tetap tersimpan." wire:loading.attr="disabled" wire:target="deleteVendor" aria-label="Hapus vendor {{ $v->code }}">Hapus</button></div></td></tr>@empty<tr><td colspan="5">Tidak ada vendor sesuai pencarian. Sesuaikan pencarian atau lengkapi profil perusahaan pada form berikut.</td></tr>@endforelse
     </tbody></table></div>{{ $vendorRows->links() }}
     @if($duplicateVendors->isNotEmpty())<p class="scm-error" role="status">Periksa kandidat duplikat sebelum menyimpan: {{ $duplicateVendors->join(', ') }}.</p>@endif
     <form wire:submit="saveVendor"><h3>{{ $vendorId ? 'Edit profil vendor · '.$vendor['code'] : 'Vendor baru' }}</h3><fieldset wire:loading.attr="disabled" wire:target="saveVendor"><legend>Perusahaan dan kontak</legend><div class="scm-grid">
@@ -16,6 +18,10 @@
         <x-scm.select model="vendor.provider_type" label="Jenis penyedia" :options="['barang'=>'Barang','jasa'=>'Jasa','keduanya'=>'Barang dan jasa']" required />
         <x-scm.field model="vendor.business_category" label="Kategori usaha" /><x-scm.field model="vendor.address" label="Alamat" multiline /><x-scm.field model="vendor.phone" label="Telepon perusahaan" /><x-scm.field model="vendor.email" label="Email perusahaan" type="email" :blur="true" />
         <x-scm.field model="vendor.pic_name" label="Nama PIC" /><x-scm.field model="vendor.pic_position" label="Jabatan PIC" /><x-scm.field model="vendor.pic_phone" label="HP / WhatsApp PIC" /><x-scm.field model="vendor.pic_email" label="Email PIC" type="email" /><x-scm.field model="vendor.notes" label="Catatan vendor" multiline /><x-scm.check model="vendor.is_active" label="Vendor aktif" />
+    </div></fieldset><fieldset wire:loading.attr="disabled" wire:target="saveVendor"><legend>Rekening pembayaran</legend><div class="scm-grid">
+        <x-scm.field model="vendor.bank_name" label="Nama bank" />
+        <x-scm.field model="vendor.bank_account_number" label="Nomor rekening" />
+        <x-scm.field model="vendor.bank_account_name" label="Nama pemilik rekening" />
     </div></fieldset><x-filament::button type="submit" wire:loading.attr="disabled" wire:target="saveVendor">Simpan profil vendor</x-filament::button></form>
 </section>
 @if($vendorId)

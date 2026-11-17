@@ -152,6 +152,7 @@ class RequestNumberingTest extends TestCase
 
     public function test_migration_registers_legacy_project_numbers_without_renumbering_them(): void
     {
+        (require database_path('migrations/2026_11_06_000003_create_shared_inventory.php'))->down();
         $migration = require database_path('migrations/2026_11_02_100000_add_scm_project_numbering.php');
         $migration->down();
         $request = Procurement::create(['number' => '043/KPMOG-OFC/PR/X/2026', 'kind' => 'PR', 'company' => 'KPMOG', 'need_type' => 'PROJECT',

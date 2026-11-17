@@ -16,6 +16,9 @@ return new class extends Migration
 
     public function down(): void
     {
-        throw new RuntimeException('Izin tim pengadaan harus ditinjau sebelum migrasi dibatalkan.');
+        $ids = DB::table('permissions')->whereIn('code', ['ga.process', 'scm.process-kpmog', 'scm.process-apca'])->pluck('id');
+        DB::table('permission_user')->whereIn('permission_id', $ids)->delete();
+        DB::table('permission_role')->whereIn('permission_id', $ids)->delete();
+        DB::table('permissions')->whereIn('id', $ids)->delete();
     }
 };

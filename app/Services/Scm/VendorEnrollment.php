@@ -29,6 +29,9 @@ class VendorEnrollment
         $token = bin2hex(random_bytes(32));
         $registration = DB::transaction(function () use ($actor, $vendorId, $context, $token) {
             $vendor = Vendor::lockForUpdate()->findOrFail($vendorId);
+            if ($vendor->archived_at !== null) {
+                throw ValidationException::withMessages(['portalInvitation' => 'Vendor sudah dihapus dari master.']);
+            }
             VendorRegistration::where('vendor_id', $vendorId)->whereIn('status', ['draft', 'correction', 'submitted'])->whereNull('revoked_at')->update(['revoked_at' => now()]);
             $registration = VendorRegistration::create(['vendor_id' => $vendorId, 'vendor_version' => $vendor->version, 'invited_by' => $actor->id,
                 'company' => $context['company'], 'context' => $context, 'token_hash' => hash('sha256', $token), 'expires_at' => now()->addDays(30),
@@ -325,7 +328,7 @@ class VendorEnrollment
                         $company = $record->answers[1];
                         $workflow = app(Workflow::class);
                         abort_unless($vendor || $portalAccess, 409);
-                        $vendor = $workflow->saveVendor($actor, [...($vendor?->getAttributes() ?? ['code' => 'WEB-'.Str::ulid(),
+                        $vendor = $workflow->saveVendor($actor, [...($vendor?->getAttributes() ?? ['code' => $portalAccess->access_code ?? 'WEB-'.Str::ulid(),
                             'provider_type' => $record->context['provider_type'], 'is_active' => true]),
                             ...collect($company)->only(['name', 'address', 'phone', 'email', 'pic_name', 'pic_email', 'pic_phone', 'pic_position'])->all()], $vendor?->id, $vendor?->version);
                         if (! $record->vendor_id) {

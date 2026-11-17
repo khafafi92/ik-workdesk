@@ -4,6 +4,8 @@ IK WorkDesk adalah platform operasional internal berbasis Laravel dan Filament u
 
 ## Panduan pengguna
 
+Semua pengajuan PR/SR dibuat melalui Permintaan. Setelah disetujui, HO diproses melalui **Pengadaan > Purchasing Officer**, sedangkan Project melalui **Pengadaan > SCM** sesuai role dan entitas. **Inventori > Inventori** menyatukan Master Barang, gudang HO/Project, stok per entitas, penerimaan PR, aset, dan riwayat mutasi. Saldo ATK lama dipetakan ke KPMOG/APCA melalui Inventori; konfirmasi penerimaan ATK tetap mengikuti alur yang sudah ada. Lihat [panduan inventori dan pembagian proses](docs/INVENTORY.md).
+
 Vendor dapat membuka **Portal Vendor** melalui tautan pada halaman login atau `/vendor`. Vendor ID diberikan saat pendaftaran dan dipakai kembali untuk membuka data serta mengajukan pembaruan dokumen. SCM memeriksa setiap kiriman sebelum profil dan berkas masuk master.
 
 Mulai dari [cara menggunakan IK WorkDesk](docs/BEGINNER-DEVELOPER-GUIDE.md#20-panduan-penggunaan-ik-workdesk). Untuk pengadaan, ikuti [panduan SCM](docs/SCM.md#panduan-penggunaan-langkah-demi-langkah), termasuk PR/SR, dokumen vendor, Master Approval bersama PR/SR dan CBE, serta tanda tangan berurutan. Buku yang sudah ada diperbarui pada [Buku Pengembangan IK WorkDesk](output/Buku%20Pengembangan%20IK%20WorkDesk.docx), dengan [salinan PDF](output/pdf/Buku%20Pengembangan%20IK%20WorkDesk.pdf). Panduan penggunaan berada pada bab 13 dan 14.

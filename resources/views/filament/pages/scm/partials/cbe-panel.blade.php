@@ -48,7 +48,18 @@
 @else
     @if($priceRecommendation)@include('filament.pages.scm.partials.cbe-recommendation')@endif
     @if($record->cbe->approvals->contains(fn ($step) => $step->role === 'acknowledged' && $step->status === 'skipped'))<p role="status">Acknowledged by dilewati karena akun tersebut sudah menandatangani Prepared by. Crosschecked by dan Approved by tetap mengikuti penugasan.</p>@endif
+    @php($nextCbeStep = app(\App\Services\Scm\CbeApprovals::class)->next($record->cbe))
     @include('scm.partials.cbe-sheet')
+    @if($record->status === 'selected' && $nextCbeStep)
+        @if(auth()->user()->isSystemAdministrator() || (int) $nextCbeStep->user_id === (int) auth()->id())
+            @if((int) $nextCbeStep->user_id !== (int) auth()->id())<p>Penugasan asli: {{ $nextCbeStep->assigned_name }}. Tanda tangan menggunakan profil {{ auth()->user()->name }}.</p>@endif
+            <p>Giliran Anda: {{ rtrim(\App\Services\Scm\CbeApprovals::LABELS[$nextCbeStep->role], ':') }}. Pastikan <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}">tanda tangan profil</a> sudah tersedia.</p>
+            <button type="button" wire:click="signCbe" wire:confirm="Tanda tangani CBE ini sesuai penugasan Anda?" wire:loading.attr="disabled" wire:target="signCbe">Tanda tangani sebagai {{ rtrim(\App\Services\Scm\CbeApprovals::LABELS[$nextCbeStep->role], ':') }}</button>
+            <p role="status" wire:loading wire:target="signCbe">Menyimpan tanda tangan CBE...</p>
+        @else
+            <p role="status">Menunggu {{ $nextCbeStep->assigned_name }} untuk {{ rtrim(\App\Services\Scm\CbeApprovals::LABELS[$nextCbeStep->role], ':') }}.</p>
+        @endif
+    @endif
     <p>Harga akhir: {{ \App\Services\Scm\Decimal::money($record->cbe->final_minor, $record->cbe->snapshot['quotes'][0]['currency']) }}</p>
     <p><a href="{{ route('scm.print', $record->cbe) }}" target="_blank" rel="noopener">Buka CBE untuk cetak / simpan PDF</a></p>
     <p>CBE final terkunci dan memakai snapshot penawaran serta profil vendor saat finalisasi. Versi {{ $record->cbe->version }}.</p>

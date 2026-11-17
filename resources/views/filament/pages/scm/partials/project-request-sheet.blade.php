@@ -52,7 +52,7 @@
                     @if($sheetEditing)
                         <td><x-scm.field model="draft.items.{{ $index }}.size" label="Size" /></td>
                         <td><x-scm.field model="draft.items.{{ $index }}.model_part_number" label="Model/PN" /></td>
-                        <td><x-scm.field model="draft.items.{{ $index }}.name" label="Material" required /></td>
+                        <td><x-scm.select model="draft.items.{{ $index }}.inventory_item_id" label="Master Barang" :options="$inventoryItemOptions ?? []" :live="true" placeholder="Pilih barang atau isi usulan baru" /><x-scm.field model="draft.items.{{ $index }}.name" label="Material" required /></td>
                         <td class="scm-sheet-description"><x-scm.field model="draft.items.{{ $index }}.specification" label="Description General" multiline required /></td>
                         <td><x-scm.field model="draft.items.{{ $index }}.quantity" label="Qty" inputmode="decimal" required /></td>
                         <td><x-scm.field model="draft.items.{{ $index }}.unit" label="Unit" required /></td>

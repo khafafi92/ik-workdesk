@@ -7,6 +7,7 @@ use App\Filament\Resources\AtkItems\Pages\CreateAtkItem;
 use App\Filament\Resources\AtkItems\Pages\EditAtkItem;
 use App\Filament\Resources\AtkItems\Pages\ListAtkItems;
 use App\Models\AtkItem;
+use App\Models\InventoryWarehouse;
 use App\Services\AtkItemImportService;
 use App\Services\AtkWarehouseStockService;
 use BackedEnum;
@@ -19,6 +20,7 @@ use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -29,6 +31,11 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class AtkItemResource extends Resource
 {
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     protected static ?string $model = AtkItem::class;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArchiveBox;
@@ -66,13 +73,16 @@ class AtkItemResource extends Resource
                     TextInput::make('minimum_stock')->label('Stok minimum')->numeric()->minValue(0)->step(0.01),
                     Toggle::make('is_active')->label('Aktif')->default(true),
                     TextInput::make('current_stock')
-                        ->label('Stok awal Gudang Utama')
-                        ->helperText('Stok berjalan Gudang Utama hanya diubah melalui transaksi masuk atau penyesuaian.')
+                        ->label('Stok awal gudang pilihan')
+                        ->helperText('Pilih gudang entitas untuk stok awal. Stok berjalan diubah melalui transaksi masuk atau penyesuaian.')
                         ->numeric()
                         ->minValue(0)
                         ->step(0.01)
                         ->default(0)
                         ->disabledOn('edit'),
+                    Select::make('initial_warehouse_id')->label('Gudang stok awal')->options(static::warehouseOptions(...))
+                        ->required(fn (Get $get) => (float) $get('current_stock') > 0)
+                        ->visibleOn('create')->searchable(),
                     TextInput::make('actual_stock')
                         ->label('Stok fisik aktual')
                         ->helperText('Nilai ini hanya mencatat hasil penghitungan fisik. Gunakan Penyesuaian untuk mengubah stok sistem.')
@@ -115,8 +125,9 @@ class AtkItemResource extends Resource
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('primary')
                     ->modalHeading('Import master dan stok ATK')
-                    ->modalDescription('Gunakan kolom Item Name, Size, Quantity, Actual, dan Unit. Code dibuat otomatis. Quantity memperbarui stok sistem, sedangkan Actual hanya mencatat stok fisik.')
+                    ->modalDescription('Pilih gudang entitas untuk satu batch impor. Quantity memperbarui stok gudang yang dipilih; Actual tetap mencatat hasil pemeriksaan fisik ATK.')
                     ->form([
+                        Select::make('warehouse_id')->label('Gudang entitas tujuan impor')->options(static::warehouseOptions(...))->searchable()->required(),
                         FileUpload::make('file')
                             ->label('File Excel')
                             ->disk('local')
@@ -134,6 +145,7 @@ class AtkItemResource extends Resource
                             $result = app(AtkItemImportService::class)->import(
                                 $data['file'],
                                 auth()->user(),
+                                InventoryWarehouse::findOrFail($data['warehouse_id']),
                             );
 
                             Notification::make()
@@ -162,6 +174,7 @@ class AtkItemResource extends Resource
                             (float) $data['quantity'],
                             auth()->user(),
                             $data['note'] ?? null,
+                            InventoryWarehouse::findOrFail($data['warehouse_id']),
                         );
                         static::success('Stok masuk tercatat.');
                     }),
@@ -178,6 +191,7 @@ class AtkItemResource extends Resource
                             (float) $data['quantity'],
                             auth()->user(),
                             $data['note'] ?? null,
+                            InventoryWarehouse::findOrFail($data['warehouse_id']),
                         );
                         static::success('Penyesuaian stok tercatat.');
                     }),
@@ -222,6 +236,7 @@ class AtkItemResource extends Resource
     private static function stockForm(string $quantityLabel, bool $allowNegative = false): array
     {
         return [
+            Select::make('warehouse_id')->label('Gudang entitas')->options(static::warehouseOptions(...))->searchable()->required(),
             TextInput::make('quantity')
                 ->label($quantityLabel)
                 ->numeric()
@@ -235,5 +250,11 @@ class AtkItemResource extends Resource
     private static function success(string $title): void
     {
         Notification::make()->title($title)->success()->send();
+    }
+
+    public static function warehouseOptions(): array
+    {
+        return InventoryWarehouse::where('is_active', true)->where('legacy_atk', false)->with('project')->get()
+            ->mapWithKeys(fn ($warehouse) => [$warehouse->id => $warehouse->label()])->all();
     }
 }

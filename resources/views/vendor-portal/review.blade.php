@@ -1,6 +1,6 @@
 <x-vendor-portal.layout :registration="$registration">
     <section class="vp-paper"><h2>Pemeriksaan Form 005 #{{ $registration->id }}</h2>
-        <p>@if($returnToDirectory ?? false)<a href="{{ \App\Filament\Pages\ScmVendorRegistrations::getUrl() }}">Kembali ke Data Vendor</a>@else<a href="{{ url('/panel/scm/pengadaan?bagian=vendors') }}">Kembali ke master vendor SCM</a>@endif</p>
+        <p>@if($returnToDirectory ?? false)<a href="{{ \App\Filament\Pages\ScmVendorRegistrations::getUrl() }}">Kembali ke Data Vendor</a>@else<a href="{{ (\App\Services\Scm\Access::canProcessNeedType(auth()->user(), 'PROJECT') ? \App\Filament\Pages\ScmProcurement::class : \App\Filament\Pages\PurchasingOfficer::class)::getUrl(['bagian' => 'vendors']) }}">Kembali ke master vendor</a>@endif</p>
         <p>Periksa jawaban dan file sebelum menerima. Penerimaan memperbarui profil dan menambahkan versi dokumen ke master vendor; checklist pengadaan yang sudah ada tetap diperiksa SCM.</p>
         @if(!$registration->revoked_at && !$registration->portalAccess?->revoked_at)
             @if($registration->expires_at->isPast() && $registration->status !== 'accepted')<p class="vp-note"><strong>Langkah berikutnya:</strong> @if($registration->portal_access_id)Vendor membuka kembali formulir melalui Portal Vendor dengan Vendor ID agar akses aktif kembali.@else SCM membuat undangan baru dari Master Vendor agar proses formulir dapat dilanjutkan.@endif</p>

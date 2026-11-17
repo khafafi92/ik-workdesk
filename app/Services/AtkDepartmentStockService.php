@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\AtkDepartmentBalance;
 use App\Models\AtkDepartmentStockMovement;
+use App\Models\AtkRequest;
 use App\Models\AtkRequestHistory;
 use App\Models\AtkRequestItem;
 use App\Models\AtkUsageTransaction;
@@ -17,6 +18,7 @@ class AtkDepartmentStockService
     public function receive(AtkRequestItem $requestItem, User $actor): AtkRequestItem
     {
         return DB::transaction(function () use ($requestItem, $actor): AtkRequestItem {
+            AtkRequest::query()->lockForUpdate()->findOrFail($requestItem->atk_request_id);
             $requestItem = AtkRequestItem::query()->with('request')->lockForUpdate()->findOrFail($requestItem->id);
             $quantity = $requestItem->awaitingReceipt();
 
@@ -57,7 +59,7 @@ class AtkDepartmentStockService
             app(AtkRequestStatusService::class)->recalculate($requestItem->request->fresh('items'));
 
             return $requestItem->fresh();
-        });
+        }, 3);
     }
 
     public function use(Department $department, int $itemId, float $quantity, User $actor, ?string $purpose = null, ?string $note = null, mixed $usageDate = null): AtkUsageTransaction

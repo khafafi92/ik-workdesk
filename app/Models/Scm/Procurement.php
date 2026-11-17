@@ -2,6 +2,7 @@
 
 namespace App\Models\Scm;
 
+use App\Models\AtkRequest;
 use App\Models\Department;
 use App\Models\User;
 use App\Models\WorkProject;
@@ -12,7 +13,12 @@ class Procurement extends Record
 
     protected function casts(): array
     {
-        return ['date' => 'date', 'needed_at' => 'date', 'submitted_at' => 'datetime', 'received_at' => 'datetime', 'completed_at' => 'datetime', 'prepared_signed_at' => 'datetime', 'requires_cbo3' => 'boolean'];
+        return ['date' => 'date', 'needed_at' => 'date', 'submitted_at' => 'datetime', 'received_at' => 'datetime', 'completed_at' => 'datetime', 'prepared_signed_at' => 'datetime', 'requires_cbo3' => 'boolean', 'budget_estimate_minor' => 'integer', 'source_atk_quantities' => 'array'];
+    }
+
+    public function sourceAtkRequest()
+    {
+        return $this->belongsTo(AtkRequest::class, 'source_atk_request_id');
     }
 
     public function preparedSignature()
@@ -35,14 +41,14 @@ class Procurement extends Record
         return $this->hasMany(Candidate::class, 'request_id');
     }
 
-    public function purchaseOrder()
-    {
-        return $this->hasOne(PurchaseOrder::class, 'request_id');
-    }
-
     public function cbe()
     {
         return $this->hasOne(Cbe::class, 'request_id');
+    }
+
+    public function purchaseOrder()
+    {
+        return $this->hasOne(PurchaseOrder::class, 'request_id');
     }
 
     public function legalCase()

@@ -8,6 +8,7 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
 use App\Models\Scm\ProjectNumbering;
+use App\Models\Scm\UserSignature;
 use App\Models\TravelApprovalPolicy;
 use App\Models\TravelDocument;
 use App\Models\User;
@@ -90,8 +91,46 @@ class TravelDocumentsTest extends TestCase
         $user = User::factory()->create(['is_admin' => false, 'name' => $name]);
         Employee::create(['user_id' => $user->id, 'department_id' => $department->id, 'name' => $name, 'position' => $name, 'position_level' => $level, 'is_active' => true]);
         $user->directPermissions()->attach(Permission::whereIn('code', $permissions)->pluck('id'));
+        $path = 'signatures/test-'.$user->id.'.png';
+        Storage::disk('scm')->put($path, 'test signature');
+        UserSignature::create(['user_id' => $user->id, 'path' => $path, 'mime' => 'image/png']);
 
         return $user->fresh();
+    }
+
+    public function test_signatures_notifications_and_revision_follow_the_approval_sequence(): void
+    {
+        $workflow = app(TravelWorkflow::class);
+        $document = $this->draft();
+        Storage::disk('scm')->delete('signatures/test-'.$this->requester->id.'.png');
+        try {
+            $workflow->submit($this->requester, $document->id, $document->version);
+            $this->fail('Submission without a profile signature was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('travel', $exception->errors());
+        }
+        Storage::disk('scm')->put('signatures/test-'.$this->requester->id.'.png', 'test signature');
+        $document = $workflow->submit($this->requester, $document->id, $document->version);
+        $this->assertSame(1, $this->hr->notifications()->count());
+        $this->assertSame(0, $this->finance->notifications()->count());
+        Storage::disk('scm')->delete('signatures/test-'.$this->hr->id.'.png');
+        try {
+            $workflow->decide($this->hr, $document->id, $document->version, true);
+            $this->fail('Approval without a profile signature was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('travel', $exception->errors());
+            $this->assertSame('pending', $document->currentApprovals()->first()->status);
+        }
+        Storage::disk('scm')->put('signatures/test-'.$this->hr->id.'.png', 'test signature');
+        $document = $workflow->decide($this->hr, $document->id, $document->version, true);
+        $this->assertSame(1, $this->finance->notifications()->count());
+        $document = $workflow->decide($this->finance, $document->id, $document->version, false, 'Perbaiki rincian');
+        $this->assertSame('001/SPD/11-2026 Rev 1', $document->displayNumber());
+        $document = $workflow->save($this->requester, 'spd', $document->id, $document->version, $this->input());
+        $document = $workflow->submit($this->requester, $document->id, $document->version);
+        $document = $workflow->decide($this->hr, $document->id, $document->version, false, 'Perbaiki lagi');
+        $this->assertSame('001/SPD/11-2026 Rev 2', $document->displayNumber());
+        $this->assertSame('2', $document->revision);
     }
 
     private function input(string $company = 'APCA'): array

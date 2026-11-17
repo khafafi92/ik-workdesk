@@ -33,7 +33,7 @@
 
         @if ($record->purchaseOrder)
             <div class="scm-actions">
-                <a href="{{ route('scm.purchase-order-print', $record->purchaseOrder) }}" target="_blank" rel="noopener">Buka draft PO untuk cetak / simpan PDF</a>
+                <a href="{{ route('scm.purchase-order-print', $record->purchaseOrder) }}" target="_blank" rel="noopener">Buka PO untuk cetak / simpan PDF</a>
             </div>
             @include('scm.partials.purchase-order-sheet', ['order' => $record->purchaseOrder])
         @endif

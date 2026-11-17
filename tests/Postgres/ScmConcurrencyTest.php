@@ -3,6 +3,9 @@
 namespace Tests\Postgres;
 
 use App\Models\Department;
+use App\Models\InventoryBalance;
+use App\Models\InventoryItem;
+use App\Models\InventoryReceipt;
 use App\Models\Permission;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Audit;
@@ -12,7 +15,10 @@ use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\ProjectNumbering;
 use App\Models\Scm\Quotation;
+use App\Models\Scm\Vendor;
 use App\Models\User;
+use App\Services\Inventory\InventoryStock;
+use App\Services\Inventory\Warehouses;
 use App\Services\Scm\Approvals;
 use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\Signatures;
@@ -22,6 +28,7 @@ use Database\Seeders\ScmSeeder;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 
@@ -55,6 +62,9 @@ class ScmConcurrencyTest extends TestCase
         try {
             for ($i = 0; $i < 2; $i++) {
                 $payload = [...$job, 'ready' => $directory.'/ready-'.$i, 'gate' => $directory.'/gate'];
+                if ($job['different_tokens'] ?? false) {
+                    $payload['data']['token'] = (string) Str::uuid();
+                }
                 if ($job['mode'] === 'save_cbe_policy') {
                     $payload['policy_ready'] = $directory.'/policy-'.$i;
                     $payload['policy_peer'] = $directory.'/policy-'.(1 - $i);
@@ -120,6 +130,49 @@ class ScmConcurrencyTest extends TestCase
         $this->assertStringStartsWith('002/COMP-19E001/PR/', $numbers[1]);
         $this->assertSame(2, DB::table('scm_project_number_sequences')->value('last_number'));
         $this->assertSame(0, DB::table('scm_number_sequences')->count());
+    }
+
+    public function test_inventory_receipts_serialize_quantities_and_duplicate_tokens(): void
+    {
+        $actor = User::factory()->create(['is_admin' => true]);
+        $department = Department::create(['code' => 'INV-PG', 'name' => 'Inventori PostgreSQL QA']);
+        $item = InventoryItem::create(['code' => 'INV-PG', 'name' => 'Barang QA', 'kind' => 'material', 'unit' => 'PCS', 'is_active' => true]);
+        $request = Procurement::create(['number' => 'INV/PG/PR', 'kind' => 'PR', 'company' => 'KPMOG', 'need_type' => 'HO', 'date' => today(),
+            'department_id' => $department->id, 'requester_id' => $actor->id, 'title' => 'Uji penerimaan', 'reason' => 'QA', 'status' => 'selected']);
+        $line = $request->items()->create(['inventory_item_id' => $item->id, 'name' => 'Barang QA', 'specification' => 'QA', 'quantity_milli' => 5000, 'unit' => 'PCS', 'position' => 1]);
+        $vendor = Vendor::create(['code' => 'INV-PG', 'name' => 'Vendor QA', 'provider_type' => 'barang', 'is_active' => true, 'created_by' => $actor->id, 'updated_by' => $actor->id]);
+        Cbe::create(['request_id' => $request->id, 'number' => 'INV/PG/CBE', 'date' => today(), 'status' => 'final', 'prepared_by' => $actor->id, 'selected_vendor_id' => $vendor->id]);
+        $warehouse = app(Warehouses::class)->forContext('KPMOG', 'HO', null);
+        $data = ['token' => (string) Str::uuid(), 'warehouse_id' => $warehouse->id, 'received_on' => today()->toDateString(), 'reference' => 'SJ-QA',
+            'lines' => [['request_item_id' => $line->id, 'inventory_item_id' => $item->id, 'quantity' => '4']]];
+        $results = $this->workers(['mode' => 'inventory_receipt', 'actor_id' => $actor->id, 'request_id' => $request->id, 'data' => $data, 'different_tokens' => true]);
+        $this->assertEqualsCanonicalizing(['received', 'conflict'], array_column($results, 'result'));
+        $this->assertSame(4000, (int) InventoryBalance::sum('quantity_milli'));
+        $this->assertSame(1, InventoryReceipt::count());
+        $data['lines'][0]['quantity'] = '1';
+        $results = $this->workers(['mode' => 'inventory_receipt', 'actor_id' => $actor->id, 'request_id' => $request->id, 'data' => $data]);
+        $this->assertSame(['received', 'received'], array_column($results, 'result'));
+        $this->assertSame($results[0]['id'], $results[1]['id']);
+        $this->assertSame(5000, (int) InventoryBalance::sum('quantity_milli'));
+        $this->assertSame(2, InventoryReceipt::count());
+    }
+
+    public function test_inventory_stock_cannot_be_overdrawn_by_simultaneous_issues(): void
+    {
+        $actor = User::factory()->create(['is_admin' => true]);
+        $item = InventoryItem::create(['code' => 'STOCK-PG', 'name' => 'Stok QA', 'kind' => 'material', 'unit' => 'PCS', 'is_active' => true]);
+        $warehouse = app(Warehouses::class)->forContext('KPMOG', 'HO', null);
+        $balance = DB::transaction(function () use ($actor, $item, $warehouse) {
+            $stock = app(InventoryStock::class);
+            $balance = $stock->balance($warehouse, $item, null);
+            $stock->move($balance, 5000, 'incoming', 'opening-pg-stock', $actor, 'Saldo pengujian.');
+
+            return $balance;
+        });
+        $results = $this->workers(['mode' => 'inventory_stock', 'actor_id' => $actor->id, 'different_tokens' => true,
+            'data' => ['token' => (string) Str::uuid(), 'balance_id' => $balance->id, 'quantity' => '4', 'notes' => 'Pengeluaran serentak QA']]);
+        $this->assertEqualsCanonicalizing(['stock_moved', 'conflict'], array_column($results, 'result'));
+        $this->assertSame(1000, $balance->fresh()->quantity_milli);
     }
 
     public function test_simultaneous_first_cbe_master_save_returns_a_recoverable_conflict(): void

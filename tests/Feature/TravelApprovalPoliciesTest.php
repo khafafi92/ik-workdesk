@@ -8,6 +8,7 @@ use App\Filament\Pages\TravelSpd;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
+use App\Models\Scm\UserSignature;
 use App\Models\TravelApprovalPolicy;
 use App\Models\TravelApprovalPolicyEvent;
 use App\Models\TravelDocument;
@@ -77,6 +78,9 @@ class TravelApprovalPoliciesTest extends TestCase
         Employee::create(['user_id' => $user->id, 'department_id' => $this->department->id, 'name' => $name,
             'position' => $name, 'position_level' => $level, 'is_active' => true]);
         $user->directPermissions()->attach(Permission::whereIn('code', $permissions)->pluck('id'));
+        $path = 'signatures/test-'.$user->id.'.png';
+        Storage::disk('scm')->put($path, 'test signature');
+        UserSignature::create(['user_id' => $user->id, 'path' => $path, 'mime' => 'image/png']);
 
         return $user->fresh();
     }
@@ -85,6 +89,17 @@ class TravelApprovalPoliciesTest extends TestCase
     {
         return [...TravelApprovalPolicies::defaults(), 'department_id' => $this->department->id,
             'hr_id' => $this->hr->id, 'finance_id' => $this->finance->id, ...$extra];
+    }
+
+    public function test_hrga_manager_title_is_recognized_when_level_is_missing(): void
+    {
+        $this->hr->employee->update(['position_level' => null, 'position' => 'HRGA Manager']);
+        $this->hr->unsetRelation('employee');
+        $this->assertTrue(TravelAccess::manager($this->hr));
+        $this->savePolicy();
+        $this->hr->employee->update(['position_level' => 'staff']);
+        $this->hr->unsetRelation('employee');
+        $this->assertFalse(TravelAccess::manager($this->hr));
     }
 
     private function savePolicy(array $extra = []): TravelApprovalPolicy
@@ -146,8 +161,11 @@ class TravelApprovalPoliciesTest extends TestCase
             ->assertSet('input.employee_id', (string) $this->author->employee->id)
             ->set('input', $this->arrangedInput(['approver_ids' => ['supervisor' => $replacement->id, 'finance' => $this->finance->id, 'hr' => $this->hr->id]]))
             ->assertSee('wire:model.live="input.approver_ids.hr"', false)
-            ->call('submitDocument')->assertHasNoErrors();
+            ->call('submitDocument')->assertHasErrors(['travel']);
         $document = TravelDocument::findOrFail($page->get('selected'));
+        $this->assertSame('draft', $document->status);
+        $this->assertSame(1, $this->author->notifications()->count());
+        $document = app(TravelWorkflow::class)->submit($this->author, $document->id, $document->version);
         $this->assertSame('submitted', $document->status);
         $this->assertSame($khafafi->id, $document->created_by);
         $this->assertSame($this->author->id, $document->data['requester_id']);
@@ -155,12 +173,12 @@ class TravelApprovalPoliciesTest extends TestCase
         $this->assertSame([$this->hr->id, $this->finance->id, $replacement->id], $document->currentApprovals()->pluck('user_id')->all());
         $this->assertSame('khafafi', $document->data['approval_policy']['source']);
         $this->assertSame($this->author->name, $document->prepared_signature['name']);
-        $this->assertNull($document->prepared_signature['path']);
-        $this->assertNull($document->prepared_signature['signed_at']);
-        $this->assertSame($khafafi->name, $document->prepared_signature['submitted_by']);
-        $this->assertSame($khafafi->id, $document->events()->where('action', 'submitted')->first()->actor_id);
+        $this->assertNotNull($document->prepared_signature['path']);
+        $this->assertNotNull($document->prepared_signature['signed_at']);
+        $this->assertArrayNotHasKey('submitted_by', $document->prepared_signature);
+        $this->assertSame($this->author->id, $document->events()->where('action', 'submitted')->first()->actor_id);
         $this->assertSame(0, TravelApprovalPolicy::count());
-        $this->get(route('travel.print', $document))->assertOk()->assertSee('Diajukan melalui Khafafi')->assertSee($replacement->name)
+        $this->get(route('travel.print', $document))->assertOk()->assertSee($replacement->name)
             ->assertDontSee('wire:model.live="input.approver_ids.', false);
         $this->actingAs($this->author);
         $this->assertSame($document->id, app(TravelWorkflow::class)->document($this->author, $document->id)->id);
@@ -247,7 +265,7 @@ class TravelApprovalPoliciesTest extends TestCase
         $document = $workflow->save($khafafi, 'spd', null, 0, $this->arrangedInput());
         $document = $workflow->save($khafafi, 'spd', $document->id, $document->version, [...$workflow->formData($document), 'arrange_approvals' => false]);
         $this->assertNull($document->data['approval_override']);
-        $document = $workflow->submit($khafafi, $document->id, $document->version);
+        $document = $workflow->submit($this->author, $document->id, $document->version);
         $this->assertSame($policy->id, $document->data['approval_policy']['id']);
         $pending = $workflow->save($khafafi, 'spd', null, 0, $this->arrangedInput());
         $khafafi->update(['is_admin' => false]);
@@ -260,7 +278,7 @@ class TravelApprovalPoliciesTest extends TestCase
         $khafafi = $this->khafafi();
         $workflow = app(TravelWorkflow::class);
         $spd = $workflow->save($khafafi, 'spd', null, 0, $this->arrangedInput());
-        $spd = $workflow->submit($khafafi, $spd->id, $spd->version);
+        $spd = $workflow->submit($this->author, $spd->id, $spd->version);
         foreach ([$this->hr, $this->finance, $this->supervisor] as $actor) {
             $spd = $workflow->decide($actor, $spd->id, $spd->version, true);
         }
@@ -269,8 +287,9 @@ class TravelApprovalPoliciesTest extends TestCase
             ->set('input.arrange_approvals', true)
             ->set('input.approver_ids', $this->arrangedInput()['approver_ids'])
             ->set('input.expenses', [['date' => '2026-11-16', 'description' => 'Biaya aktual', 'transport' => '100000']])
-            ->call('submitDocument')->assertHasNoErrors();
+            ->call('submitDocument')->assertHasErrors(['travel']);
         $lpj = TravelDocument::findOrFail($page->get('selected'));
+        $lpj = $workflow->submit($this->author, $lpj->id, $lpj->version);
         $this->assertSame('submitted', $lpj->status);
         $this->assertSame($spd->id, $lpj->spd_id);
         $this->assertSame($spd->employee_snapshot, $lpj->employee_snapshot);
@@ -480,7 +499,7 @@ class TravelApprovalPoliciesTest extends TestCase
         $this->assertArrayNotHasKey($finance->id, collect(app(TravelWorkflow::class)->approvers($this->admin))->keyBy('id')->all());
         $workflow = app(TravelWorkflow::class);
         $document = $workflow->save($khafafi, 'spd', null, 0, $this->arrangedInput(['approver_ids' => $ids]));
-        $document = $workflow->submit($khafafi, $document->id, $document->version);
+        $document = $workflow->submit($this->author, $document->id, $document->version);
         foreach ([$hr, $finance, $head] as $actor) {
             $document = $workflow->decide($actor, $document->id, $document->version, true);
         }
@@ -489,7 +508,7 @@ class TravelApprovalPoliciesTest extends TestCase
             'arrange_approvals' => true, 'approver_ids' => $ids,
             'expenses' => [['date' => '2026-11-16', 'description' => 'Biaya QA', 'transport' => '100000']]]);
         $this->assertFalse(TravelAccess::canOpen($finance, 'lpj'));
-        $lpj = $workflow->submit($khafafi, $lpj->id, $lpj->version);
+        $lpj = $workflow->submit($this->author, $lpj->id, $lpj->version);
         $this->assertTrue(TravelAccess::canOpen($finance, 'lpj'));
         $this->actingAs($finance)->get(TravelLpj::getUrl())->assertOk();
         $this->assertFalse($workflow->canDecide($finance, $lpj));

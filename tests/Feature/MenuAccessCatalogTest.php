@@ -6,6 +6,7 @@ use App\Filament\Pages\AiAssistantChat;
 use App\Filament\Pages\AiAssistantSettingsPage;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\GlobalChatRoom;
+use App\Filament\Pages\Inventory;
 use App\Filament\Pages\PurchasingOfficer;
 use App\Filament\Pages\ScmApprovals;
 use App\Filament\Pages\ScmProcurement;
@@ -32,6 +33,7 @@ use App\Models\User;
 use App\Services\UserAdditionalAccessService;
 use Database\Seeders\AccessControlSeeder;
 use Database\Seeders\MenuAccessPermissionSeeder;
+use Database\Seeders\ScmSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -74,10 +76,11 @@ class MenuAccessCatalogTest extends TestCase
             PurchasingOfficer::class => 'HO processing permissions or SCM configuration',
             ScmVendorRegistrations::class => 'SCM processing permissions',
             ScmRequestNumbers::class => 'SCM requester or processor sees authorized numbers; SCM configurator manages Project numbering',
-            ScmSelectedVendorItems::class => 'SCM requester sees own final PR items; SCM processor sees authorized department items',
+            ScmSelectedVendorItems::class => 'Rekap Material PR is separately selectable under SCM',
             SignatureProfile::class => 'SCM requester, processor or assigned approver',
+            Inventory::class => 'Catalogue, stock, and transactions follow inventory and existing module permissions',
         ];
-        $aliases = ['Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
+        $aliases = ['Perjalanan Dinas' => ['SPD' => 'Lihat SPD departemen', 'LPJ' => 'Lihat LPJ departemen', 'Master Approval' => 'Kelola Master Approval SPD/LPJ'], 'Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
             'Master Perangkat' => 'Lihat Master Perangkat',
             'Pengecekan Infrastruktur' => 'Lihat Pengecekan',
             'Monitoring Harian IT' => 'Lihat Pengecekan',
@@ -113,6 +116,45 @@ class MenuAccessCatalogTest extends TestCase
             $this->assertFalse($user->hasPermission('master-data.manage'));
             $this->assertFalse(UserResource::canViewAny());
         }
+    }
+
+    public function test_every_catalog_choice_has_active_permissions_and_can_be_saved_and_revoked(): void
+    {
+        $this->seed(ScmSeeder::class);
+        $service = app(UserAdditionalAccessService::class);
+        $user = User::factory()->create(['is_admin' => false]);
+        $groups = $service->menuGroups();
+        $definitions = (new \ReflectionClass($service))->getConstant('ACCESS_GROUPS');
+
+        foreach ($groups as $module => $group) {
+            foreach ($group['items'] as $item) {
+                $selected = $service->accessGroupsFromMenuState([$module => [$item]]);
+                $this->assertNotEmpty($selected, "Unmapped menu choice: {$item}");
+                $codes = collect($selected)->flatMap(fn ($key) => $definitions[$key])->unique()->sort()->values()->all();
+                $this->assertSame($codes, Permission::query()->whereIn('code', $codes)->where('is_active', true)->orderBy('code')->pluck('code')->all(), "Missing active permissions: {$item}");
+
+                $service->sync($user, $selected);
+                $this->assertSame($codes, $user->directPermissions()->orderBy('code')->pluck('code')->all(), "Incorrect permissions saved: {$item}");
+                $this->assertContains($item, $service->menuStateFor($user)[$module], "Choice lost on reload: {$item}");
+                $service->sync($user, []);
+                $this->assertSame(0, $user->directPermissions()->count(), "Permissions not revoked: {$item}");
+            }
+        }
+    }
+
+    public function test_material_register_choice_grants_and_revokes_menu_access(): void
+    {
+        $user = User::factory()->create(['is_admin' => false]);
+        $service = app(UserAdditionalAccessService::class);
+        $this->actingAs($user);
+
+        $this->assertContains('Rekap Material PR', $service->menuOptionsForModule($service->menuGroups()['scm']));
+        $service->sync($user, ['scm-requests']);
+        $this->assertFalse(ScmSelectedVendorItems::canAccess());
+        $service->sync($user, ['scm-requests', 'scm-material-register']);
+        $this->assertTrue(ScmSelectedVendorItems::canAccess());
+        $service->sync($user, ['scm-requests']);
+        $this->assertFalse(ScmSelectedVendorItems::canAccess());
     }
 
     public function test_legacy_master_access_survives_loading_and_saving_the_checklist(): void

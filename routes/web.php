@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AttendanceReportDownloadController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\FinancePaymentFileController;
 use App\Http\Controllers\FindingAttachmentDownloadController;
 use App\Http\Controllers\GlobalChatAttachmentDownloadController;
 use App\Http\Controllers\LtroMttrImportController;
@@ -135,6 +136,8 @@ Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void 
     Route::get('/cbe/{cbe}/penawaran-terpilih', [ScmDocumentController::class, 'selectedQuotation'])->name('selected-quotation');
     Route::get('/purchase-order/{purchaseOrder}/cetak', [ScmDocumentController::class, 'purchaseOrder'])->name('purchase-order-print');
 });
+
+Route::get('/finance/pembayaran/file/{file}', FinancePaymentFileController::class)->middleware('auth')->name('finance.payment-file');
 
 Route::middleware('auth')->prefix('perjalanan-dinas')->name('travel.')->group(function (): void {
     Route::get('/dokumen/{document}/cetak', [TravelDocumentController::class, 'print'])->whereNumber('document')->name('print');

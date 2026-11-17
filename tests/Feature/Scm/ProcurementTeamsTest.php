@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Scm;
 
+use App\Filament\Pages\Inventory;
 use App\Filament\Pages\PurchaseRequests;
 use App\Filament\Pages\PurchasingOfficer;
 use App\Filament\Pages\ScmProcurement;
 use App\Filament\Pages\ServiceRequests;
+use App\Models\AtkItem;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
@@ -136,6 +138,21 @@ class ProcurementTeamsTest extends TestCase
             ->set('companyFilter', 'APCA')->assertSee($other->number)->assertDontSee($mine->number)
             ->set('needTypeFilter', 'PROJECT')->assertDontSee($project->number)->assertDontSee($other->number)
             ->call('clearFilters')->assertSee($mine->number)->assertSee($other->number)->assertDontSee($project->number);
+    }
+
+    public function test_inventory_keeps_own_request_scope_and_filters_pr_sr_ho_project(): void
+    {
+        $mine = $this->request('APCA', 'HO', 'SR', 'draft');
+        $other = $this->request('KPMOG', 'PROJECT');
+        $other->update(['requester_id' => $this->actor(['scm.request'])->id]);
+        Livewire::actingAs($this->requester)->test(Inventory::class)->call('switchDataset', 'requests')->assertSee($mine->number)->assertDontSee($other->number)
+            ->set('kindFilter', 'PR')->assertDontSee($mine->number)->call('clearFilters')->assertSee($mine->number)
+            ->call('switchDataset', 'stock')->assertForbidden();
+        $manager = User::factory()->create(['is_admin' => true]);
+        AtkItem::create(['code' => 'INV-QA', 'name' => 'Barang inventori pengujian', 'unit' => 'PCS', 'current_stock' => 7]);
+        Livewire::actingAs($manager)->test(Inventory::class)->assertSee('Barang inventori pengujian')->call('switchDataset', 'requests')
+            ->assertSee($mine->number)->assertSee($other->number)->set('companyFilter', 'KPMOG')->set('needTypeFilter', 'PROJECT')
+            ->assertSee($other->number)->assertDontSee($mine->number)->set('search', 'tidak-ada-nomor')->assertSee('Belum ada PR/SR sesuai filter');
     }
 
     public function test_user_management_exposes_scoped_team_access_and_legacy_access_stays_compatible(): void

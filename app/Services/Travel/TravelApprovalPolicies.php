@@ -189,7 +189,7 @@ class TravelApprovalPolicies
             throw ValidationException::withMessages(['approval_policy' => (TravelWorkflow::ROLES[$role] ?? $role)
                 .($assignedAccess ? ' harus memakai akun aktif.' : ' harus memakai akun aktif dengan Hak Akses persetujuan SPD/LPJ. Periksa Master Approval.')]);
         }
-        if ($role === 'hr' && ! in_array($user->employee?->position_level, TravelAccess::MANAGER_LEVELS, true)) {
+        if ($role === 'hr' && ! TravelAccess::manager($user)) {
             throw ValidationException::withMessages(['approval_policy' => 'HRGA / HR Manager pada aturan harus memiliki jenjang jabatan minimal Manager.']);
         }
 

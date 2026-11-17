@@ -71,4 +71,13 @@ class TravelDocument extends Model
     {
         return ['draft' => 'Draft', 'submitted' => 'Menunggu persetujuan', 'returned' => 'Dikembalikan', 'approved' => 'Disetujui'][$this->status] ?? $this->status;
     }
+
+    public function displayNumber(): string
+    {
+        $returns = $this->returned_events_count ?? ($this->relationLoaded('events')
+            ? $this->events->where('action', 'returned')->count()
+            : $this->events()->where('action', 'returned')->count());
+
+        return $this->number.($returns ? ' Rev '.$returns : '');
+    }
 }
