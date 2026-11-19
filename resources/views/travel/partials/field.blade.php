@@ -11,7 +11,7 @@
 @if ($printing || !$editable)
     <span class="travel-value{{ $fieldType === 'textarea' ? ' travel-preline' : '' }}">{{ $shownValue }}</span>
 @elseif (isset($options))
-    <select aria-label="{{ $label }}" wire:model.live="input.{{ $field }}"><option value="">Pilih {{ $label }}</option>@foreach($options as $key => $text)<option value="{{ $key }}">{{ $text }}</option>@endforeach</select>
+    <select aria-label="{{ $label }}" wire:model.live="input.{{ $field }}"><option value="">{{ $blankLabel ?? 'Pilih '.$label }}</option>@foreach($options as $key => $text)<option value="{{ $key }}">{{ $text }}</option>@endforeach</select>
 @elseif ($fieldType === 'textarea')
     <textarea aria-label="{{ $label }}" wire:model.blur="input.{{ $field }}" rows="{{ $rows ?? 2 }}">{{ $fieldValue }}</textarea>
 @else

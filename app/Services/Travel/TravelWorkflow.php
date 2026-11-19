@@ -5,17 +5,20 @@ namespace App\Services\Travel;
 use App\Filament\Pages\TravelLpj;
 use App\Filament\Pages\TravelSpd;
 use App\Models\Scm\ProjectNumbering;
+use App\Models\FinanceBudgetLine;
 use App\Models\TravelDocument;
 use App\Models\TravelEvent;
 use App\Models\User;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\Signatures;
+use App\Services\Finance\BudgetLedger;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -66,7 +69,7 @@ class TravelWorkflow
         return ['company' => 'APCA', 'number' => '', 'revision' => '-', 'issued_on' => today()->toDateString(), 'applied_on' => today()->toDateString(),
             'requester_id' => (string) $actor->id, 'arrange_approvals' => false,
             'employee_id' => (string) (TravelAccess::employees($actor, $kind)->where('user_id', $actor->id)->value('id') ?? ''),
-            'spd_id' => '', 'project_numbering_id' => '', 'travel_type' => 'HO', 'urgency' => 'normal', 'job_code' => '', 'purpose' => '', 'depart_at' => '', 'return_at' => '',
+            'spd_id' => '', 'project_numbering_id' => '', 'finance_budget_line_id' => '', 'travel_type' => 'HO', 'urgency' => 'normal', 'job_code' => '', 'purpose' => '', 'depart_at' => '', 'return_at' => '',
             'depart_time' => '', 'return_time' => '', 'depart_time_tba' => true, 'return_time_tba' => true,
             'routes' => [['from' => '', 'to' => '', 'mode' => '']], 'lodgings' => [],
             'costs' => array_map(fn ($description, $unit) => ['description' => $description, 'quantity' => '1', 'unit' => $unit, 'unit_cost' => '0', 'notes' => ''],
@@ -95,6 +98,7 @@ class TravelWorkflow
             'issued_on' => $document->issued_on->toDateString(), 'applied_on' => $document->applied_on->toDateString(),
             'employee_id' => (string) $document->employee_id, 'spd_id' => (string) ($document->spd_id ?? ''),
             'project_numbering_id' => (string) ($document->project_numbering_id ?? ''),
+            'finance_budget_line_id' => (string) ($document->finance_budget_line_id ?? ''),
             'advance_one' => Decimal::input($document->advance_one_minor), 'advance_two' => Decimal::input($document->advance_two_minor)];
     }
 
@@ -111,7 +115,7 @@ class TravelWorkflow
                     $this->assertEditable($actor, $document, $version);
                 }
                 $before = $document?->only(['number', 'company', 'data', 'employee_snapshot', 'total_minor', 'advance_one_minor',
-                    'advance_two_minor', 'balance_minor', 'prepared_signature', 'version', 'approval_round', 'project_numbering_id']);
+                    'advance_two_minor', 'balance_minor', 'prepared_signature', 'version', 'approval_round', 'project_numbering_id', 'finance_budget_line_id']);
                 $normalized = $this->normalize($actor, $kind, $input, $document);
                 $document ??= new TravelDocument(['kind' => $kind, 'created_by' => $actor->id]);
                 $document->fill($normalized);
@@ -244,6 +248,12 @@ class TravelWorkflow
         }
         $data['notes'] = trim($header['notes'] ?? '');
         $data = [...$data, ...$assignment];
+        $budgetLine = $kind === 'spd' && Schema::hasColumn('travel_documents', 'finance_budget_line_id')
+            ? app(BudgetLedger::class)->resolveLine(
+                filled($input['finance_budget_line_id'] ?? null) ? (int) $input['finance_budget_line_id'] : null,
+                $company, $header['applied_on'], $departmentId, self::travelType($projectNumberingId), $projectNumberingId,
+            )
+            : null;
         $preview = $administration->preview($company, $departmentId, $kind, $employeeSnapshot, $assignment['requester_id'], $assignment['approval_override'], $travelType);
         $data['approver_ids'] = $preview['plan']['ids'] ?? [];
         $data['approval_policy'] = null;
@@ -252,6 +262,9 @@ class TravelWorkflow
             'issued_on' => $header['issued_on'], 'applied_on' => $header['applied_on'], 'employee_id' => $employeeId,
             'department_id' => $departmentId, 'employee_snapshot' => $employeeSnapshot, 'spd_id' => $spd?->id,
             'project_numbering_id' => $projectNumberingId,
+            ...(Schema::hasColumn('travel_documents', 'finance_budget_line_id')
+                ? ['finance_budget_line_id' => $budgetLine?->id ?? $spd?->finance_budget_line_id]
+                : []),
             'data' => $data, 'total_minor' => $total, 'advance_one_minor' => $actual['advance_one_minor'] ?? 0,
             'advance_two_minor' => $actual['advance_two_minor'] ?? 0, 'balance_minor' => $actual['balance_minor'] ?? 0];
     }
@@ -266,6 +279,12 @@ class TravelWorkflow
             }
             if ($document->kind === 'lpj') {
                 $this->eligibleSpds($actor, $document->id)->lockForUpdate()->findOrFail($document->spd_id);
+            } elseif (Schema::hasColumn('travel_documents', 'finance_budget_line_id') && $document->finance_budget_line_id) {
+                $line = FinanceBudgetLine::lockForUpdate()->findOrFail($document->finance_budget_line_id);
+                $available = app(BudgetLedger::class)->lineSummary($line)['available_minor'];
+                if ($document->total_minor > $available) {
+                    throw ValidationException::withMessages(['travel' => 'Estimasi SPD melebihi sisa anggaran pada peruntukan yang dipilih.']);
+                }
             }
             $plan = app(TravelDocumentAdministration::class)->plan($document->company, (int) $document->department_id,
                 $document->kind, $document->employee_snapshot, (int) ($document->data['requester_id'] ?? $document->created_by),

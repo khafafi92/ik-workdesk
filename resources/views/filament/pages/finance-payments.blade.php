@@ -83,7 +83,7 @@
                         $progress = $total > 0 ? min(100, max(0, (int) round($paid / $total * 100))) : 0;
                         $vendor = $row->cbe?->selectedVendor;
                     @endphp
-                    <tr wire:key="finance-order-{{ $row->id }}"><td data-label="PO / PR"><strong>{{ $row->number }}</strong><span class="finance-overview-meta">{{ $row->request->number }}</span></td>
+                    <tr wire:key="finance-order-{{ $row->id }}"><td data-label="PO / PR"><strong>{{ $row->number }}</strong><span class="finance-overview-meta">{{ $row->request->number }}</span>@if($row->status === 'cancelled')<span class="finance-overview-meta">PO dibatalkan</span>@endif</td>
                         <td data-label="Vendor"><strong>{{ $row->snapshot['vendor']['name'] ?? '-' }}</strong><span class="finance-overview-meta">{{ $vendor?->bank_name ?: 'Bank belum diisi' }}</span></td>
                         <td data-label="Penerimaan & termin">{{ $row->receipts_exists ? 'Penerimaan tercatat' : 'Belum ada penerimaan' }}<span class="finance-overview-meta">{{ $row->payments_count }} termin tercatat</span></td>
                         <td data-label="Grand Total"><strong>{{ \App\Services\Scm\Decimal::money($total, $currency) }}</strong></td>
@@ -101,6 +101,7 @@
             $selected = $payments->firstWhere('id', $selectedPayment);
             $vendorMaster = $order->cbe?->selectedVendor;
             $progress = $total > 0 ? min(100, max(0, (int) round($paidTotal / $total * 100))) : 0;
+            $canCancelOrder = $order->status !== 'cancelled' && $paidTotal === 0 && $receipts->isEmpty();
         @endphp
         <div class="finance-detail">
         <section class="finance-detail-header"><header class="finance-detail-heading"><div><h2>{{ $order->number }}</h2>
@@ -112,6 +113,22 @@
                 <div><dt>Termin belum dibayar</dt><dd>{{ \App\Services\Scm\Decimal::money($plannedTotal, $currency) }}</dd></div>
                 <div><dt>Belum dijadwalkan</dt><dd>{{ \App\Services\Scm\Decimal::money(max(0, $total - $paidTotal - $plannedTotal), $currency) }}</dd></div></dl>
             <div class="finance-overview-meta">{{ $progress }}% dari total PO sudah dibayar</div><div class="finance-progress" role="progressbar" aria-label="Pembayaran PO" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $progress }}"><span style="width:{{ $progress }}%"></span></div>
+            @if($order->status === 'cancelled')
+                <p role="status">PO dibatalkan pada {{ $order->cancelled_at?->format('d/m/Y H:i') }}. Alasan: {{ $order->cancellation_reason }}</p>
+            @elseif($canCancelOrder)
+                @if($paymentAction !== 'cancel_order')
+                    <button type="button" wire:click="prepareCancelOrder">Batalkan seluruh PO</button>
+                @else
+                    <form class="finance-sheet-form" wire:submit="cancelOrder"><fieldset wire:loading.attr="disabled"><legend>Batalkan seluruh PO</legend>
+                        <p>Pembatalan melepas komitmen anggaran dan membatalkan termin yang belum dibayar. Riwayat tetap tersimpan.</p>
+                        <x-scm.field model="orderCancelReason" label="Alasan pembatalan PO" multiline help="Minimal 10 karakter." required />
+                        <div class="scm-actions"><x-filament::button type="submit" color="danger" wire:confirm="Batalkan seluruh PO? Pembatalan tidak dapat dibatalkan." wire:loading.attr="disabled">Konfirmasi pembatalan PO</x-filament::button>
+                            <button type="button" wire:click="$set('paymentAction', '')">Kembali</button></div>
+                    </fieldset></form>
+                @endif
+            @elseif($order->status !== 'cancelled')
+                <p role="status">@if($paidTotal > 0)PO tidak dapat dibatalkan karena sudah ada pembayaran.@else PO tidak dapat dibatalkan karena penerimaan barang sudah tercatat.@endif</p>
+            @endif
         </section>
         <div class="finance-detail-columns"><section class="finance-detail-block"><h3>Rekening vendor</h3>
                 <p>Data master saat ini untuk {{ $vendorMaster?->name ?? ($order->snapshot['vendor']['name'] ?? 'vendor') }}.</p>
@@ -134,11 +151,11 @@
                     <td data-label="Nominal">{{ \App\Services\Scm\Decimal::money($payment->amount_minor, $payment->currency) }}</td>
                     <td data-label="Status">{{ ['planned' => 'Belum dibayar', 'paid' => 'Dibayar', 'cancelled' => 'Dibatalkan'][$payment->status] ?? $payment->status }}@if($payment->paid_on)<br>{{ $payment->paid_on->format('d/m/Y') }}<br>{{ $payment->payment_reference }}@endif</td>
                     <td data-label="Dokumen">@forelse($payment->files as $file)<a href="{{ route('finance.payment-file', $file) }}">{{ $file->type === 'invoice' ? 'Invoice' : 'Bukti bayar' }}: {{ $file->original_name }}</a><br>@empty Belum ada dokumen @endforelse</td>
-                    <td data-label="Tindakan"><div class="finance-table-actions">@if($payment->status === 'planned')<button type="button" wire:click="preparePaid({{ $payment->id }})">Proses termin {{ $loop->iteration }}</button>@endif
-                        @if($payment->status !== 'cancelled' && ! $payment->files->contains('type', 'invoice'))<button type="button" wire:click="prepareInvoice({{ $payment->id }})">Tambah invoice</button>@endif</div></td></tr>
+                    <td data-label="Tindakan"><div class="finance-table-actions">@if($order->status !== 'cancelled' && $payment->status === 'planned')<button type="button" wire:click="preparePaid({{ $payment->id }})">Proses termin {{ $loop->iteration }}</button>@endif
+                        @if($order->status !== 'cancelled' && $payment->status !== 'cancelled' && ! $payment->files->contains('type', 'invoice'))<button type="button" wire:click="prepareInvoice({{ $payment->id }})">Tambah invoice</button>@endif</div></td></tr>
                 @empty<tr><td class="finance-empty" colspan="6">Belum ada termin pembayaran. Tambahkan sesuai syarat PO.</td></tr>@endforelse
             </tbody></table></div>
-            @if($selected && $selected->status === 'planned' && $paymentAction === 'pay')
+            @if($order->status !== 'cancelled' && $selected && $selected->status === 'planned' && $paymentAction === 'pay')
                 <form class="finance-sheet-form" wire:submit="savePaid"><fieldset wire:loading.attr="disabled"><legend>Catat pembayaran: {{ $selected->description }}</legend>
                     <p>Catat pembayaran yang sudah dilakukan dan unggah buktinya.</p>
                     <div><strong>Rekening vendor (data master saat ini)</strong>
@@ -154,13 +171,14 @@
                 <div><x-scm.field model="cancelReason" label="Alasan pembatalan termin" multiline help="Minimal 10 karakter; hanya untuk termin yang belum dibayar." />
                     <button type="button" wire:click="cancelPlan" wire:confirm="Batalkan termin ini? Riwayat tetap disimpan." wire:loading.attr="disabled">Batalkan termin</button></div>
             @endif
-            @if($selected && $paymentAction === 'invoice' && $selected->status !== 'cancelled' && ! $selected->files->contains('type', 'invoice'))
+            @if($order->status !== 'cancelled' && $selected && $paymentAction === 'invoice' && $selected->status !== 'cancelled' && ! $selected->files->contains('type', 'invoice'))
                 <form class="finance-sheet-form" wire:submit="saveInvoice"><fieldset wire:loading.attr="disabled"><legend>Tambah invoice: {{ $selected->description }}</legend><div class="scm-grid">
                     <x-scm.field model="lateInvoiceNumber" label="Nomor invoice" required />
                     <x-scm.field model="lateInvoiceFile" label="Invoice (PDF/JPG/PNG)" type="file" required accept=".pdf,.jpg,.jpeg,.png" />
                 </div><div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan invoice</x-filament::button></div></fieldset></form>
             @endif
         </section>
+        @if($order->status !== 'cancelled')
         <section class="finance-sheet"><h2>Tambah termin</h2>
             <p class="finance-sheet-intro">Masukkan nominal berdasarkan kesepakatan. Total termin tidak boleh melebihi Grand Total PO.</p>
             <form wire:submit="savePlan"><fieldset wire:loading.attr="disabled"><legend>Rencana pembayaran</legend><div class="finance-plan-grid">
@@ -174,6 +192,7 @@
                 <div class="scm-field finance-plan-notes"><label for="scm-plan-notes">Catatan</label><textarea id="scm-plan-notes" wire:model="plan.notes" rows="3"></textarea></div>
             </div>@if(($plan['kind'] ?? '') === 'settlement' && $total - $paidTotal - $plannedTotal <= 0)<p role="status">Tidak ada sisa PO yang belum dijadwalkan. Periksa termin yang sudah tercatat.</p>@endif<div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan termin</x-filament::button></div></fieldset></form>
         </section>
+        @endif
         </div>
     @endif
 </div>

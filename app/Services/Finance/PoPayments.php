@@ -53,6 +53,7 @@ class PoPayments
             return DB::transaction(function () use ($actor, $orderId, $data, $amount, $invoice, &$paths): FinancePoPayment {
                 $order = $this->orders($actor)->lockForUpdate()->findOrFail($orderId);
                 $order->load(['request', 'cbe']);
+                $this->reject($order->status === 'cancelled', 'PO sudah dibatalkan dan tidak dapat menerima termin.');
                 $existing = FinancePoPayment::where('token', $data['token'])->first();
                 if ($existing) {
                     $existingInvoice = $existing->files()->where('type', 'invoice')->first();
@@ -115,6 +116,7 @@ class PoPayments
                 $payment = FinancePoPayment::findOrFail($paymentId);
                 $order = $this->orders($actor)->lockForUpdate()->findOrFail($payment->purchase_order_id);
                 $payment = FinancePoPayment::where('purchase_order_id', $order->id)->lockForUpdate()->findOrFail($paymentId);
+                $this->reject($order->status === 'cancelled', 'PO sudah dibatalkan dan tidak dapat diproses.');
                 $this->reject($payment->status !== 'planned', 'Termin sudah dibayar atau dibatalkan. Muat ulang data.');
                 if ($payment->timing === 'after_receipt') {
                     $order->load('request');
@@ -151,6 +153,7 @@ class PoPayments
                 $candidate = FinancePoPayment::findOrFail($paymentId);
                 $order = $this->orders($actor)->lockForUpdate()->findOrFail($candidate->purchase_order_id);
                 $payment = FinancePoPayment::where('purchase_order_id', $order->id)->lockForUpdate()->findOrFail($paymentId);
+                $this->reject($order->status === 'cancelled', 'Invoice tidak dapat ditambahkan ke PO yang dibatalkan.');
                 $this->reject($payment->status === 'cancelled' || $payment->files()->where('type', 'invoice')->exists(), 'Invoice tidak dapat ditambahkan ke termin ini.');
                 $this->store($actor, $payment, 'invoice', $file, $paths);
                 $payment->update(['invoice_number' => $number]);
@@ -171,9 +174,42 @@ class PoPayments
             $candidate = FinancePoPayment::findOrFail($paymentId);
             $order = $this->orders($actor)->lockForUpdate()->findOrFail($candidate->purchase_order_id);
             $payment = FinancePoPayment::where('purchase_order_id', $order->id)->lockForUpdate()->findOrFail($paymentId);
+            $this->reject($order->status === 'cancelled', 'PO sudah dibatalkan.');
             $this->reject($payment->status !== 'planned', 'Hanya termin yang belum dibayar dapat dibatalkan.');
             $payment->update(['status' => 'cancelled', 'cancelled_by' => $actor->id, 'cancelled_at' => now()]);
             $this->audit($actor, $payment, 'batal_termin_po', ['order_id' => $order->id], $reason);
+        }, 3);
+    }
+
+    public function cancelOrder(User $actor, int $orderId, string $reason): PurchaseOrder
+    {
+        Validation::make(['reason' => $reason], ['reason' => 'required|string|min:10|max:2000'])->validate();
+
+        return DB::transaction(function () use ($actor, $orderId, $reason): PurchaseOrder {
+            $order = $this->orders($actor)->with('request')->lockForUpdate()->findOrFail($orderId);
+            $this->reject($order->status === 'cancelled', 'PO sudah dibatalkan.');
+            $this->reject($order->payments()->where('status', 'paid')->exists(), 'PO tidak dapat dibatalkan setelah ada pembayaran.');
+            $this->reject($order->receipts()->exists(), 'PO tidak dapat dibatalkan setelah penerimaan barang tercatat.');
+
+            if ($order->request->finance_budget_line_id) {
+                \App\Models\FinanceBudgetLine::lockForUpdate()->findOrFail($order->request->finance_budget_line_id);
+            }
+
+            $order->update(['status' => 'cancelled', 'cancelled_by' => $actor->id, 'cancelled_at' => now(),
+                'cancellation_reason' => trim($reason)]);
+            $plannedPayments = FinancePoPayment::where('purchase_order_id', $order->id)->where('status', 'planned')->lockForUpdate()->get();
+            foreach ($plannedPayments as $payment) {
+                $payment->update(['status' => 'cancelled', 'cancelled_by' => $actor->id, 'cancelled_at' => now()]);
+                DB::table('finance_po_payment_events')->insert(['payment_id' => $payment->id, 'actor_id' => $actor->id,
+                    'action' => 'batal_termin_po', 'details' => json_encode(['order_id' => $order->id], JSON_THROW_ON_ERROR),
+                    'reason' => trim($reason), 'created_at' => now()]);
+            }
+            app(\App\Services\Scm\Workflow::class)->audit($actor, $order, 'batalkan_po', [
+                'status' => 'cancelled', 'cancelled_at' => $order->cancelled_at,
+                'cancelled_payment_ids' => $plannedPayments->pluck('id')->all(),
+            ], $order->request_id, trim($reason));
+
+            return $order->fresh();
         }, 3);
     }
 

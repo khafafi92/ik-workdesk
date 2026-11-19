@@ -57,6 +57,8 @@ class FinancePayments extends Page
 
     public string $cancelReason = '';
 
+    public string $orderCancelReason = '';
+
     public string $paymentAction = '';
 
     public $invoiceFile;
@@ -86,7 +88,7 @@ class FinancePayments extends Page
         $this->planToken = (string) Str::uuid();
         $this->selectedPayment = 0;
         $this->paymentAction = '';
-        $this->reset('plan', 'paid', 'cancelReason', 'invoiceFile', 'proofFile', 'paidInvoiceFile', 'lateInvoiceFile', 'lateInvoiceNumber');
+        $this->reset('plan', 'paid', 'cancelReason', 'orderCancelReason', 'invoiceFile', 'proofFile', 'paidInvoiceFile', 'lateInvoiceFile', 'lateInvoiceNumber');
         $this->suggestedAmount = $this->suggestedDescription = '';
         if (! $order->payments()->whereIn('status', ['planned', 'paid'])->exists()
             && preg_match('/\bDP\s*([0-9]{1,3}(?:[.,][0-9]{1,2})?)\s*%/i', $order->payment_terms, $match)
@@ -162,7 +164,7 @@ class FinancePayments extends Page
     {
         $this->selectedOrder = $this->selectedPayment = 0;
         $this->paymentAction = '';
-        $this->reset('plan', 'paid', 'cancelReason', 'invoiceFile', 'proofFile', 'paidInvoiceFile', 'lateInvoiceFile', 'lateInvoiceNumber');
+        $this->reset('plan', 'paid', 'cancelReason', 'orderCancelReason', 'invoiceFile', 'proofFile', 'paidInvoiceFile', 'lateInvoiceFile', 'lateInvoiceNumber');
         $this->suggestedAmount = $this->suggestedDescription = '';
         $this->resetValidation();
     }
@@ -241,6 +243,26 @@ class FinancePayments extends Page
         Notification::make()->title('Termin dibatalkan.')->success()->send();
     }
 
+    public function prepareCancelOrder(): void
+    {
+        $order = app(PoPayments::class)->order(auth()->user(), $this->selectedOrder);
+        abort_unless($order->status !== 'cancelled'
+            && ! $order->payments()->where('status', 'paid')->exists()
+            && ! $order->receipts()->exists(), 409);
+        $this->paymentAction = 'cancel_order';
+        $this->reset('orderCancelReason');
+        $this->resetValidation();
+    }
+
+    public function cancelOrder(): void
+    {
+        app(PoPayments::class)->cancelOrder(auth()->user(), $this->selectedOrder, $this->orderCancelReason);
+        $this->paymentAction = '';
+        $this->reset('orderCancelReason');
+        $this->resetValidation();
+        Notification::make()->title('PO dibatalkan dan komitmen anggaran dilepas.')->success()->send();
+    }
+
     protected function getViewData(): array
     {
         abort_unless(static::canAccess(), 403);
@@ -251,7 +273,8 @@ class FinancePayments extends Page
         $receipts = collect();
         try {
             $schemaMissing = ! Schema::hasTable('finance_po_payments') || ! Schema::hasTable('finance_po_payment_files')
-                || ! Schema::hasTable('finance_po_payment_events');
+                || ! Schema::hasTable('finance_po_payment_events') || ! Schema::hasColumn('scm_purchase_orders', 'status')
+                || ! Schema::hasColumn('scm_purchase_orders', 'cancelled_by');
             if ($schemaMissing) {
                 $orders = new LengthAwarePaginator([], 0, 15);
             } else {

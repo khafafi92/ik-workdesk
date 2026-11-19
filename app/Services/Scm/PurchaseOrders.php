@@ -3,11 +3,13 @@
 namespace App\Services\Scm;
 
 use App\Models\InventoryReceipt;
+use App\Models\FinanceBudgetLine;
 use App\Models\Scm\Cbe;
 use App\Models\Scm\PoApprovalPolicy;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\PurchaseOrder;
 use App\Models\User;
+use App\Services\Finance\BudgetLedger;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -90,10 +92,23 @@ class PurchaseOrders
                     throw ValidationException::withMessages(['scm' => 'Selesaikan legalitas vendor terpilih sebelum membuat PO.']);
                 }
                 $order = $request->purchaseOrder()->lockForUpdate()->first();
+                if ($order?->status === 'cancelled') {
+                    throw ValidationException::withMessages(['scm' => 'PO yang sudah dibatalkan tidak dapat diubah.']);
+                }
                 if ($order && InventoryReceipt::where('purchase_order_id', $order->id)->exists()) {
                     throw ValidationException::withMessages(['scm' => 'PO tidak dapat diubah setelah penerimaan barang tercatat.']);
                 }
                 $snapshot = $order?->snapshot ?? $this->snapshot($cbe);
+                if ($request->finance_budget_line_id) {
+                    $budgetLine = FinanceBudgetLine::with('scope.budget')->lockForUpdate()->findOrFail($request->finance_budget_line_id);
+                    if ($budgetLine->scope->budget->currency !== ($snapshot['currency'] ?? null)) {
+                        throw ValidationException::withMessages(['scm' => 'Mata uang PO harus sama dengan mata uang peruntukan anggaran.']);
+                    }
+                    $available = app(BudgetLedger::class)->lineSummary($budgetLine, $order?->id)['available_minor'];
+                    if ((int) data_get($snapshot, 'evaluation.total_minor', 0) > $available) {
+                        throw ValidationException::withMessages(['scm' => 'Nilai PO melebihi sisa anggaran pada peruntukan yang dipilih.']);
+                    }
+                }
                 if ((! array_key_exists('buyer_signer', $snapshot) || ! array_key_exists('second_buyer_signer', $snapshot)) && Schema::hasTable('scm_po_approval_policies')) {
                     $policy = PoApprovalPolicy::with('buyer')->where('company', $request->company)->first();
                     if ($policy) {
@@ -157,7 +172,6 @@ class PurchaseOrders
             || (int) $evaluation['total_minor'] !== (int) $cbe->final_minor) {
             throw ValidationException::withMessages(['scm' => 'Nilai PO tidak cocok dengan CBE final. Periksa snapshot sebelum membuat PO.']);
         }
-
         $company = $cbe->snapshot['request']['company'] ?? $cbe->request->company;
 
         return ['request_number' => $cbe->snapshot['request']['number'] ?? $cbe->request->number,

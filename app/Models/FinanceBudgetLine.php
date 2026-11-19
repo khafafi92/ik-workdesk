@@ -27,4 +27,14 @@ class FinanceBudgetLine extends Model
     {
         return $this->belongsTo(Department::class);
     }
+
+    public function procurementRequests()
+    {
+        return $this->hasMany(\App\Models\Scm\Procurement::class, 'finance_budget_line_id');
+    }
+
+    public function travelDocuments()
+    {
+        return $this->hasMany(TravelDocument::class, 'finance_budget_line_id');
+    }
 }

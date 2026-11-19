@@ -7,6 +7,8 @@ use App\Models\Department;
 use App\Models\Employee;
 use App\Models\InventoryReceipt;
 use App\Models\InventoryWarehouse;
+use App\Models\FinanceAccount;
+use App\Models\FinanceBudgetLine;
 use App\Models\Permission;
 use App\Models\Scm\Cbe;
 use App\Models\Scm\Procurement;
@@ -14,6 +16,8 @@ use App\Models\Scm\PurchaseOrder;
 use App\Models\Scm\Vendor;
 use App\Models\User;
 use App\Services\Finance\PoPayments;
+use App\Services\Finance\BudgetLedger;
+use App\Services\Finance\BudgetMasters;
 use Database\Seeders\ScmSeeder;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -226,6 +230,60 @@ class FinancePaymentsTest extends TestCase
         Livewire::actingAs($this->outsider)->test(FinancePayments::class)->assertDontSee('PO-FIN-QA');
     }
 
+    public function test_finance_cancels_an_unpaid_po_and_releases_its_budget_commitment(): void
+    {
+        $line = $this->budgetLineForOrder();
+        $payment = app(PoPayments::class)->plan($this->finance, $this->order->id, $this->input(), null);
+        $this->assertSame(1000000, app(BudgetLedger::class)->lineSummary($line)['used_minor']);
+
+        $cancelled = app(PoPayments::class)->cancelOrder($this->finance, $this->order->id, 'Pengadaan dibatalkan oleh Finance');
+
+        $this->assertSame('cancelled', $cancelled->status);
+        $this->assertSame('cancelled', $payment->fresh()->status);
+        $this->assertSame(0, app(BudgetLedger::class)->lineSummary($line)['used_minor']);
+        $this->assertSame(2000000, app(BudgetLedger::class)->lineSummary($line)['available_minor']);
+        $this->assertDatabaseHas('scm_audits', ['request_id' => $this->order->request_id, 'action' => 'batalkan_po']);
+        $this->assertDatabaseHas('finance_po_payment_events', ['payment_id' => $payment->id, 'action' => 'batal_termin_po']);
+    }
+
+    public function test_finance_cannot_cancel_a_po_after_payment(): void
+    {
+        $service = app(PoPayments::class);
+        $payment = $service->plan($this->finance, $this->order->id, $this->input(), null);
+        $service->recordPaid($this->finance, $payment->id,
+            ['paid_on' => today()->toDateString(), 'payment_reference' => 'TRX-QA'], $this->pdf('proof.pdf'), null);
+        try {
+            $service->cancelOrder($this->finance, $this->order->id, 'Uji pembatalan setelah pembayaran');
+            $this->fail('PO dengan pembayaran tidak dapat dibatalkan.');
+        } catch (ValidationException $error) {
+            $this->assertStringContainsString('setelah ada pembayaran', $error->getMessage());
+        }
+    }
+
+    public function test_finance_cannot_cancel_a_po_after_receipt(): void
+    {
+        $service = app(PoPayments::class);
+        $warehouse = InventoryWarehouse::create(['code' => 'FIN-CANCEL-QA', 'name' => 'Gudang QA', 'kind' => 'PROJECT']);
+        InventoryReceipt::create(['token' => (string) Str::uuid(), 'request_id' => $this->order->request_id, 'purchase_order_id' => $this->order->id,
+            'warehouse_id' => $warehouse->id, 'received_on' => today(), 'reference' => 'GR-CANCEL-QA', 'created_by' => $this->finance->id]);
+        try {
+            $service->cancelOrder($this->finance, $this->order->id, 'Uji pembatalan setelah penerimaan');
+            $this->fail('PO dengan penerimaan tidak dapat dibatalkan.');
+        } catch (ValidationException $error) {
+            $this->assertStringContainsString('penerimaan barang', $error->getMessage());
+        }
+        $this->assertSame('active', $this->order->fresh()->status);
+    }
+
+    public function test_finance_page_exposes_the_audited_po_cancellation_flow(): void
+    {
+        Livewire::actingAs($this->finance)->test(FinancePayments::class)->call('openOrder', $this->order->id)
+            ->assertSee('Batalkan seluruh PO')->call('prepareCancelOrder')
+            ->set('orderCancelReason', 'Pengadaan dibatalkan oleh Finance')
+            ->call('cancelOrder')->assertHasNoErrors()->assertSee('PO dibatalkan pada')
+            ->assertDontSee('Tambah termin');
+    }
+
     public function test_percentage_suggests_editable_amount_from_the_po_total(): void
     {
         $page = Livewire::actingAs($this->finance)->test(FinancePayments::class)
@@ -323,5 +381,20 @@ class FinancePaymentsTest extends TestCase
         Schema::drop('finance_po_payments');
         Livewire::actingAs($this->finance)->test(FinancePayments::class)
             ->assertSee('Modul pembayaran belum disiapkan di database.');
+    }
+
+    private function budgetLineForOrder(): FinanceBudgetLine
+    {
+        $this->finance->directPermissions()->attach(Permission::where('code', 'finance.budget.manage')->sole()->id);
+        $account = FinanceAccount::create(['company' => 'KPMOG', 'code' => 'FIN-CANCEL-QA', 'name' => 'Anggaran QA',
+            'is_active' => true, 'created_by' => $this->finance->id, 'updated_by' => $this->finance->id]);
+        $masters = app(BudgetMasters::class);
+        $budget = $masters->createBudget($this->finance, ['company' => 'KPMOG', 'year' => 2026, 'amount' => '20000']);
+        $scope = $masters->createScope($this->finance, $budget->id, ['need_type' => 'HO', 'amount' => '20000']);
+        $masters->createLine($this->finance, $scope->id, ['department_id' => $this->finance->employee->department_id,
+            'account_id' => $account->id, 'amount' => '20000']);
+        $this->order->request->update(['need_type' => 'HO', 'finance_budget_line_id' => $scope->lines()->sole()->id]);
+
+        return $scope->lines()->sole();
     }
 }

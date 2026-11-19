@@ -10,6 +10,7 @@ use App\Filament\Pages\ServiceRequests;
 use App\Filament\Pages\SignatureProfile;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\FinanceAccount;
 use App\Models\Permission;
 use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Attachment;
@@ -25,6 +26,7 @@ use App\Models\Scm\Requirement;
 use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
 use App\Models\Scm\VendorRegistration;
+use App\Models\TravelDocument;
 use App\Models\User;
 use App\Services\Scm\Access;
 use App\Services\Scm\Approvals;
@@ -37,6 +39,7 @@ use App\Services\Scm\SelectedVendorItems;
 use App\Services\Scm\Signatures;
 use App\Services\Scm\Validation;
 use App\Services\Scm\Workflow;
+use App\Services\Finance\BudgetMasters;
 use Database\Seeders\ScmDemoSeeder;
 use Database\Seeders\ScmSeeder;
 use Filament\Facades\Filament;
@@ -134,6 +137,50 @@ class ProcurementTest extends TestCase
         $updated = $this->flow->saveDraft($this->requester, $this->draftData(), $request->id, $request->version);
         $this->assertSame('USD', $updated->budget_currency);
         $this->assertSame(25050, $updated->budget_estimate_minor);
+    }
+
+    public function test_request_budget_selection_must_match_company_and_department(): void
+    {
+        $manager = User::factory()->create(['is_admin' => false]);
+        $manager->directPermissions()->attach(Permission::where('code', 'finance.budget.manage')->sole());
+        $account = FinanceAccount::create(['company' => 'KPMOG', 'code' => 'BUDGET-QA', 'name' => 'Biaya pengujian',
+            'is_active' => true, 'created_by' => $manager->id, 'updated_by' => $manager->id]);
+        $masters = app(BudgetMasters::class);
+        $budget = $masters->createBudget($manager, ['company' => 'KPMOG', 'year' => today()->year, 'amount' => '1000']);
+        $scope = $masters->createScope($manager, $budget->id, ['need_type' => 'HO', 'amount' => '1000']);
+        $masters->createLine($manager, $scope->id, ['department_id' => $this->department->id, 'account_id' => $account->id, 'amount' => '800']);
+        $line = $scope->lines()->sole();
+        TravelDocument::create(['kind' => 'spd', 'company' => 'KPMOG', 'number' => 'SPD-BUDGET-QA', 'number_key' => 'spd-budget-qa',
+            'issued_on' => today()->toDateString(), 'applied_on' => today()->toDateString(),
+            'employee_id' => $this->requester->employee->id, 'department_id' => $this->department->id,
+            'created_by' => $this->requester->id, 'finance_budget_line_id' => $line->id, 'status' => 'approved',
+            'data' => ['purpose' => 'Uji sisa anggaran'], 'employee_snapshot' => ['name' => $this->requester->name, 'department' => $this->department->name],
+            'total_minor' => 25000]);
+
+        $page = Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('newDraft', 'KPMOG')
+            ->assertSet('draft.finance_budget_line_id', (string) $line->id)
+            ->assertSeeHtml('value="'.$line->id.'">Sisa IDR 550,00</option>')
+            ->assertSee('Sisa IDR 550,00')
+            ->assertDontSee('Mata uang estimasi anggaran')
+            ->assertDontSee('Estimasi anggaran pengajuan')
+            ->set('draft.items.0.name', 'Barang uji')
+            ->set('draft.items.0.specification', 'Spesifikasi uji')
+            ->set('draft.items.0.unit', 'unit')
+            ->call('saveDraft')->assertHasNoErrors();
+        $request = Procurement::sole();
+
+        $this->assertSame($line->id, $request->finance_budget_line_id);
+        Livewire::actingAs($this->requester)->test(PurchaseRequests::class)->call('open', $request->id)
+            ->assertSee('Sisa IDR 550,00')->assertDontSee('BUDGET-QA')->assertDontSee('Biaya pengujian');
+
+        try {
+            $this->flow->saveDraft($this->requester, [
+                ...$this->draftData(), 'company' => 'APCA', 'finance_budget_line_id' => $line->id,
+            ]);
+            $this->fail('Peruntukan perusahaan lain harus ditolak.');
+        } catch (ValidationException $error) {
+            $this->assertArrayHasKey('finance_budget_line_id', $error->errors());
+        }
     }
 
     private function sourcing(string $kind = 'PR'): Procurement

@@ -2,18 +2,19 @@
 <fieldset class="scm-request-routing" wire:loading.attr="disabled" wire:target="saveDraft,signPrepared">
     <legend>Alur persetujuan</legend>
     <div class="scm-grid">
-        <x-scm.select model="draft.budget_currency" label="Mata uang estimasi anggaran" :options="collect(config('scm.currencies'))->mapWithKeys(fn ($currency) => [$currency => $currency])->all()" />
-        <x-scm.field model="draft.budget_estimate" label="Estimasi anggaran pengajuan" inputmode="decimal" help="Tanpa pemisah ribuan; gunakan koma untuk desimal." />
+        <x-scm.select model="draft.finance_budget_line_id" label="Peruntukan anggaran" :options="$budgetLineOptions" :live="true" placeholder="Pilih peruntukan" />
     </div>
-    <p class="scm-help">Estimasi ini belum memeriksa sisa anggaran atau memicu persetujuan kelebihan anggaran.</p>
+    @if(($budgetLine ?? null) && ($budgetUsage ?? null))
+        <p class="scm-help" role="status">Anggaran {{ \App\Services\Scm\Decimal::money($budgetLine->amount_minor, $budgetLine->scope->budget->currency) }}. Terpakai dan komitmen {{ \App\Services\Scm\Decimal::money($budgetUsage['used_minor'], $budgetLine->scope->budget->currency) }}. Sisa {{ \App\Services\Scm\Decimal::money($budgetUsage['available_minor'], $budgetLine->scope->budget->currency) }}. Nilai ini tidak masuk ke form cetak.</p>
+    @elseif($budgetLineOptions ?? null)
+        <p class="scm-help" role="status">Pilih peruntukan untuk melihat sisa anggaran. PR/SR menjadi komitmen saat PO dibuat.</p>
+    @else
+        <p class="scm-help" role="status">Belum ada alokasi anggaran untuk divisi dan kebutuhan ini. Hubungi Finance untuk menyiapkan master anggaran.</p>
+    @endif
     @if(($canChooseRequester ?? false) && ($requestKind ?? '') === 'SR' && ($draft['need_type'] ?? 'HO') === 'PROJECT')
         <x-scm.select model="draft.requester_id" label="Requestor" :options="$requesterOptions" :live="true" required />
     @endif
     <p>Jenis kebutuhan: <strong>{{ \App\Services\Scm\ApprovalPolicies::NEED_TYPES[$draft['need_type'] ?? 'HO'] ?? 'Tidak valid' }}</strong>. Jenis kebutuhan mengikuti nomor yang sudah diterbitkan.</p>
-    @if(($draft['need_type'] ?? 'HO') === 'PROJECT')
-        <x-scm.select model="draft.work_project_id" label="Nama Project (opsional)" :options="$projectOptions" placeholder="Belum dipilih" help="Nama proyek boleh menyusul. Daftar diambil dari Master Data > Projects." />
-        @if(!$projectOptions)<p class="scm-help">Daftar nama proyek belum tersedia. PR/SR Project tetap dapat dibuat.</p>@endif
-    @endif
     <label class="scm-check"><input type="checkbox" wire:model.live="draft.requires_cbo3" aria-describedby="scm-routing-help"><span>Pengajuan di atas Rp5 juta</span></label>
     <p id="scm-routing-help" class="scm-help" role="status">
         @if(($routingPlan['is_custom'] ?? false))
@@ -34,8 +35,10 @@
 </fieldset>
 @elseif($record->approval_scope === 'HO')
 <p class="scm-help">Jenis kebutuhan: {{ \App\Services\Scm\ApprovalPolicies::NEED_TYPES[$record->need_type ?? 'HO'] }}.
-    @if($record->need_type === 'PROJECT' && $record->project)Nama Project: {{ $record->project->code }} - {{ $record->project->name }}.@endif
-    @if($record->budget_estimate_minor !== null)Estimasi anggaran: {{ \App\Services\Scm\Decimal::money($record->budget_estimate_minor, $record->budget_currency ?? 'IDR') }}.@endif
+    @if($record->need_type === 'PROJECT' && $record->projectNumbering)Project: {{ $record->projectNumbering->code }} - {{ $record->projectNumbering->name }}.@endif
     @if($finalStep = $record->approvals->where('round', $record->approval_round)->firstWhere('role', 'approved'))Approved by: {{ $finalStep->user->name }}.@endif
 </p>
+@if(($budgetLine ?? null) && ($budgetUsage ?? null))
+    <p class="scm-help" role="status">Alokasi {{ \App\Services\Scm\Decimal::money($budgetLine->amount_minor, $budgetLine->scope->budget->currency) }}. Terpakai dan komitmen {{ \App\Services\Scm\Decimal::money($budgetUsage['used_minor'], $budgetLine->scope->budget->currency) }}. Sisa {{ \App\Services\Scm\Decimal::money($budgetUsage['available_minor'], $budgetLine->scope->budget->currency) }}. Rincian anggaran hanya tampil di WorkDesk, tidak di form cetak.</p>
+@endif
 @endif

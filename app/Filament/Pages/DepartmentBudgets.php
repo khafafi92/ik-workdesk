@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\FinanceBudgetLine;
+use App\Services\Finance\BudgetLedger;
 use App\Services\Scm\Access;
 use Filament\Pages\Page;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -39,6 +40,13 @@ class DepartmentBudgets extends Page
             ->with(['scope.budget', 'scope.project', 'department', 'account'])
             ->when(! $user->isSystemAdministrator(), fn ($query) => $query->whereIn('department_id', $user->accessibleDepartmentIds()))
             ->orderByDesc('id')->paginate(15);
+        if (! $missing) {
+            $lines->getCollection()->transform(function (FinanceBudgetLine $line): FinanceBudgetLine {
+                $line->setAttribute('budget_usage', app(BudgetLedger::class)->lineSummary($line));
+
+                return $line;
+            });
+        }
 
         return compact('missing', 'lines');
     }

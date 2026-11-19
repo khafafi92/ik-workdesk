@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Scm\ProjectNumbering;
+use App\Models\FinanceBudgetLine;
 use Illuminate\Database\Eloquent\Model;
 
 class TravelDocument extends Model
@@ -45,6 +46,11 @@ class TravelDocument extends Model
     public function projectNumbering()
     {
         return $this->belongsTo(ProjectNumbering::class, 'project_numbering_id');
+    }
+
+    public function financeBudgetLine()
+    {
+        return $this->belongsTo(FinanceBudgetLine::class, 'finance_budget_line_id');
     }
 
     public function approvals()

@@ -124,9 +124,13 @@ class BudgetMasters
                 $scope = FinanceBudgetScope::lockForUpdate()->findOrFail($scopeId);
                 $record = $scope->lines()->lockForUpdate()->findOrFail($id);
                 $allocated = 0;
+                $used = app(BudgetLedger::class)->lineSummary($record)['used_minor'];
                 $other = $scope->lines()->whereKeyNot($id)->sum('amount_minor');
                 if ($other + $amount > $scope->amount_minor) {
                     throw ValidationException::withMessages(['amount' => 'Total alokasi departemen melebihi anggaran HO atau project.']);
+                }
+                if ($amount < $used) {
+                    throw ValidationException::withMessages(['amount' => 'Anggaran tidak boleh lebih kecil dari realisasi dan komitmen yang sudah tercatat.']);
                 }
             } else {
                 abort(404);

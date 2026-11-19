@@ -6,6 +6,7 @@ use App\Filament\Pages\TravelLpj;
 use App\Filament\Pages\TravelSpd;
 use App\Models\Department;
 use App\Models\Employee;
+use App\Models\FinanceAccount;
 use App\Models\Permission;
 use App\Models\Scm\ProjectNumbering;
 use App\Models\Scm\UserSignature;
@@ -16,6 +17,7 @@ use App\Services\Scm\Access;
 use App\Services\Travel\TravelAccess;
 use App\Services\Travel\TravelApprovalPolicies;
 use App\Services\Travel\TravelWorkflow;
+use App\Services\Finance\BudgetMasters;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -109,6 +111,7 @@ class TravelDocumentsTest extends TestCase
         } catch (ValidationException $exception) {
             $this->assertArrayHasKey('travel', $exception->errors());
         }
+
         Storage::disk('scm')->put('signatures/test-'.$this->requester->id.'.png', 'test signature');
         $document = $workflow->submit($this->requester, $document->id, $document->version);
         $this->assertSame(1, $this->hr->notifications()->count());
@@ -131,6 +134,65 @@ class TravelDocumentsTest extends TestCase
         $document = $workflow->decide($this->hr, $document->id, $document->version, false, 'Perbaiki lagi');
         $this->assertSame('001/SPD/11-2026 Rev 2', $document->displayNumber());
         $this->assertSame('2', $document->revision);
+    }
+
+    public function test_spd_automatically_shows_its_department_budget_when_only_one_allocation_matches(): void
+    {
+        $account = FinanceAccount::create(['company' => 'APCA', 'code' => 'SPD-BUDGET', 'name' => 'Biaya perjalanan',
+            'is_active' => true, 'created_by' => $this->policyAdmin->id, 'updated_by' => $this->policyAdmin->id]);
+        $masters = app(BudgetMasters::class);
+        $budget = $masters->createBudget($this->policyAdmin, ['company' => 'APCA', 'year' => today()->year, 'amount' => '1000']);
+        $scope = $masters->createScope($this->policyAdmin, $budget->id, ['need_type' => 'HO', 'amount' => '1000']);
+        $masters->createLine($this->policyAdmin, $scope->id, ['department_id' => $this->department->id, 'account_id' => $account->id, 'amount' => '800']);
+        $line = $scope->lines()->sole();
+
+        Livewire::actingAs($this->requester)->test(TravelSpd::class)->call('createDocument')
+            ->assertSet('input.finance_budget_line_id', (string) $line->id)
+            ->assertSee('Sisa IDR 800,00')->assertDontSee('SPD-BUDGET')->assertDontSee('Biaya perjalanan');
+    }
+
+    public function test_spd_revision_field_renders_instead_of_showing_blade_source(): void
+    {
+        Livewire::actingAs($this->requester)->test(TravelSpd::class)->call('createDocument')
+            ->assertSeeHtml('aria-label="Revisi SPD"')
+            ->assertDontSee("@include('travel.partials.field', ['field' => 'revision'");
+    }
+
+    public function test_spd_shows_project_budget_after_project_is_selected(): void
+    {
+        $account = FinanceAccount::create(['company' => 'KPMOG', 'code' => 'SPD-PROJECT-BUDGET', 'name' => 'Biaya perjalanan project',
+            'is_active' => true, 'created_by' => $this->policyAdmin->id, 'updated_by' => $this->policyAdmin->id]);
+        $project = ProjectNumbering::withoutEvents(fn () => ProjectNumbering::create([
+            'code' => 'SPD-BUDGET-PROJECT', 'name' => 'Project Anggaran SPD', 'is_active' => true, 'version' => 1,
+        ]));
+        $masters = app(BudgetMasters::class);
+        $budget = $masters->createBudget($this->policyAdmin, ['company' => 'KPMOG', 'year' => today()->year, 'amount' => '2000']);
+        $hoScope = $masters->createScope($this->policyAdmin, $budget->id, ['need_type' => 'HO', 'amount' => '1000']);
+        $masters->createLine($this->policyAdmin, $hoScope->id, [
+            'department_id' => $this->department->id, 'account_id' => $account->id, 'amount' => '300',
+        ]);
+        $scope = $masters->createScope($this->policyAdmin, $budget->id, [
+            'need_type' => 'PROJECT', 'project_numbering_id' => $project->id, 'amount' => '1000',
+        ]);
+        $masters->createLine($this->policyAdmin, $scope->id, [
+            'department_id' => $this->department->id, 'account_id' => $account->id, 'amount' => '800',
+        ]);
+        $line = $scope->lines()->sole();
+
+        Livewire::actingAs($this->requester)->test(TravelSpd::class)->call('createDocument')
+            ->assertSeeInOrder(['Perusahaan', 'Anggaran SPD'])
+            ->assertSee('HO / Kantor Pusat')
+            ->set('input.company', 'KPMOG')
+            ->assertSet('input.finance_budget_line_id', (string) $hoScope->lines()->sole()->id)
+            ->assertSee('Sisa IDR 300,00')
+            ->set('input.project_numbering_id', (string) $project->id)
+            ->assertSet('input.finance_budget_line_id', (string) $line->id)
+            ->assertSee('Anggaran SPD')
+            ->assertSee('Sisa IDR 800,00')
+            ->set('input.project_numbering_id', '')
+            ->assertSet('input.finance_budget_line_id', (string) $hoScope->lines()->sole()->id)
+            ->assertSee('Sisa IDR 300,00')
+            ->assertDontSee('SPD-PROJECT-BUDGET')->assertDontSee('Biaya perjalanan project');
     }
 
     private function input(string $company = 'APCA'): array

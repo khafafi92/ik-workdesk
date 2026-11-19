@@ -4,6 +4,7 @@ namespace App\Models\Scm;
 
 use App\Models\AtkRequest;
 use App\Models\Department;
+use App\Models\FinanceBudgetLine;
 use App\Models\User;
 use App\Models\WorkProject;
 
@@ -79,6 +80,11 @@ class Procurement extends Record
     public function projectNumbering()
     {
         return $this->belongsTo(ProjectNumbering::class, 'project_numbering_id');
+    }
+
+    public function financeBudgetLine()
+    {
+        return $this->belongsTo(FinanceBudgetLine::class, 'finance_budget_line_id');
     }
 
     public function cbeProjectName(): string

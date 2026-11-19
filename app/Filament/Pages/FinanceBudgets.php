@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Exports\FinanceBudgetUsageExport;
 use App\Models\Department;
 use App\Models\FinanceAccount;
 use App\Models\FinanceBudget;
@@ -9,12 +10,14 @@ use App\Models\FinanceBudgetLine;
 use App\Models\FinanceBudgetScope;
 use App\Models\Scm\ProjectNumbering;
 use App\Services\Finance\BudgetMasters;
+use App\Services\Finance\BudgetLedger;
 use App\Services\Scm\Access;
 use App\Services\Scm\Decimal;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Locked;
+use Maatwebsite\Excel\Facades\Excel;
 use UnitEnum;
 
 class FinanceBudgets extends Page
@@ -128,16 +131,34 @@ class FinanceBudgets extends Page
         Notification::make()->title('Alokasi departemen tersimpan.')->success()->send();
     }
 
+    public function exportBudget()
+    {
+        abort_unless(static::canAccess(), 403);
+        $budget = FinanceBudget::with(['scopes.project', 'scopes.lines.department', 'scopes.lines.account'])
+            ->findOrFail($this->selectedBudget);
+        $report = app(BudgetLedger::class)->budgetReport($budget);
+        $filename = sprintf(
+            'penggunaan-anggaran-%s-%d-%s.xlsx',
+            strtolower($budget->company),
+            $budget->year,
+            strtolower($budget->currency),
+        );
+
+        return Excel::download(new FinanceBudgetUsageExport($budget, $report), $filename);
+    }
+
     protected function getViewData(): array
     {
         abort_unless(static::canAccess(), 403);
-        $missing = ! Schema::hasTable('finance_budget_lines') || ! Schema::hasTable('finance_budget_scopes') || ! Schema::hasTable('finance_budgets') || ! Schema::hasTable('finance_accounts') || ! Schema::hasColumn('finance_budgets', 'currency');
+        $missing = ! Schema::hasTable('finance_budget_lines') || ! Schema::hasTable('finance_budget_scopes') || ! Schema::hasTable('finance_budgets')
+            || ! Schema::hasTable('finance_accounts') || ! Schema::hasColumn('finance_budgets', 'currency');
         $budgets = $missing ? collect() : FinanceBudget::orderByDesc('year')->orderBy('company')->orderBy('currency')->get();
         $current = $missing || ! $this->selectedBudget ? null : FinanceBudget::with(['scopes.project', 'scopes.lines.department', 'scopes.lines.account'])->findOrFail($this->selectedBudget);
+        $budgetReport = $current ? app(BudgetLedger::class)->budgetReport($current) : collect();
         $projects = $missing ? collect() : ProjectNumbering::where('is_active', true)->orderBy('code')->get();
         $departments = $missing ? collect() : Department::where('is_active', true)->orderBy('name')->get();
         $accounts = $current ? FinanceAccount::where('company', $current->company)->where('is_active', true)->orderBy('code')->get() : collect();
 
-        return compact('missing', 'budgets', 'current', 'projects', 'departments', 'accounts');
+        return compact('missing', 'budgets', 'current', 'budgetReport', 'projects', 'departments', 'accounts');
     }
 }

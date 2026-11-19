@@ -8,7 +8,13 @@
         <div class="travel-spd-heading"><strong>{{ $brand }}</strong><h2>FORMULIR PERMOHONAN PERJALANAN DINAS</h2></div>
         <table class="travel-document-meta"><tbody>
             <tr><th>No. Dokumen</th><td>@include('travel.partials.field', ['field' => 'number', 'label' => 'Nomor Dokumen SPD', 'placeholder' => 'Otomatis saat disimpan', 'display' => $record?->displayNumber() ?? ($values['number'] ?? '')])@if($editable && $record && $record->approval_round > 0)<small>Nomor cetak: {{ $record->displayNumber() }}</small>@endif</td></tr>
-            <tr><th>Revisi</th><td>@if($record && $record->approval_round > 0)<span class="travel-value">{{ $record->revision }}</span>@else@include('travel.partials.field', ['field' => 'revision', 'label' => 'Revisi SPD'])@endif</td></tr>
+            <tr><th>Revisi</th><td>
+                @if($record && $record->approval_round > 0)
+                    <span class="travel-value">{{ $record->revision }}</span>
+                @else
+                    @include('travel.partials.field', ['field' => 'revision', 'label' => 'Revisi SPD'])
+                @endif
+            </td></tr>
             <tr><th>Tgl Issue</th><td>@include('travel.partials.field', ['field' => 'issued_on', 'label' => 'Tanggal Issue SPD', 'type' => 'date', 'display' => \App\Services\Travel\TravelPresentation::date($values['issued_on'] ?? null)])</td></tr>
             <tr><th>Kategori</th><td>@include('travel.partials.field', ['field' => 'urgency', 'label' => 'Kategori', 'options' => ['urgent' => 'Urgent', 'normal' => 'Non Urgent']])</td></tr>
         </tbody></table>
@@ -23,7 +29,7 @@
         </section>
         <section class="travel-spd-department">
             <div class="travel-spd-field"><label>2. DEPARTEMEN</label><b>:</b><span class="travel-underlined">{{ $employee['department'] ?? '' }}</span></div>
-            <div class="travel-spd-field travel-spd-project"><label>No. Kode Pekerjaan</label><b>:</b>@if($editable && !$printing)@include('travel.partials.field', ['field' => 'project_numbering_id', 'label' => 'Kode Project', 'options' => $projectCodes])@if(empty($values['project_numbering_id']) && filled($values['job_code'] ?? ''))<small>Kode tersimpan: {{ $values['job_code'] }}</small>@endif @else<span class="travel-value">{{ $values['job_code'] ?? '' }}</span>@endif</div>
+            <div class="travel-spd-field travel-spd-project"><label>No. Kode Pekerjaan</label><b>:</b>@if($editable && !$printing)@include('travel.partials.field', ['field' => 'project_numbering_id', 'label' => 'Kode Project', 'options' => $projectCodes, 'blankLabel' => 'HO / Kantor Pusat'])<small>Pilih HO / Kantor Pusat jika perjalanan tidak terkait project.</small>@if(empty($values['project_numbering_id']) && filled($values['job_code'] ?? ''))<small>Kode tersimpan: {{ $values['job_code'] }}</small>@endif @else<span class="travel-value">{{ filled($values['job_code'] ?? '') ? $values['job_code'] : 'HO / Kantor Pusat' }}</span>@endif</div>
         </section>
         <section class="travel-spd-line"><label>3. MAKSUD PERJALANAN DINAS</label><b>:</b>@include('travel.partials.field', ['field' => 'purpose', 'label' => 'Maksud Perjalanan Dinas', 'type' => 'textarea', 'rows' => 3])</section>
         <section><h3>4. ESTIMASI DURASI PERJALANAN DINAS</h3><table class="travel-duration"><tbody>

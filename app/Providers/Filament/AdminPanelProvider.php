@@ -6,6 +6,7 @@ use App\Filament\GlobalSearch\ContextualGlobalSearchProvider;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\SignatureProfile;
 use App\Http\Middleware\AuthenticateFilament;
+use App\Http\Middleware\EnsureModuleIsEnabled;
 use App\Services\Scm\Access;
 use Filament\Actions\Action;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -82,6 +83,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make()->label('Service Desk'),
                 NavigationGroup::make()->label('Collaboration'),
                 NavigationGroup::make()->label('Daily Reports'),
+                NavigationGroup::make()->label('Pengaturan Sistem'),
             ])
             ->navigationItems([
                 NavigationItem::make('Internal 9')
@@ -196,6 +198,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 AuthenticateFilament::class,
+                EnsureModuleIsEnabled::class,
             ]);
     }
 }

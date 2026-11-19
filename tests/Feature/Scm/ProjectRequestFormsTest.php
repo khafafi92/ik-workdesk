@@ -60,12 +60,12 @@ class ProjectRequestFormsTest extends TestCase
     }
 
     #[DataProvider('requestPages')]
-    public function test_new_request_selects_ho_or_project_before_company_and_project_name_can_wait(string $page, string $kind): void
+    public function test_new_request_uses_the_project_selected_for_its_number(string $page, string $kind): void
     {
         Livewire::test($page)->call('chooseCompany')->assertSet('newRequestNeedType', '')
             ->assertSee('Jenis kebutuhan')->set('newRequestNeedType', 'PROJECT')->set('newProjectNumberingId', (string) ProjectNumbering::where('code', 'COMP-19E001')->sole()->id)->call('newDraft', 'KPMOG')
-            ->assertSet('draft.need_type', 'PROJECT')->assertSee('Nama Project (opsional)')
-            ->assertSee('PR/SR Project tetap dapat dibuat')->assertSee($kind === 'PR' ? 'Model/PN' : 'SERVICE REQUEST AND MATERIALS');
+            ->assertSet('draft.need_type', 'PROJECT')->assertSee('COMP-19E001')
+            ->assertDontSee('Nama Project (opsional)')->assertSee($kind === 'PR' ? 'Model/PN' : 'SERVICE REQUEST AND MATERIALS');
         $request = app(Workflow::class)->saveDraft($this->staff, $this->data($kind));
         $this->assertNull($request->work_project_id);
         $this->assertSame('PROJECT', $request->need_type);
@@ -127,13 +127,15 @@ class ProjectRequestFormsTest extends TestCase
         Livewire::test(ServiceRequests::class)->call('open', $request->id)->call('editDraft')->assertSet('draft.items.0.materials_needed', 'Material dari draft lama');
     }
 
-    public function test_optional_project_uses_existing_master_and_does_not_change_approval_scope(): void
+    public function test_legacy_work_project_data_is_preserved_but_project_number_is_shown(): void
     {
         $project = WorkProject::create(['code' => 'QA-1', 'name' => 'Project uji', 'department_id' => $this->department->id, 'status' => 'active']);
         $request = app(Workflow::class)->saveDraft($this->staff, $this->data(extra: ['work_project_id' => $project->id]));
         $this->assertSame($project->id, $request->project->id);
         $this->assertSame('HO', $request->approval_scope);
-        Livewire::test(PurchaseRequests::class)->call('open', $request->id)->assertSee('Nama Project: QA-1 - Project uji')
+        $numbering = ProjectNumbering::where('code', 'COMP-19E001')->sole();
+        Livewire::test(PurchaseRequests::class)->call('open', $request->id)
+            ->assertSee('Project: '.$numbering->code.' - '.$numbering->name)->assertDontSee('Nama Project (opsional)')
             ->call('editDraft')->assertSet('draft.work_project_id', $project->id);
         $ho = app(Workflow::class)->saveDraft($this->staff, $this->data(extra: ['need_type' => 'HO', 'work_project_id' => $project->id]));
         $this->assertNull($ho->work_project_id);

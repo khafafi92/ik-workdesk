@@ -22,8 +22,8 @@ use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
 use App\Models\Scm\VendorRegistration;
 use App\Models\User;
-use App\Models\WorkProject;
 use App\Services\Finance\BudgetApprovalPolicies;
+use App\Services\Finance\BudgetLedger;
 use App\Services\Inventory\InventoryCatalogue;
 use App\Services\Scm\Access;
 use App\Services\Scm\ApprovalPolicies;
@@ -418,7 +418,8 @@ class ScmProcurement extends Page
             'requester_id' => auth()->id(),
             'project_numbering_id' => $number->project_numbering_id,
             'work_project_id' => '', 'instruction_to_vendor' => '', 'procedure_required' => '',
-            'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'budget_currency' => 'IDR', 'budget_estimate' => '', 'items' => []];
+            'customer_po' => '', 'job_order' => '', 'delivery_point' => '', 'title' => '', 'reason' => '', 'needed_at' => '', 'notes' => '', 'requires_cbo3' => false, 'budget_currency' => 'IDR', 'budget_estimate' => '', 'finance_budget_line_id' => '', 'items' => []];
+        $this->syncBudgetLineSelection();
         $this->addItem();
         $this->resetValidation();
     }
@@ -434,13 +435,67 @@ class ScmProcurement extends Page
         $this->draft['estimated_total'] = $record->estimated_total_minor ? Decimal::input($record->estimated_total_minor) : '';
         $this->draft['budget_currency'] = $record->budget_currency ?? 'IDR';
         $this->draft['budget_estimate'] = $record->budget_estimate_minor !== null ? Decimal::input($record->budget_estimate_minor) : '';
+        $this->draft['finance_budget_line_id'] = (string) ($record->finance_budget_line_id ?? '');
         $this->draft['requires_cbo3'] = app(Approvals::class)->requiresCbo3($record);
         $this->draft['items'] = $record->items->map(fn ($i) => [...$i->only(['inventory_item_id', 'name', 'brand', 'item_reference', 'size', 'model_part_number', 'specification', 'unit', 'notes']),
             'materials_needed' => $i->materials_needed ?? ($record->need_type === 'PROJECT' && $record->kind === 'SR' ? $i->name : ''),
             'quantity' => Decimal::input($i->quantity_milli, 3)])->all();
+        $this->syncBudgetLineSelection();
         $this->version = $record->version;
         $this->editing = true;
         $this->choosingCompany = false;
+    }
+
+    public function updatedDraftCompany(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    public function updatedDraftDate(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    public function updatedDraftDepartmentId(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    public function updatedDraftNeedType(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    public function updatedDraftProjectNumberingId(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    private function syncBudgetLineSelection(): void
+    {
+        if (static::$requestKind === null || ! Schema::hasTable('finance_budget_lines')
+            || ! Schema::hasColumn('scm_requests', 'finance_budget_line_id')) {
+            return;
+        }
+
+        $departmentId = (int) ($this->draft['department_id'] ?? 0);
+        if (! $departmentId) {
+            $this->draft['finance_budget_line_id'] = '';
+
+            return;
+        }
+
+        $lines = app(BudgetLedger::class)->linesForContext(
+            $this->draft['company'] ?? 'APCA', $this->draft['date'] ?? today()->toDateString(),
+            $departmentId, $this->draft['need_type'] ?? 'HO',
+            filled($this->draft['project_numbering_id'] ?? null) ? (int) $this->draft['project_numbering_id'] : null,
+        );
+        $selectedId = (int) ($this->draft['finance_budget_line_id'] ?? 0);
+        if ($lines->contains('id', $selectedId)) {
+            return;
+        }
+
+        $this->draft['finance_budget_line_id'] = $lines->count() === 1 ? (string) $lines->sole()->id : '';
     }
 
     public function addItem(): void
@@ -965,6 +1020,27 @@ class ScmProcurement extends Page
                 $routingIssue = collect($exception->errors())->flatten()->first();
             }
         }
+        $budgetLineOptions = collect();
+        $budgetLine = null;
+        $budgetUsage = null;
+        if (static::$requestKind !== null && Schema::hasTable('finance_budget_lines')
+            && Schema::hasColumn('scm_requests', 'finance_budget_line_id')) {
+            $budgetLedger = app(BudgetLedger::class);
+            if ($this->editing && filled($this->draft['department_id'] ?? null)) {
+                $budgetLineOptions = $budgetLedger->linesForContext(
+                    $this->draft['company'] ?? 'APCA', $this->draft['date'] ?? today()->toDateString(),
+                    (int) $this->draft['department_id'], $this->draft['need_type'] ?? 'HO',
+                    filled($this->draft['project_numbering_id'] ?? null) ? (int) $this->draft['project_numbering_id'] : null,
+                );
+                $budgetLine = $budgetLineOptions->firstWhere('id', (int) ($this->draft['finance_budget_line_id'] ?? 0));
+            } elseif ($record?->finance_budget_line_id) {
+                $record->loadMissing('financeBudgetLine.scope.budget', 'financeBudgetLine.scope.project', 'financeBudgetLine.account');
+                $budgetLine = $record->financeBudgetLine;
+            }
+            if ($budgetLine) {
+                $budgetUsage = $budgetLedger->lineSummary($budgetLine);
+            }
+        }
         $submissionPlan = null;
         $submissionIssue = null;
         if ($canEditDraft && ! $this->editing) {
@@ -991,14 +1067,17 @@ class ScmProcurement extends Page
             'poPolicyUsers' => $configure ? User::with('employee')->orderBy('name')->get()->filter(fn ($account) => $account->isActiveForAccess())->pluck('name', 'id')->all() : [],
             'submissionPlan' => $submissionPlan, 'submissionIssue' => $submissionIssue,
             'routingPlan' => $routingPlan, 'routingIssue' => $routingIssue,
+            'budgetLineOptions' => $budgetLineOptions->mapWithKeys(function ($line): array {
+                $available = app(BudgetLedger::class)->lineSummary($line)['available_minor'];
+
+                return [$line->id => 'Sisa '.($available < 0 ? '-' : '').Decimal::money(abs($available), $line->scope->budget->currency)];
+            })->all(),
+            'budgetLine' => $budgetLine, 'budgetUsage' => $budgetUsage,
             'approvalPolicies' => $configure ? ApprovalPolicy::with(['department', 'supervisor', 'acknowledger', 'crosschecker', 'approver', 'highApprover'])->orderBy('need_type')->orderBy('company')->orderBy('department_id')->get() : collect(),
             'policyUsers' => $configure ? User::with(['employee', 'roles'])->orderBy('name')->get()
                 ->filter(fn ($account) => $account->isActiveForAccess() && (($this->approvalPolicy['need_type'] ?? 'HO') !== 'PROJECT' || ! app(ApprovalPolicies::class)->isCbo($account)))
                 ->mapWithKeys(fn ($account) => [$account->id => $account->name.(filled($account->employee?->position) ? ' ('.$account->employee->position.')' : '')])->all() : [],
             'records' => $query->with('department')->latest('id')->paginate(15), 'record' => $record, 'summary' => $summary, 'statuses' => $statuses, 'statusOptions' => $statusOptions, 'approvalTarget' => $approvalTarget,
-            'projectOptions' => $this->editing && ($this->draft['need_type'] ?? 'HO') === 'PROJECT' ? WorkProject::where('status', 'active')
-                ->where(fn ($query) => $query->whereNull('department_id')->orWhereIn('department_id', $requestDepartmentIds))
-                ->orderBy('name')->get()->mapWithKeys(fn ($project) => [$project->id => $project->code.' - '.$project->name])->all() : [],
             'vendors' => $vendors, 'candidateVendors' => $candidateVendors,
             'vendorRegistrations' => $isScm && $this->vendorId ? VendorRegistration::where('vendor_id', $this->vendorId)->latest('id')->get() : collect(),
             'pendingRegistrations' => $isScm && $this->section === 'vendors' ? VendorRegistration::with('vendor')->where('status', 'submitted')->whereNull('revoked_at')->orderBy('submitted_at')->paginate(5, ['*'], 'registrationPage') : null,

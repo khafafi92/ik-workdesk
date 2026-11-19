@@ -16,11 +16,13 @@ use App\Models\Scm\Vendor;
 use App\Models\Scm\VendorDocument;
 use App\Models\Scm\VendorRegistration;
 use App\Models\User;
+use App\Services\Finance\BudgetLedger;
 use App\Services\Scm\Validation as Validator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -92,6 +94,7 @@ class Workflow
             'estimated_total' => 'nullable',
             'budget_estimate' => 'nullable',
             'budget_currency' => ['nullable', Rule::in(config('scm.currencies'))],
+            'finance_budget_line_id' => 'nullable|integer|exists:finance_budget_lines,id',
             'requires_cbo3' => 'sometimes|boolean',
             'kind' => ['required', Rule::in(['PR', 'SR'])], 'date' => 'required|date',
             'department_id' => ['required', Rule::exists('departments', 'id')],
@@ -111,6 +114,19 @@ class Workflow
         ], [], ['kind' => 'jenis permintaan', 'items' => 'item', 'title' => 'judul', 'reason' => 'alasan kebutuhan',
             ...($projectService ? ['items.*.name' => 'Description', 'items.*.specification' => 'Description'] : [])])->validate();
         abort_unless($actor->isSystemAdministrator() || ($actor->canAccessDepartment((int) $validated['department_id']) && $requester->canAccessDepartment((int) $validated['department_id'])), 403);
+        if (Schema::hasColumn('scm_requests', 'finance_budget_line_id')) {
+            $budgetLine = app(BudgetLedger::class)->resolveLine(
+                filled($validated['finance_budget_line_id'] ?? null) ? (int) $validated['finance_budget_line_id'] : null,
+                $validated['company'], $validated['date'], (int) $validated['department_id'], $validated['need_type'],
+                filled($validated['project_numbering_id'] ?? null) ? (int) $validated['project_numbering_id'] : null,
+            );
+            $validated['finance_budget_line_id'] = $budgetLine?->id;
+            if ($budgetLine) {
+                $validated['budget_currency'] = $budgetLine->scope->budget->currency;
+            }
+        } else {
+            unset($validated['finance_budget_line_id']);
+        }
         if (array_key_exists('estimated_total', $validated)) {
             $validated['estimated_total_minor'] = filled($validated['estimated_total']) ? Decimal::parse($validated['estimated_total']) : null;
             $this->reject($validated['estimated_total_minor'] !== null && $validated['estimated_total_minor'] <= 0, 'Estimasi total harus lebih dari nol.');

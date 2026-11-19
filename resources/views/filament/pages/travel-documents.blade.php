@@ -13,7 +13,29 @@
             <div class="travel-context"><label for="travel-spd-reference">SPD acuan yang sudah disetujui</label><select id="travel-spd-reference" wire:model.live="input.spd_id"><option value="">Pilih SPD</option>@foreach($spds as $item)<option value="{{ $item->id }}">{{ $item->number }} · {{ $item->employee_snapshot['name'] }}</option>@endforeach</select>
                 @if($spds->isEmpty())<p>Belum ada SPD yang disetujui dan belum mempunyai LPJ dalam cakupan akses Anda.</p>@endif</div>
         @elseif($kind === 'lpj' && $spd)<p>SPD acuan: <strong>{{ $spd->number }}</strong></p>@endif
-        @if($kind === 'spd' && $editable)<div class="travel-context"><label for="travel-company">Perusahaan</label><select id="travel-company" wire:model.live="input.company"><option value="APCA">APCA</option><option value="KPMOG">KPMOG</option></select></div>@endif
+        @if($kind === 'spd' && $editable)
+            <div class="travel-spd-context-row">
+                <div class="travel-context"><label for="travel-company">Perusahaan</label><select id="travel-company" wire:model.live="input.company"><option value="APCA">APCA</option><option value="KPMOG">KPMOG</option></select></div>
+                <section class="travel-context travel-budget-context" aria-labelledby="travel-budget-heading">
+                    <div class="travel-budget-context-heading"><h2 id="travel-budget-heading">Anggaran SPD</h2><label for="travel-budget-line">Peruntukan anggaran, tidak dicetak pada SPD</label></div>
+                    <select id="travel-budget-line" wire:model.live="input.finance_budget_line_id">
+                        <option value="">Pilih peruntukan anggaran</option>
+                        @foreach($budgetLineOptions as $id => $label)<option value="{{ $id }}">{{ $label }}</option>@endforeach
+                    </select>
+                    @if($budgetUsage && $budgetLine)
+                        <p role="status">Alokasi {{ \App\Services\Scm\Decimal::money($budgetLine->amount_minor, $budgetLine->scope->budget->currency) }}. Terpakai dan komitmen {{ \App\Services\Scm\Decimal::money($budgetUsage['used_minor'], $budgetLine->scope->budget->currency) }}. Sisa {{ \App\Services\Scm\Decimal::money($budgetUsage['available_minor'], $budgetLine->scope->budget->currency) }}.</p>
+                    @elseif($budgetLineOptions)
+                        <p role="status">Pilih peruntukan untuk melihat sisa anggaran. Estimasi SPD menjadi komitmen saat diajukan.</p>
+                    @else
+                        <p role="status">Belum ada alokasi anggaran untuk divisi dan project ini. Hubungi Finance untuk menyiapkan master anggaran.</p>
+                    @endif
+                </section>
+            </div>
+        @elseif($budgetLine && $budgetUsage)
+            <section class="travel-context" aria-labelledby="travel-budget-heading"><h2 id="travel-budget-heading">Anggaran terkait SPD</h2>
+                <p role="status">Terpakai dan komitmen {{ \App\Services\Scm\Decimal::money($budgetUsage['used_minor'], $budgetLine->scope->budget->currency) }} dari alokasi {{ \App\Services\Scm\Decimal::money($budgetLine->amount_minor, $budgetLine->scope->budget->currency) }}. Sisa {{ \App\Services\Scm\Decimal::money($budgetUsage['available_minor'], $budgetLine->scope->budget->currency) }}. Rincian ini hanya tampil di WorkDesk, tidak pada dokumen cetak.</p>
+            </section>
+        @endif
         @if($canArrange)
             <section class="travel-rule-panel" aria-labelledby="travel-administration-heading">
                 <h2 id="travel-administration-heading">Pengaturan Khafafi</h2>

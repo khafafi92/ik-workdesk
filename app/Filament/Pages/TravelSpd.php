@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Models\Scm\ProjectNumbering;
 use App\Services\Scm\Decimal;
 use App\Services\Travel\TravelAccess;
+use App\Services\Finance\BudgetLedger;
 use App\Services\Travel\TravelAmounts;
 use App\Services\Travel\TravelDocumentAdministration;
 use App\Services\Travel\TravelSchedule;
@@ -125,8 +126,8 @@ class TravelSpd extends Page
         if (blank($this->input['requester_id'] ?? null)) {
             if (static::$kind === 'spd') {
                 $this->input['employee_id'] = '';
+                $this->syncBudgetLineSelection();
             }
-
             return;
         }
         $requester = app(TravelDocumentAdministration::class)->requesters()->find($this->input['requester_id']);
@@ -135,7 +136,57 @@ class TravelSpd extends Page
         }
         if (static::$kind === 'spd') {
             $this->input['employee_id'] = (string) $requester->employee->id;
+            $this->syncBudgetLineSelection();
         }
+    }
+
+    public function updatedInputCompany(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    public function updatedInputEmployeeId(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    public function updatedInputProjectNumberingId(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    public function updatedInputAppliedOn(): void
+    {
+        $this->syncBudgetLineSelection();
+    }
+
+    private function syncBudgetLineSelection(): void
+    {
+        if (static::$kind !== 'spd' || ! Schema::hasTable('finance_budget_lines')
+            || ! Schema::hasColumn('travel_documents', 'finance_budget_line_id')) {
+            return;
+        }
+
+        $employee = filled($this->input['employee_id'] ?? null)
+            ? TravelAccess::employees(auth()->user(), 'spd')->find($this->input['employee_id'])
+            : null;
+        if (! $employee) {
+            $this->input['finance_budget_line_id'] = '';
+
+            return;
+        }
+
+        $projectNumberingId = filled($this->input['project_numbering_id'] ?? null) ? (int) $this->input['project_numbering_id'] : null;
+        $lines = app(BudgetLedger::class)->linesForContext(
+            $this->input['company'] ?? 'APCA', $this->input['applied_on'] ?? today()->toDateString(),
+            (int) $employee->department_id, $projectNumberingId ? 'PROJECT' : 'HO', $projectNumberingId,
+        );
+        $selectedId = (int) ($this->input['finance_budget_line_id'] ?? 0);
+        if ($lines->contains('id', $selectedId)) {
+            return;
+        }
+
+        $this->input['finance_budget_line_id'] = $lines->count() === 1 ? (string) $lines->sole()->id : '';
     }
 
     private function refreshDuration(): void
@@ -153,6 +204,7 @@ class TravelSpd extends Page
         $this->selected = $this->version = 0;
         $this->creating = true;
         $this->input = app(TravelWorkflow::class)->defaults(auth()->user(), static::$kind);
+        $this->syncBudgetLineSelection();
         $this->reset('uploads', 'returnReason');
         $this->resetValidation();
     }
@@ -164,6 +216,7 @@ class TravelSpd extends Page
         $this->version = $document->version;
         $this->creating = false;
         $this->input = [...app(TravelWorkflow::class)->defaults(auth()->user(), static::$kind), ...app(TravelWorkflow::class)->formData($document)];
+        $this->syncBudgetLineSelection();
         $this->reset('uploads', 'returnReason');
         $this->resetValidation();
     }
@@ -326,6 +379,32 @@ class TravelSpd extends Page
         } catch (ValidationException) {
         }
         $projectCodes = $editable && $kind === 'spd' ? ProjectNumbering::where('is_active', true)->orderBy('code')->pluck('code', 'id')->all() : [];
+        $budgetLineOptions = collect();
+        $budgetLine = null;
+        $budgetUsage = null;
+        if (Schema::hasTable('finance_budget_lines') && Schema::hasColumn('travel_documents', 'finance_budget_line_id')) {
+            $budgetLedger = app(BudgetLedger::class);
+            if ($editable && $kind === 'spd' && $person?->department_id) {
+                $projectNumberingId = filled($this->input['project_numbering_id'] ?? null) ? (int) $this->input['project_numbering_id'] : null;
+                $budgetLineOptions = $budgetLedger->linesForContext(
+                    $this->input['company'] ?? 'APCA', $this->input['applied_on'] ?? today()->toDateString(),
+                    (int) $person->department_id, $projectNumberingId ? 'PROJECT' : 'HO', $projectNumberingId,
+                );
+                $budgetLine = $budgetLineOptions->firstWhere('id', (int) ($this->input['finance_budget_line_id'] ?? 0));
+            } elseif ($kind === 'lpj') {
+                $budgetLine = $spd?->financeBudgetLine;
+            } elseif ($record) {
+                $budgetLine = $record->financeBudgetLine;
+            }
+            if ($budgetLine) {
+                $budgetUsage = $budgetLedger->lineSummary($budgetLine);
+            }
+        }
+        $budgetLineOptions = $budgetLineOptions->mapWithKeys(function ($line): array {
+            $available = app(BudgetLedger::class)->lineSummary($line)['available_minor'];
+
+            return [$line->id => 'Sisa '.($available < 0 ? '-' : '').Decimal::money(abs($available), $line->scope->budget->currency)];
+        })->all();
         $duration = null;
         $durationError = null;
         if ($editable && $kind === 'spd') {
@@ -341,6 +420,7 @@ class TravelSpd extends Page
             ->when($this->statusFilter !== '', fn ($query) => $query->where('status', $this->statusFilter))->latest('id')->paginate(15);
 
         return compact('kind', 'missing', 'record', 'editable', 'canCreate', 'employees', 'employee', 'totals', 'records', 'spds', 'spd', 'projectCodes',
-            'approvalPlan', 'approvalPlanError', 'canArrange', 'requesters', 'requesterSnapshot', 'arrangingApprovals', 'approvers', 'duration', 'durationError');
+            'approvalPlan', 'approvalPlanError', 'canArrange', 'requesters', 'requesterSnapshot', 'arrangingApprovals', 'approvers', 'duration', 'durationError',
+            'budgetLineOptions', 'budgetLine', 'budgetUsage');
     }
 }
