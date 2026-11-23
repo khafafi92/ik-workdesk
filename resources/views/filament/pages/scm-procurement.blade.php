@@ -2,7 +2,7 @@
 <div class="scm-workspace" x-on:scm-focus.window="$nextTick(() => document.getElementById($event.detail.id)?.focus())">
     @if($isSuperuser)<p class="scm-help">Akses superuser: seluruh pengguna dan departemen. Tanda tangan dan riwayat tindakan memakai identitas {{ auth()->user()->name }}.</p>@endif
     @if($isScm || $configure)<nav class="scm-actions" aria-label="Bagian pengadaan">
-        @foreach([($requestKind ? 'mine' : 'queue') => ($requestKind ?? 'Permintaan'), 'vendors' => 'Vendor & dokumen', 'settings' => 'Pengaturan'] as $key => $label)
+        @foreach([($requestKind ? 'mine' : 'queue') => ($requestKind ?? 'Permintaan'), 'vendors' => 'Master Vendor', 'settings' => 'Pengaturan'] as $key => $label)
             @if((in_array($key, ['mine', 'queue', 'vendors']) && $isScm) || ($key === 'settings' && $configure))
             <button type="button" wire:click="switchSection('{{ $key }}')" @if($section === $key) aria-current="page" @endif>{{ $label }}</button>
             @endif

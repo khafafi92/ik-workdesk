@@ -1,29 +1,106 @@
-<section class="scm-panel"><h2>Portal Vendor</h2><p>Vendor baru dapat mengisi data sendiri dan membuka kembali kiriman menggunakan Vendor ID yang diperoleh saat pendaftaran. Bagikan alamat portal berikut kepada vendor.</p><p><a href="{{ route('vendor.index') }}" target="_blank" rel="noopener">Buka Portal Vendor (tab baru)</a></p><div class="scm-field"><label for="public-vendor-url">Alamat Portal Vendor</label><input id="public-vendor-url" value="{{ route('vendor.index') }}" readonly></div></section>
-<section class="scm-panel"><h2>Kiriman Form 005 menunggu pemeriksaan ({{ $pendingRegistrations->total() }})</h2>
-    <p>Periksa kiriman vendor sebelum menerima profil dan dokumennya ke master.</p>
-    @forelse($pendingRegistrations as $registration)<div class="scm-item"><h3>{{ $registration->vendor?->code ?? 'Pendaftaran baru' }} · {{ $registration->vendor?->name ?? ($registration->answers[1]['name'] ?? 'Vendor') }}</h3><p>Form #{{ $registration->id }} · Dikirim {{ $registration->submitted_at?->format('d/m/Y H:i') }}@if($registration->expires_at->isPast()) · Akses formulir kedaluwarsa. {{ $registration->portal_access_id ? 'Vendor dapat membuka kembali melalui Portal Vendor dengan nomor uniknya.' : 'Perlu undangan baru untuk pengiriman kembali.' }}@endif</p><div class="scm-actions"><a href="{{ route('scm.vendor-review', $registration) }}">Periksa kiriman #{{ $registration->id }}</a>@if($registration->expires_at->isPast() && $registration->vendor_id)<button type="button" wire:click="editVendor({{ $registration->vendor_id }})">Buka vendor {{ $registration->vendor->code }}</button>@endif</div></div>@empty<p>Belum ada kiriman yang menunggu pemeriksaan SCM.</p>@endforelse
-    {{ $pendingRegistrations->links() }}
-</section>
-<section class="scm-panel"><header class="scm-heading"><h2>Vendor</h2><button type="button" wire:click="newVendor">Buat vendor baru</button></header>
-    <p>Vendor baru dapat mendaftar melalui Portal Vendor di atas. Untuk undangan bagi vendor yang sudah ada, buka Edit vendor lalu buat tautan Form 005. Kelengkapan pengadaan ditentukan oleh checklist masing-masing pengadaan.</p>
-    <p>Vendor yang dihapus tidak tampil di daftar master. Riwayat pengadaan dan dokumennya tetap tersimpan.</p>
-    <x-scm.field model="vendorSearch" label="Cari kode atau nama vendor" :live="true" />
-    @error('scm')<p class="scm-error" role="alert">{{ $message }}</p>@enderror
-    <div class="scm-scroll" role="region" aria-label="Daftar vendor" tabindex="0"><table><thead><tr><th>Kode & perusahaan</th><th>Jenis penyedia</th><th>PIC</th><th>Aktif</th><th>Tindakan</th></tr></thead><tbody>
-    @forelse($vendorRows as $v)<tr><td>{{ $v->code }}<br>{{ $v->name }}</td><td>{{ ['barang'=>'Barang','jasa'=>'Jasa','keduanya'=>'Barang dan jasa'][$v->provider_type] ?? $v->provider_type }}</td><td>{{ $v->pic_name ?: '-' }}</td><td>{{ $v->is_active ? 'Aktif' : 'Nonaktif' }}</td><td><div class="scm-actions"><button type="button" wire:click="editVendor({{ $v->id }})">Edit {{ $v->code }}</button><button type="button" wire:click="deleteVendor({{ $v->id }}, {{ $v->version }})" wire:confirm="Hapus vendor {{ $v->code }}? Vendor hilang dari daftar master, tetapi riwayatnya tetap tersimpan." wire:loading.attr="disabled" wire:target="deleteVendor" aria-label="Hapus vendor {{ $v->code }}">Hapus</button></div></td></tr>@empty<tr><td colspan="5">Tidak ada vendor sesuai pencarian. Sesuaikan pencarian atau lengkapi profil perusahaan pada form berikut.</td></tr>@endforelse
-    </tbody></table></div>{{ $vendorRows->links() }}
-    @if($duplicateVendors->isNotEmpty())<p class="scm-error" role="status">Periksa kandidat duplikat sebelum menyimpan: {{ $duplicateVendors->join(', ') }}.</p>@endif
-    <form wire:submit="saveVendor"><h3>{{ $vendorId ? 'Edit profil vendor · '.$vendor['code'] : 'Vendor baru' }}</h3><fieldset wire:loading.attr="disabled" wire:target="saveVendor"><legend>Perusahaan dan kontak</legend><div class="scm-grid">
-        <x-scm.field model="vendor.code" label="Kode unik vendor" required /><x-scm.field model="vendor.name" label="Nama perusahaan" :blur="true" required />
-        <x-scm.select model="vendor.provider_type" label="Jenis penyedia" :options="['barang'=>'Barang','jasa'=>'Jasa','keduanya'=>'Barang dan jasa']" required />
-        <x-scm.field model="vendor.business_category" label="Kategori usaha" /><x-scm.field model="vendor.address" label="Alamat" multiline /><x-scm.field model="vendor.phone" label="Telepon perusahaan" /><x-scm.field model="vendor.email" label="Email perusahaan" type="email" :blur="true" />
-        <x-scm.field model="vendor.pic_name" label="Nama PIC" /><x-scm.field model="vendor.pic_position" label="Jabatan PIC" /><x-scm.field model="vendor.pic_phone" label="HP / WhatsApp PIC" /><x-scm.field model="vendor.pic_email" label="Email PIC" type="email" /><x-scm.field model="vendor.notes" label="Catatan vendor" multiline /><x-scm.check model="vendor.is_active" label="Vendor aktif" />
-    </div></fieldset><fieldset wire:loading.attr="disabled" wire:target="saveVendor"><legend>Rekening pembayaran</legend><div class="scm-grid">
-        <x-scm.field model="vendor.bank_name" label="Nama bank" />
-        <x-scm.field model="vendor.bank_account_number" label="Nomor rekening" />
-        <x-scm.field model="vendor.bank_account_name" label="Nama pemilik rekening" />
-    </div></fieldset><x-filament::button type="submit" wire:loading.attr="disabled" wire:target="saveVendor">Simpan profil vendor</x-filament::button></form>
-</section>
+@php($providerTypes = ['barang' => 'Barang', 'jasa' => 'Jasa', 'keduanya' => 'Barang dan jasa'])
+@if($vendorEditorOpen)
+    @php($currentVendor = $vendorId ? $vendors->firstWhere('id', $vendorId) : null)
+    <section class="scm-panel scm-vendor-master" wire:key="vendor-editor-{{ $vendorId }}" aria-labelledby="scm-vendor-profile-heading">
+        <header class="scm-heading">
+            <div>
+                <h2 id="scm-vendor-profile-heading" tabindex="-1">{{ $currentVendor?->name ?? 'Vendor baru' }}</h2>
+                @if($currentVendor)
+                    <p class="scm-help">{{ $currentVendor->code }} · {{ $currentVendor->is_active ? 'Aktif' : 'Nonaktif' }}</p>
+                @endif
+            </div>
+            <div class="scm-actions">
+                <a href="#scm-vendor-bank_account_number">Ke rekening pembayaran</a>
+                <button type="button" wire:click="closeVendorEditor" wire:loading.attr="disabled" wire:target="saveVendor,closeVendorEditor">Kembali ke daftar vendor</button>
+            </div>
+        </header>
+        @if($duplicateVendors->isNotEmpty())
+            <p class="scm-error" role="status">Periksa kandidat duplikat sebelum menyimpan: {{ $duplicateVendors->join(', ') }}.</p>
+        @endif
+
+        <form class="scm-vendor-form" wire:submit="saveVendor">
+            <fieldset class="scm-vendor-group scm-vendor-company" wire:loading.attr="disabled" wire:target="saveVendor">
+                <legend>Perusahaan</legend>
+                <div class="scm-vendor-fields">
+                    <x-scm.field model="vendor.name" label="Nama perusahaan" :blur="true" required />
+                    <x-scm.field model="vendor.code" label="Kode unik vendor" required />
+                    <x-scm.select model="vendor.provider_type" label="Jenis penyedia" :options="$providerTypes" required />
+                    <x-scm.field model="vendor.business_category" label="Kategori usaha" />
+                    <x-scm.field model="vendor.phone" label="Telepon perusahaan" />
+                    <x-scm.field model="vendor.email" label="Email perusahaan" type="email" :blur="true" />
+                    <div class="scm-vendor-wide"><x-scm.field model="vendor.address" label="Alamat" multiline /></div>
+                    <div class="scm-vendor-wide"><x-scm.check model="vendor.is_active" label="Vendor aktif" /></div>
+                </div>
+            </fieldset>
+            <fieldset class="scm-vendor-group" wire:loading.attr="disabled" wire:target="saveVendor">
+                <legend>Rekening pembayaran</legend>
+                <p class="scm-help">Finance menggunakan data ini di Pembayaran PO.</p>
+                <div class="scm-vendor-fields">
+                    <x-scm.field model="vendor.bank_name" label="Nama bank" />
+                    <x-scm.field model="vendor.bank_account_number" label="Nomor rekening" maxlength="100" />
+                    <div class="scm-vendor-wide"><x-scm.field model="vendor.bank_account_name" label="Nama pemilik rekening" /></div>
+                </div>
+            </fieldset>
+            <fieldset class="scm-vendor-group" wire:loading.attr="disabled" wire:target="saveVendor">
+                <legend>Kontak PIC dan catatan</legend>
+                <div class="scm-vendor-fields">
+                    <x-scm.field model="vendor.pic_name" label="Nama PIC" />
+                    <x-scm.field model="vendor.pic_position" label="Jabatan PIC" />
+                    <x-scm.field model="vendor.pic_phone" label="HP / WhatsApp PIC" />
+                    <x-scm.field model="vendor.pic_email" label="Email PIC" type="email" />
+                    <div class="scm-vendor-wide"><x-scm.field model="vendor.notes" label="Catatan vendor" multiline /></div>
+                </div>
+            </fieldset>
+            <div class="scm-actions">
+                <x-filament::button type="submit" wire:loading.attr="disabled" wire:target="saveVendor,closeVendorEditor">Simpan profil vendor</x-filament::button>
+                <span class="scm-help" role="status" wire:loading wire:target="saveVendor">Menyimpan profil vendor...</span>
+            </div>
+        </form>
+    </section>
+@else
+    <section class="scm-panel scm-vendor-master" wire:key="vendor-directory" aria-labelledby="scm-vendor-directory-heading">
+        <header class="scm-heading">
+            <div>
+                <h2 id="scm-vendor-directory-heading">Daftar vendor</h2>
+                <p class="scm-help">Kelola profil, rekening pembayaran, dan dokumen vendor.</p>
+            </div>
+            <div class="scm-actions">
+                <a href="{{ \App\Filament\Pages\ScmVendorRegistrations::getUrl() }}">Lihat pendaftaran di Data Vendor</a>
+                <x-filament::button type="button" wire:click="newVendor" wire:loading.attr="disabled" wire:target="newVendor,editVendor">Buat vendor baru</x-filament::button>
+            </div>
+        </header>
+        <div class="scm-vendor-search">
+            <x-scm.field model="vendorSearch" label="Cari kode atau nama vendor" type="search" :live="true" />
+        </div>
+        <div aria-live="polite" class="scm-help">
+            <span wire:loading.remove wire:target="vendorSearch">{{ $vendorRows->total() }} vendor</span>
+            <span wire:loading wire:target="vendorSearch">Mencari vendor...</span>
+        </div>
+        @if($vendorRows->isNotEmpty())
+            <ul class="scm-vendor-list" role="list">
+                @foreach($vendorRows as $v)
+                    <li class="scm-vendor-row" wire:key="master-vendor-{{ $v->id }}">
+                        <div>
+                            <h3>{{ $v->name }}</h3>
+                            <p class="scm-help">{{ $v->code }} · {{ $providerTypes[$v->provider_type] ?? $v->provider_type }} · {{ $v->is_active ? 'Aktif' : 'Nonaktif' }}</p>
+                        </div>
+                        <dl class="scm-vendor-meta">
+                            <div><dt>PIC</dt><dd>{{ $v->pic_name ?: 'Belum diisi' }}</dd></div>
+                            <div><dt>Rekening</dt><dd>{{ filled($v->bank_name) && filled($v->bank_account_number) && filled($v->bank_account_name) ? 'Lengkap' : 'Belum lengkap' }}</dd></div>
+                        </dl>
+                        <div class="scm-actions scm-vendor-row-actions">
+                            <button type="button" wire:click="editVendor({{ $v->id }})" wire:loading.attr="disabled" wire:target="editVendor,newVendor,deleteVendor" aria-label="Edit vendor {{ $v->code }}">Edit profil</button>
+                            <button type="button" wire:click="deleteVendor({{ $v->id }}, {{ $v->version }})" wire:confirm="Hapus vendor {{ $v->code }} dari daftar master? Riwayat pengadaan dan dokumennya tetap tersimpan." wire:loading.attr="disabled" wire:target="editVendor,newVendor,deleteVendor" aria-label="Hapus vendor {{ $v->code }}">Hapus</button>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+            {{ $vendorRows->links() }}
+        @else
+            <p>{{ filled($vendorSearch) ? 'Vendor tidak ditemukan. Coba kata kunci lain.' : 'Belum ada vendor di master. Buat profil baru atau periksa pendaftaran di bawah.' }}</p>
+        @endif
+    </section>
+@endif
 @if($vendorId)
 <section class="scm-panel"><h2>Form 005 yang diisi vendor · {{ $vendor['name'] }}</h2>
     <p>Vendor mengisi lima bagian melalui halaman terpisah dari panel IK WorkDesk. Tautan berlaku 30 hari dan hanya membuka kiriman vendor ini. Membuat tautan baru mencabut undangan sebelumnya yang belum diterima dan membuat formulir baru; isian lama tetap disimpan dalam riwayat. SCM memeriksa kiriman sebelum profil dan dokumen masuk master.</p>
@@ -36,6 +113,37 @@
     @if($vendorPortalUrl)<div class="scm-field"><label for="vendor-portal-link">Tautan untuk vendor (salin dan kirim melalui saluran Anda)</label><textarea id="vendor-portal-link" rows="3" readonly>{{ $vendorPortalUrl }}</textarea></div>@endif
     @forelse($vendorRegistrations as $registration)<p>Form #{{ $registration->id }} · {{ ['draft'=>'Sedang diisi vendor','submitted'=>'Menunggu pemeriksaan SCM','correction'=>'Perlu perbaikan','accepted'=>'Diterima SCM'][$registration->status] }} · <strong>{{ $registration->revoked_at ? 'Tautan dicabut' : ($registration->expires_at->isPast() ? 'Tautan kedaluwarsa' : 'Tautan aktif') }}</strong> · Berlaku sampai {{ $registration->expires_at->format('d/m/Y H:i') }} <a href="{{ route('scm.vendor-review', $registration) }}">Periksa Form 005 #{{ $registration->id }}</a></p>@empty<p>Belum ada undangan Form 005 untuk vendor ini.</p>@endforelse
 </section>
+@endif
+@if(! $vendorEditorOpen)
+    <details class="scm-panel scm-vendor-portal" wire:key="vendor-portal-tools" wire:ignore.self>
+        <summary>Kiriman Form 005 menunggu pemeriksaan ({{ $pendingRegistrations->total() }})</summary>
+        <div class="scm-vendor-portal-body">
+            <p>Vendor baru dapat mendaftar melalui portal. Periksa kiriman Form 005 sebelum menerima profil dan dokumen ke master.</p>
+            <div class="scm-actions"><a href="{{ route('vendor.index') }}" target="_blank" rel="noopener">Buka Portal Vendor (tab baru)</a></div>
+            <div class="scm-field">
+                <label for="public-vendor-url">Alamat Portal Vendor</label>
+                <input id="public-vendor-url" value="{{ route('vendor.index') }}" readonly>
+            </div>
+            @forelse($pendingRegistrations as $registration)
+                <article class="scm-item" wire:key="pending-vendor-form-{{ $registration->id }}">
+                    <h3>{{ $registration->vendor?->code ?? 'Pendaftaran baru' }} · {{ $registration->vendor?->name ?? ($registration->answers[1]['name'] ?? 'Vendor') }}</h3>
+                    <p>Form #{{ $registration->id }} · Dikirim {{ $registration->submitted_at?->format('d/m/Y H:i') }}</p>
+                    @if($registration->expires_at->isPast())
+                        <p>Akses formulir kedaluwarsa. {{ $registration->portal_access_id ? 'Vendor dapat membuka kembali formulir dengan Vendor ID.' : 'Buat undangan baru agar vendor bisa mengirim ulang.' }}</p>
+                    @endif
+                    <div class="scm-actions">
+                        <a href="{{ route('scm.vendor-review', $registration) }}">Periksa kiriman #{{ $registration->id }}</a>
+                        @if($registration->expires_at->isPast() && $registration->vendor_id)
+                            <button type="button" wire:click="editVendor({{ $registration->vendor_id }})">Buka vendor {{ $registration->vendor->code }}</button>
+                        @endif
+                    </div>
+                </article>
+            @empty
+                <p>Belum ada kiriman yang menunggu pemeriksaan SCM.</p>
+            @endforelse
+            {{ $pendingRegistrations->links() }}
+        </div>
+    </details>
 @endif
 <section class="scm-panel"><h2>Versi dokumen vendor</h2><p>Unggah versi baru untuk memperbarui dokumen. File dan referensi versi lama tetap disimpan. Nomor dokumen disimpan sebagai teks.</p>
     <x-scm.select model="documentVendorFilter" label="Tampilkan riwayat dokumen vendor" placeholder="Semua vendor" :options="$vendors->pluck('name','id')" :live="true" help="Filter riwayat tidak mengubah vendor tujuan unggahan." />

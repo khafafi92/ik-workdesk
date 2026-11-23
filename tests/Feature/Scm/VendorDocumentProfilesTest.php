@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Scm;
 
+use App\Filament\Pages\ScmProcurement;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Permission;
@@ -18,10 +19,12 @@ use App\Services\Scm\VendorEnrollment;
 use App\Services\Scm\VendorForm;
 use App\Services\Scm\Workflow;
 use Database\Seeders\ScmSeeder;
+use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -72,6 +75,28 @@ class VendorDocumentProfilesTest extends TestCase
         ], $vendor->id, $vendor->version);
         $this->assertSame('Bank QA', $vendor->fresh()->bank_name);
         $this->assertSame('PT Vendor QA', $vendor->fresh()->bank_account_name);
+    }
+
+    public function test_master_vendor_editor_saves_bank_details_and_returns_to_the_filtered_directory(): void
+    {
+        Filament::setCurrentPanel(Filament::getPanel('admin'));
+
+        Livewire::actingAs($this->scm)->test(ScmProcurement::class)
+            ->call('switchSection', 'vendors')
+            ->set('vendorSearch', 'PROFILE-QA')
+            ->assertSee('Belum lengkap')
+            ->assertDontSee('Simpan profil vendor')
+            ->call('editVendor', $this->vendor->id)
+            ->set('vendor.bank_name', 'Bank QA')
+            ->set('vendor.bank_account_number', '0012345678')
+            ->set('vendor.bank_account_name', 'PT Vendor QA')
+            ->call('saveVendor')->assertHasNoErrors()
+            ->call('closeVendorEditor')
+            ->assertSet('vendorSearch', 'PROFILE-QA')
+            ->assertSee('Lengkap')
+            ->assertDontSee('0012345678')
+            ->call('editVendor', $this->vendor->id)
+            ->assertSet('vendor.bank_account_number', '0012345678');
     }
 
     private function answers(int $step, string $origin = 'indonesia', string $basis = 'company'): array

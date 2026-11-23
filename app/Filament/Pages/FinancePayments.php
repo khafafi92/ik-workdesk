@@ -51,6 +51,9 @@ class FinancePayments extends Page
     #[Locked]
     public string $suggestedDescription = '';
 
+    #[Locked]
+    public array $confirmedVendorBank = [];
+
     public array $plan = ['kind' => '', 'description' => '', 'timing' => '', 'due_on' => '', 'amount' => '', 'invoice_number' => '', 'notes' => ''];
 
     public array $paid = ['paid_on' => '', 'payment_reference' => '', 'invoice_number' => ''];
@@ -183,9 +186,10 @@ class FinancePayments extends Page
 
     public function preparePaid(int $id): void
     {
-        app(PoPayments::class)->order(auth()->user(), $this->selectedOrder);
+        $order = app(PoPayments::class)->order(auth()->user(), $this->selectedOrder);
         $payment = FinancePoPayment::where('purchase_order_id', $this->selectedOrder)->findOrFail($id);
         abort_unless($payment->status === 'planned', 409);
+        $this->confirmedVendorBank = $order->cbe?->selectedVendor?->only(['bank_name', 'bank_account_number', 'bank_account_name']) ?? [];
         $this->selectedPayment = $id;
         $this->paymentAction = 'pay';
         $this->paid = ['paid_on' => today()->toDateString(), 'payment_reference' => '', 'invoice_number' => $payment->invoice_number ?? ''];
@@ -223,7 +227,7 @@ class FinancePayments extends Page
         app(PoPayments::class)->order(auth()->user(), $this->selectedOrder);
         abort_unless(FinancePoPayment::where('purchase_order_id', $this->selectedOrder)->whereKey($this->selectedPayment)->exists(), 404);
         $this->validate(['proofFile' => 'required|file|max:'.config('scm.upload_max_kb'), 'paidInvoiceFile' => 'nullable|file|max:'.config('scm.upload_max_kb')]);
-        app(PoPayments::class)->recordPaid(auth()->user(), $this->selectedPayment, $this->paid, $this->proofFile, $this->paidInvoiceFile);
+        app(PoPayments::class)->recordPaid(auth()->user(), $this->selectedPayment, $this->paid, $this->proofFile, $this->paidInvoiceFile, $this->confirmedVendorBank);
         $this->selectedPayment = 0;
         $this->paymentAction = '';
         $this->reset('paid', 'proofFile', 'paidInvoiceFile');
@@ -274,7 +278,7 @@ class FinancePayments extends Page
         try {
             $schemaMissing = ! Schema::hasTable('finance_po_payments') || ! Schema::hasTable('finance_po_payment_files')
                 || ! Schema::hasTable('finance_po_payment_events') || ! Schema::hasColumn('scm_purchase_orders', 'status')
-                || ! Schema::hasColumn('scm_purchase_orders', 'cancelled_by');
+                || ! Schema::hasColumn('scm_purchase_orders', 'cancelled_by') || ! Schema::hasColumn('finance_po_payments', 'vendor_bank_snapshot');
             if ($schemaMissing) {
                 $orders = new LengthAwarePaginator([], 0, 15);
             } else {

@@ -149,7 +149,8 @@
                 @forelse($payments as $payment)<tr wire:key="finance-payment-{{ $payment->id }}"><td data-label="Termin">{{ \App\Services\Finance\PoPayments::KINDS[$payment->kind] ?? $payment->kind }}<br>{{ $payment->description }}@if($payment->invoice_number)<br>Invoice: {{ $payment->invoice_number }}@endif</td>
                     <td data-label="Waktu / jatuh tempo">{{ \App\Services\Finance\PoPayments::TIMINGS[$payment->timing] ?? $payment->timing }}<br>{{ $payment->due_on?->format('d/m/Y') ?? 'Belum ditetapkan' }}</td>
                     <td data-label="Nominal">{{ \App\Services\Scm\Decimal::money($payment->amount_minor, $payment->currency) }}</td>
-                    <td data-label="Status">{{ ['planned' => 'Belum dibayar', 'paid' => 'Dibayar', 'cancelled' => 'Dibatalkan'][$payment->status] ?? $payment->status }}@if($payment->paid_on)<br>{{ $payment->paid_on->format('d/m/Y') }}<br>{{ $payment->payment_reference }}@endif</td>
+                    <td data-label="Status">{{ ['planned' => 'Belum dibayar', 'paid' => 'Dibayar', 'cancelled' => 'Dibatalkan'][$payment->status] ?? $payment->status }}@if($payment->paid_on)<br>{{ $payment->paid_on->format('d/m/Y') }}<br>{{ $payment->payment_reference }}
+                        <br>Rekening saat dicatat: {{ $payment->vendor_bank_snapshot['bank_name'] ?? 'Tidak tercatat' }} · {{ $payment->vendor_bank_snapshot['bank_account_number'] ?? 'Tidak tercatat' }} · {{ $payment->vendor_bank_snapshot['bank_account_name'] ?? 'Tidak tercatat' }}@endif</td>
                     <td data-label="Dokumen">@forelse($payment->files as $file)<a href="{{ route('finance.payment-file', $file) }}">{{ $file->type === 'invoice' ? 'Invoice' : 'Bukti bayar' }}: {{ $file->original_name }}</a><br>@empty Belum ada dokumen @endforelse</td>
                     <td data-label="Tindakan"><div class="finance-table-actions">@if($order->status !== 'cancelled' && $payment->status === 'planned')<button type="button" wire:click="preparePaid({{ $payment->id }})">Proses termin {{ $loop->iteration }}</button>@endif
                         @if($order->status !== 'cancelled' && $payment->status !== 'cancelled' && ! $payment->files->contains('type', 'invoice'))<button type="button" wire:click="prepareInvoice({{ $payment->id }})">Tambah invoice</button>@endif</div></td></tr>
@@ -158,8 +159,9 @@
             @if($order->status !== 'cancelled' && $selected && $selected->status === 'planned' && $paymentAction === 'pay')
                 <form class="finance-sheet-form" wire:submit="savePaid"><fieldset wire:loading.attr="disabled"><legend>Catat pembayaran: {{ $selected->description }}</legend>
                     <p>Catat pembayaran yang sudah dilakukan dan unggah buktinya.</p>
-                    <div><strong>Rekening vendor (data master saat ini)</strong>
-                        <p>{{ $vendorMaster?->name ?? ($order->snapshot['vendor']['name'] ?? 'Vendor') }} · {{ $vendorMaster?->bank_name ?: 'Bank belum diisi' }} · {{ $vendorMaster?->bank_account_number ?: 'Nomor rekening belum diisi' }} · {{ $vendorMaster?->bank_account_name ?: 'Pemilik rekening belum diisi' }}</p>
+                    <div><strong>Rekening vendor saat formulir dibuka</strong>
+                        <p>{{ $vendorMaster?->name ?? ($order->snapshot['vendor']['name'] ?? 'Vendor') }} · {{ ($confirmedVendorBank['bank_name'] ?? null) ?: 'Bank belum diisi' }} · {{ ($confirmedVendorBank['bank_account_number'] ?? null) ?: 'Nomor rekening belum diisi' }} · {{ ($confirmedVendorBank['bank_account_name'] ?? null) ?: 'Pemilik rekening belum diisi' }}</p>
+                        <p>Pastikan rekening sesuai bukti pembayaran. Data ini akan disimpan pada riwayat termin.</p>
                     </div><div class="scm-grid">
                         <x-scm.field model="paid.paid_on" label="Tanggal pembayaran" type="date" required />
                         <x-scm.field model="paid.payment_reference" label="Referensi pembayaran" required />

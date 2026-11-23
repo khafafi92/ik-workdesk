@@ -1,6 +1,15 @@
 <x-vendor-portal.layout :registration="$registration">
     <section class="vp-paper"><h2>Pemeriksaan Form 005 #{{ $registration->id }}</h2>
-        <p>@if($returnToDirectory ?? false)<a href="{{ \App\Filament\Pages\ScmVendorRegistrations::getUrl() }}">Kembali ke Data Vendor</a>@else<a href="{{ (\App\Services\Scm\Access::canProcessNeedType(auth()->user(), 'PROJECT') ? \App\Filament\Pages\ScmProcurement::class : \App\Filament\Pages\PurchasingOfficer::class)::getUrl(['bagian' => 'vendors']) }}">Kembali ke master vendor</a>@endif</p>
+        <div class="vp-actions">
+            @if($directoryUrl)
+                <a href="{{ $directoryUrl }}">Kembali ke Data Vendor</a>
+            @elseif($masterListUrl)
+                <a href="{{ $masterListUrl }}">Kembali ke Master Vendor</a>
+            @endif
+            @if($masterVendorUrl)
+                <a href="{{ $masterVendorUrl }}">Buka profil di Master Vendor</a>
+            @endif
+        </div>
         <p>Periksa jawaban dan file sebelum menerima. Penerimaan memperbarui profil dan menambahkan versi dokumen ke master vendor; checklist pengadaan yang sudah ada tetap diperiksa SCM.</p>
         @if(!$registration->revoked_at && !$registration->portalAccess?->revoked_at)
             @if($registration->expires_at->isPast() && $registration->status !== 'accepted')<p class="vp-note"><strong>Langkah berikutnya:</strong> @if($registration->portal_access_id)Vendor membuka kembali formulir melalui Portal Vendor dengan Vendor ID agar akses aktif kembali.@else SCM membuat undangan baru dari Master Vendor agar proses formulir dapat dilanjutkan.@endif</p>
@@ -26,10 +35,10 @@
         </dl></section>
         @endforeach
         <section class="vp-review-section"><h3>Lampiran</h3><ul>@forelse($files as $file)<li>{{ \App\Services\Scm\VendorForm::documentLabel($file->code, $registration->answers ?? []) }}: <a href="{{ route('scm.vendor-review-download', ['registration' => $registration, 'file' => $file->id]) }}">{{ $file->original_name }}</a>@if($file->expires_at)<span @if($file->expires_at->lt(today())) class="vp-expired" @endif> · {{ $file->expires_at->format('d/m/Y') }}{{ $file->expires_at->lt(today()) ? ' · Kedaluwarsa; berkas tetap diterima.' : '' }}</span>@endif @if(!array_key_exists($file->code, \App\Services\Scm\VendorForm::requestedDocuments($registration->answers ?? [], $registration->context)))<span class="vp-note">Tersimpan dalam riwayat; tidak diminta pada pilihan saat ini dan tidak diimpor ke master.</span>@elseif(!\App\Services\Scm\VendorForm::required($file->code, $registration->answers ?? [], $registration->context))<span class="vp-note"> · Opsional</span>@endif</li>@empty<li>Belum ada lampiran.</li>@endforelse</ul></section>
-        @if(!$registration->revoked_at)
-        <form method="post" action="{{ route('scm.vendor-decide', ['registration' => $registration, ...(($returnToDirectory ?? false) ? ['dari' => 'data-vendor'] : [])]) }}">@csrf<input type="hidden" name="version" value="{{ $registration->version }}">
-            @if($registration->status === 'submitted' && $registration->expires_at->isFuture())<div class="vp-field"><label for="review-notes">Catatan pemeriksaan (wajib untuk perbaikan)</label><textarea id="review-notes" name="notes" rows="4" maxlength="5000">{{ old('notes') }}</textarea></div>@endif
-            <div class="vp-actions">@if($registration->status === 'submitted' && $registration->expires_at->isFuture())<button type="submit" name="action" value="accept">Terima profil dan dokumen ke master</button><button type="submit" name="action" value="correction" class="vp-secondary">Minta perbaikan vendor</button>@endif<button type="submit" name="action" value="revoke" class="vp-secondary">{{ $registration->portal_access_id ? 'Cabut akses Portal Vendor' : 'Cabut tautan undangan' }}</button></div>
+        @if(! $registration->isRevoked())
+        <form method="post" action="{{ route('scm.vendor-decide', ['registration' => $registration, ...$reviewContext]) }}">@csrf<input type="hidden" name="version" value="{{ $registration->version }}">
+            @if($registration->isReadyForReview())<div class="vp-field"><label for="review-notes">Catatan pemeriksaan (wajib untuk perbaikan)</label><textarea id="review-notes" name="notes" rows="4" maxlength="5000">{{ old('notes') }}</textarea></div>@endif
+            <div class="vp-actions">@if($registration->isReadyForReview())<button type="submit" name="action" value="accept">Terima profil dan dokumen ke master</button><button type="submit" name="action" value="correction" class="vp-secondary">Minta perbaikan vendor</button>@endif<button type="submit" name="action" value="revoke" class="vp-secondary">{{ $registration->portal_access_id ? 'Cabut akses Portal Vendor' : 'Cabut tautan undangan' }}</button></div>
         </form>@endif
     </section>
 </x-vendor-portal.layout>

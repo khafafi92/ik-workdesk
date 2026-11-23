@@ -49,6 +49,26 @@ class ScmVendorRegistrations extends Page
         return Access::manages(auth()->user());
     }
 
+    public static function directoryFilters(array $input): array
+    {
+        $filters = [];
+        if (is_string($input['cari'] ?? null) && trim($input['cari']) !== '') {
+            $filters['cari'] = mb_substr($input['cari'], 0, 255);
+        }
+        if (is_string($input['status'] ?? null) && ($input['status'] === 'ready' || isset(self::STATUSES[$input['status']]))) {
+            $filters['status'] = $input['status'];
+        }
+        if (is_string($input['perusahaan'] ?? null) && isset(config('scm.companies')[$input['perusahaan']])) {
+            $filters['perusahaan'] = $input['perusahaan'];
+        }
+        $page = filter_var($input['page'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 2, 'max_range' => intdiv(PHP_INT_MAX, 15)]]);
+        if ($page !== false) {
+            $filters['page'] = $page;
+        }
+
+        return $filters;
+    }
+
     public function updated(string $property): void
     {
         if (in_array($property, ['search', 'statusFilter', 'companyFilter'], true)) {
@@ -78,7 +98,7 @@ class ScmVendorRegistrations extends Page
                 ->orWhere(fn (Builder $query) => $query->whereNull('portal_access_id')->whereNull('vendor_id')));
         $term = mb_substr(trim($this->search), 0, 255);
         if ($term !== '') {
-            $formId = preg_match('/^(?:Form\s*)?#?([1-9][0-9]*)$/iD', $term, $matches) ? $matches[1] : null;
+            $formId = preg_match('/^(?:Form\s*)?#?([1-9][0-9]*)$/iD', $term, $matches) ? filter_var($matches[1], FILTER_VALIDATE_INT) : null;
             $name = DB::getDriverName() === 'pgsql' ? DB::raw("answers->'1'->>'name'") : 'answers->1->name';
             $email = DB::getDriverName() === 'pgsql' ? DB::raw("answers->'1'->>'email'") : 'answers->1->email';
             $query->where(fn (Builder $query) => $query->whereLike($name, '%'.$term.'%')
@@ -92,11 +112,20 @@ class ScmVendorRegistrations extends Page
         if ($this->statusFilter === 'revoked') {
             $query->where(fn (Builder $query) => $query->whereNotNull('revoked_at')->orWhereHas('portalAccess', fn (Builder $query) => $query->whereNotNull('revoked_at')));
         } elseif ($this->statusFilter !== '') {
-            $query->where('status', $this->statusFilter)->whereNull('revoked_at')
+            $ready = $this->statusFilter === 'ready';
+            $query->where('status', $ready ? 'submitted' : $this->statusFilter)->whereNull('revoked_at')
+                ->when($ready, fn (Builder $query) => $query->where('expires_at', '>', now()))
                 ->whereDoesntHave('portalAccess', fn (Builder $query) => $query->whereNotNull('revoked_at'));
         }
 
-        return ['registrations' => $query->orderByDesc('updated_at')->orderByDesc('id')->paginate(15),
+        $registrations = $query->orderByDesc('updated_at')->orderByDesc('id')->paginate(15);
+        $directoryFilters = self::directoryFilters([
+            'cari' => $this->search, 'status' => $this->statusFilter,
+            'perusahaan' => $this->companyFilter, 'page' => $registrations->currentPage(),
+        ]);
+
+        return ['registrations' => $registrations, 'directoryFilters' => $directoryFilters,
+            'masterVendorPage' => ScmProcurement::masterVendorPage(auth()->user()),
             'canManageVendorId' => auth()->user()->isSystemAdministrator(),
             'statuses' => self::STATUSES, 'companies' => collect(config('scm.companies'))->map(fn ($company) => $company['name'])->all()];
     }

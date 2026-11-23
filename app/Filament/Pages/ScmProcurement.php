@@ -76,6 +76,9 @@ class ScmProcurement extends Page
     #[Url(as: 'bagian')]
     public string $section = 'queue';
 
+    #[Url(as: 'vendor', except: '')]
+    public string $vendorProfile = '';
+
     #[Url(as: 'permintaan')]
     public int $selected = 0;
 
@@ -118,6 +121,8 @@ class ScmProcurement extends Page
     public string $requestNumber = '';
 
     public array $vendor = [];
+
+    public bool $vendorEditorOpen = false;
 
     public int $vendorId = 0;
 
@@ -294,6 +299,15 @@ class ScmProcurement extends Page
         return true;
     }
 
+    public static function masterVendorPage(User $user): ?string
+    {
+        if (Access::canProcessNeedType($user, self::$processingNeedType)) {
+            return self::class;
+        }
+
+        return Access::canProcessNeedType($user, 'HO') ? PurchasingOfficer::class : null;
+    }
+
     public function mount(): void
     {
         if (static::$requestKind !== null) {
@@ -304,8 +318,11 @@ class ScmProcurement extends Page
         if ($this->selected) {
             $this->open($this->selected);
         }
-        $this->newVendor(false);
-        $this->document = ['vendor_id' => '', 'document_type_id' => '', 'number' => '', 'title' => '', 'issued_at' => '', 'expires_at' => '', 'notes' => ''];
+        $vendorProfile = filter_var($this->vendorProfile, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+        $this->resetVendorForm();
+        if ($this->section === 'vendors' && $vendorProfile !== false) {
+            $this->editVendor($vendorProfile);
+        }
     }
 
     public function switchSection(string $section): void
@@ -700,8 +717,18 @@ class ScmProcurement extends Page
         $this->refreshed($request, $this->tab);
     }
 
-    public function newVendor(bool $focus = true): void
+    public function newVendor(): void
     {
+        $this->assertProcessingContext();
+        $this->resetVendorForm();
+        $this->vendorEditorOpen = true;
+        $this->dispatch('scm-focus', id: 'scm-vendor-name');
+    }
+
+    private function resetVendorForm(): void
+    {
+        $this->vendorEditorOpen = false;
+        $this->vendorProfile = '';
         $this->vendorPortalUrl = '';
         $this->vendorId = 0;
         $this->vendorVersion = 0;
@@ -714,22 +741,28 @@ class ScmProcurement extends Page
         $this->documentVendorFilter = '';
         $this->resetPage('documentPage');
         $this->resetValidation();
-        if ($focus) {
-            $this->dispatch('scm-focus', id: 'scm-vendor-code');
-        }
+    }
+
+    public function closeVendorEditor(): void
+    {
+        $this->assertProcessingContext();
+        $this->resetVendorForm();
+        $this->dispatch('scm-focus', id: 'scm-vendorSearch');
     }
 
     public function editVendor(int $id): void
     {
         $this->assertProcessingContext();
-        $this->newVendor(false);
+        $this->resetVendorForm();
         $vendor = Vendor::whereNull('archived_at')->findOrFail($id);
+        $this->vendorEditorOpen = true;
+        $this->vendorProfile = (string) $id;
         $this->vendorId = $id;
         $this->vendorVersion = $vendor->version;
         $this->vendor = $vendor->only(array_keys($this->vendor));
         $this->document['vendor_id'] = $id;
         $this->documentVendorFilter = (string) $id;
-        $this->dispatch('scm-focus', id: 'scm-vendor-code');
+        $this->dispatch('scm-focus', id: 'scm-vendor-profile-heading');
     }
 
     public function saveVendor(): void
@@ -745,7 +778,7 @@ class ScmProcurement extends Page
         $this->resetErrorBag('scm');
         app(VendorDeletion::class)->delete(auth()->user(), $id, $version);
         if ($this->vendorId === $id) {
-            $this->newVendor(false);
+            $this->resetVendorForm();
             $this->document['vendor_id'] = '';
             $this->documentVendorFilter = '';
         }

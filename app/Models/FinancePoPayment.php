@@ -11,7 +11,7 @@ class FinancePoPayment extends Model
 
     protected function casts(): array
     {
-        return ['due_on' => 'date', 'paid_on' => 'date', 'cancelled_at' => 'datetime', 'amount_minor' => 'integer'];
+        return ['due_on' => 'date', 'paid_on' => 'date', 'cancelled_at' => 'datetime', 'amount_minor' => 'integer', 'vendor_bank_snapshot' => 'array'];
     }
 
     public function order()

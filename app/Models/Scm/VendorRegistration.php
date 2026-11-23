@@ -24,6 +24,16 @@ class VendorRegistration extends Record
         return $this->belongsTo(VendorPortalAccess::class);
     }
 
+    public function isRevoked(): bool
+    {
+        return (bool) ($this->revoked_at || $this->portalAccess?->revoked_at);
+    }
+
+    public function isReadyForReview(): bool
+    {
+        return $this->status === 'submitted' && $this->expires_at->isFuture() && ! $this->isRevoked();
+    }
+
     public function files()
     {
         return $this->hasMany(VendorRegistrationFile::class, 'registration_id');

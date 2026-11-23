@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Scm;
 
+use App\Filament\Pages\PurchasingOfficer;
+use App\Filament\Pages\ScmProcurement;
 use App\Filament\Pages\ScmVendorRegistrations;
 use App\Models\Department;
 use App\Models\Employee;
@@ -112,6 +114,43 @@ class VendorDirectoryTest extends TestCase
             ->assertSee('Vendor PENGUJIAN 16')->assertSet('paginators.page', 1);
     }
 
+    public function test_only_current_submissions_are_ready_for_review(): void
+    {
+        $active = $this->registration('Kiriman aktif QA');
+        $active->update(['status' => 'submitted']);
+        $expired = $this->registration('Kiriman kedaluwarsa QA');
+        $expired->update(['status' => 'submitted', 'expires_at' => now()->subMinute()]);
+        $revoked = $this->registration('Kiriman dicabut QA');
+        $revoked->update(['status' => 'submitted']);
+        $revoked->portalAccess->update(['revoked_at' => now()]);
+
+        Livewire::actingAs($this->scm)->test(ScmVendorRegistrations::class)
+            ->assertSee('Periksa kiriman Kiriman aktif QA')
+            ->assertSee('Lihat data Kiriman kedaluwarsa QA')
+            ->assertDontSee('Periksa kiriman Kiriman kedaluwarsa QA')
+            ->set('statusFilter', 'ready')
+            ->assertSee('Kiriman aktif QA')->assertDontSee('Kiriman kedaluwarsa QA')->assertDontSee('Kiriman dicabut QA');
+    }
+
+    public function test_vendor_master_link_opens_the_linked_profile_in_the_permitted_module(): void
+    {
+        $record = $this->registration('Pendaftaran dengan profil QA');
+        $vendor = Vendor::create(['code' => 'MASTER-LINK-QA', 'name' => 'Profil Master QA', 'provider_type' => 'jasa',
+            'created_by' => $this->scm->id, 'updated_by' => $this->scm->id]);
+        $record->update(['vendor_id' => $vendor->id, 'status' => 'accepted']);
+        $parameters = ['bagian' => 'vendors', 'vendor' => $vendor->id];
+        $scmUrl = ScmProcurement::getUrl($parameters);
+        $this->actingAs($this->scm)->get(ScmVendorRegistrations::getUrl())->assertOk()->assertSee($scmUrl);
+        $this->get($scmUrl)->assertOk()->assertSee('Simpan profil vendor')->assertSee('Profil Master QA');
+
+        $buyer = User::factory()->create(['is_admin' => false]);
+        $buyer->directPermissions()->attach(Permission::where('code', 'ga.process')->sole()->id);
+        $buyerUrl = PurchasingOfficer::getUrl($parameters);
+        $this->actingAs($buyer)->get(ScmVendorRegistrations::getUrl())->assertOk()->assertSee($buyerUrl)->assertDontSee($scmUrl);
+        $this->get($buyerUrl)->assertOk()->assertSee('Simpan profil vendor')->assertSee('Profil Master QA');
+        $this->get($scmUrl)->assertForbidden();
+    }
+
     public function test_the_directory_and_draft_detail_require_existing_scm_processing_access(): void
     {
         $record = $this->registration('Vendor privat PENGUJIAN');
@@ -147,14 +186,16 @@ class VendorDirectoryTest extends TestCase
     public function test_review_started_from_directory_keeps_the_return_link_after_errors_and_a_decision(): void
     {
         $record = $this->registration('Vendor navigasi PENGUJIAN');
-        $parameters = ['registration' => $record, 'dari' => 'data-vendor'];
+        $filters = ['cari' => 'Vendor navigasi', 'status' => 'draft', 'perusahaan' => 'KPMOG', 'page' => 2];
+        $parameters = ['registration' => $record, 'dari' => 'data-vendor', ...$filters];
         $this->actingAs($this->scm)->get(route('scm.vendor-review', $parameters))->assertSee(route('scm.vendor-decide', $parameters));
         $this->post(route('scm.vendor-decide', $parameters), ['version' => $record->version + 1, 'action' => 'revoke'])
             ->assertRedirect(route('scm.vendor-review', $parameters))->assertSessionHasErrors('version');
         $this->assertNull($record->fresh()->revoked_at);
         $this->post(route('scm.vendor-decide', $parameters), ['version' => $record->version, 'action' => 'revoke'])
             ->assertRedirect(route('scm.vendor-review', $parameters));
-        $this->get(route('scm.vendor-review', $parameters))->assertSee('Kembali ke Data Vendor');
+        $this->get(route('scm.vendor-review', $parameters))->assertSee('Kembali ke Data Vendor')
+            ->assertSee(ScmVendorRegistrations::getUrl($filters));
         $this->assertNotNull($record->fresh()->revoked_at);
     }
 

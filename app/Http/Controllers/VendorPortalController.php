@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Filament\Pages\ScmProcurement;
+use App\Filament\Pages\ScmVendorRegistrations;
 use App\Models\Scm\VendorRegistration;
 use App\Services\Scm\Access;
 use App\Services\Scm\IndonesiaAddress;
@@ -73,16 +75,24 @@ class VendorPortalController extends Controller
     public function review(Request $request, VendorRegistration $registration, VendorEnrollment $enrollment)
     {
         abort_unless(Access::manages($request->user()), 403);
+        $reviewContext = $this->reviewContext($request);
+        $masterPage = ScmProcurement::masterVendorPage($request->user());
+        $masterVendorUrl = $masterPage && $registration->vendor && ! $registration->vendor->archived_at
+            ? $masterPage::getUrl(['bagian' => 'vendors', 'vendor' => $registration->vendor->id])
+            : null;
 
         return $this->privateResponse(response()->view('vendor-portal.review', ['registration' => $registration,
-            'returnToDirectory' => $request->query('dari') === 'data-vendor',
+            'reviewContext' => $reviewContext,
+            'directoryUrl' => $reviewContext ? ScmVendorRegistrations::getUrl(array_diff_key($reviewContext, ['dari' => true])) : null,
+            'masterVendorUrl' => $masterVendorUrl,
+            'masterListUrl' => $masterPage ? $masterPage::getUrl(['bagian' => 'vendors']) : null,
             'files' => $enrollment->latestFiles($registration)]));
     }
 
     public function decide(Request $request, VendorRegistration $registration, VendorEnrollment $enrollment)
     {
         abort_unless(Access::manages($request->user()), 403);
-        $returnParameters = ['registration' => $registration, ...($request->query('dari') === 'data-vendor' ? ['dari' => 'data-vendor'] : [])];
+        $returnParameters = ['registration' => $registration, ...$this->reviewContext($request)];
         $data = $request->validate(['version' => 'required|integer|min:1', 'action' => 'required|in:accept,correction,revoke', 'notes' => 'nullable|string|max:5000']);
         try {
             $enrollment->review($request->user(), $registration->id, $data['version'], $data['action'], $data['notes'] ?? null);
@@ -91,6 +101,13 @@ class VendorPortalController extends Controller
         }
 
         return $this->privateResponse(redirect()->route('scm.vendor-review', $returnParameters)->with('status', 'Hasil pemeriksaan tersimpan.'));
+    }
+
+    private function reviewContext(Request $request): array
+    {
+        return $request->query('dari') === 'data-vendor'
+            ? ['dari' => 'data-vendor', ...ScmVendorRegistrations::directoryFilters($request->query())]
+            : [];
     }
 
     public function reviewDownload(Request $request, VendorRegistration $registration, int $file)

@@ -222,6 +222,65 @@ class FinancePaymentsTest extends TestCase
         $page->call('$refresh')->assertDontSee($other->bank_account_number);
     }
 
+    public function test_paid_term_preserves_the_bank_details_at_payment_time(): void
+    {
+        $vendor = $this->order->cbe->selectedVendor;
+        $bank = ['bank_name' => 'Bank QA', 'bank_account_number' => '0012345678', 'bank_account_name' => 'PT Vendor QA'];
+        $vendor->update($bank);
+        $service = app(PoPayments::class);
+        $payment = $service->plan($this->finance, $this->order->id, $this->input(), null);
+        $service->recordPaid($this->finance, $payment->id, ['paid_on' => today()->toDateString(), 'payment_reference' => 'TRX'], $this->pdf(), null, $bank);
+        $vendor->update(['bank_account_number' => '9876543210']);
+
+        $this->assertSame($bank, $payment->fresh()->vendor_bank_snapshot);
+        Livewire::actingAs($this->finance)->test(FinancePayments::class)
+            ->call('openOrder', $this->order->id)->assertSee('0012345678')->assertSee('9876543210');
+    }
+
+    public function test_payment_rejects_bank_details_that_changed_after_confirmation(): void
+    {
+        $vendor = $this->order->cbe->selectedVendor;
+        $oldBank = ['bank_name' => 'Bank QA', 'bank_account_number' => '0012345678', 'bank_account_name' => 'PT Vendor QA'];
+        $vendor->update($oldBank);
+        $service = app(PoPayments::class);
+        $payment = $service->plan($this->finance, $this->order->id, $this->input(), null);
+        $vendor->update(['bank_account_number' => '9876543210']);
+
+        try {
+            $service->recordPaid($this->finance, $payment->id, ['paid_on' => today()->toDateString(), 'payment_reference' => 'TRX'], $this->pdf(), null, $oldBank);
+            $this->fail('Perubahan rekening harus diperiksa sebelum mencatat pembayaran.');
+        } catch (ValidationException $exception) {
+            $this->assertNotEmpty($exception->errors());
+        }
+        $this->assertSame('planned', $payment->fresh()->status);
+        $this->assertCount(0, $payment->files);
+    }
+
+    public function test_payment_page_rejects_a_bank_change_after_the_form_is_opened(): void
+    {
+        $vendor = $this->order->cbe->selectedVendor;
+        $vendor->update(['bank_name' => 'Bank QA', 'bank_account_number' => '0012345678', 'bank_account_name' => 'PT Vendor QA']);
+        $payment = app(PoPayments::class)->plan($this->finance, $this->order->id, $this->input(), null);
+        $page = Livewire::actingAs($this->finance)->test(FinancePayments::class)
+            ->call('openOrder', $this->order->id)->call('preparePaid', $payment->id);
+        $vendor->update(['bank_account_number' => '9876543210']);
+
+        $page->set('paid.payment_reference', 'TRX')->set('proofFile', $this->pdf())
+            ->call('savePaid')->assertHasErrors('finance');
+        $this->assertSame('planned', $payment->fresh()->status);
+    }
+
+    public function test_existing_payment_does_not_assume_the_current_bank_was_used(): void
+    {
+        $vendor = $this->order->cbe->selectedVendor;
+        $vendor->update(['bank_name' => 'Bank QA', 'bank_account_number' => '0012345678', 'bank_account_name' => 'PT Vendor QA']);
+        $payment = app(PoPayments::class)->plan($this->finance, $this->order->id, $this->input(), null);
+        $payment->update(['status' => 'paid', 'paid_on' => today(), 'vendor_bank_snapshot' => null]);
+
+        Livewire::actingAs($this->finance)->test(FinancePayments::class)
+            ->call('openOrder', $this->order->id)->assertSee('Rekening saat dicatat: Tidak tercatat');
+    }
+
     public function test_order_list_shows_actual_receipts_plans_and_accessible_orders(): void
     {
         app(PoPayments::class)->plan($this->finance, $this->order->id, $this->input(), null);

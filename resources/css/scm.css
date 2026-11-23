@@ -196,3 +196,151 @@
     .scm-project-sr-instructions{padding:.5rem;min-height:0}
     .scm-project-sr-instructions .scm-field,.scm-project-sr-instructions dl>div{grid-template-columns:minmax(0,1fr);gap:0}
 }
+.scm-vendor-master {
+    container-type: inline-size;
+}
+
+.scm-vendor-master #scm-vendor-profile-heading {
+    scroll-margin-top: 6rem;
+}
+
+.scm-vendor-search {
+    width: min(100%, 32rem);
+}
+
+.scm-vendor-list {
+    border-top: 1px solid var(--scm-line);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.scm-vendor-row {
+    align-items: center;
+    border-bottom: 1px solid var(--scm-line);
+    display: grid;
+    gap: .75rem;
+    padding: .875rem 0;
+}
+
+.scm-vendor-row > *,
+.scm-vendor-meta > *,
+.scm-vendor-fields > * {
+    min-width: 0;
+}
+
+.scm-vendor-meta,
+.scm-vendor-fields {
+    display: grid;
+    gap: .75rem 1rem;
+}
+
+.scm-vendor-meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.scm-vendor-meta dt {
+    color: var(--scm-muted);
+    font-size: .875rem;
+}
+
+.scm-vendor-form,
+.scm-vendor-portal-body {
+    display: grid;
+    gap: 1rem;
+}
+
+.scm-vendor-form fieldset {
+    border: 1px solid var(--scm-line);
+    border-radius: .5rem;
+    padding: .875rem;
+}
+
+.scm-vendor-form legend {
+    padding: 0 .375rem;
+}
+
+.scm-vendor-portal summary {
+    font-weight: 650;
+}
+
+.scm-registration-entry {
+    border-bottom: 1px solid var(--scm-line);
+    padding-bottom: .5rem;
+}
+
+.scm-registration-entry .scm-vendor-row {
+    border-bottom: 0;
+    padding-bottom: .25rem;
+}
+
+.scm-registration-entry summary {
+    color: var(--scm-text);
+    font-weight: 600;
+    width: fit-content;
+}
+
+.scm-registration-details {
+    background: var(--scm-soft);
+    border-radius: .375rem;
+    display: grid;
+    gap: .75rem;
+    padding: .875rem;
+}
+
+.scm-vendor-registrations button[aria-pressed="true"] {
+    border-color: var(--scm-accent);
+    box-shadow: inset 0 0 0 1px var(--scm-accent);
+    font-weight: 650;
+}
+
+@container (min-width: 34rem) {
+    .scm-vendor-fields {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .scm-vendor-wide {
+        grid-column: 1 / -1;
+    }
+
+    .scm-vendor-row {
+        grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    }
+
+    .scm-vendor-row-actions {
+        grid-column: 2;
+    }
+}
+
+@container (min-width: 51rem) {
+    .scm-vendor-row {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) auto;
+    }
+
+    .scm-registration-entry .scm-vendor-row {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) 16rem;
+    }
+
+    .scm-registration-entry .scm-vendor-row-actions {
+        justify-content: flex-end;
+        justify-self: stretch;
+    }
+
+    .scm-vendor-row-actions {
+        grid-column: auto;
+        justify-self: end;
+    }
+
+    .scm-vendor-form {
+        align-items: start;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    }
+
+    .scm-vendor-company {
+        grid-row: span 2;
+    }
+
+    .scm-vendor-form > .scm-actions {
+        grid-column: 1 / -1;
+    }
+}
