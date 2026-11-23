@@ -82,10 +82,10 @@
         }
     </style>
 @endonce
-<div class="it-review-loading" role="status" wire:loading>Memuat perubahan...</div>
+<div class="it-review-loading" role="status" wire:loading>Loading changes...</div>
 @if ($errors->any())
     <div class="it-review-errors" role="alert" tabindex="-1">
-        <strong>Periksa isian berikut.</strong>
+        <strong>Check the following contents.</strong>
         <ul>@foreach ($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul>
     </div>
 @endif

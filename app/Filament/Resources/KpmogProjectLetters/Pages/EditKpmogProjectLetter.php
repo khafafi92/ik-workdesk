@@ -14,27 +14,27 @@ class EditKpmogProjectLetter extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Lengkapi Draft Surat KPMOG Project / BD';
+        return 'Complete KPMOG Project / BD Mail Draft';
     }
 
     public function getBreadcrumb(): string
     {
-        return 'Lengkapi draft';
+        return 'Complete draft';
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Isi PIN, PIC, tujuan, dan perihal surat, lalu simpan draft untuk kembali ke daftar surat KPMOG.';
+        return 'PIN content, PIC, destination and mail subject, then save the draft to return to the KPMOG message list.';
     }
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Simpan draft');
+        return parent::getSaveFormAction()->label('Save Draft');
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Kembali');
+        return parent::getCancelFormAction()->label('Back');
     }
 
     protected function afterSave(): void

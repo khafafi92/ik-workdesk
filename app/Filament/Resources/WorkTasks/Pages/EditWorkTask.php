@@ -45,7 +45,7 @@ class EditWorkTask extends EditRecord
                     abort_unless(
                         WorkTaskResource::canDelete($this->record),
                         403,
-                        'Work log ini tidak dapat dihapus.'
+                        'This log work could not be deleted.'
                     );
                 }),
         ];

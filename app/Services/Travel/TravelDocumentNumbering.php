@@ -12,7 +12,7 @@ class TravelDocumentNumbering
     public function resolve(string $company, string $issuedOn, string $input, ?TravelDocument $document = null, string $kind = 'spd'): string
     {
         if (! in_array($kind, ['spd', 'lpj'], true)) {
-            throw new \InvalidArgumentException('Jenis dokumen tidak dikenal.');
+            throw new \InvalidArgumentException('Unknown type of document.');
         }
         $label = strtoupper($kind);
         $pattern = '~^(?!0+/)([0-9]{3,18})/'.$label.'/(0[1-9]|1[0-2])-([1-9][0-9]{3})$~D';
@@ -21,7 +21,7 @@ class TravelDocumentNumbering
         }
         $date = CarbonImmutable::parse($issuedOn);
         if ($date->year < 1000 || $date->year > 9999) {
-            throw ValidationException::withMessages(['issued_on' => 'Tahun Tgl Issue harus terdiri dari empat digit.']);
+            throw ValidationException::withMessages(['issued_on' => 'The year Tgl Issue must be made up of four digits.']);
         }
         if ($document && trim($input) === $document->number && ! preg_match($pattern, strtoupper($document->number))) {
             return $document->number;
@@ -41,7 +41,7 @@ class TravelDocumentNumbering
             if ($document && $number === $document->number) {
                 return $number;
             }
-            throw ValidationException::withMessages(['number' => 'Gunakan format 001/'.$label.'/01-2026: nomor urut/'.$label.'/bulan-tahun.']);
+            throw ValidationException::withMessages(['number' => 'Use format 001/'.$label.'/01-2026: nomor urut/'.$label.'/bulan-tahun.']);
         }
         $this->sequence($company, (int) $parts[3], (int) $parts[1], $kind, $pattern);
 
@@ -62,7 +62,7 @@ class TravelDocumentNumbering
         }
         $next = $manual === null ? $largest + 1 : max($largest, $manual);
         if ($next > 999999999999999999) {
-            throw ValidationException::withMessages(['number' => 'Urutan nomor SPD melampaui batas angka yang didukung.']);
+            throw ValidationException::withMessages(['number' => 'The SPD sequence number exceeds the supported number limit.']);
         }
         DB::table($table)->where('id', $sequence->id)->update(['last_number' => $next]);
 

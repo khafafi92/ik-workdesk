@@ -18,11 +18,11 @@ class AtkRequestHistoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClock;
 
-    protected static ?string $navigationLabel = 'Audit Permintaan';
+    protected static ?string $navigationLabel = 'Request Audit';
 
-    protected static ?string $modelLabel = 'Audit Permintaan ATK';
+    protected static ?string $modelLabel = 'Office supplies Request Audit';
 
-    protected static ?string $pluralModelLabel = 'Audit Permintaan ATK';
+    protected static ?string $pluralModelLabel = 'Office supplies Request Audit';
 
     protected static ?int $navigationSort = 11;
 
@@ -35,11 +35,11 @@ class AtkRequestHistoryResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('created_at')->label('Waktu')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('request.request_number')->label('Nomor permintaan')->searchable(),
-                TextColumn::make('action')->label('Aktivitas')->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
-                TextColumn::make('performer.name')->label('Oleh')->searchable(),
-                TextColumn::make('note')->label('Catatan')->limit(55)->tooltip(fn (AtkRequestHistory $record): ?string => $record->note),
+                TextColumn::make('created_at')->label('Time')->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('request.request_number')->label('Request number')->searchable(),
+                TextColumn::make('action')->label('Activity')->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
+                TextColumn::make('performer.name')->label('By')->searchable(),
+                TextColumn::make('note')->label('Notes')->limit(55)->tooltip(fn (AtkRequestHistory $record): ?string => $record->note),
             ])
             ->defaultSort('created_at', 'desc');
     }

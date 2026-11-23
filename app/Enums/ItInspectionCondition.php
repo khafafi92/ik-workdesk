@@ -17,7 +17,7 @@ enum ItInspectionCondition: string
             self::Warning => 'Warning',
             self::Critical => 'Critical',
             self::NotApplicable => 'N/A',
-            self::Unchecked => 'Belum Diperiksa',
+            self::Unchecked => 'Not Inspected',
         };
     }
 

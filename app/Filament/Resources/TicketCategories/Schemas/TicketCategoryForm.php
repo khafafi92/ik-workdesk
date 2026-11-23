@@ -55,12 +55,12 @@ class TicketCategoryForm
 
                 Toggle::make('requires_permit')
                     ->label('Requires Permit & KBLI')
-                    ->helperText('Jika aktif, form Permit Company dan KBLI muncul dan wajib dilengkapi pada Service Desk kategori ini.')
+                    ->helperText('If active, Company and KBLI form forms appear and are obliged to be equipped in this category of Service Desk.')
                     ->default(false),
 
                 Toggle::make('requires_manpower')
-                    ->label('Gunakan form kebutuhan manpower')
-                    ->helperText('Menampilkan tujuan kebutuhan, lokasi, tanggal, serta rincian beberapa posisi dan jumlah orang pada Service Desk ke HR.')
+                    ->label('Use manpower requirement form')
+                    ->helperText('Displaying the objectives of needs, locations, dates, and details of positions and numbers of people in the Desk Service to HR.')
                     ->visible(fn (Get $get): bool => Department::query()->find($get('handler_department_id'))?->isHumanResources() === true)
                     ->default(false),
 
@@ -77,7 +77,7 @@ class TicketCategoryForm
                         fn (Get $get): bool => $get('workflow_type') === 'collaborative'
                     )
                     ->helperText(
-                        'Department tambahan yang akan ikut mengerjakan collaborative request.'
+                        'Additional departments are going to be working on a collaborative request.'
                     )
                     ->columnSpanFull(),
 

@@ -14,6 +14,6 @@
             </dl>
         </div>
     @empty
-        <p class="ik-atk-progress-empty">Belum ada barang dalam permintaan ini.</p>
+        <p class="ik-atk-progress-empty">There's nothing in this request yet.</p>
     @endforelse
 </div>

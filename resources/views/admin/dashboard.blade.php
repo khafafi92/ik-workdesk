@@ -5,10 +5,10 @@
     @php
         $hour = now()->format('H');
         $greeting = match(true) {
-            $hour < 11 => 'Selamat Pagi',
-            $hour < 15 => 'Selamat Siang',
-            $hour < 18 => 'Selamat Sore',
-            default => 'Selamat Malam',
+            $hour < 11 => 'Good morning',
+            $hour < 15 => 'Good afternoon',
+            $hour < 18 => 'Good afternoon',
+            default => 'Good evening',
         };
         $firstName = explode(' ', auth()->user()->name ?? 'User')[0];
     @endphp
@@ -16,10 +16,10 @@
         <span>{{ $greeting }}</span>
         <span class="ik-hero-wave" aria-hidden="true">&#x1F44B;</span>
     </div>
-    {{ $firstName }}, ini ringkasan hari ini
+    {{ $firstName }}, this is today's summary
     <div class="ik-hero-date">{{ now()->translatedFormat('l, d F Y') }}</div>
 @endsection
-@section('page-description', 'Monitor service desk, work logs, dan reminders.')
+@section('page-description', 'Monitor service desk, work logs, and reminderrs.')
 
 @section('content')
 <div class="ik-dashboard-content space-y-5">
@@ -42,7 +42,7 @@
                         @forelse ($latestRequests as $request)
                         <tr class="hover:bg-[#f5f6f8] transition-colors"><td class="px-4 py-2.5 text-xs font-semibold text-[#0073ea]">{{ $request->ticket_no }}</td><td class="px-4 py-2.5 text-xs text-[#323338]">{{ $request->subject }}</td><td class="px-4 py-2.5 text-xs text-[#676879]">{{ $request->handlerDepartment?->name ?? '-' }}</td><td class="px-4 py-2.5"><span class="rounded bg-[#f0f1f3] px-1.5 py-0.5 text-[10px] font-semibold text-[#676879]">{{ str_replace('_', ' ', $request->status) }}</span></td></tr>
                         @empty
-                        <tr><td colspan="4" class="px-4 py-5 text-center text-xs text-[#9699a6]">Belum ada service request.</td></tr>
+                        <tr><td colspan="4" class="px-4 py-5 text-center text-xs text-[#9699a6]">No request service yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -64,7 +64,7 @@
                         @forelse ($latestWorkLogs as $task)
                         <tr class="hover:bg-[#f5f6f8] transition-colors"><td class="px-4 py-2.5 text-xs font-semibold text-[#0073ea]">{{ $task->task_no }}</td><td class="px-4 py-2.5 text-xs text-[#323338]">{{ $task->title }}</td><td class="px-4 py-2.5 text-xs text-[#676879]">{{ $task->employee?->name ?? '-' }}</td><td class="px-4 py-2.5"><span class="rounded bg-[#f0f1f3] px-1.5 py-0.5 text-[10px] font-semibold text-[#676879]">{{ $task->progress_percent }}%</span></td></tr>
                         @empty
-                        <tr><td colspan="4" class="px-4 py-5 text-center text-xs text-[#9699a6]">Belum ada work log.</td></tr>
+                        <tr><td colspan="4" class="px-4 py-5 text-center text-xs text-[#9699a6]">No work logs yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>

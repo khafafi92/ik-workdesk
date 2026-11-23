@@ -94,13 +94,13 @@ class CreateTicket extends CreateRecord
 
         if (! $currentEmployee) {
             throw ValidationException::withMessages([
-                'employee_id' => 'Akun login harus ditautkan ke master Employee sebelum membuat Service Desk.',
+                'employee_id' => 'The login account must be linked to the Employee master before creating Service Desk.',
             ]);
         }
 
         if (! $currentEmployee->department_id) {
             throw ValidationException::withMessages([
-                'requester_department_id' => 'Employee requester harus memiliki Department sebelum membuat Service Desk.',
+                'requester_department_id' => 'Employee register must have a Department before making Service Desk.',
             ]);
         }
 

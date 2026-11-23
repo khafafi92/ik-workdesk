@@ -34,7 +34,7 @@ class LegalRequestDetailsTest extends TestCase
             $this->fail('Permintaan Legal setelah pukul 15:00 harus ditolak.');
         } catch (ValidationException $exception) {
             $this->assertSame(
-                'Permintaan ke Legal hanya dapat dibuat sebelum pukul 15:00 WIB.',
+                'The request to Legal can only be made before 3:00 p.m.',
                 $exception->errors()['handler_department_id'][0]
             );
         } finally {

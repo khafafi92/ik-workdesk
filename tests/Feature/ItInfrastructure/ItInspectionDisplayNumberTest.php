@@ -51,7 +51,7 @@ class ItInspectionDisplayNumberTest extends ItInfrastructureTestCase
         ];
         foreach ($sheets as $sheet) {
             $row = array_combine($sheet->headings(), $sheet->map($sheet->query()->firstOrFail()));
-            $this->assertSame($number, $row['Nomor pemeriksaan']);
+            $this->assertSame($number, $row['Inspection Number']);
         }
         $this->assertSame($before, $inspection->fresh()->getRawOriginal());
         $this->assertSame($resultsBefore, $inspection->results()->get()->map->getRawOriginal()->all());

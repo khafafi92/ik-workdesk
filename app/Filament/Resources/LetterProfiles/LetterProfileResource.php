@@ -33,34 +33,34 @@ class LetterProfileResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
 
-    protected static ?string $navigationLabel = 'Profil Surat';
+    protected static ?string $navigationLabel = 'Letter Profiles';
 
-    protected static ?string $modelLabel = 'Profil Surat';
+    protected static ?string $modelLabel = 'Letter Profiles';
 
-    protected static ?string $pluralModelLabel = 'Profil Surat';
+    protected static ?string $pluralModelLabel = 'Letter Profiles';
 
     protected static ?int $navigationSort = 1;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Profil surat')
-                ->description('Profil menentukan kelompok formulir dan format nomor yang digunakan. Buat profil baru jika ada unit atau kebutuhan surat baru.')
+            Section::make('Mail profile')
+                ->description('Profile determines the form group and format the number used. Create a new profile if there are new units or needs mail.')
                 ->columns(2)
                 ->schema([
                     TextInput::make('code')
-                        ->label('Kode profil')
-                        ->helperText('Kode internal untuk membedakan profil, misalnya HR-APCA atau PROJECT-BD-KPMOG.')
+                        ->label('Profile code')
+                        ->helperText('Internal code for distinguishing profiles, for example HR-APCA or PROJECT-BD-KPMOG.')
                         ->required()
                         ->maxLength(50)
                         ->unique(ignoreRecord: true),
                     TextInput::make('name')
-                        ->label('Nama profil')
+                        ->label('Profile name')
                         ->required()
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
                     Select::make('permit_company_id')
-                        ->label('Entitas default')
+                        ->label('Default entity')
                         ->relationship('company', 'name')
                         ->searchable()
                         ->preload()
@@ -70,23 +70,23 @@ class LetterProfileResource extends Resource
                         ->relationship('department', 'name')
                         ->searchable()
                         ->preload()
-                        ->helperText('Kosongkan bila profil dapat digunakan oleh lebih dari satu departemen.'),
+                        ->helperText('Empty if profile can be used by more than one department.'),
                     Select::make('form_variant')
-                        ->label('Bentuk formulir')
+                        ->label('Form forms')
                         ->options([
-                            'general' => 'Surat umum',
-                            'hr' => 'Surat HR',
-                            'project_bd' => 'Surat Team Project/BD',
+                            'general' => 'General mail',
+                            'hr' => 'HR Letter',
+                            'project_bd' => 'Team Project/BD Mail',
                         ])
-                        ->helperText('Menentukan kelompok isian yang tampil saat membuat surat.')
+                        ->helperText('Determines the content group that shows up when creating mail.')
                         ->default('general')
                         ->required(),
                     Toggle::make('is_active')
-                        ->label('Aktif')
+                        ->label('Active')
                         ->default(true),
                     Textarea::make('description')
-                        ->label('Keterangan')
-                        ->helperText('Catat penggunaan profil agar admin lain memilih profil yang tepat.')
+                        ->label('Description')
+                        ->helperText('Note the use of the profile to make other admins choose the correct profile.')
                         ->maxLength(2000)
                         ->columnSpanFull(),
                 ]),
@@ -97,33 +97,33 @@ class LetterProfileResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('code')->label('Kode')->searchable()->sortable(),
-                TextColumn::make('name')->label('Profil')->searchable()->sortable(),
-                TextColumn::make('company.code')->label('Entitas')->placeholder('-')->sortable(),
-                TextColumn::make('department.code')->label('Departemen')->placeholder('Lebih dari satu')->sortable(),
+                TextColumn::make('code')->label('Code')->searchable()->sortable(),
+                TextColumn::make('name')->label('Profiles')->searchable()->sortable(),
+                TextColumn::make('company.code')->label('Entity')->placeholder('-')->sortable(),
+                TextColumn::make('department.code')->label('Department')->placeholder('More than one')->sortable(),
                 TextColumn::make('form_variant')
-                    ->label('Formulir')
+                    ->label('Form')
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'hr' => 'HR',
                         'project_bd' => 'Team Project/BD',
-                        default => 'Umum',
+                        default => 'General',
                     }),
-                IconColumn::make('is_active')->label('Aktif')->boolean(),
+                IconColumn::make('is_active')->label('Active')->boolean(),
             ])
             ->filters([
-                SelectFilter::make('permit_company_id')->label('Entitas')->relationship('company', 'name'),
-                SelectFilter::make('form_variant')->label('Bentuk formulir')->options([
-                    'general' => 'Surat umum',
-                    'hr' => 'Surat HR',
-                    'project_bd' => 'Surat Team Project/BD',
+                SelectFilter::make('permit_company_id')->label('Entity')->relationship('company', 'name'),
+                SelectFilter::make('form_variant')->label('Form forms')->options([
+                    'general' => 'General mail',
+                    'hr' => 'HR Letter',
+                    'project_bd' => 'Team Project/BD Mail',
                 ]),
             ])
             ->defaultSort('name')
             ->headerActions([
-                CreateAction::make()->label('Buat profil surat'),
+                CreateAction::make()->label('Create a mail profile'),
             ])
             ->recordActions([
-                EditAction::make()->label('Ubah profil'),
+                EditAction::make()->label('Change profile'),
             ]);
     }
 

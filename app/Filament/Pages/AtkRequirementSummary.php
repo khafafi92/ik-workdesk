@@ -12,9 +12,9 @@ class AtkRequirementSummary extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentMagnifyingGlass;
 
-    protected static ?string $navigationLabel = 'Rekap Kebutuhan';
+    protected static ?string $navigationLabel = 'Requirements Summary';
 
-    protected static ?string $title = 'Rekap Kebutuhan ATK';
+    protected static ?string $title = 'Office Supply Requirements Summary';
 
     protected static string|UnitEnum|null $navigationGroup = 'ATK';
 
@@ -80,39 +80,39 @@ class AtkRequirementSummary extends Page
 
         if ($item->status === 'waiting_procurement') {
             return [
-                'label' => 'Menunggu pengadaan',
-                'detail' => 'Barang belum tersedia untuk diserahkan.',
+                'label' => 'Awaiting procurement',
+                'detail' => 'The items are not ready to issue.',
                 'tone' => 'procurement',
             ];
         }
 
         if ($awaitingIssue > 0 && $awaitingReceipt > 0) {
             return [
-                'label' => 'Perlu diserahkan dan dikonfirmasi',
-                'detail' => 'Sebagian barang sudah diserahkan; sisanya masih perlu disiapkan.',
+                'label' => 'Awaiting issue and receipt confirmation',
+                'detail' => 'Some items were issued. Prepare the remaining items.',
                 'tone' => 'mixed',
             ];
         }
 
         if ($awaitingReceipt > 0) {
             return [
-                'label' => 'Menunggu konfirmasi penerimaan',
-                'detail' => 'Barang sudah diserahkan, tetapi peminta belum mengonfirmasi penerimaan.',
+                'label' => 'Awaiting receipt confirmation',
+                'detail' => 'The items were issued. The requester still needs to confirm receipt.',
                 'tone' => 'receipt',
             ];
         }
 
         if ($item->status === 'ready') {
             return [
-                'label' => 'Siap diserahkan',
-                'detail' => 'Barang telah siap dan menunggu penyerahan oleh GA.',
+                'label' => 'Ready to hand over',
+                'detail' => 'The items are ready for GA to issue.',
                 'tone' => 'ready',
             ];
         }
 
         return [
-            'label' => 'Perlu diproses dan diserahkan',
-            'detail' => 'Belum ada barang yang diserahkan untuk kebutuhan ini.',
+            'label' => 'Awaiting issue',
+            'detail' => 'No items have been issued for this request.',
             'tone' => 'issue',
         ];
     }

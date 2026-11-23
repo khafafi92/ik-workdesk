@@ -12,13 +12,13 @@ class ListLetterProfiles extends ListRecords
 
     public function getTitle(): string
     {
-        return 'Kelola Profil Surat';
+        return 'Manage Mail Profiles';
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Buat profil surat'),
+            CreateAction::make()->label('Create a mail profile'),
         ];
     }
 }

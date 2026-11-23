@@ -11,16 +11,16 @@ class ListAteGeneralLetters extends ListRecords
 
     public function getTitle(): string
     {
-        return 'Register Surat Umum APCA';
+        return 'APCA General Mail Registers';
     }
 
     public function getBreadcrumb(): string
     {
-        return 'Daftar';
+        return 'List';
     }
 
     public function getSubheading(): ?string
     {
-        return 'Pilih jenis surat. Sistem membuat nomor dengan pola yang sesuai dan menyimpan riwayatnya di daftar ini.';
+        return 'Select mail type. The system creates numbers with appropriate patterns and stores its history in this list.';
     }
 }

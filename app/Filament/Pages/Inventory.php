@@ -40,9 +40,9 @@ class Inventory extends Page
 
     protected static ?string $slug = 'inventori';
 
-    protected static ?string $title = 'Inventori';
+    protected static ?string $title = 'Inventory';
 
-    protected static ?string $navigationLabel = 'Inventori';
+    protected static ?string $navigationLabel = 'Inventory';
 
     protected static string|UnitEnum|null $navigationGroup = 'Inventori';
 
@@ -174,14 +174,14 @@ class Inventory extends Page
     {
         app(InventoryCatalogue::class)->save(auth()->user(), $this->catalogueForm, $this->catalogueId ?: null, $this->catalogueVersion ?: null);
         $this->closeForm();
-        $this->notify('Master Barang tersimpan.');
+        $this->notify('Master of the Hidden goods.');
     }
 
     public function syncWarehouses(): void
     {
         abort_unless(InventoryAccess::administer(auth()->user()), 403);
         app(Warehouses::class)->syncProjects();
-        $this->notify('Gudang Project aktif sudah tersedia.');
+        $this->notify('Project warehouse is active.');
     }
 
     public function toggleWarehouse(int $id): void
@@ -189,7 +189,7 @@ class Inventory extends Page
         abort_unless(InventoryAccess::administer(auth()->user()), 403);
         $warehouse = InventoryWarehouse::where('legacy_atk', false)->findOrFail($id);
         $warehouse->update(['is_active' => ! $warehouse->is_active]);
-        $this->notify('Status gudang tersimpan.');
+        $this->notify('The warehouse status is stored.');
     }
 
     public function newStock(): void
@@ -233,7 +233,7 @@ class Inventory extends Page
             $stock->transact(auth()->user(), $data['operation'], [...$data, 'token' => $this->actionToken]);
         }, 3);
         $this->closeForm();
-        $this->notify('Mutasi gudang tercatat.');
+        $this->notify('The barn mutations are recorded.');
     }
 
     public function openAllocation(int $id): void
@@ -251,7 +251,7 @@ class Inventory extends Page
     {
         app(InventoryStock::class)->allocateLegacy(auth()->user(), AtkItem::findOrFail($this->allocationItemId), $this->allocation, $this->actionToken);
         $this->closeForm();
-        $this->notify('Saldo ATK lama dialokasikan ke gudang entitas.');
+        $this->notify('Old office supplies balance allocated to the entity warehouse.');
     }
 
     public function openReceipt(int $requestId): void
@@ -276,7 +276,7 @@ class Inventory extends Page
         app(ProcurementReceipt::class)->receive(auth()->user(), $this->receiptRequestId,
             [...$this->receiptForm, 'token' => $this->actionToken, 'lines' => $lines]);
         $this->closeForm();
-        $this->notify('Penerimaan barang ke gudang tercatat. Konfirmasi penerimaan ATK oleh peminta tetap dilakukan melalui Permintaan ATK.');
+        $this->notify('Receipts to the warehouse are noted, confirming the office supplies reception by the request continues through office supplies Request.');
     }
 
     public function newReceiptItem(int $requestItemId): void
@@ -309,7 +309,7 @@ class Inventory extends Page
         $item = app(InventoryCatalogue::class)->save(auth()->user(), $data);
         $this->receiptLines[$index]['inventory_item_id'] = $item->id;
         $this->cancelReceiptItem();
-        $this->notify('Master Barang tersimpan dan dipilih. Lanjutkan pencatatan penerimaan.');
+        $this->notify('The master of goods is stored and selected.');
     }
 
     public static function procurementUrl(Procurement $request): ?string

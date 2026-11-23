@@ -96,7 +96,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             $this->assertSame([$target->id => $target->name.' · '.$target->asset_number], $select->getSearchResults($search));
         }
         $this->assertSame([], $select->getSearchResults('Tidak ada perangkat ini'));
-        $component->set('deviceId', (string) $target->id)->assertSet('inspectionId', null)->assertSee('Server Fisik');
+        $component->set('deviceId', (string) $target->id)->assertSet('inspectionId', null)->assertSee('Physical Server');
         $this->assertSame($target->id, $component->instance()->selectedDevice->id);
         $selected = $component->instance()->getSchema('deviceSelector')->getComponents()[0];
         $this->assertSame($target->name.' · '.$target->asset_number, $selected->getOptionLabel());
@@ -130,7 +130,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->assertSame(3, ItDevice::query()->count());
         $this->assertSame('512', (string) $one->computerDetail->storage_devices[0]['capacity_gb']);
         $this->assertNull($server->computerDetail);
-        Livewire::test(ListItDevices::class)->assertSee('Tambah Perangkat')->assertDontSee('Mode review')
+        Livewire::test(ListItDevices::class)->assertSee('Add Device')->assertDontSee('Mode review')
             ->assertCanSeeTableRecords([$one, $two, $server])->searchTable('Cadangan')->assertCanSeeTableRecords([$two])->assertCanNotSeeTableRecords([$one, $server]);
     }
 
@@ -198,8 +198,8 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $pc = $this->register(['device_type' => 'pc']);
         $laptop = $this->register();
         $component = Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $pc->id])
-            ->assertSee('Hardware PC')->assertDontSee('Baterai laptop')
-            ->set('deviceId', (string) $laptop->id)->assertSee('Baterai laptop')->assertDontSee('Hardware PC');
+            ->assertSee('Hardware PC')->assertDontSee('Laptop battery')
+            ->set('deviceId', (string) $laptop->id)->assertSee('Laptop battery')->assertDontSee('Hardware PC');
         $this->assertCount(18, $component->get('data.results'));
         foreach (['boot', 'performance', 'ram_usage', 'disk_health', 'network_access', 'access_security', 'windows_license', 'office_license', 'psu', 'cooling', 'external_monitor'] as $code) {
             $this->assertArrayNotHasKey($code, $component->get('data.results'));
@@ -227,9 +227,9 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->assertSame('laptop', $device->refresh()->device_type->value);
         $this->assertSame($detail, $device->computerDetail->getRawOriginal());
         Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])
-            ->assertSee('Baterai laptop')->assertDontSee('Hardware PC');
+            ->assertSee('Laptop battery')->assertDontSee('Hardware PC');
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $draft->id])
-            ->assertSee('Hardware PC')->assertDontSee('Baterai laptop');
+            ->assertSee('Hardware PC')->assertDontSee('Laptop battery');
 
         Livewire::test(EditItDevice::class, ['record' => $device->id])->set('data.device_type', 'pc')
             ->assertSet('data.lifecycle_status', 'in_use')->call('save')->assertHasNoFormErrors();
@@ -266,7 +266,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $device = ItDevice::query()->sole();
         $this->assertSame(ItSwitchFloor::Floor2, $device->floor);
         Livewire::test(EditItDevice::class, ['record' => $device->id])->assertFormSet(['floor' => '2']);
-        Livewire::test(ListItDevices::class)->assertSee('Nama Perangkat')->assertSee('LT 2');
+        Livewire::test(ListItDevices::class)->assertSee('Device Name')->assertSee('LT 2');
         $data = $this->inspectionData($device);
         $code = array_key_first($data['results']);
         $data['results'][$code] = [...$data['results'][$code], 'condition' => 'warning', 'finding' => 'Port perlu diperiksa', 'action_plan' => 'Periksa koneksi', 'assigned_to' => $this->inspector->id];
@@ -370,7 +370,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->assertSame($beforeName, $final->device_snapshot['name']);
         $this->assertSame('normal', $final->overall_condition->value);
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $final->id])
-            ->assertSee('Hasil sudah final.')->assertDontSee('Nama baru')->call('saveDraft')->assertForbidden();
+            ->assertSee('The results are final.')->assertDontSee('Nama baru')->call('saveDraft')->assertForbidden();
     }
 
     public function test_inline_livewire_values_across_groups_survive_save_and_reopen(): void
@@ -378,7 +378,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->asAdministrator();
         $device = $this->register();
         $component = Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id])
-            ->assertSee('Fisik dan daya')->assertSee('Performa dan penyimpanan')->assertSee('Baterai laptop')
+            ->assertSee('Physical and power')->assertSee('Performa dan penyimpanan')->assertSee('Laptop battery')
             ->assertDontSeeHtml('id="it-checklist-group"')->assertDontSee('Sebelumnya')->assertDontSee('Berikutnya')
             ->assertSeeHtml('id="check-physical_condition"')->assertSeeHtml('id="check-cpu_usage"')->assertSeeHtml('id="check-battery_health"')
             ->set('data.results.physical_condition.condition', 'warning')
@@ -414,7 +414,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->asAdministrator();
         $device = $this->register(['device_type' => 'server']);
         $component = Livewire::test(ItInspectionPage::class, ['deviceId' => (string) $device->id]);
-        $component->assertSee('0 / 37 diperiksa')->assertSee('Lingkungan')->assertSee('Virtualisasi')
+        $component->assertSee('0 / 37 diperiksa')->assertSee('Environment')->assertSee('Virtualisasi')
             ->assertDontSee('AC ruang')->assertDontSeeHtml('id="it-checklist-group"')
             ->assertSeeHtml('wire:model="data.results.room_temperature.measured_value"')
             ->assertSeeHtml('wire:model="data.results.virtual_machines.measured_value"');
@@ -477,7 +477,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             ->assertSee('SSD normal')->assertSee('HDD normal')->assertSeeText('0 %')
             ->assertSee('&lt;script&gt;alert(1)&lt;/script&gt;', false)->assertDontSeeHtml('<script>alert(1)</script>')
             ->assertDontSeeHtml('wire:submit="saveDraft"')->assertDontSeeHtml('wire:model="data.results.')
-            ->assertDontSee('Lanjutkan draft');
+            ->assertDontSee('Continue draft');
         $this->assertSame(17, $component->instance()->conditionCounts()['normal']);
         $this->assertSame(1, $component->instance()->conditionCounts()['warning']);
         $this->assertFalse(ItInspectionSummaryPage::shouldRegisterNavigation());
@@ -490,14 +490,14 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $service = app(ItInspectionService::class);
         $final = $service->save($this->inspector, $device->id, null, $this->inspectionData($device), true);
         $draft = $service->save($this->inspector, $device->id, null, $this->inspectionData($device), false);
-        Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => (string) $draft->id])->assertSee('Lanjutkan draft');
+        Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => (string) $draft->id])->assertSee('Continue draft');
         $other = Department::query()->create(['code' => 'HR', 'name' => 'HR']);
         $foreign = $this->register(['managing_department_id' => $other->id]);
         $foreignInspection = $service->save($this->inspector, $foreign->id, null, $this->inspectionData($foreign), true);
         $reader = $this->userIn($this->department);
         $this->grant($reader, ItPermission::ReportsView);
         $this->actingAs($reader);
-        Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => (string) $final->id])->assertSee($final->referenceNumber())->assertDontSee('Lanjutkan draft');
+        Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => (string) $final->id])->assertSee($final->referenceNumber())->assertDontSee('Continue draft');
         foreach ([(string) $draft->id, (string) $foreignInspection->id, 'invalid', '0', null] as $id) {
             Livewire::test(ItInspectionSummaryPage::class, ['inspectionId' => $id])->assertNotFound();
         }
@@ -531,14 +531,14 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $service = app(ItInspectionService::class);
         $service->save($this->inspector, $one->id, null, $this->inspectionData($one), true);
         $service->save($this->inspector, $one->id, null, $this->inspectionData($one), true);
-        $component = Livewire::test(ItInfrastructureReportPage::class)->assertSee('Total aset');
+        $component = Livewire::test(ItInfrastructureReportPage::class)->assertSee('Total assets');
         $stats = $component->instance()->stats;
         $this->assertSame(2, $stats['assets']);
         $this->assertSame(2, $stats['inspections']);
         $this->assertSame(0, $stats['open_findings']);
         $component->set('conditionFilter', 'normal');
         $this->assertCount(1, $component->instance()->latestDevices());
-        $component->set('deviceFilter', (string) $two->id)->set('reportTab', 'history')->assertSee('Belum ada pemeriksaan');
+        $component->set('deviceFilter', (string) $two->id)->set('reportTab', 'history')->assertSee('No inspections match these filters.');
     }
 
     public function test_viewer_cannot_write_and_report_permission_does_not_grant_draft_access(): void
@@ -558,10 +558,10 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
     public function test_empty_master_does_not_fabricate_devices_or_inspections(): void
     {
         $this->asAdministrator();
-        Livewire::test(ListItDevices::class)->assertSee('Belum ada perangkat');
-        Livewire::test(ItInspectionPage::class)->assertSee('Tambah Perangkat')->assertDontSee('Mode review');
-        Livewire::test(ItInspectionPage::class, ['deviceId' => 'laptop', 'inspectionId' => 'example-1'])->assertSee('Tambah Perangkat');
-        Livewire::test(ItInfrastructureReportPage::class)->assertSee('Belum ada pemeriksaan untuk pilihan ini.');
+        Livewire::test(ListItDevices::class)->assertSee('No device yet');
+        Livewire::test(ItInspectionPage::class)->assertSee('Add Device')->assertDontSee('Mode review');
+        Livewire::test(ItInspectionPage::class, ['deviceId' => 'laptop', 'inspectionId' => 'example-1'])->assertSee('Add Device');
+        Livewire::test(ItInfrastructureReportPage::class)->assertSee('No inspections match these filters.');
         $this->assertSame(0, ItDevice::query()->count());
         $this->assertSame(0, ItInspection::query()->count());
     }
@@ -654,9 +654,9 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->assertSame(1, $component->instance()->stats['inspections']);
         $this->assertSame($old->id, (int) $component->instance()->latestDevices()->first()->last_inspection_id);
         $this->assertNotSame($new->id, $old->id);
-        $component->set('dateFrom', '2026-02-31')->assertSee('Periksa format tanggal');
+        $component->set('dateFrom', '2026-02-31')->assertSee('Check the period date format.');
         $this->assertSame(0, $component->instance()->stats['inspections']);
-        $component->set('dateFrom', '')->set('dateUntil', '')->set('deviceFilter', 'invalid-id')->assertSee('Pilih perangkat dan petugas dari daftar');
+        $component->set('dateFrom', '')->set('dateUntil', '')->set('deviceFilter', 'invalid-id')->assertSee('Select devices and officers from available lists.');
         $this->assertSame(0, $component->instance()->stats['inspections']);
     }
 
@@ -673,7 +673,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $component = Livewire::test(ItInfrastructureReportPage::class);
         $this->assertSame(0, $component->instance()->stats['assets']);
         $this->assertSame(1, $component->instance()->stats['inspections']);
-        Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])->assertSee('Hasil sudah final.')->call('saveDraft')->assertForbidden();
+        Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])->assertSee('The results are final.')->call('saveDraft')->assertForbidden();
         $otherReader = $this->userIn($other);
         $this->grant($otherReader, ItPermission::ReportsView);
         $this->actingAs($otherReader);
@@ -718,7 +718,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         $this->actingAs($exporter);
         Excel::fake();
         Livewire::test(ItInfrastructureReportPage::class)->call('exportReport')->assertHasNoErrors();
-        Excel::assertDownloaded('pengecekan-infrastruktur-'.now()->format('Ymd-His').'.xlsx', function (ItInspectionExport $export) use ($allowed): bool {
+        Excel::assertDownloaded('infrastructure-inspections-'.now()->format('Ymd-His').'.xlsx', function (ItInspectionExport $export) use ($allowed): bool {
             $ids = $export->query()->pluck('it_inspection_id')->unique()->all();
             $this->assertSame([$allowed->id], $ids);
 
@@ -752,23 +752,23 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
             file_put_contents($file, $bytes);
             Cell::setValueBinder(new DefaultValueBinder);
             $workbook = IOFactory::load($file);
-            $this->assertSame(['Ringkasan Perangkat', 'Temuan dan Perawatan'], $workbook->getSheetNames());
+            $this->assertSame(['Device Summary', 'Findings and Maintenance'], $workbook->getSheetNames());
             $summary = $workbook->getSheet(0);
             $this->assertSame(3, $summary->getHighestDataRow());
             $rows = $summary->toArray(null, true, false);
             $columns = array_flip($rows[0]);
-            $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Nomor pemeriksaan']] === $latest->referenceNumber());
+            $row = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Inspection Number']] === $latest->referenceNumber());
             $this->assertSame('=1+1', $row[1]);
             $this->assertSame('Normal', $row[$columns['Kondisi']]);
-            $this->assertSame([0, 0, 0, 0], array_slice($row, $columns['Temuan terbuka']));
-            $oldRow = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Nomor pemeriksaan']] === $old->referenceNumber());
+            $this->assertSame([0, 0, 0, 0], array_slice($row, $columns['Open Findings']));
+            $oldRow = collect(array_slice($rows, 1))->first(fn ($row) => $row[$columns['Inspection Number']] === $old->referenceNumber());
             $this->assertSame($device->asset_number, $oldRow[0]);
             $this->assertSame('Warning', $oldRow[$columns['Kondisi']]);
-            $this->assertSame([0, 1, 1, 1], array_slice($oldRow, $columns['Temuan terbuka']));
+            $this->assertSame([0, 1, 1, 1], array_slice($oldRow, $columns['Open Findings']));
             $untested = collect(array_slice($rows, 1))->first(fn ($row) => $row[0] === $other->asset_number);
             $this->assertNull($untested);
             $this->assertSame(DataType::TYPE_STRING, $summary->getCell('B2')->getDataType());
-            $this->assertSame(DataType::TYPE_NUMERIC, $summary->getCell([$columns['Temuan terbuka'] + 1, 2])->getDataType());
+            $this->assertSame(DataType::TYPE_NUMERIC, $summary->getCell([$columns['Open Findings'] + 1, 2])->getDataType());
             $details = $workbook->getSheet(1);
             $this->assertSame(3, $details->getHighestDataRow());
             $detailRows = $details->toArray(null, true, false);
@@ -810,7 +810,7 @@ class ItInfrastructureOperationsTest extends ItInfrastructureTestCase
         Excel::fake();
         $component = Livewire::test(ItInfrastructureReportPage::class);
         $component->call('exportSummary')->assertHasNoErrors();
-        $name = 'ringkasan-perawatan-infrastruktur-'.now()->format('Ymd-His').'.xlsx';
+        $name = 'infrastructure-maintenance-summary-'.now()->format('Ymd-His').'.xlsx';
         Excel::assertDownloaded($name, function (ItMaintenanceSummaryExport $export) use ($devices, $old): bool {
             [$summary, $findings] = $export->sheets();
             $this->assertEqualsCanonicalizing($devices->pluck('id')->all(), $summary->query()->pluck('it_device_id')->unique()->values()->all());

@@ -435,10 +435,10 @@ class ProcurementTest extends TestCase
         $this->actingAs($this->scm)->get(route('scm.signature-prepared', $request))->assertOk();
         $this->rejects(fn () => $signatures->sign($this->requester, $request->id, $request->version));
         Livewire::actingAs($other)->test(SignatureProfile::class)
-            ->assertSee('Belum ada gambar tanda tangan')->call('saveSignature')->assertHasErrors('signatureFile')
-            ->set('signatureFile', $this->signatureFile())->call('saveSignature')->assertHasNoErrors()->assertSee('Ganti TTD profil');
+            ->assertSee('No signatures in the profile yet.')->call('saveSignature')->assertHasErrors('signatureFile')
+            ->set('signatureFile', $this->signatureFile())->call('saveSignature')->assertHasNoErrors()->assertSee('Replace profile signature');
         $this->assertNotNull($signatures->current($other));
-        Livewire::actingAs($this->scm)->test(SignatureProfile::class)->assertSee('Ganti TTD profil');
+        Livewire::actingAs($this->scm)->test(SignatureProfile::class)->assertSee('Replace profile signature');
     }
 
     #[DataProvider('kinds')]

@@ -56,7 +56,7 @@ class AiAssistantChat extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Tanya Aku';
+        return 'Ask Me';
     }
 
     public static function getNavigationSort(): ?int
@@ -66,12 +66,12 @@ class AiAssistantChat extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return 'Tanya Aku';
+        return 'Ask Me';
     }
 
     public function getHeading(): string|Htmlable
     {
-        return 'Tanya Aku';
+        return 'Ask Me';
     }
 
     public function send(): void
@@ -98,8 +98,8 @@ class AiAssistantChat extends Page
             Report::report($exception);
 
             Notification::make()
-                ->title('Jawaban belum tersedia')
-                ->body('Terjadi gangguan saat meminta jawaban. Coba lagi nanti atau hubungi administrator.')
+                ->title('Response unavailable')
+                ->body('Try again later or contact your administrator.')
                 ->danger()
                 ->send();
 
@@ -117,7 +117,7 @@ class AiAssistantChat extends Page
 
         return [
             'availableModels' => $availableModels,
-            'providerLabel' => AiProvider::tryFrom($this->provider)?->label() ?? 'penyedia AI',
+            'providerLabel' => AiProvider::tryFrom($this->provider)?->label() ?? 'AI provider',
             'messages' => AiAssistantMessage::query()
                 ->where('user_id', auth()->id())
                 ->where('provider', $this->provider)

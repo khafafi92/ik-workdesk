@@ -34,8 +34,8 @@ class MeetingBookingNotification extends Notification
         return FilamentNotification::make()
             ->title(
                 $cancelled
-                    ? 'Meeting dibatalkan'
-                    : 'Undangan meeting baru'
+                    ? 'Meeting cancelled'
+                    : 'New meeting invitation'
             )
             ->body(sprintf(
                 '%s · %s · %s–%s · %s',
@@ -53,7 +53,7 @@ class MeetingBookingNotification extends Notification
             ->color($cancelled ? 'danger' : 'info')
             ->actions([
                 Action::make('open')
-                    ->label('Lihat Booking')
+                    ->label('View Booking')
                     ->button()
                     ->url(
                         MeetingBookingResource::getUrl('index')

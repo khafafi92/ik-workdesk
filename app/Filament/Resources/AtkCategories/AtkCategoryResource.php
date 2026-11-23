@@ -23,28 +23,28 @@ class AtkCategoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTag;
 
-    protected static ?string $navigationLabel = 'Kategori Barang';
+    protected static ?string $navigationLabel = 'Item Categories';
 
-    protected static ?string $modelLabel = 'Kategori ATK';
+    protected static ?string $modelLabel = 'Item Category';
 
-    protected static ?string $pluralModelLabel = 'Kategori ATK';
+    protected static ?string $pluralModelLabel = 'Item Categories';
 
     protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('name')->label('Nama kategori')->required()->maxLength(255)->unique(ignoreRecord: true),
-            Toggle::make('is_active')->label('Aktif')->default(true),
+            TextInput::make('name')->label('Category name')->required()->maxLength(255)->unique(ignoreRecord: true),
+            Toggle::make('is_active')->label('Active')->default(true),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Kategori')->searchable()->sortable(),
-            TextColumn::make('items_count')->label('Barang')->counts('items')->alignCenter(),
-            IconColumn::make('is_active')->label('Aktif')->boolean(),
+            TextColumn::make('name')->label('Category')->searchable()->sortable(),
+            TextColumn::make('items_count')->label('Item')->counts('items')->alignCenter(),
+            IconColumn::make('is_active')->label('Active')->boolean(),
         ])->defaultSort('name')->recordActions([EditAction::make()]);
     }
 

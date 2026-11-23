@@ -38,7 +38,7 @@ class FinanceChartOfAccountsTest extends TestCase
     public function test_managed_accounts_are_company_scoped_audited_and_can_be_deactivated(): void
     {
         $page = Livewire::actingAs($this->manager)->test(FinanceChartOfAccounts::class)
-            ->assertSee('Belum ada COA yang sesuai')
+            ->assertSee('No suitable COAs yet, add accounts to the Finance list.')
             ->set('account', ['company' => 'KPMOG', 'code' => ' 001-a ', 'name' => 'Akun QA', 'is_active' => true])
             ->call('saveAccount')->assertHasNoErrors()->assertSee('001-A');
         $account = FinanceAccount::sole();

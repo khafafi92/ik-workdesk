@@ -16,12 +16,12 @@ class EmployeeHierarchy
             'supervisor' => 'SPV',
             'manager' => 'Manager',
             'general-manager' => 'GM',
-            'director' => 'Direktur',
+            'director' => 'Director',
             'cbo' => 'CBO',
             'coo-1' => 'COO I',
             'coo-2' => 'COO II',
             'coo-3' => 'COO III',
-            'specialist' => 'Spesialis',
+            'specialist' => 'Specialist',
         ];
     }
 
@@ -29,7 +29,7 @@ class EmployeeHierarchy
     {
         if ($employee->isDirty('position_level') && $employee->position_level !== null
             && ! array_key_exists($employee->position_level, self::levels())) {
-            throw ValidationException::withMessages(['position_level' => 'Pilih jenjang jabatan yang tersedia.']);
+            throw ValidationException::withMessages(['position_level' => 'Select available rank.']);
         }
 
         if (! $employee->isDirty('supervisor_employee_id') || $employee->supervisor_employee_id === null) {
@@ -38,13 +38,13 @@ class EmployeeHierarchy
 
         $supervisor = Employee::find($employee->supervisor_employee_id);
         if (! $supervisor || ! $supervisor->is_active) {
-            throw ValidationException::withMessages(['supervisor_employee_id' => 'Pilih atasan langsung yang aktif.']);
+            throw ValidationException::withMessages(['supervisor_employee_id' => 'Choose an active direct superior.']);
         }
 
         $visited = $employee->exists ? [(int) $employee->id => true] : [];
         while ($supervisor) {
             if (isset($visited[$supervisor->id])) {
-                throw ValidationException::withMessages(['supervisor_employee_id' => 'Hubungan atasan tidak boleh menunjuk diri sendiri atau membentuk putaran.']);
+                throw ValidationException::withMessages(['supervisor_employee_id' => 'The relationship of the superior should not be self - appointed or in shape.']);
             }
             $visited[$supervisor->id] = true;
             $supervisor = $supervisor->supervisor;

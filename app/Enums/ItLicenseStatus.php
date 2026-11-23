@@ -13,9 +13,9 @@ enum ItLicenseStatus: string
     {
         return match ($this) {
             self::Valid => 'Original/Valid',
-            self::Unofficial => 'Tidak Resmi/Crack',
-            self::Unverified => 'Belum Diverifikasi',
-            self::NotApplicable => 'Tidak Berlaku',
+            self::Unofficial => 'Unofficial / Cracked',
+            self::Unverified => 'Unverified',
+            self::NotApplicable => 'Not Applicable',
         };
     }
 }

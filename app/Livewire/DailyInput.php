@@ -114,8 +114,8 @@ class DailyInput extends Component
             'dailyValues.engine.*.*' => 'nullable|string|max:50',
             'dailyValues.compressor.*.*' => 'nullable|string|max:50',
         ], [
-            'selectedUnit.required' => 'Unit harus dipilih.',
-            'selectedUnit.in' => 'Unit yang dipilih tidak valid.',
+            'selectedUnit.required' => 'Units must be selected.',
+            'selectedUnit.in' => 'The selected unit is invalid.',
         ]);
 
         // Ambil report berdasarkan kombinasi unit + tanggal. Jika belum ada, buat object baru.
@@ -163,16 +163,16 @@ class DailyInput extends Component
         ActivityLog::write(
             $isNewReport ? 'daily_input' : 'daily_edit',
             'daily',
-            'Daily report Unit '.$this->selectedUnit.' tanggal '.$this->report_date.' '.($isNewReport ? 'dibuat.' : 'diupdate.')
+            'Daily report for Unit '.$this->selectedUnit.' on '.$this->report_date.' '.($isNewReport ? 'created.' : 'updated.')
         );
 
         $this->reportId = $report->id;
         $this->loadExistingReport();
 
-        $message = $isNewReport ? 'berhasil disimpan.' : 'berhasil diupdate.';
+        $message = $isNewReport ? 'successfully saved.' : 'updated successfully.';
         $readingCount = $this->filledReadingCount();
 
-        session()->flash('success', 'Input daily Unit '.$this->selectedUnit.' tanggal '.$this->report_date.' '.$message.' '.$readingCount.' cell reading tersimpan.');
+        session()->flash('success', 'Input daily Unit '.$this->selectedUnit.' tanggal '.$this->report_date.' '.$message.' '.$readingCount.' cell reading saved.');
     }
 
     public function updatedSelectedUnit(): void
@@ -604,7 +604,7 @@ class DailyInput extends Component
             ['number' => 21, 'description' => 'Flow Rate Gas', 'unit' => 'MMSCFD', 'low_alarm' => '-', 'high_alarm' => '-', 'normal_range' => '-'],
             ['number' => 22, 'description' => 'Battery Proflow', 'unit' => '%', 'low_alarm' => '-', 'high_alarm' => '-', 'normal_range' => '20-100'],
             ['number' => 23, 'description' => 'Recycle Valve (Open / Close)', 'unit' => '%', 'low_alarm' => '-', 'high_alarm' => '-', 'normal_range' => '-'],
-            ['number' => 24, 'description' => 'Weather (Cerah / Terik / Hujan)', 'unit' => '-', 'low_alarm' => '-', 'high_alarm' => '-', 'normal_range' => '-'],
+            ['number' => 24, 'description' => 'Weather (Clear / Hot / Rain)', 'unit' => '-', 'low_alarm' => '-', 'high_alarm' => '-', 'normal_range' => '-'],
         ];
     }
 

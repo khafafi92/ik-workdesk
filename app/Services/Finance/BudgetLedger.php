@@ -35,7 +35,7 @@ class BudgetLedger
 
         if (! $lineId) {
             if ($lines->isNotEmpty()) {
-                throw ValidationException::withMessages(['finance_budget_line_id' => 'Pilih peruntukan anggaran untuk perusahaan, tahun, project, dan divisi ini.']);
+                throw ValidationException::withMessages(['finance_budget_line_id' => 'Select a budget for this company, year, project, and division.']);
             }
 
             return null;
@@ -43,7 +43,7 @@ class BudgetLedger
 
         $line = $lines->firstWhere('id', $lineId);
         if (! $line) {
-            throw ValidationException::withMessages(['finance_budget_line_id' => 'Peruntukan anggaran tidak sesuai dengan perusahaan, tahun, project, atau divisi.']);
+            throw ValidationException::withMessages(['finance_budget_line_id' => 'Budget efforts don\'t match companies, years, projects, or divisions.']);
         }
 
         return $line;
@@ -126,7 +126,7 @@ class BudgetLedger
                     'number' => $order->request->number, 'related_number' => $order->number,
                     'department' => $order->request->department->name, 'project' => $order->request->projectNumbering?->code,
                     'purpose' => $order->request->title ?: $order->request->reason,
-                    'status' => $cancelled ? 'PO dibatalkan, komitmen dilepas' : 'PO aktif',
+                    'status' => $cancelled ? 'PO canceled, commitment off' : 'PO aktif',
                     'amount_minor' => $total, 'used_minor' => $cancelled ? 0 : $total,
                     'realized_minor' => $paid, 'committed_minor' => $cancelled ? 0 : max(0, $total - $paid)];
             })
@@ -145,7 +145,7 @@ class BudgetLedger
                     'department' => $spd->department?->name ?? $spd->employee_snapshot['department'] ?? '',
                     'project' => $spd->projectNumbering?->code,
                     'purpose' => $spd->data['purpose'] ?? '',
-                    'status' => $lpj ? 'Realisasi LPJ' : 'Komitmen SPD',
+                    'status' => $lpj ? 'LPJ Realization' : 'SPD commitment',
                     'amount_minor' => $amount, 'used_minor' => $amount, 'realized_minor' => $lpj ? $amount : 0,
                     'committed_minor' => $lpj ? 0 : $amount];
             })

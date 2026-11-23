@@ -71,6 +71,7 @@ class MenuAccessCatalogTest extends TestCase
             GlobalChatRoom::class => 'Signed-in users, company scope',
             AiAssistantSettingsPage::class => 'System administrator only',
             UserResource::class => 'Administrator access level',
+            \App\Filament\Pages\ModuleAccessSettingsPage::class => 'System administrator only',
             ScmApprovals::class => 'Assigned PR/SR or CBE approval, SCM processor, or system administrator',
             ScmProcurement::class => 'Project processing permissions or SCM configuration',
             PurchasingOfficer::class => 'HO processing permissions or SCM configuration',
@@ -80,18 +81,18 @@ class MenuAccessCatalogTest extends TestCase
             SignatureProfile::class => 'SCM requester, processor or assigned approver',
             Inventory::class => 'Catalogue, stock, and transactions follow inventory and existing module permissions',
         ];
-        $aliases = ['Perjalanan Dinas' => ['SPD' => 'Lihat SPD departemen', 'LPJ' => 'Lihat LPJ departemen', 'Master Approval' => 'Kelola Master Approval SPD/LPJ'], 'Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'], 'Infrastruktur IT' => [
-            'Master Perangkat' => 'Lihat Master Perangkat',
-            'Pengecekan Infrastruktur' => 'Lihat Pengecekan',
-            'Monitoring Harian IT' => 'Lihat Pengecekan',
-            'Rekap & Laporan' => 'Lihat Rekap & Laporan',
+        $aliases = ['Business Travel' => ['SPD' => 'View department SPD', 'LPJ' => 'View department LPJ', 'Approval Rules' => 'Manage Master Approval SPD/LPJ'], 'Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR', 'Department budget' => 'Anggaran departemen'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'], 'IT Infrastructure' => [
+            'Device Catalog' => 'View Device Catalog',
+            'Infrastructure Inspections' => 'View Inspections',
+            'Daily IT Monitoring' => 'View Inspections',
+            'Summary & Reports' => 'View Summary & Reports',
         ]];
         $panel = Filament::getCurrentPanel();
         foreach ([...$panel->getResources(), ...$panel->getPages()] as $class) {
             if (! $class::shouldRegisterNavigation() || isset($exceptions[$class])) {
                 continue;
             }
-            $group = $class::getNavigationGroup() ?? 'Master Data';
+            $group = \App\Services\ModuleAccessService::displayLabel($class::getNavigationGroup() ?? 'Master Data');
             $label = $class::getNavigationLabel();
             $this->assertContains($aliases[$group][$label] ?? $label, $groups[$group] ?? [], "Missing checklist entry: {$class}");
         }

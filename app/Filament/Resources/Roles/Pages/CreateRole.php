@@ -24,7 +24,7 @@ class CreateRole extends CreateRecord
                     )
                 ),
             403,
-            'Anda tidak memiliki izin membuat role.'
+            'You don\'t have a license to make roles.'
         );
 
         /*
@@ -36,7 +36,7 @@ class CreateRole extends CreateRecord
                 === 'system-admin'
         ) {
             throw ValidationException::withMessages([
-                'code' => 'Kode system-admin dilindungi dan tidak dapat digunakan.',
+                'code' => 'System-admin code protected and unusable.',
             ]);
         }
 

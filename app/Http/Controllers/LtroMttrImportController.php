@@ -25,7 +25,7 @@ class LtroMttrImportController
         $rows = IOFactory::load($file->getRealPath())->getActiveSheet()->toArray(null, true, false, true);
 
         if (count($rows) < 2) {
-            return back()->withErrors(['mttr_file' => 'File Excel tidak memiliki data.']);
+            return back()->withErrors(['mttr_file' => 'Excel file has no data.']);
         }
 
         [$headerRow, $headers] = $this->headers($rows);
@@ -43,7 +43,7 @@ class LtroMttrImportController
                 $shutdownDate = $this->date($value('dateshutdown'));
 
                 if (! $unitName || ! $shutdownDate) {
-                    $notes[] = "Baris {$rowNumber}: Unit atau Date Shutdown kosong.";
+                    $notes[] = "Row {$rowNumber}: The Shutdown Unit or Date is empty.";
 
                     continue;
                 }
@@ -65,7 +65,7 @@ class LtroMttrImportController
                     : $shutdown->copy()->addMinutes($downtime);
 
                 if ($downtime < 0 || $running->lt($shutdown)) {
-                    $notes[] = "Baris {$rowNumber}: Waktu running sebelum shutdown atau downtime negatif.";
+                    $notes[] = "Row {$rowNumber}: Time running before shutdown or negative downtime.";
 
                     continue;
                 }
@@ -94,12 +94,12 @@ class LtroMttrImportController
                 $record ? $updated++ : $created++;
                 $processed++;
             } catch (Throwable $exception) {
-                $notes[] = "Baris {$rowNumber}: {$exception->getMessage()}";
+                $notes[] = "Row {$rowNumber}: {$exception->getMessage()}";
             }
         }
 
-        ActivityLog::write('ltro_import', 'ltro', "Import LTRO {$sourceFile}: {$processed} diproses, {$created} baru, {$updated} diperbarui.");
-        $message = "Import selesai. {$processed} baris diproses ({$created} baru, {$updated} diperbarui).";
+        ActivityLog::write('ltro_import', 'ltro', "Import LTRO {$sourceFile}: {$processed} processed, {$created} new, {$updated} upgraded.");
+        $message = "Import complete. {$processed} line processed ({$created} new, {$updated} updated).";
 
         return back()->with('success', $message)->with('import_warnings', array_slice($notes, 0, 10));
     }

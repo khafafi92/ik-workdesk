@@ -44,13 +44,13 @@ class TicketCollaborationService
 
             if ($ticket->workflow_type === 'collaborative') {
                 throw ValidationException::withMessages([
-                    'workflow_type' => 'Service Desk ini sudah menggunakan workflow kolaboratif.',
+                    'workflow_type' => 'Service Desk here is already using collaborative workflow.',
                 ]);
             }
 
             if (in_array($ticket->status, ['resolved', 'closed', 'cancel', 'cancelled', 'rejected'], true)) {
                 throw ValidationException::withMessages([
-                    'workflow_type' => 'Service Desk yang sudah selesai, dibatalkan, atau ditolak tidak dapat dijadikan kolaboratif.',
+                    'workflow_type' => 'Completed, canceled, or rejected Service Desk cannot be collaborative.',
                 ]);
             }
 
@@ -58,7 +58,7 @@ class TicketCollaborationService
 
             if ($departmentIds->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'department_ids' => 'Pilih minimal satu departemen tambahan untuk kolaborasi.',
+                    'department_ids' => 'Select at least one additional department for collaboration.',
                 ]);
             }
 
@@ -112,7 +112,7 @@ class TicketCollaborationService
 
         if ($departmentIds->intersect($excludedDepartmentIds)->isNotEmpty()) {
             throw ValidationException::withMessages([
-                'department_ids' => 'Pilih hanya departemen tambahan; departemen lead dan peminta sudah tercatat pada Service Desk.',
+                'department_ids' => 'Select only additional departments; the lead and request department has been recorded to Service Desk.',
             ]);
         }
 
@@ -120,7 +120,7 @@ class TicketCollaborationService
 
         if ($departmentIds->intersect($existingDepartmentIds)->isNotEmpty()) {
             throw ValidationException::withMessages([
-                'department_ids' => 'Salah satu departemen yang dipilih sudah terlibat dalam Service Desk ini.',
+                'department_ids' => 'One of the selected departments is already involved in Desk\'s Service.',
             ]);
         }
 
@@ -132,7 +132,7 @@ class TicketCollaborationService
 
         if ($activeDepartmentIds->count() !== $departmentIds->count()) {
             throw ValidationException::withMessages([
-                'department_ids' => 'Semua departemen kolaborator harus masih aktif.',
+                'department_ids' => 'All collaborators must remain active.',
             ]);
         }
 

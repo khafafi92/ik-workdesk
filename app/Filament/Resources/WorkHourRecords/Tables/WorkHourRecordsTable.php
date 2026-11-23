@@ -25,11 +25,11 @@ class WorkHourRecordsTable
                     ->sortable(),
 
                 TextColumn::make('work_hours_text')
-                    ->label('Total Jam Kerja')
+                    ->label('Total Working Hours')
                     ->sortable(),
 
                 TextColumn::make('work_minutes')
-                    ->label('Total Menit')
+                    ->label('Total Minutes')
                     ->numeric()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

@@ -22,13 +22,13 @@ class EnsureActiveUser
         $request->session()->regenerateToken();
 
         if ($request->expectsJson()) {
-            abort(403, 'Akun employee sudah tidak aktif.');
+            abort(403, 'Employee account is disabled.');
         }
 
         return redirect()
             ->route('login')
             ->withErrors([
-                'email' => 'Akun employee sudah tidak aktif.',
+                'email' => 'Employee account is disabled.',
             ]);
     }
 }

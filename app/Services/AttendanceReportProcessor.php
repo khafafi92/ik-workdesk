@@ -60,7 +60,7 @@ class AttendanceReportProcessor
     {
         if (! $import->attendance_file_path) {
             throw new RuntimeException(
-                'Attendance file path tidak tersedia.'
+                'Attendance file path not available.'
             );
         }
 
@@ -70,7 +70,7 @@ class AttendanceReportProcessor
 
         if (! file_exists($path)) {
             throw new RuntimeException(
-                'Attendance file tidak ditemukan: '.$path
+                'Attendance file not found: '.$path
             );
         }
 
@@ -88,7 +88,7 @@ class AttendanceReportProcessor
 
         if (! $headers) {
             throw new RuntimeException(
-                'Header file Activity Attendance tidak sesuai.'
+                'The Activity Attendance file header does not match.'
             );
         }
 
@@ -264,7 +264,7 @@ class AttendanceReportProcessor
     {
         if (! $import->work_hour_file_path) {
             throw new RuntimeException(
-                'Work Hour file path tidak tersedia.'
+                'Work Hour file path not available.'
             );
         }
 
@@ -274,7 +274,7 @@ class AttendanceReportProcessor
 
         if (! file_exists($path)) {
             throw new RuntimeException(
-                'Work Hour file tidak ditemukan: '.$path
+                'Work hours file not found: '.$path
             );
         }
 
@@ -291,7 +291,7 @@ class AttendanceReportProcessor
 
         if (! $headers) {
             throw new RuntimeException(
-                'Header file Work Hour tidak sesuai.'
+                'Work Hour file header mismatch.'
             );
         }
 
@@ -491,7 +491,7 @@ class AttendanceReportProcessor
                 'checkout_status' => 'Clock Out Tidak Ada',
                 'work_hour_status' => 'Tersedia',
                 'final_status' => 'need_review',
-                'notes' => 'Karyawan terdapat di file Total Jam Kerja, tetapi tidak memiliki Activity Check pada periode ini.',
+                'notes' => 'The employee is present in the Total Work Clock file, but has no Activity Check at this time.',
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
@@ -744,7 +744,7 @@ class AttendanceReportProcessor
     {
         if ($periodDates === []) {
             throw new RuntimeException(
-                'File Total Jam Kerja tidak memiliki tanggal kerja yang valid.'
+                'Total Work Clock File does not have a valid working date.'
             );
         }
 
@@ -756,7 +756,7 @@ class AttendanceReportProcessor
 
         if ($periodStart->day !== 21 || ! $periodEnd->isSameDay($expectedEnd)) {
             throw new RuntimeException(sprintf(
-                'Periode file Total Jam Kerja harus tanggal 21 sampai 20 bulan berikutnya. Terdeteksi %s sampai %s.',
+                'The work hours file must cover the 21st through the 20th of the following month. Detected %s through %s.',
                 $periodStart->format('Y-m-d'),
                 $periodEnd->format('Y-m-d')
             ));
@@ -774,7 +774,7 @@ class AttendanceReportProcessor
 
         if ($hasActivityOutsidePeriod) {
             throw new RuntimeException(
-                'File Activity memiliki tanggal di luar periode file Total Jam Kerja.'
+                'The activity file contains dates outside the work hours period.'
             );
         }
 

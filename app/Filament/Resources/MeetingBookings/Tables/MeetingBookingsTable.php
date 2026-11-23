@@ -95,7 +95,7 @@ class MeetingBookingsTable
                     ->requiresConfirmation()
                     ->modalHeading('Finish this meeting?')
                     ->modalDescription(
-                        'Meeting akan ditandai selesai dan sisa jadwal ruangan langsung tersedia untuk booking lain.'
+                        'Meetings will be marked complete and the remaining room schedules are readily available for other bookings.'
                     )
                     ->action(
                         function (MeetingBooking $record): void {
@@ -108,7 +108,7 @@ class MeetingBookingsTable
                             Notification::make()
                                 ->title('Meeting marked as done')
                                 ->body(
-                                    'Sisa slot ruangan sekarang tersedia.'
+                                    'The remaining slot rooms are now available.'
                                 )
                                 ->success()
                                 ->send();

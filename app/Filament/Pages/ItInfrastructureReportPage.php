@@ -31,9 +31,9 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar-square';
 
-    protected static ?string $navigationLabel = 'Rekap & Laporan';
+    protected static ?string $navigationLabel = 'Summary & Reports';
 
-    protected static ?string $title = 'Rekap & Laporan';
+    protected static ?string $title = 'Summary & Reports';
 
     protected static ?string $slug = 'it-infrastructure-reports';
 
@@ -90,15 +90,15 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
     public function filterProblem(): ?string
     {
         if (($this->deviceFilter !== '' && filter_var($this->deviceFilter, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) || ($this->inspectorFilter !== '' && filter_var($this->inspectorFilter, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false)) {
-            return 'Pilih perangkat dan petugas dari daftar yang tersedia.';
+            return 'Select devices and officers from available lists.';
         }
         foreach ([$this->dateFrom, $this->dateUntil] as $date) {
             if ($date !== '' && (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || ! checkdate((int) substr($date, 5, 2), (int) substr($date, 8, 2), (int) substr($date, 0, 4)))) {
-                return 'Periksa format tanggal periode.';
+                return 'Check the period date format.';
             }
         }
 
-        return $this->dateFrom !== '' && $this->dateUntil !== '' && $this->dateUntil < $this->dateFrom ? 'Tanggal akhir tidak boleh sebelum tanggal awal.' : null;
+        return $this->dateFrom !== '' && $this->dateUntil !== '' && $this->dateUntil < $this->dateFrom ? 'End date must not be before start date.' : null;
     }
 
     public function inspectionQuery(): Builder
@@ -205,7 +205,7 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
             throw ValidationException::withMessages(['resolutionNotes.'.$id => $exception->validator?->errors()->first() ?? $exception->getMessage()]);
         }
         $this->resetValidation('resolutionNotes.'.$id);
-        Notification::make()->success()->title($status === 'resolved' ? 'Tindak lanjut diselesaikan' : 'Tindak lanjut dimulai')->send();
+        Notification::make()->success()->title($status === 'resolved' ? 'Follow-up completed' : 'Follow-up begins')->send();
     }
 
     public function exportSummary()
@@ -223,7 +223,7 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
             $findings->whereIn('it_inspection_id', (clone $inspections)->select('it_inspections.id'));
         }
 
-        return Excel::download(new ItMaintenanceSummaryExport($devices, $inspections, $findings), 'ringkasan-perawatan-infrastruktur-'.now()->format('Ymd-His').'.xlsx');
+        return Excel::download(new ItMaintenanceSummaryExport($devices, $inspections, $findings), 'infrastructure-maintenance-summary-'.now()->format('Ymd-His').'.xlsx');
     }
 
     public function exportReport()
@@ -237,6 +237,6 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
             $query->whereHas('inspection', fn ($inspection) => $inspection->where('overall_condition', $this->conditionFilter));
         }
 
-        return Excel::download(new ItInspectionExport($query), 'pengecekan-infrastruktur-'.now()->format('Ymd-His').'.xlsx');
+        return Excel::download(new ItInspectionExport($query), 'infrastructure-inspections-'.now()->format('Ymd-His').'.xlsx');
     }
 }

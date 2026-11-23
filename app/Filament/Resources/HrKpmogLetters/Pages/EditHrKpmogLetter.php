@@ -14,27 +14,27 @@ class EditHrKpmogLetter extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Lengkapi Draft Surat HR KPMOG';
+        return 'Complete Draft KPMOG HR Letter';
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Isi data surat, lalu simpan draft. Nomor surat sudah dicadangkan dan tidak dapat diubah.';
+        return 'Mail content, then save the draft. The mail number is already backuped and cannot be changed.';
     }
 
     public function getBreadcrumb(): string
     {
-        return 'Lengkapi draft';
+        return 'Complete draft';
     }
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Simpan draft');
+        return parent::getSaveFormAction()->label('Save Draft');
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Kembali');
+        return parent::getCancelFormAction()->label('Back');
     }
 
     protected function afterSave(): void

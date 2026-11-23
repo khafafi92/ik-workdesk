@@ -40,7 +40,7 @@ class CommentsRelationManager extends RelationManager
                 Textarea::make('message')
                     ->label('Comment / Update')
                     ->placeholder(
-                        'Tuliskan pertanyaan, klarifikasi, atau perkembangan pekerjaan.'
+                        'Write down questions, clarifyation, or employment development.'
                     )
                     ->required()
                     ->rows(5)
@@ -183,7 +183,7 @@ class CommentsRelationManager extends RelationManager
                         abort_unless(
                             auth()->check(),
                             403,
-                            'Anda tidak memiliki izin membuat komentar.'
+                            'You don\'t have a comment permit.'
                         );
                     })
                     ->mutateDataUsing(function (array $data): array {

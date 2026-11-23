@@ -23,7 +23,7 @@ class MeetingBookingForm
         return $schema->components([
             Section::make('Book Meeting Room')
                 ->description(
-                    'Pilih ruangan dan waktu. Sistem akan otomatis menolak jadwal yang bertabrakan.'
+                    'Select space and time. The system will automatically reject collision schedules.'
                 )
                 ->schema([
                     TextInput::make('title')
@@ -203,7 +203,7 @@ class MeetingBookingForm
 
                     Textarea::make('external_guests')
                         ->label('External Guests')
-                        ->placeholder('Nama tamu eksternal, pisahkan dengan koma.')
+                        ->placeholder('External guest name, separate by comma.')
                         ->rows(2)
                         ->columnSpanFull(),
 

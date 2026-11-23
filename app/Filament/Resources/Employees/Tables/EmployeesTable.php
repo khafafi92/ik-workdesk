@@ -38,13 +38,13 @@ class EmployeesTable
                 TextColumn::make('position')
                     ->searchable(),
                 TextColumn::make('position_level')
-                    ->label('Jenjang Jabatan')
+                    ->label('Job Level')
                     ->formatStateUsing(fn (string $state): string => EmployeeHierarchy::levels()[$state] ?? $state)
-                    ->placeholder('Belum dipetakan')
+                    ->placeholder('Unmapped')
                     ->sortable(),
                 TextColumn::make('supervisor.name')
-                    ->label('Atasan Langsung')
-                    ->placeholder('Belum dipetakan')
+                    ->label('Direct Top')
+                    ->placeholder('Unmapped')
                     ->searchable(),
                 IconColumn::make('is_active')
                     ->boolean(),

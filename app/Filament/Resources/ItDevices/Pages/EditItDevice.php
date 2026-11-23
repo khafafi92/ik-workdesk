@@ -34,7 +34,7 @@ class EditItDevice extends EditRecord
     {
         return [
             TransferItDeviceAction::make()->record(fn () => $this->getRecord()),
-            Action::make('inspect')->label('Periksa perangkat ini')->url(fn () => ItInspectionPage::getUrl(['device' => $this->getRecord()->id]))->visible(fn () => Gate::allows('inspectDevice', [ItInspection::class, $this->getRecord()])),
+            Action::make('inspect')->label('Check this device')->url(fn () => ItInspectionPage::getUrl(['device' => $this->getRecord()->id]))->visible(fn () => Gate::allows('inspectDevice', [ItInspection::class, $this->getRecord()])),
         ];
     }
 }

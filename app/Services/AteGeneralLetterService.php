@@ -43,7 +43,7 @@ class AteGeneralLetterService
         $type = $this->typeFor($kind);
 
         if (! $type->is_active) {
-            throw ValidationException::withMessages(['letter_kind' => 'Jenis surat APCA ini tidak aktif.']);
+            throw ValidationException::withMessages(['letter_kind' => 'This APCA mail type is disabled.']);
         }
 
         $letter = new OutgoingLetter([
@@ -77,7 +77,7 @@ class AteGeneralLetterService
 
         if ($department === null || ! $department->is_active || blank($department->code)) {
             throw ValidationException::withMessages([
-                'department_id' => 'Pilih departemen aktif sebelum menyimpan atau menerbitkan surat.',
+                'department_id' => 'Select active department before saving or publishing mail.',
             ]);
         }
 
@@ -93,14 +93,14 @@ class AteGeneralLetterService
     private function definitions(): array
     {
         return [
-            'perdin' => ['label' => 'Surat Perdin', 'type_code' => 'ATE-PERDIN'],
-            'tugas' => ['label' => 'Surat Tugas', 'type_code' => 'ATE-TUGAS'],
-            'pernyataan' => ['label' => 'Surat Pernyataan', 'type_code' => 'ATE-PERNYATAAN'],
-            'pengantar' => ['label' => 'Surat Pengantar', 'type_code' => 'ATE-PENGANTAR'],
-            'permohonan' => ['label' => 'Surat Permohonan', 'type_code' => 'ATE-PERMOHONAN'],
-            'keputusan' => ['label' => 'Surat Keputusan', 'type_code' => 'ATE-KEPUTUSAN'],
+            'perdin' => ['label' => 'Business Travel Letter', 'type_code' => 'ATE-PERDIN'],
+            'tugas' => ['label' => 'Assignment Letter', 'type_code' => 'ATE-TUGAS'],
+            'pernyataan' => ['label' => 'Statement', 'type_code' => 'ATE-PERNYATAAN'],
+            'pengantar' => ['label' => 'Cover Letter', 'type_code' => 'ATE-PENGANTAR'],
+            'permohonan' => ['label' => 'Request Letter', 'type_code' => 'ATE-PERMOHONAN'],
+            'keputusan' => ['label' => 'Decision Letter', 'type_code' => 'ATE-KEPUTUSAN'],
             'sket' => ['label' => 'SKET', 'type_code' => 'ATE-SKET'],
-            'tanda_terima_dok' => ['label' => 'Tanda Terima Dok', 'type_code' => 'ATE-TTD'],
+            'tanda_terima_dok' => ['label' => 'Document Receipt', 'type_code' => 'ATE-TTD'],
             'info_memo_luwuk' => ['label' => 'Info Memo Luwuk', 'type_code' => 'ATE-INFO-MEMO-LWK'],
         ];
     }
@@ -110,7 +110,7 @@ class AteGeneralLetterService
         $definition = $this->definitions()[$kind] ?? null;
 
         if ($definition === null) {
-            throw ValidationException::withMessages(['letter_kind' => 'Pilih jenis surat ATE yang tersedia.']);
+            throw ValidationException::withMessages(['letter_kind' => 'Select the available FATE mail type.']);
         }
 
         return $definition;
@@ -123,13 +123,13 @@ class AteGeneralLetterService
             ->contains(fn (array $item): bool => $item['type_code'] === $letter->documentType?->code);
 
         if (! $typeExists) {
-            throw ValidationException::withMessages(['document_type_id' => 'Jenis surat ATE tidak valid.']);
+            throw ValidationException::withMessages(['document_type_id' => 'Invalid ATT mail type.']);
         }
 
         $department ??= $letter->department;
 
         if ($department === null || blank($department->code)) {
-            throw ValidationException::withMessages(['department_id' => 'Pilih departemen aktif dari master departemen.']);
+            throw ValidationException::withMessages(['department_id' => 'Select the active department of the department master.']);
         }
 
         $date = Carbon::parse($letter->document_date);
@@ -147,7 +147,7 @@ class AteGeneralLetterService
             ->first();
 
         if ($department === null || ! $department->is_active || blank($department->code)) {
-            throw ValidationException::withMessages(['department_id' => 'Pilih departemen aktif dari master departemen.']);
+            throw ValidationException::withMessages(['department_id' => 'Select the active department of the department master.']);
         }
 
         return $department;
@@ -158,16 +158,16 @@ class AteGeneralLetterService
         $company = PermitCompany::query()->where('code', 'APCA')->first();
 
         if ($company === null) {
-            throw ValidationException::withMessages(['profile' => 'Entitas APCA belum tersedia pada master data.']);
+            throw ValidationException::withMessages(['profile' => 'APCA entity not yet available on data master.']);
         }
 
         $profile = LetterProfile::query()->firstOrCreate(
             ['code' => 'ATE-UMUM'],
             [
-                'name' => 'Surat Umum APCA',
+                'name' => 'APCA General Correspondence',
                 'permit_company_id' => $company->id,
                 'form_variant' => 'general',
-                'description' => 'Register surat umum APCA dengan nomor berdasarkan departemen yang dipilih.',
+                'description' => 'A.P.C.A. general mail register with numbers based on the selected department.',
                 'is_active' => true,
             ],
         );
@@ -179,7 +179,7 @@ class AteGeneralLetterService
                     'letter_profile_id' => $profile->id,
                     'permit_company_id' => $company->id,
                     'document_type_id' => $type->id,
-                    'name' => 'Nomor ATE '.strtoupper($kind),
+                    'name' => 'TE number '.strtoupper($kind),
                 ],
                 [
                     'template' => '{running:3}/{department_code}-ATE/{roman_month}/{year}',

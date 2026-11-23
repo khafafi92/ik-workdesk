@@ -19,11 +19,11 @@ class AtkDepartmentBalanceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedBuildingOffice2;
 
-    protected static ?string $navigationLabel = 'Saldo Department';
+    protected static ?string $navigationLabel = 'Department Stock Balances';
 
-    protected static ?string $modelLabel = 'Saldo Department';
+    protected static ?string $modelLabel = 'Department Stock Balances';
 
-    protected static ?string $pluralModelLabel = 'Saldo Department';
+    protected static ?string $pluralModelLabel = 'Department Stock Balances';
 
     protected static ?int $navigationSort = 6;
 
@@ -36,15 +36,15 @@ class AtkDepartmentBalanceResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('department.name')->label('Departemen')->searchable()->sortable(),
-                TextColumn::make('item.code')->label('Kode')->searchable(),
-                TextColumn::make('item.name')->label('Barang ATK')->searchable()->sortable(),
-                TextColumn::make('qty_available')->label('Saldo')->numeric(decimalPlaces: 0)->sortable(),
-                TextColumn::make('item.unit')->label('Satuan'),
-                TextColumn::make('updated_at')->label('Diperbarui')->since()->sortable(),
+                TextColumn::make('department.name')->label('Department')->searchable()->sortable(),
+                TextColumn::make('item.code')->label('Code')->searchable(),
+                TextColumn::make('item.name')->label('Office Supply Items')->searchable()->sortable(),
+                TextColumn::make('qty_available')->label('Balance')->numeric(decimalPlaces: 0)->sortable(),
+                TextColumn::make('item.unit')->label('Unit'),
+                TextColumn::make('updated_at')->label('Updated')->since()->sortable(),
             ])
             ->filters([
-                SelectFilter::make('department_id')->label('Departemen')->relationship('department', 'name')->searchable()->preload(),
+                SelectFilter::make('department_id')->label('Department')->relationship('department', 'name')->searchable()->preload(),
             ])
             ->defaultSort('updated_at', 'desc');
     }

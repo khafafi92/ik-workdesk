@@ -14,8 +14,8 @@ enum ItMonitoringType: string
     {
         return match ($this) {
             self::Internet => 'Internet',
-            self::Firewall => $version === 1 ? 'Firewall & koneksi internet' : 'Firewall',
-            self::ServerRoom => 'Ruang server',
+            self::Firewall => $version === 1 ? 'Firewall & Internet connection' : 'Firewall',
+            self::ServerRoom => 'Server room',
             self::Synology => $version === 1 ? 'Backup Synology' : 'Backup',
             self::Vsphere => $version === 1 ? 'VM vSphere' : 'VM',
         };
@@ -29,17 +29,17 @@ enum ItMonitoringType: string
     public function statuses(int $version = 1): array
     {
         if ($version === 2 || in_array($this, [self::Internet, self::ServerRoom], true)) {
-            return ['unchecked' => 'Belum diperiksa', ...match ($this) {
-                self::Internet, self::Firewall, self::Synology => ['normal' => 'Normal', 'issue' => 'Ada gangguan'],
-                self::ServerRoom => ['recorded' => 'Suhu dicatat'],
+            return ['unchecked' => 'Not inspected', ...match ($this) {
+                self::Internet, self::Firewall, self::Synology => ['normal' => 'Normal', 'issue' => 'Issue detected'],
+                self::ServerRoom => ['recorded' => 'Temperature recorded'],
                 self::Vsphere => ['up_to_date' => 'Up to date', 'update' => 'Update'],
             }];
         }
 
-        return ['unchecked' => 'Belum diperiksa', ...match ($this) {
-            self::Firewall => ['up' => 'Terhubung', 'unstable' => 'Putus nyambung', 'down' => 'Terputus'],
-            self::Synology => ['success' => 'Berhasil', 'running' => 'Masih berjalan', 'failed' => 'Gagal', 'not_run' => 'Tidak berjalan'],
-            self::Vsphere => ['powered_on' => 'Menyala', 'powered_off' => 'Mati', 'suspended' => 'Suspended', 'unknown' => 'Tidak dapat diperiksa'],
+        return ['unchecked' => 'Not inspected', ...match ($this) {
+            self::Firewall => ['up' => 'Connected', 'unstable' => 'Intermittent', 'down' => 'Disconnected'],
+            self::Synology => ['success' => 'Success', 'running' => 'Still running', 'failed' => 'Failed', 'not_run' => 'Not running'],
+            self::Vsphere => ['powered_on' => 'Powered on', 'powered_off' => 'Powered off', 'suspended' => 'Suspended', 'unknown' => 'Unable to check'],
         }];
     }
 
@@ -86,7 +86,7 @@ enum ItMonitoringType: string
         return match ($this) {
             self::Internet => 'Internet status',
             self::Firewall => 'FortiView status',
-            self::ServerRoom => 'Suhu ruang server',
+            self::ServerRoom => 'Server room temperature',
             default => null,
         };
     }

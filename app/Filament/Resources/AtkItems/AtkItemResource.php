@@ -42,50 +42,50 @@ class AtkItemResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
-    protected static ?string $navigationLabel = 'Master Barang ATK';
+    protected static ?string $navigationLabel = 'Office Supply Catalog';
 
-    protected static ?string $modelLabel = 'Barang ATK';
+    protected static ?string $modelLabel = 'Office Supply Items';
 
-    protected static ?string $pluralModelLabel = 'Master Barang ATK';
+    protected static ?string $pluralModelLabel = 'Office Supply Catalog';
 
     protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Data barang')
+            Section::make('Goods data')
                 ->columns(2)
                 ->schema([
-                    TextInput::make('code')->label('Kode barang')->required()->maxLength(50)->unique(ignoreRecord: true),
-                    TextInput::make('name')->label('Nama barang')->required()->maxLength(255),
-                    TextInput::make('size')->label('Ukuran')->maxLength(100),
+                    TextInput::make('code')->label('Goods code')->required()->maxLength(50)->unique(ignoreRecord: true),
+                    TextInput::make('name')->label('The name of the item')->required()->maxLength(255),
+                    TextInput::make('size')->label('Size')->maxLength(100),
                     Select::make('atk_category_id')
-                        ->label('Kategori')
+                        ->label('Category')
                         ->relationship('categoryMaster', 'name', fn (Builder $query): Builder => $query->where('is_active', true))
                         ->searchable()
                         ->preload(),
                     Select::make('atk_unit_id')
-                        ->label('Satuan')
+                        ->label('Unit')
                         ->relationship('unitMaster', 'name', fn (Builder $query): Builder => $query->where('is_active', true))
                         ->searchable()
                         ->preload()
                         ->required(),
-                    TextInput::make('minimum_stock')->label('Stok minimum')->numeric()->minValue(0)->step(0.01),
-                    Toggle::make('is_active')->label('Aktif')->default(true),
+                    TextInput::make('minimum_stock')->label('Minimum stock')->numeric()->minValue(0)->step(0.01),
+                    Toggle::make('is_active')->label('Active')->default(true),
                     TextInput::make('current_stock')
-                        ->label('Stok awal gudang pilihan')
-                        ->helperText('Pilih gudang entitas untuk stok awal. Stok berjalan diubah melalui transaksi masuk atau penyesuaian.')
+                        ->label('Stock early storage options')
+                        ->helperText('Select an entity warehouse for initial stock. Stocks are changed through incoming transactions or adjustments.')
                         ->numeric()
                         ->minValue(0)
                         ->step(0.01)
                         ->default(0)
                         ->disabledOn('edit'),
-                    Select::make('initial_warehouse_id')->label('Gudang stok awal')->options(static::warehouseOptions(...))
+                    Select::make('initial_warehouse_id')->label('Start stock storage')->options(static::warehouseOptions(...))
                         ->required(fn (Get $get) => (float) $get('current_stock') > 0)
                         ->visibleOn('create')->searchable(),
                     TextInput::make('actual_stock')
-                        ->label('Stok fisik aktual')
-                        ->helperText('Nilai ini hanya mencatat hasil penghitungan fisik. Gunakan Penyesuaian untuk mengubah stok sistem.')
+                        ->label('Real physical stock')
+                        ->helperText('This value only records physical calculations. Use adjustments to change system stock.')
                         ->numeric()
                         ->minValue(0)
                         ->step(0.01),
@@ -109,7 +109,7 @@ class AtkItemResource extends Resource
                 TextColumn::make('unit')->label('Unit'),
             ])
             ->filters([
-                TernaryFilter::make('is_active')->label('Aktif'),
+                TernaryFilter::make('is_active')->label('Active'),
             ])
             ->defaultSort('name')
             ->headerActions([
@@ -121,13 +121,13 @@ class AtkItemResource extends Resource
                         'template-import-master-atk.xlsx',
                     )),
                 Action::make('import_items')
-                    ->label('Import Master/Stok')
+                    ->label('Master/Stok Import')
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('primary')
-                    ->modalHeading('Import master dan stok ATK')
-                    ->modalDescription('Pilih gudang entitas untuk satu batch impor. Quantity memperbarui stok gudang yang dipilih; Actual tetap mencatat hasil pemeriksaan fisik ATK.')
+                    ->modalHeading('Master import and office supplies stock')
+                    ->modalDescription('Select an entity warehouse for one import batch. Quantity updates the stock of selected warehouses; Actual records the results of office supplies physical examinations.')
                     ->form([
-                        Select::make('warehouse_id')->label('Gudang entitas tujuan impor')->options(static::warehouseOptions(...))->searchable()->required(),
+                        Select::make('warehouse_id')->label('Entitled entity warehouse to import')->options(static::warehouseOptions(...))->searchable()->required(),
                         FileUpload::make('file')
                             ->label('File Excel')
                             ->disk('local')
@@ -149,13 +149,13 @@ class AtkItemResource extends Resource
                             );
 
                             Notification::make()
-                                ->title('Import ATK selesai')
-                                ->body("Baru: {$result['created']}; diperbarui: {$result['updated']}; stok disesuaikan: {$result['stockAdjusted']}.")
+                                ->title('ATT import complete')
+                                ->body("New: {$result['created']}; updated: {$result['updated']}; stock adjusted: {$result['stockAdjusted']}.")
                                 ->success()
                                 ->send();
                         } catch (\Throwable $e) {
                             Notification::make()
-                                ->title('Import ATK gagal')
+                                ->title('Office supplies import failed')
                                 ->body($e->getMessage())
                                 ->danger()
                                 ->send();
@@ -164,10 +164,10 @@ class AtkItemResource extends Resource
             ])
             ->recordActions([
                 Action::make('incoming')
-                    ->label('Stok masuk')
+                    ->label('Stock in')
                     ->icon(Heroicon::OutlinedArrowDownCircle)
                     ->color('success')
-                    ->form(static::stockForm('Jumlah masuk'))
+                    ->form(static::stockForm('Number in'))
                     ->action(function (AtkItem $record, array $data): void {
                         app(AtkWarehouseStockService::class)->incoming(
                             $record,
@@ -176,15 +176,15 @@ class AtkItemResource extends Resource
                             $data['note'] ?? null,
                             InventoryWarehouse::findOrFail($data['warehouse_id']),
                         );
-                        static::success('Stok masuk tercatat.');
+                        static::success('Stock entry\'s accounted for.');
                     }),
                 Action::make('adjust')
-                    ->label('Penyesuaian')
+                    ->label('Adjustment')
                     ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
                     ->color('warning')
-                    ->form(static::stockForm('Selisih stok (+/-)', true))
+                    ->form(static::stockForm('Stock difference (+/-)', true))
                     ->requiresConfirmation()
-                    ->modalDescription('Masukkan nilai positif untuk menambah dan nilai negatif untuk mengurangi stok.')
+                    ->modalDescription('Enter positive values to add and negative values to reduce stock.')
                     ->action(function (AtkItem $record, array $data): void {
                         app(AtkWarehouseStockService::class)->adjust(
                             $record,
@@ -193,7 +193,7 @@ class AtkItemResource extends Resource
                             $data['note'] ?? null,
                             InventoryWarehouse::findOrFail($data['warehouse_id']),
                         );
-                        static::success('Penyesuaian stok tercatat.');
+                        static::success('Stock adjustment noted.');
                     }),
                 EditAction::make(),
             ]);
@@ -236,14 +236,14 @@ class AtkItemResource extends Resource
     private static function stockForm(string $quantityLabel, bool $allowNegative = false): array
     {
         return [
-            Select::make('warehouse_id')->label('Gudang entitas')->options(static::warehouseOptions(...))->searchable()->required(),
+            Select::make('warehouse_id')->label('An entity warehouse')->options(static::warehouseOptions(...))->searchable()->required(),
             TextInput::make('quantity')
                 ->label($quantityLabel)
                 ->numeric()
                 ->step(0.01)
                 ->minValue($allowNegative ? null : 0.01)
                 ->required(),
-            TextInput::make('note')->label('Catatan')->required()->maxLength(500),
+            TextInput::make('note')->label('Notes')->required()->maxLength(500),
         ];
     }
 

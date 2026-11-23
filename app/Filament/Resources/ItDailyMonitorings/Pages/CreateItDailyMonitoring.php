@@ -17,7 +17,7 @@ class CreateItDailyMonitoring extends CreateRecord
 
     protected static bool $canCreateAnother = false;
 
-    protected static ?string $title = 'Tambah catatan monitoring';
+    protected static ?string $title = 'Add monitoring notes';
 
     #[Locked]
     public ?string $repeatedFromSource = null;
@@ -72,25 +72,25 @@ class CreateItDailyMonitoring extends CreateRecord
     public function getSubheading(): ?string
     {
         return $this->repeatedFromSource === null
-            ? 'Isi hasil yang Anda periksa. Simpan Draft untuk melanjutkan nanti; Finalisasi mengunci catatan.'
-            : 'Daftar pemeriksaan dari '.$this->repeatedFromSource.'. Semua hasil dikosongkan untuk pemeriksaan baru.';
+            ? 'Fill in the results you checked. Save Draft to continue later; Finalization lock notes.'
+            : 'Checklist copied from '.$this->repeatedFromSource.'. Results are blank for the new inspection.';
     }
 
     public function getTitle(): string
     {
         return match ($this->data['monitoring_type'] ?? null) {
             'internet' => 'Cek internet',
-            'firewall' => ($this->data['format_version'] ?? 2) === 1 ? 'Cek koneksi internet' : 'Cek firewall',
-            'server_room' => 'Cek ruang server',
+            'firewall' => ($this->data['format_version'] ?? 2) === 1 ? 'Check Internet connection' : 'Cek firewall',
+            'server_room' => 'Check the server room',
             'synology' => 'Cek backup Synology',
             'vsphere' => 'Cek VM vSphere',
-            default => 'Tambah catatan monitoring',
+            default => 'Add monitoring notes',
         };
     }
 
     public function getBreadcrumb(): string
     {
-        return 'Tambah catatan';
+        return 'Add note';
     }
 
     protected function handleRecordCreation(array $data): Model
@@ -105,7 +105,7 @@ class CreateItDailyMonitoring extends CreateRecord
 
     protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()->label('Simpan Draft')->color('gray');
+        return parent::getCreateFormAction()->label('Save Draft')->color('gray');
     }
 
     protected function getFormActions(): array
@@ -121,12 +121,12 @@ class CreateItDailyMonitoring extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Catatan monitoring tersimpan';
+        return 'Saved monitoring notes';
     }
 
     protected function getCancelFormAction(): Action
     {
-        return Action::make('cancel')->label('Batal')->color('gray')->url(ItDailyMonitoringResource::getUrl('index'));
+        return Action::make('cancel')->label('Cancel')->color('gray')->url(ItDailyMonitoringResource::getUrl('index'));
     }
 
     protected function getRedirectUrl(): string

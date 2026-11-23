@@ -14,7 +14,7 @@ class SignatureProfile extends Page
 
     protected static ?string $slug = 'profil/tanda-tangan';
 
-    protected static ?string $title = 'Tanda tangan profil';
+    protected static ?string $title = 'Profile signature';
 
     protected static bool $shouldRegisterNavigation = false;
 
@@ -31,13 +31,13 @@ class SignatureProfile extends Page
     {
         abort_unless(static::canAccess(), 403);
         $this->validate(['signatureFile' => 'required|file|max:2048'], [
-            'signatureFile.required' => 'Pilih gambar tanda tangan terlebih dahulu.',
-            'signatureFile.file' => 'Gambar tanda tangan harus berupa file.',
-            'signatureFile.max' => 'Gambar tanda tangan maksimal 2 MB.',
+            'signatureFile.required' => 'Select the signature image first.',
+            'signatureFile.file' => 'Signature image must be a file.',
+            'signatureFile.max' => 'Image signatures are at least 2 MBs.',
         ]);
         app(Signatures::class)->upload(auth()->user(), $this->signatureFile);
         $this->signatureFile = null;
-        Notification::make()->title('Tanda tangan profil tersimpan.')->success()->send();
+        Notification::make()->title('The profile signature is stored.')->success()->send();
     }
 
     protected function getViewData(): array

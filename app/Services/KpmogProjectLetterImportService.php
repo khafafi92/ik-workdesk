@@ -41,7 +41,7 @@ class KpmogProjectLetterImportService
         ];
 
         if ($rows->isEmpty()) {
-            $result['messages'][] = 'File tidak memiliki baris data.';
+            $result['messages'][] = 'File has no data line.';
 
             return $result;
         }
@@ -56,7 +56,7 @@ class KpmogProjectLetterImportService
 
                 if (blank($number)) {
                     $result['skippedInvalid']++;
-                    $result['messages'][] = "Baris {$rowNumber}: nomor surat terbit wajib diisi.";
+                    $result['messages'][] = "Row {$rowNumber}: The number of sunrise messages is mandatory to be filled.";
 
                     continue;
                 }
@@ -64,7 +64,7 @@ class KpmogProjectLetterImportService
                 $numberKey = strtolower($number);
                 if (isset($numbersInFile[$numberKey])) {
                     $result['skippedDuplicate']++;
-                    $result['messages'][] = "Baris {$rowNumber}: nomor {$number} sama dengan baris {$numbersInFile[$numberKey]} dan dilewati.";
+                    $result['messages'][] = "Row {$rowNumber}: number {$number} duplicates row {$numbersInFile[$numberKey]} and was skipped.";
 
                     continue;
                 }
@@ -75,7 +75,7 @@ class KpmogProjectLetterImportService
                     ->whereRaw('LOWER(document_number) = ?', [$numberKey])
                     ->exists()) {
                     $result['skippedExisting']++;
-                    $result['messages'][] = "Baris {$rowNumber}: nomor {$number} sudah ada di register dan dilewati.";
+                    $result['messages'][] = "Row {$rowNumber}: number {$number} it's already in the register and skipped.";
 
                     continue;
                 }
@@ -83,7 +83,7 @@ class KpmogProjectLetterImportService
                 $date = $this->date($this->value($row, 'tanggal_surat', 'document_date'));
                 if ($date === null) {
                     $result['skippedInvalid']++;
-                    $result['messages'][] = "Baris {$rowNumber}: tanggal surat tidak valid.";
+                    $result['messages'][] = "Row {$rowNumber}: invalid mail date.";
 
                     continue;
                 }
@@ -91,7 +91,7 @@ class KpmogProjectLetterImportService
                 $departmentCode = $this->value($row, 'dept', 'department');
                 if (blank($departmentCode)) {
                     $result['skippedInvalid']++;
-                    $result['messages'][] = "Baris {$rowNumber}: Dept wajib diisi.";
+                    $result['messages'][] = "Row {$rowNumber}: Dept must be filled.";
 
                     continue;
                 }

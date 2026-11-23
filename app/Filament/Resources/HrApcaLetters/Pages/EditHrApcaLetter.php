@@ -15,27 +15,27 @@ class EditHrApcaLetter extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Lengkapi Draft Surat HR APCA';
+        return 'Complete Draft HR APCA Letter';
     }
 
     public function getBreadcrumb(): string
     {
-        return 'Lengkapi draft';
+        return 'Complete draft';
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Isi data surat, lalu simpan draft. Nomor urut sudah dicadangkan; format lengkap memakai ATE-HR sesuai keterangan surat.';
+        return 'Mail content, then save the draft. The sequence number is already backuped; the full format uses theATE-HR according to the mail description.';
     }
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Simpan draft');
+        return parent::getSaveFormAction()->label('Save Draft');
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Kembali');
+        return parent::getCancelFormAction()->label('Back');
     }
 
     protected function afterSave(): void

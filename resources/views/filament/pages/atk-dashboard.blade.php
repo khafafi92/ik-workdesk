@@ -1,31 +1,31 @@
 <x-filament-panels::page>
     <div class="ik-atk-dashboard">
-        <section class="ik-atk-dashboard-summary" aria-label="Ringkasan status ATK">
+        <section class="ik-atk-dashboard-summary" aria-label="ATTK status summary">
             <div>
-                <span>Permintaan baru</span>
+                <span>New request</span>
                 <strong>{{ $newRequests }}</strong>
-                <small>Perlu ditinjau GA</small>
+                <small>GA review required</small>
             </div>
             <div>
-                <span>Menunggu konfirmasi</span>
+                <span>Waiting for confirmation</span>
                 <strong>{{ $awaitingReceipt }}</strong>
-                <small>Barang belum diterima</small>
+                <small>Unacceptable items</small>
             </div>
             <div>
-                <span>Stok minimum</span>
+                <span>Minimum stock</span>
                 <strong>{{ $lowStock }}</strong>
-                <small>Barang perlu perhatian</small>
+                <small>Stuff needs attention</small>
             </div>
         </section>
 
         <section class="ik-atk-dashboard-list" aria-labelledby="atk-request-queue-heading">
             <div class="ik-atk-dashboard-list-toolbar">
                 <div>
-                    <h2 id="atk-request-queue-heading">Permintaan yang perlu ditindak</h2>
-                    <p>Lihat progres penyerahan, penerimaan, stok tersedia, dan kekurangan setiap barang.</p>
+                    <h2 id="atk-request-queue-heading">Requests to be performed</h2>
+                    <p>See surrender progress, acceptance, stock available, and lack of every item.</p>
                 </div>
                 @if ($requestsUrl)
-                    <a class="ik-atk-dashboard-action" href="{{ $requestsUrl }}">Buka semua permintaan</a>
+                    <a class="ik-atk-dashboard-action" href="{{ $requestsUrl }}">Open all requests</a>
                 @endif
             </div>
 
@@ -33,14 +33,14 @@
                 <table class="ik-atk-table">
                         <thead>
                             <tr>
-                                <th scope="col">Nomor</th>
-                                <th scope="col">Tanggal</th>
+                                <th scope="col">Number</th>
+                                <th scope="col">Date</th>
                                 <th scope="col">Peminta</th>
-                                <th scope="col">Departemen</th>
-                                <th scope="col">Entitas</th>
-                                <th scope="col">Barang dan progres</th>
+                                <th scope="col">Department</th>
+                                <th scope="col">Entity</th>
+                                <th scope="col">Stuff and progress</th>
                                 <th scope="col">Status</th>
-                                <th scope="col">Keperluan</th>
+                                <th scope="col">Requirement</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -59,7 +59,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="ik-atk-table-empty">Tidak ada permintaan terbuka yang perlu ditindak saat ini.</td>
+                                    <td colspan="8" class="ik-atk-table-empty">There's no open demand to be acted on at this time.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -67,7 +67,7 @@
             </div>
 
             <footer class="ik-atk-dashboard-list-footer">
-                Menampilkan {{ $pendingRequests->count() }} dari {{ $pendingRequestCount }} permintaan terbuka.
+                Display {{ $pendingRequests->count() }} of {{ $pendingRequestCount }} open demand.
             </footer>
         </section>
     </div>

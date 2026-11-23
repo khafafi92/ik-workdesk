@@ -108,7 +108,7 @@ class MeetingBookingService
 
                 if (! $booking->canBeCancelled()) {
                     throw ValidationException::withMessages([
-                        'status' => 'Booking yang sudah dimulai, selesai, atau dibatalkan tidak dapat dibatalkan.',
+                        'status' => 'The booking that has already begun, finished, or canceled cannot be undone.',
                     ]);
                 }
 
@@ -141,7 +141,7 @@ class MeetingBookingService
 
                 if (! $booking->canBeCompleted()) {
                     throw ValidationException::withMessages([
-                        'status' => 'Hanya meeting yang sedang berlangsung yang dapat diselesaikan.',
+                        'status' => 'Only an ongoing meeting can be completed.',
                     ]);
                 }
 
@@ -189,7 +189,7 @@ class MeetingBookingService
     ): void {
         if (! $room->is_active) {
             throw ValidationException::withMessages([
-                'data.meeting_room_id' => 'Ruangan ini sedang tidak aktif.',
+                'data.meeting_room_id' => 'This room is off-line.',
             ]);
         }
 
@@ -198,7 +198,7 @@ class MeetingBookingService
         if ($attendeeCount > $room->capacity) {
             throw ValidationException::withMessages([
                 'data.participants' => sprintf(
-                    'Jumlah peserta (%d termasuk organizer) melebihi kapasitas %s (%d orang).',
+                    'The number of participants (%d includes organizers) exceeds the capacity of %s (%d people).',
                     $attendeeCount,
                     $room->name,
                     $room->capacity
@@ -211,13 +211,13 @@ class MeetingBookingService
 
         if ($end->lessThanOrEqualTo($start)) {
             throw ValidationException::withMessages([
-                'data.end_at' => 'Jam selesai harus setelah jam mulai.',
+                'data.end_at' => 'The clock has to be after the clock starts.',
             ]);
         }
 
         if (! $start->isSameDay($end)) {
             throw ValidationException::withMessages([
-                'data.end_at' => 'Booking harus dimulai dan selesai pada hari yang sama.',
+                'data.end_at' => 'Booking must begin and finish on the same day.',
             ]);
         }
 
@@ -234,7 +234,7 @@ class MeetingBookingService
         ) {
             throw ValidationException::withMessages([
                 'data.start_at' => sprintf(
-                    '%s hanya dapat dibooking pukul %s–%s.',
+                    '%s can only be booked from %s to %s.',
                     $room->name,
                     substr($room->available_from, 0, 5),
                     substr($room->available_until, 0, 5)
@@ -257,7 +257,7 @@ class MeetingBookingService
         if ($conflict) {
             throw ValidationException::withMessages([
                 'data.start_at' => sprintf(
-                    '%s sudah dibooking pada %s–%s untuk “%s”. Tersedia kembali pukul %s.',
+                    '%s is already booked from %s to %s for "%s". It is available again at %s.',
                     $room->name,
                     $conflict->start_at->format('H:i'),
                     $conflict->end_at->format('H:i'),

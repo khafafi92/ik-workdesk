@@ -17,7 +17,7 @@ class EditRole extends EditRecord
         abort_unless(
             RoleResource::canEdit($this->record),
             403,
-            'Anda tidak memiliki izin mengubah role ini.'
+            'You do not have permission to change this role.'
         );
 
         /*
@@ -38,7 +38,7 @@ class EditRole extends EditRecord
                 === 'system-admin'
         ) {
             throw ValidationException::withMessages([
-                'code' => 'Kode system-admin dilindungi dan tidak dapat digunakan.',
+                'code' => 'System-admin code protected and unusable.',
             ]);
         }
 
@@ -99,7 +99,7 @@ class EditRole extends EditRecord
                             $this->record
                         ),
                         403,
-                        'Role ini tidak dapat dihapus.'
+                        'This role cannot be removed.'
                     );
                 }),
         ];

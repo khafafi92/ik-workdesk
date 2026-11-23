@@ -35,7 +35,7 @@ class EditAttendanceImport extends EditRecord
         if ($filesChanged) {
             $data['status'] = 'uploaded';
             $data['processed_at'] = null;
-            $data['notes'] = 'File diperbarui. Jalankan Process Report untuk memperbarui hasil.';
+            $data['notes'] = 'File updated. Run Process Report to update results.';
         }
 
         return $data;

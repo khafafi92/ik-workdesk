@@ -87,9 +87,9 @@ class FinanceBudgetsTest extends TestCase
         Filament::setCurrentPanel(Filament::getPanel('admin'));
         $user = User::factory()->create(['is_admin' => false]);
         $user->directPermissions()->attach(Permission::where('code', 'finance.budget.manage')->sole());
-        Livewire::actingAs($user)->test(FinanceBudgets::class)->assertSee('Belum ada anggaran utama.')
+        Livewire::actingAs($user)->test(FinanceBudgets::class)->assertSee('No major budget yet.')
             ->set('budget', ['company' => 'KPMOG', 'year' => '2026', 'amount' => '1000'])
-            ->call('createBudget')->assertHasNoErrors()->assertSee('Alokasi KPMOG 2026');
+            ->call('createBudget')->assertHasNoErrors()->assertSee('Allocation KPMOG 2026');
     }
 
     public function test_budgets_keep_currencies_separate_for_the_same_company_and_year(): void
@@ -144,7 +144,7 @@ class FinanceBudgetsTest extends TestCase
             $this->assertSame(25000, $summary['used_minor']);
             $this->assertSame(0, $summary['committed_minor']);
             $this->assertSame(75000, $summary['available_minor']);
-            $this->assertSame('Realisasi LPJ', $report['entries']->sole()['status']);
+            $this->assertSame('LPJ Realization', $report['entries']->sole()['status']);
             $this->assertSame('LPJ-BUDGET-QA', $report['entries']->sole()['related_number']);
             $this->assertSame(25000, $report['entries']->sole()['realized_minor']);
     }
@@ -183,8 +183,8 @@ class FinanceBudgetsTest extends TestCase
         $this->assertSame(500.0, $rows[5][7]);
         $this->assertSame(250.0, $rows[6][9]);
         $this->assertSame(1250.0, $rows[8][11]);
-        $this->assertSame('ALOKASI HO / KANTOR PUSAT', $rows[11][0]);
-        $this->assertSame('ALOKASI DIVISI / COA', $rows[12][0]);
+        $this->assertSame('HEAD OFFICE ALLOCATION', $rows[11][0]);
+        $this->assertSame('DIVISION / COA ALLOCATION', $rows[12][0]);
         $this->assertSame('LPJ · LPJ-EXPORT-QA', $rows[13][2]);
         $this->assertSame(250.0, $rows[13][8]);
         $this->assertIsFloat($rows[13][3]);
@@ -210,7 +210,7 @@ class FinanceBudgetsTest extends TestCase
         Excel::fake();
         Livewire::actingAs($manager)->test(FinanceBudgets::class)
             ->call('openBudget', $budget->id)
-            ->assertSee('Export ke Excel')
+            ->assertSee('Export to Excel')
             ->call('exportBudget')
             ->assertHasNoErrors();
         Excel::assertDownloaded('penggunaan-anggaran-kpmog-2026-idr.xlsx', fn (FinanceBudgetUsageExport $download): bool => $download->array()[8][11] === 1250.0);

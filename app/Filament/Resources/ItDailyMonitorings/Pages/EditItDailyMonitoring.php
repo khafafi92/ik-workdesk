@@ -12,11 +12,11 @@ class EditItDailyMonitoring extends EditRecord
 {
     protected static string $resource = ItDailyMonitoringResource::class;
 
-    protected static ?string $title = 'Ubah draft monitoring';
+    protected static ?string $title = 'Modify draft monitoring';
 
     public function getBreadcrumb(): string
     {
-        return 'Ubah draft';
+        return 'Change draft';
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
@@ -26,7 +26,7 @@ class EditItDailyMonitoring extends EditRecord
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Simpan Draft')->color('gray');
+        return parent::getSaveFormAction()->label('Save Draft')->color('gray');
     }
 
     protected function getFormActions(): array
@@ -42,7 +42,7 @@ class EditItDailyMonitoring extends EditRecord
 
     protected function getCancelFormAction(): Action
     {
-        return Action::make('cancel')->label('Batal')->color('gray')->url(ItDailyMonitoringResource::getUrl('index'));
+        return Action::make('cancel')->label('Cancel')->color('gray')->url(ItDailyMonitoringResource::getUrl('index'));
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
@@ -57,7 +57,7 @@ class EditItDailyMonitoring extends EditRecord
 
     protected function getSavedNotificationTitle(): ?string
     {
-        return 'Catatan monitoring tersimpan';
+        return 'Saved monitoring notes';
     }
 
     protected function getRedirectUrl(): string

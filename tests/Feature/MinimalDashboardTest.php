@@ -22,7 +22,7 @@ class MinimalDashboardTest extends TestCase
             ->assertSeeText('Today')
             ->assertSeeText('Upcoming')
             ->assertSeeText('Overdue')
-            ->assertDontSeeText('ruangan tersedia')
+            ->assertDontSeeText('available space')
             ->assertDontSeeText('Booking Saya')
             ->assertDontSeeText('Meeting Rooms Today')
             ->assertDontSeeText('Upcoming Reminders');
@@ -37,7 +37,7 @@ class MinimalDashboardTest extends TestCase
             ->assertOk()
             ->assertSeeText('Service Desk')
             ->assertSeeText('Work Logs')
-            ->assertSeeText('ruangan tersedia')
+            ->assertSeeText('available space')
             ->assertSeeText('Reminder')
             ->assertSeeText('Hari Ini')
             ->assertSeeText('Akan Datang')

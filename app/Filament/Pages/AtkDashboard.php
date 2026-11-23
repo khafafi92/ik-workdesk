@@ -15,9 +15,9 @@ class AtkDashboard extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
-    protected static ?string $navigationLabel = 'Dashboard ATK';
+    protected static ?string $navigationLabel = 'Office Supplies Dashboard';
 
-    protected static ?string $title = 'Dashboard ATK';
+    protected static ?string $title = 'Office Supplies Dashboard';
 
     protected static string|UnitEnum|null $navigationGroup = 'ATK';
 
@@ -59,11 +59,11 @@ class AtkDashboard extends Page
     public function requestStatusLabel(string $status): string
     {
         return match ($status) {
-            'submitted' => 'Baru, perlu ditinjau GA',
-            'processing' => 'Sedang diproses',
-            'partially_fulfilled' => 'Sebagian dipenuhi',
-            'completed' => 'Selesai',
-            'cancelled' => 'Dibatalkan',
+            'submitted' => 'New, needs GA review',
+            'processing' => 'Processing',
+            'partially_fulfilled' => 'Partially fulfilled',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
             default => str($status)->replace('_', ' ')->title()->toString(),
         };
     }

@@ -23,15 +23,15 @@ class ItChecklistItem extends Model
         static::saving(function (self $item): void {
             $templateIds = array_filter([$item->it_checklist_template_id, $item->getRawOriginal('it_checklist_template_id')]);
             if (ItInspection::query()->whereIn('it_checklist_template_id', $templateIds)->exists()) {
-                throw ValidationException::withMessages(['item' => 'Item template yang sudah digunakan tidak dapat diubah atau ditambah.']);
+                throw ValidationException::withMessages(['item' => 'Items on a template already in use cannot be edited or added.']);
             }
             if (! in_array($item->value_type, ['text', 'number', 'datetime', 'rows'], true) || blank($item->code) || blank($item->label) || blank($item->section) || blank($item->instructions) || $item->sort_order < 1) {
-                throw ValidationException::withMessages(['item' => 'Definisi butir checklist tidak lengkap.']);
+                throw ValidationException::withMessages(['item' => 'Complete the checklist item definition.']);
             }
         });
         static::deleting(function (self $item): void {
             if ($item->results()->exists() || $item->template()->firstOrFail()->inspections()->exists()) {
-                throw ValidationException::withMessages(['item' => 'Item template yang sudah digunakan tidak dapat dihapus.']);
+                throw ValidationException::withMessages(['item' => 'Items on a template already in use cannot be deleted.']);
             }
         });
     }

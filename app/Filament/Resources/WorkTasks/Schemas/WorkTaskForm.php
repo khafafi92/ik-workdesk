@@ -35,7 +35,7 @@ class WorkTaskForm
                 */
                 Section::make('Source Service Desk')
                     ->description(
-                        'Informasi permintaan asli. Attachment hanya dapat dikelola dari menu Service Desk.'
+                        'The original request information. Attachment can only be managed from the Service Desk menu.'
                     )
                     ->visible(
                         fn (?WorkTask $record): bool => filled($record?->ticket_id)
@@ -75,14 +75,14 @@ class WorkTaskForm
                         TextEntry::make('ticket.description')
                             ->label(
                                 fn (WorkTask $record): string => $record->requiresLegalApproval()
-                                    ? 'Nama Proyek / Kegiatan / Transaksi'
+                                    ? 'Project / Activity Name'
                                     : 'Request Description'
                             )
                             ->placeholder('No description')
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.legal_background')
-                            ->label('Latar Belakang')
+                            ->label('Background')
                             ->placeholder('-')
                             ->visible(
                                 fn (WorkTask $record): bool => $record->requiresLegalApproval()
@@ -90,7 +90,7 @@ class WorkTaskForm
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.legal_objective')
-                            ->label('Tujuan Permintaan')
+                            ->label('Purpose of Request')
                             ->placeholder('-')
                             ->visible(
                                 fn (WorkTask $record): bool => $record->requiresLegalApproval()
@@ -98,7 +98,7 @@ class WorkTaskForm
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.legal_desired_scheme')
-                            ->label('Skema yang Diinginkan')
+                            ->label('Preferred arrangement')
                             ->placeholder('-')
                             ->visible(
                                 fn (WorkTask $record): bool => $record->requiresLegalApproval()
@@ -106,19 +106,19 @@ class WorkTaskForm
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.legal_document_types')
-                            ->label('Dokumen Pendukung')
+                            ->label('Supporter Documents')
                             ->placeholder('-')
                             ->listWithLineBreaks()
                             ->bulleted()
                             ->formatStateUsing(
                                 fn (string $state): string => match ($state) {
-                                    'draft_agreement' => 'Draft Perjanjian',
+                                    'draft_agreement' => 'Draft Agreement',
                                     'proposal' => 'Proposal',
                                     'term_sheet_loi' => 'Term Sheet / LOI',
                                     'correspondence' => 'Korespondensi',
                                     'company_profile' => 'Company Profile',
-                                    'permit_document' => 'Dokumen Perizinan',
-                                    'other' => 'Dokumen Lainnya',
+                                    'permit_document' => 'Permission Document',
+                                    'other' => 'Other Documents',
                                     default => $state,
                                 }
                             )
@@ -168,7 +168,7 @@ class WorkTaskForm
                     ]),
 
                 Section::make('Permit Request & Result')
-                    ->description('KBLI yang diminta dari Service Desk dan hasil yang dikirim oleh Legal.')
+                    ->description('Requested KBLI from Service Desk and results sent by Legal.')
                     ->visible(fn (?WorkTask $record): bool => $record?->isPermitLegalTask() === true)
                     ->columns(2)
                     ->schema([
@@ -184,7 +184,7 @@ class WorkTaskForm
                             ->label('Requested KBLI No.')
                             ->placeholder(
                                 fn (WorkTask $record): string => $record->ticket?->permit_kbli_unavailable
-                                    ? 'Tidak ada / belum terdaftar'
+                                    ? 'No / not registered'
                                     : '-'
                             ),
 
@@ -192,13 +192,13 @@ class WorkTaskForm
                             ->label('Requested KBLI Name')
                             ->placeholder(
                                 fn (WorkTask $record): string => $record->ticket?->permit_kbli_unavailable
-                                    ? 'Perlu didiskusikan dengan Legal'
+                                    ? 'Needs to be discussed with Legal'
                                     : '-'
                             ),
 
                         Textarea::make('permit_result_notes')
                             ->label('Permit Result Notes')
-                            ->helperText('Diisi oleh Legal untuk menjelaskan hasil pemrosesan KBLI.')
+                            ->helperText('Charged by Legal to explain the results of KBLI processing.')
                             ->rows(4)
                             ->maxLength(5000)
                             ->disabled(
@@ -209,7 +209,7 @@ class WorkTaskForm
 
                         FileUpload::make('permit_result_attachments')
                             ->label('Permit Result Attachments')
-                            ->helperText('Unggah dokumen hasil Permit/KBLI yang akan dikirim kepada requester.')
+                            ->helperText('Upload permit/KBLI document to send to the register.')
                             ->multiple()
                             ->maxFiles(10)
                             ->disk('local')
@@ -323,7 +323,7 @@ class WorkTaskForm
                 */
                 Section::make('Work Execution')
                     ->description(
-                        'Tentukan PIC, status, progress, jadwal, dan catatan pekerjaan.'
+                        'Define PIC, status, progress, schedule, and employment records.'
                     )
                     ->columns(2)
                     ->schema([
@@ -331,7 +331,7 @@ class WorkTaskForm
                             ->label('Task No')
                             ->disabled()
                             ->dehydrated(false)
-                            ->placeholder('Auto generate saat disimpan'),
+                            ->placeholder('Auto generation on saved'),
 
                         Select::make('ticket_id')
                             ->label('Related Service Desk')
@@ -382,7 +382,7 @@ class WorkTaskForm
                             ->required(),
 
                         Select::make('employee_id')
-                            ->label('PIC / Pelaksana')
+                            ->label('PIC / Execution')
                             ->options(function (Get $get): array {
                                 $departmentId = $get('department_id');
 
@@ -405,7 +405,7 @@ class WorkTaskForm
                                         && ! $record->canAssignPicBy(auth()->user()))
                             )
                             ->helperText(
-                                'PIC Legal ditentukan Manager. Di department lain, PIC ditentukan Manager atau Supervisor.'
+                                'In other departments, PIC is assigned manager or Supervisor.'
                             )
                             ->nullable(),
 
@@ -424,7 +424,7 @@ class WorkTaskForm
                                 fn (?WorkTask $record): bool => $record !== null
                                     && ! $record->canBeManagedBy(auth()->user())
                             )
-                            ->helperText('Opsional. Aktivitas dari task ini akan otomatis terhubung ke project.'),
+                            ->helperText('Optional. Activity from this task will be automatically connected to the project.'),
 
                         TextInput::make('title')
                             ->label('Task Title')
@@ -458,7 +458,7 @@ class WorkTaskForm
                                 fn (?WorkTask $record): bool => $record !== null
                                     && ! $record->canUpdateExecutionBy(auth()->user())
                             )
-                            ->helperText('Nilai awal dari requester dapat disesuaikan oleh department penerima. Setiap perubahan tercatat di Activity History.')
+                            ->helperText('The initial value of the register can be adjusted by the recipient department. Every change is recorded in Activity History.')
                             ->required(),
 
                         Select::make('status')
@@ -492,7 +492,7 @@ class WorkTaskForm
                             ->required(),
 
                         Textarea::make('status_reason')
-                            ->label('Alasan Hold / Cancel')
+                            ->label('Hold / Cancel Reasons')
                             ->rows(3)
                             ->visible(
                                 fn (Get $get): bool => in_array(
@@ -531,7 +531,7 @@ class WorkTaskForm
                                 fn (?WorkTask $record): bool => $record !== null
                                     && ! $record->canUpdateExecutionBy(auth()->user())
                             )
-                            ->helperText('Target awal dari requester dapat disepakati ulang oleh department penerima. Setiap perubahan tercatat.'),
+                            ->helperText('The original target of the register can be re-approved by the recipient department. Every change is recorded.'),
 
                         DateTimePicker::make('completed_at')
                             ->label('Completed At')
@@ -551,10 +551,10 @@ class WorkTaskForm
                             ->label('CBO Approval')
                             ->badge()
                             ->formatStateUsing(fn (?string $state): string => match ($state) {
-                                'pending' => 'Menunggu CBO',
+                                'pending' => 'Waiting for CBO',
                                 'approved' => 'Approved',
                                 'rejected' => 'Rejected',
-                                default => 'Tidak diperlukan',
+                                default => 'Not required',
                             })
                             ->visible(fn (?WorkTask $record): bool => $record?->requiresLegalApproval() === true),
 
@@ -564,7 +564,7 @@ class WorkTaskForm
                             ->visible(fn (?WorkTask $record): bool => $record?->isLegalApprovalRejected() === true),
 
                         TextEntry::make('rejection_reason')
-                            ->label('Alasan Penolakan CBO')
+                            ->label('CBO Reasons for Rejection')
                             ->placeholder('-')
                             ->visible(fn (?WorkTask $record): bool => $record?->isLegalApprovalRejected() === true)
                             ->columnSpanFull(),

@@ -20,7 +20,7 @@ class AtkItem extends Model
                 && (RequestItem::where('inventory_item_id', $item->inventory_item_id)->exists()
                     || InventoryMovement::whereIn('balance_id', InventoryBalance::where('inventory_item_id', $item->inventory_item_id)->select('id'))->exists()
                     || $item->requestItems()->exists())) {
-                throw ValidationException::withMessages(['unit' => 'Satuan barang yang sudah dipakai transaksi tidak dapat diubah.']);
+                throw ValidationException::withMessages(['unit' => 'The unit of measure cannot change after an item has been used in a transaction.']);
             }
         });
         static::saved(function (self $item): void {

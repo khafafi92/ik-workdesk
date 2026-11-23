@@ -41,7 +41,7 @@ class ItInspectionReferenceTest extends ItInfrastructureTestCase
         $this->assertSame($number, $inspection->referenceNumber());
         $this->assertSame('PK-1000000', ItInspection::formatReferenceNumber(1000000));
         $this->assertNotSame($number, $this->inspection($device)->referenceNumber());
-        Livewire::test(ItInfrastructureReportPage::class)->assertSee('Pemilik / pemakai unit')
+        Livewire::test(ItInfrastructureReportPage::class)->assertSee('Owner/user unit')
             ->assertSee($number)->assertDontSee($inspection->inspection_number)
             ->assertSee('Pemakai saat diperiksa')
             ->set('reportTab', 'latest')->assertSee('Pemakai sekarang')->assertSee($number);
@@ -49,7 +49,7 @@ class ItInspectionReferenceTest extends ItInfrastructureTestCase
             ->assertSee($number)->assertSee('Pemakai saat diperiksa')->assertDontSee('Pemakai sekarang');
         $export = new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id));
         $row = array_combine($export->headings(), $export->map($export->query()->firstOrFail()));
-        $this->assertSame($number, $row['Nomor pemeriksaan']);
+        $this->assertSame($number, $row['Inspection Number']);
         $this->assertSame('Pemakai saat diperiksa', $row['Nama User']);
         $this->assertSame($before, $inspection->fresh()->getRawOriginal());
     }
@@ -64,7 +64,7 @@ class ItInspectionReferenceTest extends ItInfrastructureTestCase
         $this->assertSame(ItAssetLifecycle::Unused, $device->lifecycle_status);
         $this->assertNull($device->assigned_employee_id);
         $this->assertNull($device->assigned_user_name);
-        Livewire::test(ListItDevices::class)->assertSee('Stok (belum dialokasikan)')->assertSee('Stok / Belum Digunakan');
+        Livewire::test(ListItDevices::class)->assertSee('Stock (unallocated)')->assertSee('In Stock / Unassigned');
         $service = app(ItInspectionService::class);
         $data = $service->blank($device);
         foreach ($data['results'] as &$result) {
@@ -76,7 +76,7 @@ class ItInspectionReferenceTest extends ItInfrastructureTestCase
         $inspection = $device->inspections()->sole();
         $before = $inspection->getRawOriginal();
         $this->assertSame('Stok (belum dialokasikan)', $inspection->assigneeLabel());
-        Livewire::test(ItInfrastructureReportPage::class)->assertSee('Stok (belum dialokasikan)');
+        Livewire::test(ItInfrastructureReportPage::class)->assertSee('Stock (unallocated)');
         Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm([
             'assigned_employee_id' => $this->inspector->employee->id, 'lifecycle_status' => 'in_use',
         ])->call('save')->assertHasNoFormErrors();
@@ -87,8 +87,8 @@ class ItInspectionReferenceTest extends ItInfrastructureTestCase
 
     public function test_unknown_assignees_are_not_invented_or_treated_as_stock(): void
     {
-        $this->assertSame('Belum ditetapkan', ItDevice::assigneeLabelFor([]));
-        $this->assertSame('Belum ditetapkan', ItDevice::assigneeLabelFor(['lifecycle_status' => 'in_use']));
+        $this->assertSame('Unassigned', ItDevice::assigneeLabelFor([]));
+        $this->assertSame('Unassigned', ItDevice::assigneeLabelFor(['lifecycle_status' => 'in_use']));
         $this->assertSame('Tidak berlaku', ItDevice::assigneeLabelFor(['object_kind' => 'room']));
         $this->assertSame('Pemakai terdaftar', ItDevice::assigneeLabelFor(['assigned_user_name' => '', 'assigned_employee' => ['name' => 'Pemakai terdaftar']]));
     }

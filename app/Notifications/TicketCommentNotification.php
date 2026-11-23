@@ -49,7 +49,7 @@ class TicketCommentNotification extends Notification implements ShouldQueue
                 'filament.admin.resources.service-desk.view',
                 ['record' => $ticket->id]
             )."#activity-{$comment->id}";
-            $title = "Balasan Baru: {$ticket->ticket_no}";
+            $title = "New Reply: {$ticket->ticket_no}";
             $body = "{$sender}: ".mb_strimwidth(
                 strip_tags($comment->message),
                 0,
@@ -64,12 +64,12 @@ class TicketCommentNotification extends Notification implements ShouldQueue
                 ['record' => $task->id]
             );
             $title = match ($comment->activity_type) {
-                'status_change' => "Status Task Diperbarui: {$task->task_no}",
-                'progress_change' => "Progres Task Diperbarui: {$task->task_no}",
-                'pic_change' => "PIC Task Diperbarui: {$task->task_no}",
-                'due_date_change' => "Deadline Task Diperbarui: {$task->task_no}",
-                'notes_change' => "Catatan Task Diperbarui: {$task->task_no}",
-                default => "Aktivitas Task: {$task->task_no}",
+                'status_change' => "Task Status Updated: {$task->task_no}",
+                'progress_change' => "Task Progress Updated: {$task->task_no}",
+                'pic_change' => "PIC Task Updated: {$task->task_no}",
+                'due_date_change' => "Deadline Task Updated: {$task->task_no}",
+                'notes_change' => "Task Records Updated: {$task->task_no}",
+                default => "Task Activities: {$task->task_no}",
             };
             $body = $comment->message;
             $icon = 'heroicon-o-arrow-path';
@@ -82,7 +82,7 @@ class TicketCommentNotification extends Notification implements ShouldQueue
             ->info()
             ->actions([
                 Action::make('open')
-                    ->label($isMessage ? 'Buka Balasan' : 'Buka Work Log')
+                    ->label($isMessage ? 'Open Reply' : 'Open Work Log')
                     ->button()
                     ->url($url)
                     ->markAsRead(),
@@ -110,20 +110,20 @@ class TicketCommentNotification extends Notification implements ShouldQueue
             ->from($fromAddress, $fromName)
             ->subject("[IK WorkDesk] Update Ticket: {$ticket->ticket_no}")
             ->greeting("Halo, {$notifiable->name}!")
-            ->line('Ada **komentar / update baru** pada ticket yang berhubungan dengan Anda.')
+            ->line('There\'s a new ** update* on the ticket associated with you.')
             ->line('---')
             ->line("**No. Ticket :** {$ticket->ticket_no}")
-            ->line("**Subjek     :** {$ticket->subject}")
-            ->line("**Dari       :** {$sender}")
-            ->line("**Pesan      :** {$preview}")
+            ->line("**Subject:** {$ticket->subject}")
+            ->line("**From the ** {$sender}")
+            ->line("**Message:** {$preview}")
             ->when(
                 $hasAttachments,
                 fn (MailMessage $mail) => $mail->line(
-                    '📎 '.count($comment->attachments).' lampiran tersedia.'
+                    '📎 '.count($comment->attachments).' attachments are available.'
                 )
             )
-            ->action('Lihat Ticket', $viewUrl)
-            ->line('Silakan login untuk membalas atau melihat detail selengkapnya.')
+            ->action('View Ticket', $viewUrl)
+            ->line('Please log in to reply or see the full details.')
             ->salutation('IK WorkDesk System');
     }
 }

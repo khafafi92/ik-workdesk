@@ -48,44 +48,44 @@ class AtkRequestResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'request_number';
 
-    protected static ?string $navigationLabel = 'Permintaan ATK';
+    protected static ?string $navigationLabel = 'Office Supply Requests';
 
-    protected static ?string $modelLabel = 'Permintaan ATK';
+    protected static ?string $modelLabel = 'Office Supply Request';
 
-    protected static ?string $pluralModelLabel = 'Permintaan ATK';
+    protected static ?string $pluralModelLabel = 'Office Supply Requests';
 
     protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Informasi permintaan')
+            Section::make('Request information')
                 ->extraAttributes(['class' => 'atk-request-context'])
-                ->description('Isi keperluan dan entitas yang akan memakai barang. Setelah dikirim, permintaan langsung masuk ke daftar tindak lanjut GA.')
+                ->description('The contents and entity that will be used for goods. The request goes directly to the GA follow-up list.')
                 ->columnSpanFull()
                 ->columns(12)
                 ->schema([
                     TextInput::make('request_number')
-                        ->label('Nomor permintaan')
+                        ->label('Request number')
                         ->disabled()
                         ->dehydrated(false)
-                        ->placeholder('Dibuat saat permintaan dikirim')
+                        ->placeholder('Created when request is sent')
                         ->columnSpan(2),
                     TextInput::make('request_date')
-                        ->label('Tanggal permintaan')
+                        ->label('Request date')
                         ->default(now()->toDateString())
                         ->disabled()
                         ->dehydrated(false)
                         ->columnSpan(2),
                     TextInput::make('purpose')
-                        ->label('Keperluan')
-                        ->helperText('Jelaskan barang ini akan digunakan untuk apa.')
+                        ->label('Requirement')
+                        ->helperText('Explain to me what it\'s going to be used for.')
                         ->required()
                         ->maxLength(1000)
                         ->columnSpan(5),
                     Select::make('permit_company_id')
-                        ->label('Entitas peminta')
-                        ->helperText('Pilih entitas yang akan menggunakan barang.')
+                        ->label('Requesting entity')
+                        ->helperText('Select the entity that will use goods.')
                         ->relationship(
                             'company',
                             'name',
@@ -111,10 +111,10 @@ class AtkRequestResource extends Resource
                         ->preload()
                         ->required()
                         ->visible(fn (): bool => static::canChooseRequesterDepartment())
-                        ->helperText('Akun Anda belum terhubung ke employee. Pilih department asal permintaan ini.')
+                        ->helperText('Your account has not been connected to the emeloyee. Select the department as long as this request is available.')
                         ->columnSpanFull(),
                     Select::make('need_type')
-                        ->label('Jenis kebutuhan')
+                        ->label('The kind of needs')
                         ->options(['HO' => 'Head Office', 'PROJECT' => 'Project'])
                         ->default('HO')
                         ->live()
@@ -131,30 +131,30 @@ class AtkRequestResource extends Resource
                         ->columnSpan(9),
                     Placeholder::make('employee_department_notice')
                         ->label('Departemen peminta')
-                        ->content('Akun belum terhubung ke employee dan tidak dapat memilih department. Hubungkan akun melalui User Management sebelum membuat permintaan ATK.')
+                        ->content('Account is not connected to emploee and cannot select department. Connect accounts through User Management before making office supplies requests.')
                         ->visible(fn (): bool => static::hasMissingEmployeeDepartment())
                         ->columnSpanFull(),
                 ]),
-            Section::make('Daftar barang')
+            Section::make('Requested items')
                 ->extraAttributes(['class' => 'atk-request-items'])
-                ->description('Pilih barang dan jumlah yang dibutuhkan. Setelah dikirim, penyerahan dapat dilakukan bertahap dan progresnya terlihat di daftar permintaan.')
+                ->description('Choose the items and quantities you need. GA can issue items in batches. Track progress in the request list.')
                 ->columnSpanFull()
                 ->schema([
                     Repeater::make('items')
                         ->relationship()
-                        ->addActionLabel('Tambah barang')
+                        ->addActionLabel('Add item')
                         ->minItems(1)
                         ->defaultItems(1)
                         ->compact()
                         ->table([
-                            TableColumn::make('Barang ATK')->markAsRequired()->width('40%'),
-                            TableColumn::make('Jumlah')->markAsRequired()->width('15%'),
-                            TableColumn::make('Satuan')->markAsRequired()->width('15%'),
-                            TableColumn::make('Catatan untuk GA')->width('30%'),
+                            TableColumn::make('Office Supply Item')->markAsRequired()->width('40%'),
+                            TableColumn::make('Quantity')->markAsRequired()->width('15%'),
+                            TableColumn::make('Unit')->markAsRequired()->width('15%'),
+                            TableColumn::make('Notes for GA')->width('30%'),
                         ])
                         ->schema([
                             Select::make('atk_item_id')
-                                ->label('Barang ATK')
+                                ->label('Office Supply Items')
                                 ->relationship(
                                     'item',
                                     'name',
@@ -168,7 +168,7 @@ class AtkRequestResource extends Resource
                                     fn (AtkItem $record): string => implode(' - ', array_filter([
                                         $record->code,
                                         $record->name,
-                                        filled($record->size) ? 'Ukuran '.$record->size : null,
+                                        filled($record->size) ? 'Size '.$record->size : null,
                                         $record->unit,
                                     ]))
                                 )
@@ -181,18 +181,18 @@ class AtkRequestResource extends Resource
                                 })
                                 ->required(),
                             TextInput::make('qty_requested')
-                                ->label('Jumlah')
+                                ->label('Quantity')
                                 ->numeric()
                                 ->minValue(0.01)
                                 ->step(0.01)
                                 ->required(),
                             TextInput::make('unit')
-                                ->label('Satuan barang')
+                                ->label('The item unit')
                                 ->default('pcs')
                                 ->required()
                                 ->maxLength(30),
                             TextInput::make('requester_note')
-                                ->label('Catatan untuk GA')
+                                ->label('Note to GA')
                                 ->maxLength(500),
                         ]),
                 ]),
@@ -204,11 +204,11 @@ class AtkRequestResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('request_number')
-                    ->label('Nomor')
+                    ->label('Number')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('request_date')
-                    ->label('Tanggal')
+                    ->label('Date')
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('requester.name')
@@ -216,11 +216,11 @@ class AtkRequestResource extends Resource
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('department.name')
-                    ->label('Departemen')
+                    ->label('Department')
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('company.code')
-                    ->label('Entitas')
+                    ->label('Entity')
                     ->badge()
                     ->color('info')
                     ->toggleable(),
@@ -229,27 +229,27 @@ class AtkRequestResource extends Resource
                     ->counts('items')
                     ->alignCenter(),
                 TextColumn::make('need_type')
-                    ->label('Kebutuhan')
+                    ->label('Needs')
                     ->formatStateUsing(fn (string $state): string => $state === 'PROJECT' ? 'Project' : 'HO'),
                 TextColumn::make('procurement.number')
-                    ->label('PR terkait')
-                    ->placeholder('Belum dibuat')
+                    ->label('Mounted homework')
+                    ->placeholder('Unmade')
                     ->url(fn (AtkRequest $record): ?string => $record->procurement && Access::authors(Auth::user(), $record->procurement)
                         ? PurchaseRequests::getUrl(['permintaan' => $record->procurement->id]) : null),
                 TextColumn::make('requested_items')
-                    ->label('Barang diminta')
+                    ->label('Things requested')
                     ->extraCellAttributes(['style' => 'min-width: 14rem'])
                     ->state(fn (AtkRequest $record): array => static::requestedItemsList($record))
                     ->listWithLineBreaks()
                     ->wrap()
                     ->tooltip(fn (AtkRequest $record): string => static::requestedItemsSummary($record)),
                 ViewColumn::make('item_progress')
-                    ->label('Progres barang')
+                    ->label('Progress')
                     ->extraCellAttributes(['style' => 'min-width: 26rem'])
                     ->view('filament.tables.columns.atk-request-progress')
-                    ->tooltip('Diminta adalah total kebutuhan. Diserahkan adalah jumlah dari gudang sesuai entitas dan kebutuhan permintaan. Diterima adalah jumlah yang sudah dikonfirmasi peminta.'),
+                    ->tooltip('Requested is a total requirement, given the number of warehouses as per the entity and demand, received is the confirmed number of the requesters.'),
                 TextColumn::make('next_step')
-                    ->label('Langkah berikutnya')
+                    ->label('Next step')
                     ->extraCellAttributes(['style' => 'min-width: 18rem'])
                     ->state(fn (AtkRequest $record): string => static::nextStep($record))
                     ->wrap(),
@@ -264,19 +264,19 @@ class AtkRequestResource extends Resource
                         default => 'info',
                     }),
                 TextColumn::make('purpose')
-                    ->label('Keperluan')
+                    ->label('Requirement')
                     ->limit(45)
                     ->tooltip(fn (AtkRequest $record): string => $record->purpose),
             ])
             ->filters([
                 SelectFilter::make('status')->label('Status')->options(static::statusOptions()),
                 SelectFilter::make('department_id')
-                    ->label('Departemen')
+                    ->label('Department')
                     ->relationship('department', 'name')
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('permit_company_id')
-                    ->label('Entitas')
+                    ->label('Entity')
                     ->relationship('company', 'name')
                     ->searchable()
                     ->preload(),
@@ -288,7 +288,7 @@ class AtkRequestResource extends Resource
             ])
             ->recordActions([
                 Action::make('issue')
-                    ->label('Serahkan dari gudang permintaan')
+                    ->label('Hand it over from the request warehouse')
                     ->extraAttributes(['style' => 'min-height: 44px'])
                     ->icon(Heroicon::OutlinedArrowRightCircle)
                     ->color('primary')
@@ -296,10 +296,10 @@ class AtkRequestResource extends Resource
                         && in_array($record->status, ['submitted', 'processing', 'partially_fulfilled'], true)
                         && $record->items->contains(fn (AtkRequestItem $item): bool => $item->status !== 'cancelled' && $item->outstandingRequested() > 0))
                     ->form([
-                        ...static::itemActionForm('Barang yang diserahkan'),
+                        ...static::itemActionForm('Things to hand over'),
                         TextInput::make('quantity')
-                            ->label('Jumlah diserahkan')
-                            ->helperText('Masukkan jumlah yang benar-benar diserahkan pada tahap ini.')
+                            ->label('Number handed')
+                            ->helperText('Enter the total amount that was actually handed over at this stage.')
                             ->numeric()
                             ->minValue(0.01)
                             ->step(0.01)
@@ -312,10 +312,10 @@ class AtkRequestResource extends Resource
                             Auth::user(),
                             $data['ga_note'] ?? null,
                         );
-                        static::success('Penyerahan barang tercatat.');
+                        static::success('Hand-offs are accounted for.');
                     }),
                 Action::make('create_pr')
-                    ->label('Ajukan PR kekurangan')
+                    ->label('Ask for less homework')
                     ->extraAttributes(['style' => 'min-height: 44px'])
                     ->visible(fn (AtkRequest $record): bool => AtkProcurementService::canCreate(Auth::user())
                         && in_array($record->status, ['submitted', 'processing', 'partially_fulfilled'], true)
@@ -323,22 +323,22 @@ class AtkRequestResource extends Resource
                         && $record->items->contains(fn (AtkRequestItem $item): bool => $item->status !== 'cancelled'
                             && $item->outstandingRequested() > static::availableStock($record, $item)))
                     ->requiresConfirmation()
-                    ->modalHeading('Buat draft PR untuk kekurangan stok')
-                    ->modalDescription('Hanya jumlah yang belum dapat dipenuhi dari stok tersedia yang masuk PR. Draft dibuat atas nama Anda dan mengikuti akses departemen serta persetujuan PR biasa. Stok tidak berubah sampai barang diserahkan. Periksa dan tanda tangani draft sebelum mengajukan persetujuan.')
-                    ->modalSubmitActionLabel('Buat draft PR')
+                    ->modalHeading('Create a PR draft for stock shortages')
+                    ->modalDescription('Only an unfilled amount of available stock goes in. Draft is created on your behalf and follows the department\'s access and regular PR agreements. Stocks do not change until the item is delivered. Check and sign the draft before signing the agreement.')
+                    ->modalSubmitActionLabel('Create a PR draft')
                     ->action(function (AtkRequest $record): void {
                         $draft = app(AtkProcurementService::class)->createDraft($record, Auth::user());
-                        static::success('Draft PR '.$draft->number.' tersedia di menu PR.');
+                        static::success('Draft PR '.$draft->number.' is available on the PR menu.');
                     }),
                 Action::make('confirm_received')
-                    ->label('Konfirmasi barang diterima')
+                    ->label('Confirm item received')
                     ->icon(Heroicon::OutlinedHandThumbUp)
                     ->color('success')
                     ->visible(fn (AtkRequest $record): bool => static::canConfirmReceipt($record))
                     ->form([
                         Select::make('request_item_id')
-                            ->label('Barang yang diterima')
-                            ->helperText('Pilih barang yang sudah Anda terima. Sistem mencatat seluruh jumlah yang sudah diserahkan dan belum dikonfirmasi.')
+                            ->label('Received items')
+                            ->helperText('Select the items you have received. The system records all the amount that has been submitted and has not been confirmed.')
                             ->options(fn (AtkRequest $record): array => static::receivableItems($record))
                             ->required(),
                     ])
@@ -347,7 +347,7 @@ class AtkRequestResource extends Resource
                             static::requestItem($record, $data['request_item_id']),
                             Auth::user(),
                         );
-                        static::success('Penerimaan dan saldo departemen telah diperbarui.');
+                        static::success('The department\'s acceptance and balance has been updated.');
                     }),
             ]);
     }
@@ -424,7 +424,7 @@ class AtkRequestResource extends Resource
                 ->label($label)
                 ->options(fn (AtkRequest $record): array => static::outstandingItems($record))
                 ->required(),
-            Textarea::make('ga_note')->label('Catatan GA')->maxLength(500),
+            Textarea::make('ga_note')->label('GA Notes')->maxLength(500),
         ];
     }
 
@@ -442,7 +442,7 @@ class AtkRequestResource extends Resource
         return $record->items()->with('item')->get()
             ->filter(fn (AtkRequestItem $item): bool => $item->awaitingReceipt() > 0)
             ->mapWithKeys(fn (AtkRequestItem $item): array => [
-                $item->id => "{$item->item->name} (menunggu: ".number_format($item->awaitingReceipt(), 0, ',', '.').')',
+                $item->id => "{$item->item->name} (waits: ".number_format($item->awaitingReceipt(), 0, ',', '.').')',
             ])->all();
     }
 
@@ -462,11 +462,11 @@ class AtkRequestResource extends Resource
     private static function statusOptions(): array
     {
         return [
-            'submitted' => 'Baru',
-            'processing' => 'Diproses',
-            'partially_fulfilled' => 'Sebagian dipenuhi',
-            'completed' => 'Selesai',
-            'cancelled' => 'Dibatalkan',
+            'submitted' => 'New',
+            'processing' => 'In Process',
+            'partially_fulfilled' => 'Partially fulfilled',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
         ];
     }
 
@@ -496,17 +496,17 @@ class AtkRequestResource extends Resource
 
                 return [
                     'name' => implode(' - ', array_filter([
-                        $item->item?->name ?? 'Barang',
+                        $item->item?->name ?? 'Item',
                         $item->item?->size,
                     ])),
                     'shortage' => $shortage,
                     'metrics' => [
-                        'Diminta' => (float) $item->qty_requested,
-                        'Diserahkan' => (float) $item->qty_issued,
-                        'Belum diserahkan' => $item->outstandingRequested(),
-                        'Diterima' => (float) $item->qty_received,
-                        'Stok tersedia' => $available,
-                        'Kekurangan' => $shortage,
+                        'Requested' => (float) $item->qty_requested,
+                        'Issued' => (float) $item->qty_issued,
+                        'Not yet issued' => $item->outstandingRequested(),
+                        'Received' => (float) $item->qty_received,
+                        'Available stock' => $available,
+                        'Shortage' => $shortage,
                     ],
                 ];
             })
@@ -531,40 +531,40 @@ class AtkRequestResource extends Resource
     private static function nextStep(AtkRequest $record): string
     {
         if ($record->status === 'completed') {
-            return 'Permintaan selesai.';
+            return 'Request complete.';
         }
         if ($record->status === 'cancelled') {
-            return 'Permintaan dibatalkan.';
+            return 'Request canceled.';
         }
 
         $awaitingReceipt = $record->items->sum(fn (AtkRequestItem $item): float => $item->awaitingReceipt());
         $outstanding = $record->items->sum(fn (AtkRequestItem $item): float => $item->outstandingRequested());
 
         if (static::canConfirmReceipt($record) && $awaitingReceipt > 0) {
-            return 'Konfirmasi penerimaan barang yang sudah diserahkan.';
+            return 'Confirm the acceptance of the submitted items.';
         }
 
         if (static::canManage() && $outstanding > 0) {
             return $record->procurement
-                ? 'PR '.$record->procurement->number.' terkait. Serahkan barang yang tersedia; perbarui stok saat barang pengadaan diterima.'
-                : 'Serahkan barang yang tersedia. Gunakan Ajukan PR kekurangan untuk stok yang belum cukup.';
+                ? 'PR '.$record->procurement->number.' related. Hand over available items; update stock when supplying is received.'
+                : 'Issue available items. Create a purchase request for any shortage.';
         }
 
         if ($awaitingReceipt > 0) {
-            return 'Menunggu peminta mengonfirmasi penerimaan.';
+            return 'Waiting for the requester to confirm the reception.';
         }
 
-        return 'Menunggu GA Proses';
+        return 'Waiting for Process GA';
     }
 
     public static function statusLabel(string $status): string
     {
         return match ($status) {
-            'submitted' => 'Baru',
-            'processing' => 'Diproses',
-            'partially_fulfilled' => 'Sebagian dipenuhi',
-            'completed' => 'Selesai',
-            'cancelled' => 'Dibatalkan',
+            'submitted' => 'New',
+            'processing' => 'In Process',
+            'partially_fulfilled' => 'Partially fulfilled',
+            'completed' => 'Completed',
+            'cancelled' => 'Cancelled',
             default => str($status)->replace('_', ' ')->title()->toString(),
         };
     }

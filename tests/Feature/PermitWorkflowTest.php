@@ -48,7 +48,7 @@ class PermitWorkflowTest extends TestCase
             $this->fail('Duplicate KBLI should not be saved.');
         } catch (ValidationException $exception) {
             $this->assertSame(
-                'Nomor dan nama KBLI yang sama sudah terdaftar pada Permit Company tersebut.',
+                'The same number and name of the KBLI are already registered to the Permit Company.',
                 $exception->errors()['name'][0],
             );
         }

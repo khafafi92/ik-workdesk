@@ -84,7 +84,7 @@ class AvailabilityLtro1b extends Component
         $this->newPeriodEndMonth = '';
         $this->loadRows();
 
-        session()->flash('success', 'Period availability berhasil dibuat.');
+        session()->flash('success', 'Period availability was created.');
     }
 
     public function save(): void
@@ -121,7 +121,7 @@ class AvailabilityLtro1b extends Component
         }
 
         $this->loadRows();
-        session()->flash('success', 'Data Availability LTRO-1B berhasil disimpan.');
+        session()->flash('success', 'Availability LTRO-1B data was successfully saved.');
     }
 
     public function deleteRow(int $recordId): void
@@ -140,7 +140,7 @@ class AvailabilityLtro1b extends Component
         $this->selectedPeriodStart = $periodStart;
         $this->loadRows();
 
-        session()->flash('success', 'Baris availability berhasil dihapus.');
+        session()->flash('success', 'The availability line was successfully removed.');
     }
 
     public function deletePeriod(): void
@@ -156,7 +156,7 @@ class AvailabilityLtro1b extends Component
         $this->selectedPeriodStart = $this->latestPeriodStart();
         $this->loadRows();
 
-        session()->flash('success', 'Period availability berhasil dihapus.');
+        session()->flash('success', 'Period availability successfully removed.');
     }
 
     public function render()

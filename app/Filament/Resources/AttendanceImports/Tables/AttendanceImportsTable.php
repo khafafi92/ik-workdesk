@@ -94,7 +94,7 @@ class AttendanceImportsTable
                             auth()->user()
                                 ?->hasPermission('attendance.view') === true,
                             403,
-                            'Anda tidak memiliki izin melihat attendance.'
+                            'You don\'t have clearance to look at attention.'
                         );
                     })
                     ->url(
@@ -118,7 +118,7 @@ class AttendanceImportsTable
                             auth()->user()
                                 ?->hasPermission('attendance.manage') === true,
                             403,
-                            'Anda tidak memiliki izin memproses attendance.'
+                            'You don\'t have permission to process attendance.'
                         );
                     })
                     ->action(
@@ -129,7 +129,7 @@ class AttendanceImportsTable
                             Notification::make()
                                 ->title('Attendance report processed')
                                 ->body(
-                                    'Data Excel berhasil diproses ke Attendance Results.'
+                                    'Excel data was successfully processed to Attendance Results.'
                                 )
                                 ->success()
                                 ->send();

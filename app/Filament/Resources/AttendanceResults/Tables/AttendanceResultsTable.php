@@ -12,6 +12,8 @@ class AttendanceResultsTable
 {
     public static function configure(Table $table): Table
     {
+        $translateStatus = static fn (?string $state): ?string => __($state);
+
         return $table
             ->defaultPaginationPageOption(25)
             ->paginationPageOptions([
@@ -57,7 +59,8 @@ class AttendanceResultsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('location_check')
-                    ->label('Cek Lokasi')
+                    ->label('Location Check')
+                    ->formatStateUsing($translateStatus)
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'Sesuai' => 'success',
@@ -66,10 +69,11 @@ class AttendanceResultsTable
                     })
                     ->searchable(),
                 TextColumn::make('duration_text')
-                    ->label('Cek Waktu')
+                    ->label('Time Check')
                     ->searchable(),
                 TextColumn::make('checkout_check')
-                    ->label('Cek Pulang')
+                    ->label('Clock-out Check')
+                    ->formatStateUsing($translateStatus)
                     ->badge()
                     ->color(fn (?string $state): string => str_contains((string) $state, '19:00 UP') || str_contains((string) $state, 'Diatas 19:00') ? 'danger' : 'success')
                     ->searchable(),
@@ -77,16 +81,20 @@ class AttendanceResultsTable
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('location_status')
+                    ->formatStateUsing($translateStatus)
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('checkout_status')
+                    ->formatStateUsing($translateStatus)
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('work_hour_status')
+                    ->formatStateUsing($translateStatus)
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('final_status')
                     ->label('Final Status')
+                    ->formatStateUsing($translateStatus)
                     ->badge()
                     ->searchable(),
                 TextColumn::make('created_at')

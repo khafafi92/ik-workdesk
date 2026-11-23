@@ -32,49 +32,49 @@ class AteGeneralLetterResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?string $navigationLabel = 'Surat Umum APCA';
+    protected static ?string $navigationLabel = 'APCA General Correspondence';
 
-    protected static ?string $modelLabel = 'Surat Umum APCA';
+    protected static ?string $modelLabel = 'APCA General Correspondence';
 
-    protected static ?string $pluralModelLabel = 'Surat Umum APCA';
+    protected static ?string $pluralModelLabel = 'APCA General Correspondence';
 
     protected static ?int $navigationSort = 4;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Nomor dan jenis surat')
-                ->description('Jenis surat dipilih saat nomor digunakan. Urutannya terpisah per jenis dan tahun.')
+            Section::make('Number and type of mail')
+                ->description('The type of mail selected when the number is used. The sequence is separated per type and year.')
                 ->columns(3)
                 ->schema([
                     Placeholder::make('document_number')
-                        ->label('Nomor surat')
+                        ->label('Mail number')
                         ->content(fn (?OutgoingLetter $record): string => $record?->document_number ?? '-'),
                     Placeholder::make('document_type_label')
-                        ->label('Jenis surat')
+                        ->label('Mail type')
                         ->content(fn (?OutgoingLetter $record): string => $record?->documentType?->name ?? '-'),
                     Select::make('department_id')
-                        ->label('Departemen')
+                        ->label('Department')
                         ->options(static::departmentOptions())
                         ->searchable()
                         ->required()
-                        ->helperText('Nomor memakai kode departemen pada master yang dipilih.')
+                        ->helperText('Number uses department code on selected master.')
                         ->disabled(fn (?OutgoingLetter $record): bool => $record?->status !== 'draft'),
                     DatePicker::make('document_date')
-                        ->label('Tanggal surat')
+                        ->label('Mail date')
                         ->required()
                         ->disabled(fn (?OutgoingLetter $record): bool => $record?->status !== 'draft'),
                 ]),
-            Section::make('Isi surat')
-                ->description('Lengkapi keterangan dan tujuan surat sebelum diterbitkan.')
+            Section::make('Mail content')
+                ->description('Complete the information and purpose of the letter before it is published.')
                 ->columns(2)
                 ->schema([
-                    TextInput::make('recipient')->label('Tujuan surat')->maxLength(255),
+                    TextInput::make('recipient')->label('Mail destination')->maxLength(255),
                     TextInput::make('pin')->label('PIN')->maxLength(255),
                     TextInput::make('pic_name')->label('PIC')->maxLength(255),
                     TextInput::make('subject')
-                        ->label('Keterangan surat')
-                        ->helperText('Contoh: Permohonan informasi harga dan spesifikasi.')
+                        ->label('Mail description')
+                        ->helperText('Example: Request price information and specs.')
                         ->required()
                         ->maxLength(255)
                         ->columnSpanFull(),
@@ -86,14 +86,14 @@ class AteGeneralLetterResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('document_date')->label('Tanggal')->date('d M Y')->sortable(),
-                TextColumn::make('document_number')->label('Nomor surat')->searchable()->sortable()->wrap(),
-                TextColumn::make('documentType.name')->label('Jenis surat')->searchable()->wrap(),
-                TextColumn::make('department.code')->label('Departemen')->placeholder('-')->searchable(),
-                TextColumn::make('recipient')->label('Tujuan surat')->placeholder('-')->searchable()->wrap(),
-                TextColumn::make('subject')->label('Keterangan surat')->placeholder('Perlu dilengkapi')->searchable()->wrap(),
+                TextColumn::make('document_date')->label('Date')->date('d M Y')->sortable(),
+                TextColumn::make('document_number')->label('Mail number')->searchable()->sortable()->wrap(),
+                TextColumn::make('documentType.name')->label('Mail type')->searchable()->wrap(),
+                TextColumn::make('department.code')->label('Department')->placeholder('-')->searchable(),
+                TextColumn::make('recipient')->label('Mail destination')->placeholder('-')->searchable()->wrap(),
+                TextColumn::make('subject')->label('Mail description')->placeholder('Need to be equipped')->searchable()->wrap(),
                 TextColumn::make('status')->label('Status')->badge()
-                    ->formatStateUsing(fn (string $state): string => $state === 'issued' ? 'Terbit' : ($state === 'cancelled' ? 'Dibatalkan' : 'Draft'))
+                    ->formatStateUsing(fn (string $state): string => $state === 'issued' ? 'Issue' : ($state === 'cancelled' ? 'Cancelled' : 'Draft'))
                     ->color(fn (string $state): string => match ($state) {
                         'issued' => 'success',
                         'cancelled' => 'danger',
@@ -103,34 +103,34 @@ class AteGeneralLetterResource extends Resource
             ->filters([
                 SelectFilter::make('status')->label('Status')->options([
                     'draft' => 'Draft',
-                    'issued' => 'Terbit',
-                    'cancelled' => 'Dibatalkan',
+                    'issued' => 'Issue',
+                    'cancelled' => 'Cancelled',
                 ]),
             ])
-            ->emptyStateHeading('Belum ada surat umum APCA')
-            ->emptyStateDescription('Pilih jenis surat, lalu gunakan nomor untuk membuat draft pertama.')
+            ->emptyStateHeading('No public APCA mail yet')
+            ->emptyStateDescription('Select mail type, then use number to create the first draft.')
             ->defaultSort('created_at', 'desc')
             ->headerActions([
                 Action::make('use_ate_number')
-                    ->label('Pilih jenis dan gunakan nomor')
+                    ->label('Select type and use number')
                     ->icon(Heroicon::OutlinedDocumentPlus)
                     ->color('primary')
                     ->form([
                         Select::make('letter_kind')
-                            ->label('Jenis surat')
+                            ->label('Mail type')
                             ->options(app(AteGeneralLetterService::class)->kinds())
                             ->required(),
                         Select::make('department_id')
-                            ->label('Departemen')
+                            ->label('Department')
                             ->options(static::departmentOptions())
                             ->searchable()
                             ->required()
-                            ->helperText('Nomor memakai kode departemen pada master yang dipilih.'),
-                        DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required(),
+                            ->helperText('Number uses department code on selected master.'),
+                        DatePicker::make('document_date')->label('Mail date')->default(today())->required(),
                     ])
-                    ->modalHeading('Pilih jenis surat APCA')
-                    ->modalDescription('Urutan nomor terpisah untuk setiap jenis surat dan tahun. Pilih departemen yang menerbitkan surat.')
-                    ->modalSubmitActionLabel('Gunakan nomor dan buat draft')
+                    ->modalHeading('Select APCA mail type')
+                    ->modalDescription('Sort separate numbers for each type of mail and year. Select the department to publish the mail.')
+                    ->modalSubmitActionLabel('Use number and draft')
                     ->visible(fn (): bool => static::canCreate())
                     ->action(function (array $data): void {
                         $letter = app(AteGeneralLetterService::class)->createDraft(
@@ -141,37 +141,37 @@ class AteGeneralLetterResource extends Resource
                         );
 
                         Notification::make()
-                            ->title('Draft '.$letter->document_number.' sudah dibuat.')
-                            ->body('Lengkapi keterangan surat, lalu simpan draft sebelum menerbitkannya.')
+                            ->title('Draft '.$letter->document_number.' it\'s been made.')
+                            ->body('Complete the mail information, then save the draft before publishing it.')
                             ->success()
                             ->send();
                     }),
             ])
             ->recordActions([
                 Action::make('issue')
-                    ->label('Terbitkan surat')
+                    ->label('Publish mail')
                     ->icon(Heroicon::OutlinedPaperAirplane)
                     ->color('success')
                     ->requiresConfirmation()
-                    ->modalDescription('Pastikan data surat benar. Nomor surat akan tetap tercatat sebagai nomor terbit.')
+                    ->modalDescription('Make sure the mail data is correct. The mail number will remain listed as the print number.')
                     ->visible(fn (OutgoingLetter $record): bool => static::canIssue($record))
                     ->action(function (OutgoingLetter $record): void {
                         $letter = app(AteGeneralLetterService::class)->refreshNumber($record);
                         app(DocumentNumberService::class)->issue($letter, auth()->user());
-                        Notification::make()->title('Surat '.$record->document_number.' berhasil diterbitkan.')->success()->send();
+                        Notification::make()->title('Correspondence '.$record->document_number.' successfully published.')->success()->send();
                     }),
                 Action::make('cancel')
-                    ->label('Batalkan draft')
+                    ->label('Cancel draft')
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->modalDescription('Nomor surat tetap tercatat sebagai dibatalkan dan tidak akan dipakai kembali.')
+                    ->modalDescription('The mail number remains recorded as canceled and will not be reused.')
                     ->visible(fn (OutgoingLetter $record): bool => $record->status === 'draft' && static::canEdit($record))
                     ->action(function (OutgoingLetter $record): void {
                         $record->update(['status' => 'cancelled']);
-                        Notification::make()->title('Draft '.$record->document_number.' dibatalkan.')->success()->send();
+                        Notification::make()->title('Draft '.$record->document_number.' cancelled.')->success()->send();
                     }),
-                EditAction::make()->label('Lengkapi draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
+                EditAction::make()->label('Complete draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
             ]);
     }
 

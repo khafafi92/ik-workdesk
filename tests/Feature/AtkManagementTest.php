@@ -199,7 +199,7 @@ class AtkManagementTest extends TestCase
         $notification = $ga->notifications()->latest()->first();
 
         $this->assertNotNull($notification);
-        $this->assertSame('Permintaan ATK baru', $notification->data['title']);
+        $this->assertSame('New office supplies Request', $notification->data['title']);
         $this->assertStringContainsString('Pulpen Biru 5 PCS', $notification->data['body']);
     }
 
@@ -262,10 +262,10 @@ class AtkManagementTest extends TestCase
         $this->actingAs($manager)
             ->get('/panel/atk-dashboard')
             ->assertOk()
-            ->assertSeeText('Permintaan yang perlu ditindak')
+            ->assertSeeText('Requests to be performed')
             ->assertSeeText($requester->name)
             ->assertSeeText('Pulpen Hitam')
-            ->assertSeeText('Barang dan progres')
+            ->assertSeeText('Progress')
             ->assertSeeText('Stok tersedia:')
             ->assertSeeText('Kekurangan:')
             ->assertSeeText('Perlu ditinjau GA');
@@ -275,7 +275,7 @@ class AtkManagementTest extends TestCase
             ->assertOk()
             ->assertSeeText('Progres barang')
             ->assertSeeText('Pulpen Hitam')
-            ->assertSeeText('Serahkan barang yang tersedia. Gunakan Ajukan PR kekurangan untuk stok yang belum cukup.');
+            ->assertSeeText('Issue available items. Create a purchase request for any shortage.');
     }
 
     public function test_atk_requirement_summary_shows_request_context_and_delivery_progress(): void
@@ -303,8 +303,8 @@ class AtkManagementTest extends TestCase
         $this->actingAs($manager)
             ->get('/panel/atk-requirement-summary')
             ->assertOk()
-            ->assertSeeText('Kebutuhan ATK yang belum selesai')
-            ->assertSeeText('Permintaan terbuka')
+            ->assertSeeText('Unfinished office supplies needs')
+            ->assertSeeText('An open request')
             ->assertSeeText('Belum diserahkan')
             ->assertSeeText('Menunggu konfirmasi')
             ->assertSeeText($request->request_number)
@@ -324,7 +324,7 @@ class AtkManagementTest extends TestCase
         $this->actingAs($manager)
             ->get('/panel/outgoing-letters/create')
             ->assertOk()
-            ->assertSeeText('Tentukan profil dan identitas surat')
+            ->assertSeeText('Choose a profile and identify the letter')
             ->assertSeeText('Lengkapi tujuan dan isi')
             ->assertSeeText('Tinjau nomor dan simpan draft')
             ->assertSeeText('Nomor menjadi final dan dicadangkan hanya saat surat diterbitkan.');
@@ -357,14 +357,14 @@ class AtkManagementTest extends TestCase
         $notification = $requester->notifications()->latest()->first();
 
         $this->assertNotNull($notification);
-        $this->assertSame('Barang ATK telah diserahkan', $notification->data['title']);
-        $this->assertStringContainsString('Map Dokumen sejumlah 2 PCS', $notification->data['body']);
+        $this->assertSame('The office supplies item has been handed in', $notification->data['title']);
+        $this->assertStringContainsString('Map Dokumen number 2 PCS', $notification->data['body']);
 
         $this->actingAs($requester)
             ->get('/panel/atk-requests')
             ->assertOk()
             ->assertSeeText('Konfirmasi barang diterima')
-            ->assertSeeText('Konfirmasi penerimaan barang yang sudah diserahkan.')
+            ->assertSeeText('Confirm the acceptance of the submitted items.')
             ->assertSeeInOrder([
                 'ik-atk-progress-name', 'Map Dokumen',
                 'Diminta:', '<dd>2</dd>',
@@ -385,7 +385,7 @@ class AtkManagementTest extends TestCase
         app(AtkDepartmentStockService::class)->receive($requestItem->fresh(), $requester);
         $this->get('/panel')->assertOk()
             ->assertSeeInOrder([$request->request_number, 'Selesai'])
-            ->assertDontSeeText('Konfirmasi barang yang sudah diterima di daftar ATK.');
+            ->assertDontSeeText('Confirm receipt on the Office Supply Requests page.');
     }
 
     public function test_partial_issue_receive_and_usage_keep_each_stock_ledger_correct(): void
@@ -654,8 +654,8 @@ class AtkManagementTest extends TestCase
         $this->actingAs($manager)
             ->get('/panel/atk-reports')
             ->assertOk()
-            ->assertSeeText('Rekap Bulanan')
-            ->assertSeeText('bulan permintaan')
+            ->assertSeeText('Monthly Summary')
+            ->assertSeeText('request month')
             ->assertSeeText('Permintaan yang dibatalkan tidak dihitung.');
     }
 
@@ -690,7 +690,7 @@ class AtkManagementTest extends TestCase
         $sheet = (new AtkReportExport)->sheets()[1];
 
         $this->assertSame([
-            'Departemen', 'Barang ATK', 'Jumlah Diterima', 'Satuan',
+            'Department', 'Office Supply Items', 'Quantity Received', 'Unit',
         ], $sheet->headings());
         $this->assertSame([[
             $department->name,
@@ -757,8 +757,8 @@ class AtkManagementTest extends TestCase
         ))->sheets()[0];
 
         $this->assertSame([
-            'Bulan Permintaan', 'Departemen', 'Entitas', 'Kode Barang', 'Barang ATK', 'Ukuran', 'Satuan',
-            'Jumlah Permintaan', 'Jumlah Diminta', 'Jumlah Diserahkan', 'Jumlah Diterima',
+            'Request Month', 'Department', 'Entity', 'Item Code', 'Office Supply Items', 'Size', 'Unit',
+            'Request Count', 'Quantity Requested', 'Quantity Issued', 'Quantity Received',
         ], $sheet->headings());
         $this->assertSame([[
             '2026-01',

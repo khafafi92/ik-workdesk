@@ -40,9 +40,9 @@ class ItDeviceDeletionTest extends ItInfrastructureTestCase
         $this->assertInstanceOf(ActionGroup::class, $group);
         $this->assertSame(['edit', 'transferDevice', 'delete'], array_keys($group->getFlatActions()));
         $page->mountTableAction('delete', $device)->assertActionMounted(TestAction::make('delete')->table($device));
-        $this->assertSame('Hapus '.$device->name.'?', $page->instance()->getMountedAction()->getModalHeading());
+        $this->assertSame('Delete '.$device->name.'?', $page->instance()->getMountedAction()->getModalHeading());
         $this->assertNotNull($device->fresh());
-        $page->callMountedTableAction()->assertNotified('Perangkat berhasil dihapus');
+        $page->callMountedTableAction()->assertNotified('Device successfully removed');
         $this->assertTrue($device->fresh()->trashed());
         $this->assertFalse(ItDevice::query()->whereKey($device->id)->exists());
         $this->assertNotNull($detail->fresh());
@@ -65,7 +65,7 @@ class ItDeviceDeletionTest extends ItInfrastructureTestCase
             $beforeResult = $result->fresh()->getRawOriginal();
             $beforeFollowUp = $followUp->fresh()->getRawOriginal();
             Livewire::test(ListItDevices::class)->callTableAction('delete', $device)
-                ->assertNotified('Perangkat berhasil dihapus');
+                ->assertNotified('Device successfully removed');
             $this->assertSame($before, $inspection->fresh()->getRawOriginal());
             $this->assertSame($beforeResult, $result->fresh()->getRawOriginal());
             $this->assertSame($beforeFollowUp, $followUp->fresh()->getRawOriginal());

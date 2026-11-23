@@ -40,7 +40,7 @@ class CreateAtkItem extends CreateRecord
             $this->record,
             $quantity,
             auth()->user(),
-            'Stok awal master barang',
+            'Early stock master of goods',
             InventoryWarehouse::findOrFail($this->initialWarehouseId),
         );
     }

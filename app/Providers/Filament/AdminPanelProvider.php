@@ -52,7 +52,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling(null)
             ->userMenuItems([
                 Action::make('signature-profile')
-                    ->label('Tanda tangan profil')
+                    ->label('Profile signature')
                     ->url(fn () => SignatureProfile::getUrl())
                     ->visible(fn () => Access::signs(Auth::user())),
             ])

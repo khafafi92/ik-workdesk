@@ -26,7 +26,7 @@ class LegalRequestSchedule
     {
         if (! self::canBeCreatedAt($at)) {
             throw ValidationException::withMessages([
-                'handler_department_id' => 'Permintaan ke Legal hanya dapat dibuat sebelum pukul 15:00 WIB.',
+                'handler_department_id' => 'The request to Legal can only be made before 3:00 p.m.',
             ]);
         }
     }
@@ -37,7 +37,7 @@ class LegalRequestSchedule
 
         if (blank($dueAt) || Carbon::parse($dueAt)->lt($minimumDueAt)) {
             throw ValidationException::withMessages([
-                'due_at' => 'Due At untuk permintaan Legal minimal 3 hari setelah Reported At.',
+                'due_at' => 'Due At for a minimum legal request three days after Reported At.',
             ]);
         }
     }

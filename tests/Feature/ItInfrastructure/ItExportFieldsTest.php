@@ -74,8 +74,8 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
         $summary = $this->workbook(new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()));
         $details = $this->workbook(new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id)));
         try {
-            $headings = ['Nomor Aset', 'Nama Perangkat', 'Jenis perangkat / objek', 'Department pengelola', 'Lokasi', 'LT (Lantai)', 'Detail ruang / rack', 'Serial Number', 'Spesifikasi', 'OS', 'Versi', 'Lisensi', 'Versi Microsoft Office', 'Lisensi Microsoft Office', 'RAM (GB)', 'HDD / SSD', 'Nama User', 'Jabatan', 'Divisi', 'Status Pemakaian', 'Aktif untuk pemeriksaan baru', 'Tanggal penghapusan', 'Alasan penghapusan', 'Keterangan'];
-            $historical = ['00035/APCA/IT/2025', '=Laptop terdaftar', 'Laptop', 'IT', 'Office HO', null, 'Ruang IT', '001234', 'Core i5', 'Ubuntu', '24.04 LTS', 'Tidak Berlaku', '2024', 'Original/Valid', 16.0, 'SSD 512 GB; HDD 1024 GB', 'User terdaftar', 'IT Officer', 'IT', 'Digunakan', 'Ya', null, null, '=Catatan asli'];
+            $headings = ['Asset Number', 'Device Name', 'Type of device / object', 'Managing Department', 'Location', 'Floor', 'Room / rack details', 'Serial Number', 'Specification', 'OS', 'Version', 'License', 'Microsoft Office version', 'Microsoft Office License', 'RAM (GB)', 'HDD / SSD', 'User Name', 'Position', 'Division', 'Usage Status', 'Active for new checks', 'Disposal date', 'The reason for the removal', 'Description'];
+            $historical = ['00035/APCA/IT/2025', '=Laptop terdaftar', 'Laptop', 'IT', 'Office HO', null, 'Ruang IT', '001234', 'Core i5', 'Ubuntu', '24.04 LTS', 'Not Applicable', '2024', 'Original/Valid', 16.0, 'SSD 512 GB; HDD 1024 GB', 'User terdaftar', 'IT Officer', 'IT', 'In Use', 'Yes', null, null, '=Catatan asli'];
             foreach ([$summary->getSheet(0), $summary->getSheet(1), $details->getActiveSheet()] as $sheet) {
                 $rows = $sheet->toArray(null, true, false);
                 $this->assertSame($headings, array_slice($rows[0], 0, 24));
@@ -84,7 +84,7 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
                 }
                 if ($sheet === $summary->getSheet(0)) {
                     $expected = $historical;
-                    foreach ([1 => 'Laptop diperbarui', 4 => 'Office Alamanda', 6 => 'Meja 8', 7 => '005678', 10 => '26.04 LTS', 14 => 32.0, 16 => 'Nama terbaru', 17 => 'Supervisor', 18 => 'Operations', 20 => 'Tidak'] as $index => $value) {
+                    foreach ([1 => 'Laptop diperbarui', 4 => 'Office Alamanda', 6 => 'Meja 8', 7 => '005678', 10 => '26.04 LTS', 14 => 32.0, 16 => 'Nama terbaru', 17 => 'Supervisor', 18 => 'Operations', 20 => 'No'] as $index => $value) {
                         $expected[$index] = $value;
                     }
                 } else {
@@ -115,12 +115,12 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
         $device->update(['assigned_user_name' => 'Pemakai baru']);
         $export = new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id));
         $row = array_combine($export->headings(), $export->map($export->query()->sole()));
-        foreach (['OS', 'Versi', 'Nama User', 'Jabatan', 'Divisi', 'Aktif untuk pemeriksaan baru'] as $field) {
+        foreach (['OS', 'Version', 'User Name', 'Position', 'Division', 'Active for new checks'] as $field) {
             $this->assertNull($row[$field]);
         }
         $workbook = $this->workbook($export);
         try {
-            $cell = $workbook->getActiveSheet()->getCell([array_search('Nilai / rincian', $export->headings(), true) + 1, 2]);
+            $cell = $workbook->getActiveSheet()->getCell([array_search('Reading / details', $export->headings(), true) + 1, 2]);
             $this->assertSame(0, $cell->getValue());
             $this->assertSame(DataType::TYPE_NUMERIC, $cell->getDataType());
         } finally {
@@ -143,15 +143,15 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
         foreach ($sheet->query()->get() as $inspection) {
             $device = $inspection->device;
             $row = array_combine($sheet->headings(), $sheet->map($inspection));
-            $this->assertSame('Office HO', $row['Lokasi']);
-            $this->assertSame($device->id === $switch->id ? 'B2' : null, $row['LT (Lantai)']);
-            $this->assertSame($device->id === $room->id ? 'Ruang server' : 'Rack 2', $row['Detail ruang / rack']);
-            foreach (['OS', 'Versi', 'Lisensi', 'RAM (GB)'] as $field) {
+            $this->assertSame('Office HO', $row['Location']);
+            $this->assertSame($device->id === $switch->id ? 'B2' : null, $row['Floor']);
+            $this->assertSame($device->id === $room->id ? 'Ruang server' : 'Rack 2', $row['Room / rack details']);
+            foreach (['OS', 'Version', 'License', 'RAM (GB)'] as $field) {
                 $this->assertNull($row[$field]);
             }
             if ($device->id === $room->id) {
-                $this->assertNull($row['Nomor Aset']);
-                $this->assertNull($row['Status Pemakaian']);
+                $this->assertNull($row['Asset Number']);
+                $this->assertNull($row['Usage Status']);
             }
         }
     }
@@ -166,7 +166,7 @@ class ItExportFieldsTest extends ItInfrastructureTestCase
         $page = Livewire::test(ItInfrastructureReportPage::class)->instance();
         [$sheet] = (new ItMaintenanceSummaryExport($page->latestDevicesQuery(), $page->inspectionQuery()->where('status', 'finalized'), $page->findingsQuery()))->sheets();
         $row = array_combine($sheet->headings(), $sheet->map($sheet->query()->sole()));
-        $this->assertNull($row['Lokasi']);
+        $this->assertNull($row['Location']);
         $this->assertSame($location->id, $device->fresh()->work_location_id);
     }
 }

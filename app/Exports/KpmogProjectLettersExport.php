@@ -23,7 +23,7 @@ class KpmogProjectLettersExport implements FromQuery, ShouldAutoSize, WithColumn
 
     public function headings(): array
     {
-        return ['NO', 'KPMOG', 'DEPT', 'BLN', 'THN', 'TANGGAL SURAT', 'PIN', 'PIC', 'TUJUAN SURAT', 'PERIHAL SURAT', 'NOMOR SURAT TERBIT', 'STATUS SURAT'];
+        return ['NO', 'KPMOG', 'DEPT', 'BLN', 'THN', 'CONDITIONS', 'PIN', 'PIC', 'PURPOSE', 'WRITZED WHITE', 'NUMBER BIT', 'HARD STATUS'];
     }
 
     public function map($letter): array

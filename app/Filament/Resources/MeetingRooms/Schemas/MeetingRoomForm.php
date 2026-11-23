@@ -16,7 +16,7 @@ class MeetingRoomForm
         return $schema->components([
             Section::make('Room Information')
                 ->description(
-                    'Nama ruangan dapat diubah kapan saja tanpa menghapus riwayat booking.'
+                    'The name of the room can be changed at any time without deleting the booking history.'
                 )
                 ->schema([
                     TextInput::make('name')

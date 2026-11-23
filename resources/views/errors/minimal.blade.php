@@ -2,13 +2,13 @@
     $status = (int) trim($__env->yieldContent('code', '500'));
     $canReturnToWorkspace = $status < 500 && $status !== 419 && auth()->check();
     [$heading, $description] = match ($status) {
-        401 => ['Silakan masuk untuk melanjutkan', 'Gunakan akun perusahaan untuk membuka halaman ini.'],
-        403 => ['Halaman ini belum dapat Anda akses', 'Hubungi pengelola akses jika halaman ini diperlukan untuk pekerjaan Anda.'],
-        404 => ['Halaman tidak ditemukan', 'Periksa alamat halaman atau kembali ke workspace.'],
-        419 => ['Sesi telah berakhir', 'Masuk kembali sebelum melanjutkan pekerjaan Anda.'],
-        429 => ['Terlalu banyak permintaan', 'Tunggu beberapa saat sebelum mencoba kembali.'],
-        503 => ['WorkDesk sedang dalam pemeliharaan', 'Silakan coba kembali setelah pemeliharaan selesai.'],
-        default => ['Halaman belum dapat dimuat', 'Coba muat ulang halaman atau kembali ke workspace.'],
+        401 => ['Sign in to continue', 'Use your company account to open this page.'],
+        403 => ['Access denied', 'Contact your administrator if you need access to this page.'],
+        404 => ['Page not found', 'Check the page address or return to your workspace.'],
+        419 => ['Session expired', 'Sign in again to continue.'],
+        429 => ['Too many requests', 'Wait a moment and try again.'],
+        503 => ['WorkDesk is undergoing maintenance', 'Try again after maintenance is complete.'],
+        default => ['Unable to load this page', 'Reload the page or return to your workspace.'],
     };
 @endphp
 <!DOCTYPE html>
@@ -25,7 +25,7 @@
         <p class="ik-error-code">{{ $status }}</p>
         <h1>{{ $heading }}</h1>
         <p>{{ $description }}</p>
-        <a class="ik-button ik-button--primary" href="{{ $canReturnToWorkspace ? url('/panel') : route('login') }}">{{ $canReturnToWorkspace ? 'Buka workspace' : 'Masuk ke WorkDesk' }}</a>
+        <a class="ik-button ik-button--primary" href="{{ $canReturnToWorkspace ? url('/panel') : route('login') }}">{{ $canReturnToWorkspace ? 'Open workspace' : 'Sign in to WorkDesk' }}</a>
     </main>
 </body>
 </html>

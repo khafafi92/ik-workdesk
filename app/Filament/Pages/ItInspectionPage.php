@@ -31,9 +31,9 @@ class ItInspectionPage extends ItInfrastructurePage
 {
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';
 
-    protected static ?string $navigationLabel = 'Pengecekan Infrastruktur';
+    protected static ?string $navigationLabel = 'Infrastructure Inspections';
 
-    protected static ?string $title = 'Pengecekan Infrastruktur';
+    protected static ?string $title = 'Infrastructure Inspections';
 
     protected static ?string $slug = 'it-inspections';
 
@@ -141,15 +141,15 @@ class ItInspectionPage extends ItInfrastructurePage
     public function deviceSelector(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('deviceId')->id('it-inspection-device')->label('Nama Perangkat')
+            Select::make('deviceId')->id('it-inspection-device')->label('Device Name')
                 ->options(function (): array {
                     $options = $this->deviceSearchResults();
 
                     return $this->inspection ? [$this->deviceId => $this->selectedDeviceLabel($this->deviceId)] + $options : $options;
                 })
                 ->searchable()->searchDebounce(300)
-                ->searchPrompt('Ketik nama, nomor aset, atau serial number')
-                ->searchingMessage('Mencari perangkat...')->noSearchResultsMessage('Perangkat tidak ditemukan.')
+                ->searchPrompt('Type name, asset number, or serial number')
+                ->searchingMessage('Searching for devices...')->noSearchResultsMessage('Device not found.')
                 ->getSearchResultsUsing(fn (string $search): array => $this->deviceSearchResults($search))
                 ->getOptionLabelUsing(fn ($value): ?string => $this->selectedDeviceLabel($value))
                 ->selectablePlaceholder(false)->live()->disabled(! $this->canCreate())
@@ -210,12 +210,12 @@ class ItInspectionPage extends ItInfrastructurePage
     public function form(Schema $schema): Schema
     {
         return $schema->statePath('data')->components([
-            Section::make('Informasi pemeriksaan')->columns(['md' => 2, 'xl' => 4])->schema([
-                DateTimePicker::make('checked_at')->label('Tanggal dan waktu')->required()->seconds(false)->maxDate(now()),
-                Select::make('location_name')->label('Lokasi pemeriksaan')->options(ItDeviceLocation::options())
-                    ->placeholder(fn () => $this->inspection?->location_snapshot['location']['gps_name'] ?? 'Pilih lokasi pemeriksaan'),
+            Section::make('Check information')->columns(['md' => 2, 'xl' => 4])->schema([
+                DateTimePicker::make('checked_at')->label('Date and time')->required()->seconds(false)->maxDate(now()),
+                Select::make('location_name')->label('Check location')->options(ItDeviceLocation::options())
+                    ->placeholder(fn () => $this->inspection?->location_snapshot['location']['gps_name'] ?? 'Select checkpoint location'),
                 TextInput::make('location_detail')->label('Detail lokasi / rack')->maxLength(255),
-                TextInput::make('notes')->label('Catatan pemeriksaan')->placeholder('Catatan (opsional)')->maxLength(3000),
+                TextInput::make('notes')->label('Inspection notes')->placeholder('Notes (optional)')->maxLength(3000),
             ]),
         ])->disabled($this->isReadOnly());
     }
@@ -238,7 +238,7 @@ class ItInspectionPage extends ItInfrastructurePage
 
         return User::query()->select(['id', 'name', 'is_admin'])->with(['employee', 'roles'])->orderBy('name')->get()
             ->filter(fn ($user) => $user->isActiveForAccess() || in_array($user->id, $assigned))
-            ->mapWithKeys(fn ($user) => [$user->id => $user->name.($user->isActiveForAccess() ? '' : ' (nonaktif)')])->all();
+            ->mapWithKeys(fn ($user) => [$user->id => $user->name.($user->isActiveForAccess() ? '' : ' (disabled)')])->all();
     }
 
     public function conditionOptions(): array
@@ -263,7 +263,7 @@ class ItInspectionPage extends ItInfrastructurePage
         $this->inspectionId = (string) $record->id;
         unset($this->inspection, $this->template);
         $this->form->fill($this->service()->formData($record));
-        Notification::make()->success()->title($finalize ? 'Pemeriksaan difinalisasi' : 'Draft pemeriksaan disimpan')->send();
+        Notification::make()->success()->title($finalize ? 'Check finalized' : 'Draft check saved')->send();
     }
 
     public function summary(): array

@@ -62,6 +62,20 @@ class ModuleAccessService
         return Str::slug($label);
     }
 
+    public static function displayLabel(string $label): string
+    {
+        return match ($label) {
+            'Menu Utama' => 'Main Menu',
+            'Surat' => 'Correspondence',
+            'ATK' => 'Office Supplies',
+            'Infrastruktur IT' => 'IT Infrastructure',
+            'Inventori' => 'Inventory',
+            'Perjalanan Dinas' => 'Business Travel',
+            'Pengaturan Sistem' => 'System Settings',
+            default => $label,
+        };
+    }
+
     private function definitionForGroup(string|UnitEnum|null $group): ?array
     {
         $label = $this->labelForGroup($group);

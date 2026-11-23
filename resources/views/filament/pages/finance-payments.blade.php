@@ -58,23 +58,23 @@
     @media(max-width:700px){.finance-detail-header,.finance-detail-block,.finance-detail .finance-sheet{padding:1rem}.finance-bank-facts{grid-template-columns:1fr;gap:.75rem}.finance-detail .finance-table tr{border:1px solid var(--scm-line);border-radius:.5rem}.finance-detail .finance-table :is(th,td){border:0;padding:.5rem}.finance-detail .finance-table td:nth-child(3){text-align:left}}
 </style>
 <div class="scm-workspace">
-    @if($errors->any())<div class="scm-error" role="alert"><h2>Periksa data pembayaran</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-    <p role="status" wire:loading.delay>Memuat atau menyimpan data pembayaran...</p>
+    @if($errors->any())<div class="scm-error" role="alert"><h2>Check the payment details</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    <p role="status" wire:loading.delay>Loading or saving payment data...</p>
     @if($schemaMissing)
-        <section class="scm-panel"><p role="alert">Modul pembayaran belum disiapkan di database. Administrator database perlu menjalankan migrasi Finance.</p><button type="button" wire:click="$refresh">Periksa lagi</button></section>
+        <section class="scm-panel"><p role="alert">The payment module is not set up in the database. Administrator database needs to run the Finance migration.</p><button type="button" wire:click="$refresh">Check again</button></section>
     @elseif($loadError)
-        <section class="scm-panel"><p role="alert">Data pembayaran belum dapat dimuat. Hubungi administrator untuk memeriksa database.</p><button type="button" wire:click="$refresh">Coba lagi</button></section>
+        <section class="scm-panel"><p role="alert">Payment data could not be loaded. Contact administrator to check the database.</p><button type="button" wire:click="$refresh">Try again</button></section>
     @elseif(! $order)
         <section class="finance-overview"><header class="finance-overview-header"><h2>Purchase Order</h2>
-            <p>Pilih PO untuk mencatat termin, invoice, dan bukti pembayaran. Penerimaan barang tetap dicatat oleh gudang.</p></header>
-            <dl class="finance-overview-metrics" aria-label="Ringkasan PO pada halaman ini">
-                <div><dt>PO pada halaman ini</dt><dd>{{ $orders->count() }}</dd></div>
-                <div><dt>PO dengan penerimaan</dt><dd>{{ $orders->where('receipts_exists', true)->count() }}</dd></div>
-                <div><dt>Termin belum dibayar</dt><dd>{{ $orders->sum('planned_count') }}</dd></div>
-                <div><dt>Total PO ditemukan</dt><dd>{{ $orders->total() }}</dd></div>
+            <p>Select a PO to record installments, invoices, and proof of payment. The warehouse records item receipts.</p></header>
+            <dl class="finance-overview-metrics" aria-label="P.O. Summary on this page">
+                <div><dt>PO on this page</dt><dd>{{ $orders->count() }}</dd></div>
+                <div><dt>POs with receipts</dt><dd>{{ $orders->where('receipts_exists', true)->count() }}</dd></div>
+                <div><dt>Unpaid installments</dt><dd>{{ $orders->sum('planned_count') }}</dd></div>
+                <div><dt>Total POs found</dt><dd>{{ $orders->total() }}</dd></div>
             </dl>
-            <div class="finance-overview-search"><x-scm.field model="search" label="Cari nomor PO atau PR/SR" :live="true" /></div>
-            <div class="scm-scroll" role="region" aria-label="Daftar Purchase Order" tabindex="0"><table class="finance-overview-table"><thead><tr><th scope="col">PO / PR</th><th scope="col">Vendor</th><th scope="col">Penerimaan & termin</th><th scope="col">Grand Total</th><th scope="col">Sudah dibayar</th><th scope="col">Tindakan</th></tr></thead><tbody>
+            <div class="finance-overview-search"><x-scm.field model="search" label="Search PO or PR/SR numbers" :live="true" /></div>
+            <div class="scm-scroll" role="region" aria-label="Purchase Order List" tabindex="0"><table class="finance-overview-table"><thead><tr><th scope="col">PO / PR</th><th scope="col">Vendor</th><th scope="col">Receipts & installments</th><th scope="col">Grand Total</th><th scope="col">It's paid for</th><th scope="col">Action</th></tr></thead><tbody>
                 @forelse($orders as $row)
                     @php
                         $currency = $row->snapshot['currency'] ?? 'IDR';
@@ -83,14 +83,14 @@
                         $progress = $total > 0 ? min(100, max(0, (int) round($paid / $total * 100))) : 0;
                         $vendor = $row->cbe?->selectedVendor;
                     @endphp
-                    <tr wire:key="finance-order-{{ $row->id }}"><td data-label="PO / PR"><strong>{{ $row->number }}</strong><span class="finance-overview-meta">{{ $row->request->number }}</span>@if($row->status === 'cancelled')<span class="finance-overview-meta">PO dibatalkan</span>@endif</td>
-                        <td data-label="Vendor"><strong>{{ $row->snapshot['vendor']['name'] ?? '-' }}</strong><span class="finance-overview-meta">{{ $vendor?->bank_name ?: 'Bank belum diisi' }}</span></td>
-                        <td data-label="Penerimaan & termin">{{ $row->receipts_exists ? 'Penerimaan tercatat' : 'Belum ada penerimaan' }}<span class="finance-overview-meta">{{ $row->payments_count }} termin tercatat</span></td>
+                    <tr wire:key="finance-order-{{ $row->id }}"><td data-label="PO / PR"><strong>{{ $row->number }}</strong><span class="finance-overview-meta">{{ $row->request->number }}</span>@if($row->status === 'cancelled')<span class="finance-overview-meta">PO canceled</span>@endif</td>
+                        <td data-label="Vendor"><strong>{{ $row->snapshot['vendor']['name'] ?? '-' }}</strong><span class="finance-overview-meta">{{ $vendor?->bank_name ?: 'Bank is not set' }}</span></td>
+                        <td data-label="Receipts & installments">{{ $row->receipts_exists ? 'Receipt recorded' : 'No reception yet' }}<span class="finance-overview-meta">{{ $row->payments_count }} installments recorded</span></td>
                         <td data-label="Grand Total"><strong>{{ \App\Services\Scm\Decimal::money($total, $currency) }}</strong></td>
-                        <td data-label="Sudah dibayar"><strong>{{ \App\Services\Scm\Decimal::money($paid, $currency) }}</strong><div class="finance-progress" role="progressbar" aria-label="Pembayaran {{ $row->number }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $progress }}"><span style="width:{{ $progress }}%"></span></div><span class="finance-overview-meta">{{ $progress }}% dibayar · Sisa {{ \App\Services\Scm\Decimal::money(max(0, $total - $paid), $currency) }}</span></td>
-                        <td data-label="Tindakan"><button type="button" wire:click="openOrder({{ $row->id }})">Buka {{ $row->number }}</button></td></tr>
-                @empty<tr><td class="finance-overview-empty" colspan="6">Belum ada PO yang sesuai dengan pencarian dan akses Anda.</td></tr>@endforelse
-            </tbody></table></div><footer class="finance-overview-footer"><p>Ringkasan di atas mengikuti PO yang tampil pada halaman ini, kecuali total PO ditemukan.</p>{{ $orders->links() }}</footer>
+                        <td data-label="Paid"><strong>{{ \App\Services\Scm\Decimal::money($paid, $currency) }}</strong><div class="finance-progress" role="progressbar" aria-label="Payment {{ $row->number }}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $progress }}"><span style="width:{{ $progress }}%"></span></div><span class="finance-overview-meta">{{ $progress }}% paid · Remaining {{ \App\Services\Scm\Decimal::money(max(0, $total - $paid), $currency) }}</span></td>
+                        <td data-label="Actions"><button type="button" wire:click="openOrder({{ $row->id }})">Open {{ $row->number }}</button></td></tr>
+                @empty<tr><td class="finance-overview-empty" colspan="6">There hasn't been a PO that matches your search and access.</td></tr>@endforelse
+            </tbody></table></div><footer class="finance-overview-footer"><p>The above summary follows the PO that appears on this page, unless a total PO is found.</p>{{ $orders->links() }}</footer>
         </section>
     @else
         @php
@@ -106,93 +106,93 @@
         <div class="finance-detail">
         <section class="finance-detail-header"><header class="finance-detail-heading"><div><h2>{{ $order->number }}</h2>
             <p>{{ $order->snapshot['vendor']['name'] ?? '-' }} · {{ $order->request->number }}</p>
-            <p>Syarat pembayaran PO: {{ $order->payment_terms }}</p></div>
-            <div class="finance-detail-links"><a href="{{ route('scm.purchase-order-print', $order) }}" target="_blank" rel="noopener">Lihat Purchase Order</a><button type="button" wire:click="closeOrder">Kembali ke daftar PO</button></div></header>
+            <p>PO payment requirements: {{ $order->payment_terms }}</p></div>
+            <div class="finance-detail-links"><a href="{{ route('scm.purchase-order-print', $order) }}" target="_blank" rel="noopener">View Purchase Order</a><button type="button" wire:click="closeOrder">Return to PO list</button></div></header>
             <dl class="finance-detail-summary"><div><dt>Grand Total PO</dt><dd>{{ \App\Services\Scm\Decimal::money($total, $currency) }}</dd></div>
-                <div><dt>Sudah dibayar</dt><dd>{{ \App\Services\Scm\Decimal::money($paidTotal, $currency) }}</dd></div>
-                <div><dt>Termin belum dibayar</dt><dd>{{ \App\Services\Scm\Decimal::money($plannedTotal, $currency) }}</dd></div>
-                <div><dt>Belum dijadwalkan</dt><dd>{{ \App\Services\Scm\Decimal::money(max(0, $total - $paidTotal - $plannedTotal), $currency) }}</dd></div></dl>
-            <div class="finance-overview-meta">{{ $progress }}% dari total PO sudah dibayar</div><div class="finance-progress" role="progressbar" aria-label="Pembayaran PO" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $progress }}"><span style="width:{{ $progress }}%"></span></div>
+                <div><dt>It's paid for</dt><dd>{{ \App\Services\Scm\Decimal::money($paidTotal, $currency) }}</dd></div>
+                <div><dt>Unpaid installments</dt><dd>{{ \App\Services\Scm\Decimal::money($plannedTotal, $currency) }}</dd></div>
+                <div><dt>Not scheduled yet</dt><dd>{{ \App\Services\Scm\Decimal::money(max(0, $total - $paidTotal - $plannedTotal), $currency) }}</dd></div></dl>
+            <div class="finance-overview-meta">{{ $progress }}% of the total PO paid</div><div class="finance-progress" role="progressbar" aria-label="PO Payment" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $progress }}"><span style="width:{{ $progress }}%"></span></div>
             @if($order->status === 'cancelled')
-                <p role="status">PO dibatalkan pada {{ $order->cancelled_at?->format('d/m/Y H:i') }}. Alasan: {{ $order->cancellation_reason }}</p>
+                <p role="status">PO canceled on {{ $order->cancelled_at?->format('d/m/Y H:i') }}Reason: {{ $order->cancellation_reason }}</p>
             @elseif($canCancelOrder)
                 @if($paymentAction !== 'cancel_order')
-                    <button type="button" wire:click="prepareCancelOrder">Batalkan seluruh PO</button>
+                    <button type="button" wire:click="prepareCancelOrder">Cancel entire PO</button>
                 @else
-                    <form class="finance-sheet-form" wire:submit="cancelOrder"><fieldset wire:loading.attr="disabled"><legend>Batalkan seluruh PO</legend>
-                        <p>Pembatalan melepas komitmen anggaran dan membatalkan termin yang belum dibayar. Riwayat tetap tersimpan.</p>
-                        <x-scm.field model="orderCancelReason" label="Alasan pembatalan PO" multiline help="Minimal 10 karakter." required />
-                        <div class="scm-actions"><x-filament::button type="submit" color="danger" wire:confirm="Batalkan seluruh PO? Pembatalan tidak dapat dibatalkan." wire:loading.attr="disabled">Konfirmasi pembatalan PO</x-filament::button>
-                            <button type="button" wire:click="$set('paymentAction', '')">Kembali</button></div>
+                    <form class="finance-sheet-form" wire:submit="cancelOrder"><fieldset wire:loading.attr="disabled"><legend>Cancel entire PO</legend>
+                        <p>The cancellation uncommitted budget commitments and cancels unpaid trusts. The history remains stored.</p>
+                        <x-scm.field model="orderCancelReason" label="PO revocation reason" multiline help="At least 10 characters." required />
+                        <div class="scm-actions"><x-filament::button type="submit" color="danger" wire:confirm="Batalkan seluruh PO? Pembatalan tidak dapat dibatalkan." wire:loading.attr="disabled">Confirm PO revocation</x-filament::button>
+                            <button type="button" wire:click="$set('paymentAction', '')">Back</button></div>
                     </fieldset></form>
                 @endif
             @elseif($order->status !== 'cancelled')
-                <p role="status">@if($paidTotal > 0)PO tidak dapat dibatalkan karena sudah ada pembayaran.@else PO tidak dapat dibatalkan karena penerimaan barang sudah tercatat.@endif</p>
+                <p role="status">@if($paidTotal > 0)The PO cannot be canceled because there is already payment.@else The PO cannot be canceled because the receipts of goods are already recorded.@endif</p>
             @endif
         </section>
-        <div class="finance-detail-columns"><section class="finance-detail-block"><h3>Rekening vendor</h3>
-                <p>Data master saat ini untuk {{ $vendorMaster?->name ?? ($order->snapshot['vendor']['name'] ?? 'vendor') }}.</p>
+        <div class="finance-detail-columns"><section class="finance-detail-block"><h3>Vendor Account</h3>
+                <p>Current master data for {{ $vendorMaster?->name ?? ($order->snapshot['vendor']['name'] ?? 'vendor') }}.</p>
                 @if(! $vendorMaster || ! $vendorMaster->bank_name || ! $vendorMaster->bank_account_number || ! $vendorMaster->bank_account_name)
-                    <p class="finance-bank-warning" role="status">Data rekening vendor belum lengkap. Lengkapi profil vendor sebelum digunakan untuk pembayaran.</p>
+                    <p class="finance-bank-warning" role="status">Vendor account details are incomplete. Complete vendor profile before being used for payment.</p>
                 @endif
-                <dl class="finance-bank-facts"><div><dt>Nama bank</dt><dd>{{ $vendorMaster?->bank_name ?: 'Belum diisi' }}</dd></div>
-                    <div><dt>Nomor rekening</dt><dd>{{ $vendorMaster?->bank_account_number ?: 'Belum diisi' }}</dd></div>
-                    <div><dt>Nama pemilik rekening</dt><dd>{{ $vendorMaster?->bank_account_name ?: 'Belum diisi' }}</dd></div></dl>
+                <dl class="finance-bank-facts"><div><dt>Bank name</dt><dd>{{ $vendorMaster?->bank_name ?: 'Not entered' }}</dd></div>
+                    <div><dt>Account number</dt><dd>{{ $vendorMaster?->bank_account_number ?: 'Not entered' }}</dd></div>
+                    <div><dt>Account owner's name</dt><dd>{{ $vendorMaster?->bank_account_name ?: 'Not entered' }}</dd></div></dl>
         </section>
-        <section class="finance-detail-block"><h3>Penerimaan barang terkait</h3><div class="finance-receipt-list">
+        <section class="finance-detail-block"><h3>Involuntary acceptance</h3><div class="finance-receipt-list">
             @forelse($receipts as $receipt)<div><p>{{ $receipt->received_on->format('d/m/Y') }} · {{ $receipt->reference }}</p>
-                @foreach($receipt->movements as $movement)<p>{{ $movement->balance?->item?->name ?? 'Barang' }}: {{ \App\Services\Scm\Decimal::quantityInput((int) $movement->quantity_milli) }} {{ $movement->balance?->item?->unit }}</p>@endforeach</div>
-            @empty<p>Belum ada penerimaan barang tercatat untuk PO ini.</p>@endforelse
+                @foreach($receipt->movements as $movement)<p>{{ $movement->balance?->item?->name ?? 'Item' }}: {{ \App\Services\Scm\Decimal::quantityInput((int) $movement->quantity_milli) }} {{ $movement->balance?->item?->unit }}</p>@endforeach</div>
+            @empty<p>No receipts have been recorded for this PO.</p>@endforelse
         </div></section></div>
-        <section class="finance-sheet"><h2>Termin pembayaran</h2>
-            <div class="finance-table-wrap" role="region" aria-label="Daftar termin pembayaran" tabindex="0"><table class="finance-table"><thead><tr><th scope="col">Termin</th><th scope="col">Waktu / jatuh tempo</th><th scope="col">Nominal</th><th scope="col">Status</th><th scope="col">Dokumen</th><th scope="col">Tindakan</th></tr></thead><tbody>
-                @forelse($payments as $payment)<tr wire:key="finance-payment-{{ $payment->id }}"><td data-label="Termin">{{ \App\Services\Finance\PoPayments::KINDS[$payment->kind] ?? $payment->kind }}<br>{{ $payment->description }}@if($payment->invoice_number)<br>Invoice: {{ $payment->invoice_number }}@endif</td>
-                    <td data-label="Waktu / jatuh tempo">{{ \App\Services\Finance\PoPayments::TIMINGS[$payment->timing] ?? $payment->timing }}<br>{{ $payment->due_on?->format('d/m/Y') ?? 'Belum ditetapkan' }}</td>
-                    <td data-label="Nominal">{{ \App\Services\Scm\Decimal::money($payment->amount_minor, $payment->currency) }}</td>
-                    <td data-label="Status">{{ ['planned' => 'Belum dibayar', 'paid' => 'Dibayar', 'cancelled' => 'Dibatalkan'][$payment->status] ?? $payment->status }}@if($payment->paid_on)<br>{{ $payment->paid_on->format('d/m/Y') }}<br>{{ $payment->payment_reference }}
-                        <br>Rekening saat dicatat: {{ $payment->vendor_bank_snapshot['bank_name'] ?? 'Tidak tercatat' }} · {{ $payment->vendor_bank_snapshot['bank_account_number'] ?? 'Tidak tercatat' }} · {{ $payment->vendor_bank_snapshot['bank_account_name'] ?? 'Tidak tercatat' }}@endif</td>
-                    <td data-label="Dokumen">@forelse($payment->files as $file)<a href="{{ route('finance.payment-file', $file) }}">{{ $file->type === 'invoice' ? 'Invoice' : 'Bukti bayar' }}: {{ $file->original_name }}</a><br>@empty Belum ada dokumen @endforelse</td>
-                    <td data-label="Tindakan"><div class="finance-table-actions">@if($order->status !== 'cancelled' && $payment->status === 'planned')<button type="button" wire:click="preparePaid({{ $payment->id }})">Proses termin {{ $loop->iteration }}</button>@endif
-                        @if($order->status !== 'cancelled' && $payment->status !== 'cancelled' && ! $payment->files->contains('type', 'invoice'))<button type="button" wire:click="prepareInvoice({{ $payment->id }})">Tambah invoice</button>@endif</div></td></tr>
-                @empty<tr><td class="finance-empty" colspan="6">Belum ada termin pembayaran. Tambahkan sesuai syarat PO.</td></tr>@endforelse
+        <section class="finance-sheet"><h2>Payment installment</h2>
+            <div class="finance-table-wrap" role="region" aria-label="Payment installments" tabindex="0"><table class="finance-table"><thead><tr><th scope="col">Installment</th><th scope="col">Time / due</th><th scope="col">Amount</th><th scope="col">Status</th><th scope="col">Documents</th><th scope="col">Action</th></tr></thead><tbody>
+                @forelse($payments as $payment)<tr wire:key="finance-payment-{{ $payment->id }}"><td data-label="Installment">{{ \App\Services\Finance\PoPayments::KINDS[$payment->kind] ?? $payment->kind }}<br>{{ $payment->description }}@if($payment->invoice_number)<br>Invoice: {{ $payment->invoice_number }}@endif</td>
+                    <td data-label="Timing / due date">{{ \App\Services\Finance\PoPayments::TIMINGS[$payment->timing] ?? $payment->timing }}<br>{{ $payment->due_on?->format('d/m/Y') ?? 'Unassigned' }}</td>
+                    <td data-label="Amount">{{ \App\Services\Scm\Decimal::money($payment->amount_minor, $payment->currency) }}</td>
+                    <td data-label="Status">{{ ['planned' => 'Unpaid', 'paid' => 'Paid', 'cancelled' => 'Cancelled'][$payment->status] ?? $payment->status }}@if($payment->paid_on)<br>{{ $payment->paid_on->format('d/m/Y') }}<br>{{ $payment->payment_reference }}
+                        <br>Account on record: {{ $payment->vendor_bank_snapshot['bank_name'] ?? 'Unrecorded' }} · {{ $payment->vendor_bank_snapshot['bank_account_number'] ?? 'Unrecorded' }} · {{ $payment->vendor_bank_snapshot['bank_account_name'] ?? 'Unrecorded' }}@endif</td>
+                    <td data-label="Documents">@forelse($payment->files as $file)<a href="{{ route('finance.payment-file', $file) }}">{{ $file->type === 'invoice' ? 'Invoice' : 'Evidence pays' }}: {{ $file->original_name }}</a><br>@empty Belum ada dokumen @endforelse</td>
+                    <td data-label="Actions"><div class="finance-table-actions">@if($order->status !== 'cancelled' && $payment->status === 'planned')<button type="button" wire:click="preparePaid({{ $payment->id }})">Process installment {{ $loop->iteration }}</button>@endif
+                        @if($order->status !== 'cancelled' && $payment->status !== 'cancelled' && ! $payment->files->contains('type', 'invoice'))<button type="button" wire:click="prepareInvoice({{ $payment->id }})">Add invoice</button>@endif</div></td></tr>
+                @empty<tr><td class="finance-empty" colspan="6">No payments yet. Add them to the PO's condition.</td></tr>@endforelse
             </tbody></table></div>
             @if($order->status !== 'cancelled' && $selected && $selected->status === 'planned' && $paymentAction === 'pay')
-                <form class="finance-sheet-form" wire:submit="savePaid"><fieldset wire:loading.attr="disabled"><legend>Catat pembayaran: {{ $selected->description }}</legend>
-                    <p>Catat pembayaran yang sudah dilakukan dan unggah buktinya.</p>
-                    <div><strong>Rekening vendor saat formulir dibuka</strong>
-                        <p>{{ $vendorMaster?->name ?? ($order->snapshot['vendor']['name'] ?? 'Vendor') }} · {{ ($confirmedVendorBank['bank_name'] ?? null) ?: 'Bank belum diisi' }} · {{ ($confirmedVendorBank['bank_account_number'] ?? null) ?: 'Nomor rekening belum diisi' }} · {{ ($confirmedVendorBank['bank_account_name'] ?? null) ?: 'Pemilik rekening belum diisi' }}</p>
-                        <p>Pastikan rekening sesuai bukti pembayaran. Data ini akan disimpan pada riwayat termin.</p>
+                <form class="finance-sheet-form" wire:submit="savePaid"><fieldset wire:loading.attr="disabled"><legend>Note payment: {{ $selected->description }}</legend>
+                    <p>Write down the payment and upload the evidence.</p>
+                    <div><strong>Vendor account when form is opened</strong>
+                        <p>{{ $vendorMaster?->name ?? ($order->snapshot['vendor']['name'] ?? 'Vendor') }} · {{ ($confirmedVendorBank['bank_name'] ?? null) ?: 'Bank is not set' }} · {{ ($confirmedVendorBank['bank_account_number'] ?? null) ?: 'Account number not charged' }} · {{ ($confirmedVendorBank['bank_account_name'] ?? null) ?: 'Account owner is not charged' }}</p>
+                        <p>Make sure the account matches payment evidence. This data will be saved in the current history.</p>
                     </div><div class="scm-grid">
-                        <x-scm.field model="paid.paid_on" label="Tanggal pembayaran" type="date" required />
-                        <x-scm.field model="paid.payment_reference" label="Referensi pembayaran" required />
-                        <x-scm.field model="paid.invoice_number" label="Nomor invoice" />
-                        <x-scm.field model="proofFile" label="Bukti pembayaran (PDF/JPG/PNG)" type="file" required accept=".pdf,.jpg,.jpeg,.png" />
-                        @if(! $selected->files->contains('type', 'invoice'))<x-scm.field model="paidInvoiceFile" label="Invoice (PDF/JPG/PNG, jika ada)" type="file" accept=".pdf,.jpg,.jpeg,.png" />@endif
-                    </div><div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan pembayaran</x-filament::button></div>
+                        <x-scm.field model="paid.paid_on" label="Payment date" type="date" required />
+                        <x-scm.field model="paid.payment_reference" label="Payment reference" required />
+                        <x-scm.field model="paid.invoice_number" label="Invoice number" />
+                        <x-scm.field model="proofFile" label="Payment evidence (PDF/JPG/PNG)" type="file" required accept=".pdf,.jpg,.jpeg,.png" />
+                        @if(! $selected->files->contains('type', 'invoice'))<x-scm.field model="paidInvoiceFile" label="Invoice (PDF/JPG/PNG, if any)" type="file" accept=".pdf,.jpg,.jpeg,.png" />@endif
+                    </div><div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Save payment</x-filament::button></div>
                 </fieldset></form>
-                <div><x-scm.field model="cancelReason" label="Alasan pembatalan termin" multiline help="Minimal 10 karakter; hanya untuk termin yang belum dibayar." />
-                    <button type="button" wire:click="cancelPlan" wire:confirm="Batalkan termin ini? Riwayat tetap disimpan." wire:loading.attr="disabled">Batalkan termin</button></div>
+                <div><x-scm.field model="cancelReason" label="Reason for cancelling the installment" multiline help="Enter at least 10 characters. Only unpaid installments can be cancelled." />
+                    <button type="button" wire:click="cancelPlan" wire:confirm="Cancel this installment? Its history will be retained." wire:loading.attr="disabled">Cancel installment</button></div>
             @endif
             @if($order->status !== 'cancelled' && $selected && $paymentAction === 'invoice' && $selected->status !== 'cancelled' && ! $selected->files->contains('type', 'invoice'))
-                <form class="finance-sheet-form" wire:submit="saveInvoice"><fieldset wire:loading.attr="disabled"><legend>Tambah invoice: {{ $selected->description }}</legend><div class="scm-grid">
-                    <x-scm.field model="lateInvoiceNumber" label="Nomor invoice" required />
+                <form class="finance-sheet-form" wire:submit="saveInvoice"><fieldset wire:loading.attr="disabled"><legend>Add invoice: {{ $selected->description }}</legend><div class="scm-grid">
+                    <x-scm.field model="lateInvoiceNumber" label="Invoice number" required />
                     <x-scm.field model="lateInvoiceFile" label="Invoice (PDF/JPG/PNG)" type="file" required accept=".pdf,.jpg,.jpeg,.png" />
-                </div><div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan invoice</x-filament::button></div></fieldset></form>
+                </div><div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Save invoice</x-filament::button></div></fieldset></form>
             @endif
         </section>
         @if($order->status !== 'cancelled')
-        <section class="finance-sheet"><h2>Tambah termin</h2>
-            <p class="finance-sheet-intro">Masukkan nominal berdasarkan kesepakatan. Total termin tidak boleh melebihi Grand Total PO.</p>
-            <form wire:submit="savePlan"><fieldset wire:loading.attr="disabled"><legend>Rencana pembayaran</legend><div class="finance-plan-grid">
-                <x-scm.select model="plan.kind" label="Jenis termin" :options="\App\Services\Finance\PoPayments::KINDS" :live="true" required />
-                <x-scm.field model="plan.description" label="Keterangan termin" required :live="true" />
-                <x-scm.select model="plan.timing" label="Waktu pembayaran" :options="\App\Services\Finance\PoPayments::TIMINGS" required help="Untuk pembayaran setelah penerimaan barang PR, minimal satu penerimaan harus tercatat. Periksa jumlah yang diterima sebelum membayar." />
-                <x-scm.field model="plan.due_on" label="Jatuh tempo" type="date" />
-                <x-scm.field model="plan.amount" label="Nominal ({{ $currency }})" inputmode="decimal" required :help="($plan['kind'] ?? '') === 'settlement' ? 'Nominal pelunasan diisi dari sisa PO yang belum dijadwalkan, setelah termin yang dibayar dan direncanakan diperhitungkan. Nominal dapat diubah.' : 'Persentase pada keterangan dihitung dari Grand Total PO. Nominal dapat diubah; gunakan koma untuk desimal tanpa pemisah ribuan.'" />
-                <x-scm.field model="plan.invoice_number" label="Nomor invoice" />
-                <x-scm.field model="invoiceFile" label="Invoice (PDF/JPG/PNG, jika ada)" type="file" accept=".pdf,.jpg,.jpeg,.png" />
-                <div class="scm-field finance-plan-notes"><label for="scm-plan-notes">Catatan</label><textarea id="scm-plan-notes" wire:model="plan.notes" rows="3"></textarea></div>
-            </div>@if(($plan['kind'] ?? '') === 'settlement' && $total - $paidTotal - $plannedTotal <= 0)<p role="status">Tidak ada sisa PO yang belum dijadwalkan. Periksa termin yang sudah tercatat.</p>@endif<div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan termin</x-filament::button></div></fieldset></form>
+        <section class="finance-sheet"><h2>Add installment</h2>
+            <p class="finance-sheet-intro">Enter the agreed amount. Installments cannot exceed the PO total.</p>
+            <form wire:submit="savePlan"><fieldset wire:loading.attr="disabled"><legend>Payment plans</legend><div class="finance-plan-grid">
+                <x-scm.select model="plan.kind" label="Installment type" :options="\App\Services\Finance\PoPayments::KINDS" :live="true" required />
+                <x-scm.field model="plan.description" label="Installment description" required :live="true" />
+                <x-scm.select model="plan.timing" label="Payment time" :options="\App\Services\Finance\PoPayments::TIMINGS" required help="Record at least one receipt before paying against a purchase request. Verify the received quantity before payment." />
+                <x-scm.field model="plan.due_on" label="Due date" type="date" />
+                <x-scm.field model="plan.amount" label="Amount ({{ $currency }})" inputmode="decimal" required :help="($plan['kind'] ?? '') === 'settlement' ? 'Amount pelunasan diisi dari sisa PO yang belum dijadwalkan, setelah termin yang dibayar dan direncanakan diperhitungkan. Amount dapat diubah.' : 'Persentase pada keterangan dihitung dari Grand Total PO. Amount dapat diubah; gunakan koma untuk desimal tanpa pemisah ribuan.'" />
+                <x-scm.field model="plan.invoice_number" label="Invoice number" />
+                <x-scm.field model="invoiceFile" label="Invoice (PDF/JPG/PNG, if any)" type="file" accept=".pdf,.jpg,.jpeg,.png" />
+                <div class="scm-field finance-plan-notes"><label for="scm-plan-notes">Notes</label><textarea id="scm-plan-notes" wire:model="plan.notes" rows="3"></textarea></div>
+            </div>@if(($plan['kind'] ?? '') === 'settlement' && $total - $paidTotal - $plannedTotal <= 0)<p role="status">All eligible POs already have payment installments.</p>@endif<div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Save term</x-filament::button></div></fieldset></form>
         </section>
         @endif
         </div>

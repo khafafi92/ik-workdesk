@@ -98,14 +98,14 @@ class ManpowerRequestTest extends TestCase
 
         $ticket = Ticket::query()->sole();
         $this->assertSame(2, count($ticket->manpower_details['positions']));
-        $this->assertStringContainsString('5 orang', $ticket->subject);
+        $this->assertStringContainsString('5 people', $ticket->subject);
         $this->assertNull($ticket->manpower_details['notes']);
         $this->assertSame($this->requester->employee->id, $ticket->employee_id);
         $task = WorkTask::query()->where('ticket_id', $ticket->id)->sole();
         $this->assertSame($this->hr->id, $task->department_id);
         $this->assertSame($ticket->description, $task->description);
         $this->assertStringContainsString('Operator: 3 orang', $task->description);
-        $this->assertStringContainsString('Persyaratan kandidat: Berpengalaman dalam pemeliharaan.', $task->description);
+        $this->assertStringContainsString('Candidate requirements: Berpengalaman dalam pemeliharaan.', $task->description);
         $this->assertSame(1, $ticket->assignments()->count());
     }
 
@@ -142,7 +142,7 @@ class ManpowerRequestTest extends TestCase
         $this->assertArrayNotHasKey('total', $ticket->manpower_details);
         $this->assertArrayNotHasKey('approved_by', $ticket->manpower_details);
         $this->assertArrayNotHasKey('approved_salary', $ticket->manpower_details['positions'][0]);
-        $this->assertStringContainsString('5 orang', $ticket->subject);
+        $this->assertStringContainsString('5 people', $ticket->subject);
         $this->assertStringNotContainsString('Forged', $ticket->description);
     }
 
@@ -164,7 +164,7 @@ class ManpowerRequestTest extends TestCase
             ->fillForm(['manpower_details' => $details])->call('save')->assertHasNoFormErrors();
 
         $this->assertSame(4, $ticket->fresh()->manpower_details['positions'][1]['quantity']);
-        $this->assertStringContainsString('7 orang', $ticket->fresh()->subject);
+        $this->assertStringContainsString('7 people', $ticket->fresh()->subject);
     }
 
     public function test_switching_to_a_normal_category_drops_hidden_manpower_payload(): void
@@ -278,11 +278,11 @@ class ManpowerRequestTest extends TestCase
         (new ChannelManager(app()))->sendNow($recipient, $notification, ['database']);
         $data = $recipient->notifications()->sole()->data;
         $this->assertSame('filament', $data['format']);
-        $this->assertStringContainsString('5 orang', $data['body']);
+        $this->assertStringContainsString('5 people', $data['body']);
         $this->assertSame(TicketResource::getUrl('view', ['record' => $ticket->id]), $data['actions'][0]['url']);
         $mail = $notification->toMail($recipient);
         $this->assertSame('array', $mail->mailer);
-        $this->assertStringContainsString('5 orang', implode(' ', $mail->introLines));
+        $this->assertStringContainsString('5 people', implode(' ', $mail->introLines));
         $this->assertSame($data['actions'][0]['url'], $mail->actionUrl);
         $this->assertTrue($notification->afterCommit);
         $this->assertSame('service-desk-notifications', $notification->queue);

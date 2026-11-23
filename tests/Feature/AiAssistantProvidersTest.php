@@ -234,7 +234,7 @@ class AiAssistantProvidersTest extends TestCase
             $service->respond($user, 'Pertanyaan lanjutan', 'gemini');
             $this->fail('Exhausted Gemini quota must reject the next request.');
         } catch (AiAssistantException $exception) {
-            $this->assertStringContainsString('sudah tercapai', $exception->getMessage());
+            $this->assertStringContainsString('has reached its monthly token limit', $exception->getMessage());
         }
         Http::assertSentCount(1);
         $this->assertDatabaseCount('ai_assistant_messages', 2);
@@ -255,7 +255,7 @@ class AiAssistantProvidersTest extends TestCase
                 app(AiChatService::class)->respond($user, 'Pertanyaan', 'gemini');
                 $this->fail('Incomplete Gemini response must be rejected.');
             } catch (AiAssistantException $exception) {
-                $this->assertStringContainsString('tidak lengkap', $exception->getMessage());
+                $this->assertStringContainsString('incomplete response', $exception->getMessage());
             }
         }
         $this->assertDatabaseCount('ai_assistant_messages', 0);
@@ -275,7 +275,7 @@ class AiAssistantProvidersTest extends TestCase
         $this->assertSame(18, $service->monthlyTokenUsage('deepseek'));
         $this->assertSame(28, $service->monthlyTokenUsage());
         $this->expectException(AiAssistantException::class);
-        $this->expectExceptionMessage('sudah tercapai');
+        $this->expectExceptionMessage('has reached its monthly token limit');
         $service->respond($user, 'Pertanyaan OpenAI', 'openai');
     }
 
@@ -344,7 +344,7 @@ class AiAssistantProvidersTest extends TestCase
                 app(AiChatService::class)->respond($user, 'Pertanyaan', 'anthropic');
                 $this->fail('Incomplete provider response must be rejected.');
             } catch (AiAssistantException $exception) {
-                $this->assertStringContainsString('tidak lengkap', $exception->getMessage());
+                $this->assertStringContainsString('incomplete response', $exception->getMessage());
             }
         }
         $this->assertDatabaseCount('ai_assistant_messages', 0);

@@ -101,7 +101,7 @@ class MttrForm extends Component
 
         // Guard: waktu running tidak boleh lebih awal dari waktu shutdown.
         if ($runningDatetime->lessThan($shutdownDatetime)) {
-            $this->addError('running_date', 'Date Running tidak boleh lebih awal dari Date Shutdown.');
+            $this->addError('running_date', 'Date Running can\'t be any earlier than Date Shutdown.');
 
             return;
         }
@@ -151,7 +151,7 @@ class MttrForm extends Component
             'activity_troubleshooting',
         ]);
 
-        session()->flash('success', 'Data MTTR berhasil disubmit.');
+        session()->flash('success', 'MTTR data successfully submitted.');
     }
 
     public function render()
@@ -182,7 +182,7 @@ class MttrForm extends Component
 
         // Query ranking penyebab/indikasi/activity untuk membantu melihat masalah paling dominan.
         $topCauses = DB::table('mttr_records')
-            ->selectRaw("COALESCE(NULLIF(immediate_cause, ''), 'Belum diisi') as cause_name")
+            ->selectRaw("COALESCE(NULLIF(immediate_cause, ''), 'Not entered') as cause_name")
             ->selectRaw('COUNT(*) as event_count')
             ->selectRaw('SUM(downtime_minutes) as downtime_minutes')
             ->groupBy('cause_name')
@@ -191,7 +191,7 @@ class MttrForm extends Component
             ->get();
 
         $topIndications = DB::table('mttr_records')
-            ->selectRaw("COALESCE(NULLIF(indication, ''), 'Belum diisi') as indication_name")
+            ->selectRaw("COALESCE(NULLIF(indication, ''), 'Not entered') as indication_name")
             ->selectRaw('COUNT(*) as event_count')
             ->selectRaw('SUM(downtime_minutes) as downtime_minutes')
             ->groupBy('indication_name')
@@ -200,7 +200,7 @@ class MttrForm extends Component
             ->get();
 
         $topActivities = DB::table('mttr_records')
-            ->selectRaw("COALESCE(NULLIF(activity_troubleshooting, ''), 'Belum diisi') as activity_name")
+            ->selectRaw("COALESCE(NULLIF(activity_troubleshooting, ''), 'Not entered') as activity_name")
             ->selectRaw('COUNT(*) as event_count')
             ->selectRaw('SUM(downtime_minutes) as downtime_minutes')
             ->groupBy('activity_name')

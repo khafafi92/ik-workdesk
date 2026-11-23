@@ -199,11 +199,11 @@ class FinancePaymentsTest extends TestCase
     {
         Livewire::actingAs($this->finance)->test(FinancePayments::class)->assertSee('PO-FIN-QA')->call('openOrder', $this->order->id)
             ->assertSee('DP 5% dan pelunasan')->set('plan', $this->input())->set('invoiceFile', $this->pdf('invoice.pdf'))
-            ->call('savePlan')->assertHasNoErrors()->assertSee('Belum dibayar');
+            ->call('savePlan')->assertHasNoErrors()->assertSee('Unpaid');
         $payment = $this->order->payments()->sole();
         Livewire::actingAs($this->finance)->test(FinancePayments::class)->call('openOrder', $this->order->id)
             ->call('preparePaid', $payment->id)->set('paid.payment_reference', 'TRX-QA')->set('proofFile', $this->pdf('proof.pdf'))
-            ->call('savePaid')->assertHasNoErrors()->assertSee('Dibayar')->assertSee('Bukti bayar');
+            ->call('savePaid')->assertHasNoErrors()->assertSee('Paid')->assertSee('Bukti bayar');
         $this->assertSame('paid', $payment->fresh()->status);
     }
 
@@ -211,11 +211,11 @@ class FinancePaymentsTest extends TestCase
     {
         $vendor = Vendor::findOrFail($this->order->cbe->selected_vendor_id);
         $page = Livewire::actingAs($this->finance)->test(FinancePayments::class)
-            ->call('openOrder', $this->order->id)->assertSee('Data rekening vendor belum lengkap.');
+            ->call('openOrder', $this->order->id)->assertSee('Vendor account details are incomplete. Complete vendor profile before being used for payment.');
 
         $vendor->update(['bank_name' => 'Bank QA', 'bank_account_number' => '0012345678', 'bank_account_name' => 'PT Vendor QA']);
         $page->call('$refresh')->assertSee('Bank QA')->assertSee('0012345678')->assertSee('PT Vendor QA')
-            ->assertDontSee('Data rekening vendor belum lengkap.');
+            ->assertDontSee('Vendor account details are incomplete. Complete vendor profile before being used for payment.');
 
         $other = Vendor::create(['code' => 'OTHER-BANK', 'name' => 'Vendor lain', 'provider_type' => 'barang',
             'bank_account_number' => '99999999', 'created_by' => $this->finance->id, 'updated_by' => $this->finance->id]);
@@ -285,7 +285,7 @@ class FinancePaymentsTest extends TestCase
     {
         app(PoPayments::class)->plan($this->finance, $this->order->id, $this->input(), null);
         Livewire::actingAs($this->finance)->test(FinancePayments::class)
-            ->assertSee('Belum ada penerimaan')->assertSee('1 termin tercatat')->assertSee('Termin belum dibayar');
+            ->assertSee('No receipts have been recorded for this PO.')->assertSee('1 termin tercatat')->assertSee('Unpaid installments');
         Livewire::actingAs($this->outsider)->test(FinancePayments::class)->assertDontSee('PO-FIN-QA');
     }
 
@@ -315,7 +315,7 @@ class FinancePaymentsTest extends TestCase
             $service->cancelOrder($this->finance, $this->order->id, 'Uji pembatalan setelah pembayaran');
             $this->fail('PO dengan pembayaran tidak dapat dibatalkan.');
         } catch (ValidationException $error) {
-            $this->assertStringContainsString('setelah ada pembayaran', $error->getMessage());
+            $this->assertStringContainsString('paid PO', $error->getMessage());
         }
     }
 
@@ -329,7 +329,7 @@ class FinancePaymentsTest extends TestCase
             $service->cancelOrder($this->finance, $this->order->id, 'Uji pembatalan setelah penerimaan');
             $this->fail('PO dengan penerimaan tidak dapat dibatalkan.');
         } catch (ValidationException $error) {
-            $this->assertStringContainsString('penerimaan barang', $error->getMessage());
+            $this->assertStringContainsString('receipt', $error->getMessage());
         }
         $this->assertSame('active', $this->order->fresh()->status);
     }
@@ -337,10 +337,10 @@ class FinancePaymentsTest extends TestCase
     public function test_finance_page_exposes_the_audited_po_cancellation_flow(): void
     {
         Livewire::actingAs($this->finance)->test(FinancePayments::class)->call('openOrder', $this->order->id)
-            ->assertSee('Batalkan seluruh PO')->call('prepareCancelOrder')
+            ->assertSee('Cancel entire PO')->call('prepareCancelOrder')
             ->set('orderCancelReason', 'Pengadaan dibatalkan oleh Finance')
             ->call('cancelOrder')->assertHasNoErrors()->assertSee('PO dibatalkan pada')
-            ->assertDontSee('Tambah termin');
+            ->assertDontSee('Add installment');
     }
 
     public function test_percentage_suggests_editable_amount_from_the_po_total(): void
@@ -377,7 +377,7 @@ class FinancePaymentsTest extends TestCase
         app(PoPayments::class)->plan($this->finance, $this->order->id, $this->input('10000'), null);
         Livewire::actingAs($this->finance)->test(FinancePayments::class)->call('openOrder', $this->order->id)
             ->set('plan.kind', 'settlement')->assertSet('plan.amount', '')
-            ->assertSee('Tidak ada sisa PO yang belum dijadwalkan.');
+            ->assertSee('All eligible POs already have payment installments.');
     }
 
     public function test_ambiguous_payment_terms_are_not_prefilled(): void
@@ -396,7 +396,7 @@ class FinancePaymentsTest extends TestCase
             $service->recordPaid($this->finance, $payment->id, ['paid_on' => today()->toDateString(), 'payment_reference' => 'TRX'], $this->pdf(), null);
             $this->fail('Penerimaan untuk PO ini belum ada.');
         } catch (ValidationException $error) {
-            $this->assertStringContainsString('penerimaan barang', $error->getMessage());
+            $this->assertStringContainsString('receipt', $error->getMessage());
         }
         $warehouse = InventoryWarehouse::create(['code' => 'FIN-QA', 'name' => 'Gudang QA', 'kind' => 'PROJECT']);
         InventoryReceipt::create(['token' => (string) Str::uuid(), 'request_id' => $this->order->request_id, 'purchase_order_id' => $this->order->id,
@@ -439,7 +439,7 @@ class FinancePaymentsTest extends TestCase
         Schema::drop('finance_po_payment_files');
         Schema::drop('finance_po_payments');
         Livewire::actingAs($this->finance)->test(FinancePayments::class)
-            ->assertSee('Modul pembayaran belum disiapkan di database.');
+            ->assertSee('The payment module is not set up in the database. Administrator database needs to run the Finance migration.');
     }
 
     private function budgetLineForOrder(): FinanceBudgetLine

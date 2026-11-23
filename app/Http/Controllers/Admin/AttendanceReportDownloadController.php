@@ -21,7 +21,7 @@ class AttendanceReportDownloadController extends Controller
         abort_unless(
             $attendanceImport->status === 'processed',
             409,
-            'Attendance report belum selesai diproses.'
+            'Attendance report is not yet processed.'
         );
 
         $periodName = str($attendanceImport->period_name)

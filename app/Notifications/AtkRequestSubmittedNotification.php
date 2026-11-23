@@ -33,26 +33,26 @@ class AtkRequestSubmittedNotification extends Notification
         $items = $request->items
             ->map(fn ($item): string => sprintf(
                 '%s %s %s',
-                $item->item?->name ?? 'Barang ATK',
+                $item->item?->name ?? 'Office Supply Items',
                 number_format((float) $item->qty_requested, 0, ',', '.'),
                 $item->unit,
             ))
             ->implode(', ');
 
         return FilamentNotification::make()
-            ->title('Permintaan ATK baru')
+            ->title('New office supplies Request')
             ->body(sprintf(
-                '%s dari %s (%s): %s.',
+                '%s of %s (%s): %s.',
                 $request->request_number,
                 $request->requester?->name ?? 'Peminta',
-                $request->department?->name ?? 'Departemen',
+                $request->department?->name ?? 'Department',
                 $items,
             ))
             ->icon('heroicon-o-clipboard-document-list')
             ->info()
             ->actions([
                 Action::make('open')
-                    ->label('Lihat permintaan')
+                    ->label('View request')
                     ->button()
                     ->url(AtkRequestResource::getUrl('index'))
                     ->markAsRead(),

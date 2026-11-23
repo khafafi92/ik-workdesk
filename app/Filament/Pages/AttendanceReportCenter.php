@@ -91,15 +91,15 @@ class AttendanceReportCenter extends Page
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Upload data, proses laporan, lalu lihat lokasi absen dan total jam kerja.';
+        return 'Upload data, process reports, then see the location of absences and the total working hours.';
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            Action::make('upload')->label('Upload data baru')->icon('heroicon-o-arrow-up-tray')
+            Action::make('upload')->label('Upload new data')->icon('heroicon-o-arrow-up-tray')
                 ->url($this->getUploadUrl())->visible(AttendanceImportResource::canCreate()),
-            Action::make('manageUploads')->label('Kelola upload')->color('gray')
+            Action::make('manageUploads')->label('Manage uploads')->color('gray')
                 ->url(AttendanceImportResource::getUrl())->visible(AttendanceImportResource::canViewAny()),
         ];
     }
@@ -107,10 +107,10 @@ class AttendanceReportCenter extends Page
     public function statusLabel(?string $status): string
     {
         return match ($status) {
-            'processed' => 'Selesai',
-            'processing' => 'Sedang diproses',
-            'failed' => 'Gagal diproses',
-            'uploaded', 'draft' => 'Menunggu proses',
+            'processed' => 'Completed',
+            'processing' => 'Processing',
+            'failed' => 'Failed to process',
+            'uploaded', 'draft' => 'Waiting for process',
             default => '-',
         };
     }
@@ -118,7 +118,7 @@ class AttendanceReportCenter extends Page
     public function processAction(): Action
     {
         return Action::make('process')
-            ->label('Proses laporan')
+            ->label('Process report')
             ->visible(fn (): bool => auth()->user()?->hasPermission('attendance.manage') === true
                 && in_array($this->selectedImport?->status, ['uploaded', 'draft', 'failed'], true))
             ->action(function (): void {
@@ -130,8 +130,8 @@ class AttendanceReportCenter extends Page
                     $this->redirect(AttendanceImportResource::getUrl('results', ['record' => $import]));
                 } catch (Throwable $exception) {
                     report($exception);
-                    Notification::make()->danger()->title('Proses belum berhasil')
-                        ->body('Periksa file dan keterangan kegagalan pada laporan.')->send();
+                    Notification::make()->danger()->title('Process not yet successful')
+                        ->body('Check files and information failures on the report.')->send();
                 } finally {
                     unset($this->selectedImport);
                 }

@@ -64,11 +64,11 @@ class ItDeviceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-server-stack';
 
-    protected static ?string $navigationLabel = 'Master Perangkat';
+    protected static ?string $navigationLabel = 'Device Catalog';
 
-    protected static ?string $modelLabel = 'Perangkat';
+    protected static ?string $modelLabel = 'Devices';
 
-    protected static ?string $pluralModelLabel = 'Master Perangkat';
+    protected static ?string $pluralModelLabel = 'Device Catalog';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -84,27 +84,27 @@ class ItDeviceResource extends Resource
         return $schema->components([
             Hidden::make('assignment_version'),
             Tabs::make('Data perangkat')->tabs([
-                Tab::make('Identitas')->columns(['md' => 2, 'xl' => 3])->schema([
-                    Select::make('inventory_item_id')->label('Master Barang Inventori')
+                Tab::make('Identity')->columns(['md' => 2, 'xl' => 3])->schema([
+                    Select::make('inventory_item_id')->label('Inventory Masters')
                         ->options(fn () => InventoryCatalogue::installed() ? InventoryItem::where('kind', 'device')->where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($item) => [$item->id => $item->code.' / '.$item->name]) : [])
                         ->searchable()->live()->hidden(fn (Get $get) => $isRoom($get) || ! InventoryCatalogue::installed())
-                        ->helperText('Pilih jenis barang yang sama untuk unit dengan merek dan model yang sama. Nomor aset serta serial number tetap dicatat per unit.'),
-                    Select::make('inventory_balance_id')->label('Ambil unit dari stok gudang')
+                        ->helperText('Select the same type of items for units with the same brand and model. The asset number and serial number are kept recorded per unit.'),
+                    Select::make('inventory_balance_id')->label('Get units from storage')
                         ->options(fn (Get $get) => InventoryAccess::scopeBalances(InventoryBalance::query(), auth()->user())
                             ->where('inventory_item_id', $get('inventory_item_id'))->where('quantity_milli', '>=', 1000)
                             ->with(['warehouse.project', 'department'])->get()->mapWithKeys(fn ($balance) => [$balance->id => $balance->warehouse->label().' / '.$balance->department?->name.' / '.($balance->quantity_milli / 1000).' unit']))
                         ->searchable()->visible(fn (Get $get, ?ItDevice $record) => ! $record && ! $isRoom($get) && filled($get('inventory_item_id')))
-                        ->helperText('Pilih sumber jika unit berasal dari penerimaan gudang. Kosongkan untuk pendataan unit lama; stok gudang tidak berubah.'),
-                    TextInput::make('asset_number')->label('Nomor Aset')->readOnly(fn (?ItDevice $record) => ! $record?->exists)->placeholder('Dibuat otomatis saat disimpan')
+                        ->helperText('Select the source if the unit comes from the storage reception. Empty for old unit records; storage storage is unchanged.'),
+                    TextInput::make('asset_number')->label('Asset Number')->readOnly(fn (?ItDevice $record) => ! $record?->exists)->placeholder('Auto-created on saved')
                         ->helperText(fn (?ItDevice $record) => $record?->exists
-                            ? 'Dapat dikoreksi sesuai label aset. Format: 00035/APCA/IT/2025 atau 00037/KPMOG/IT/2025.'
-                            : 'Format otomatis: 00035/APCA/IT/2025 atau 00037/KPMOG/IT/2025.')
+                            ? 'Correctable according to asset label. Format: 00035/APCA/IT/2025 or 00037/KPMOG/IT/2025.'
+                            : 'Automatic format: 00035/APCA/IT/2025 or 00037/KPMOG/IT/2025.')
                         ->mutateStateForValidationUsing(fn ($state, ?ItDevice $record) => ItAssetNumber::normalize($state, $record?->getRawOriginal('asset_number')))
                         ->dehydrateStateUsing(fn ($state, ?ItDevice $record) => ItAssetNumber::normalize($state, $record?->getRawOriginal('asset_number')))
                         ->rules(fn (?ItDevice $record) => [new ItAssetNumber($record?->getRawOriginal('asset_number'))])
                         ->maxLength(255)->unique(ignoreRecord: true)->hidden($isRoom),
-                    TextInput::make('name')->label('Nama Perangkat')->required()->maxLength(255),
-                    Select::make('device_type')->label('Jenis perangkat / objek')->default('laptop')->options(fn (?ItDevice $record) => collect($record?->editableDeviceTypes() ?? ItDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->label()])->all())->required()->disabled(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 1)->helperText(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 2 ? 'Laptop dan PC dapat dikoreksi. Riwayat pemeriksaan tetap memakai jenis saat diperiksa.' : null)->dehydrated()->live()->afterStateUpdated(function ($state, Set $set, Get $get): void {
+                    TextInput::make('name')->label('Device Name')->required()->maxLength(255),
+                    Select::make('device_type')->label('Type of device / object')->default('laptop')->options(fn (?ItDevice $record) => collect($record?->editableDeviceTypes() ?? ItDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->label()])->all())->required()->disabled(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 1)->helperText(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 2 ? 'Laptops and PCs can be corrected. Check history remains with type when checked.' : null)->dehydrated()->live()->afterStateUpdated(function ($state, Set $set, Get $get): void {
                         if ($state !== 'switch') {
                             $set('floor', null);
                         }
@@ -116,46 +116,46 @@ class ItDeviceResource extends Resource
                             $set('lifecycle_status', 'unused');
                         }
                     }),
-                    Select::make('managing_department_id')->label('Department pengelola')->options(fn () => Department::query()->whereIn('id', auth()->user()->accessibleDepartmentIds())->orderBy('name')->pluck('name', 'id'))->default(fn () => auth()->user()->employee?->department_id)->searchable()->required(),
-                    Select::make('asset_company')->label('Perusahaan Aset')->options(['APCA' => 'APCA', 'KPMOG' => 'KPMOG'])
+                    Select::make('managing_department_id')->label('Managing Department')->options(fn () => Department::query()->whereIn('id', auth()->user()->accessibleDepartmentIds())->orderBy('name')->pluck('name', 'id'))->default(fn () => auth()->user()->employee?->department_id)->searchable()->required(),
+                    Select::make('asset_company')->label('Asset Company')->options(['APCA' => 'APCA', 'KPMOG' => 'KPMOG'])
                         ->hidden(fn (Get $get, ?ItDevice $record) => $isRoom($get) || filled($record?->asset_number))
                         ->required(fn (Get $get, ?ItDevice $record) => ! $record && ! $isRoom($get) && blank($get('asset_number'))),
-                    TextInput::make('asset_year')->label('Tahun Aset')->numeric()->default(fn () => now()->year)->minValue(1000)->maxValue(9999)
+                    TextInput::make('asset_year')->label('Asset Year')->numeric()->default(fn () => now()->year)->minValue(1000)->maxValue(9999)
                         ->hidden(fn (Get $get, ?ItDevice $record) => $isRoom($get) || filled($record?->asset_number))
                         ->required(fn (Get $get, ?ItDevice $record) => ! $isRoom($get) && ((! $record && blank($get('asset_number'))) || filled($get('asset_company')))),
-                    Select::make('location_name')->label('Lokasi')->placeholder('Pilih lokasi perangkat')->options(ItDeviceLocation::options())->required($isRoom),
-                    Select::make('floor')->label('LT (Lantai)')->placeholder('Pilih lantai')->options(collect(ItSwitchFloor::cases())->mapWithKeys(fn (ItSwitchFloor $floor) => [$floor->value => $floor->label()])->all())->visible(fn (Get $get) => $get('device_type') === 'switch'),
-                    TextInput::make('location_detail')->label('Detail ruang / rack'),
+                    Select::make('location_name')->label('Location')->placeholder('Select device location')->options(ItDeviceLocation::options())->required($isRoom),
+                    Select::make('floor')->label('Floor')->placeholder('Pick a floor')->options(collect(ItSwitchFloor::cases())->mapWithKeys(fn (ItSwitchFloor $floor) => [$floor->value => $floor->label()])->all())->visible(fn (Get $get) => $get('device_type') === 'switch'),
+                    TextInput::make('location_detail')->label('Room / rack details'),
                     TextInput::make('serial_number')->label('Serial Number')->maxLength(255)->hidden($isRoom),
-                    Textarea::make('specifications')->label('Spesifikasi')->maxLength(6000)->rows(2)->columnSpanFull(),
+                    Textarea::make('specifications')->label('Specification')->maxLength(6000)->rows(2)->columnSpanFull(),
                 ]),
-                Tab::make('OS & lisensi')->visible($isComputer)->columns(['md' => 2, 'xl' => 3])->schema([
+                Tab::make('OS & license')->visible($isComputer)->columns(['md' => 2, 'xl' => 3])->schema([
                     TextInput::make('operating_system')->label('OS'),
-                    TextInput::make('windows_version')->label('Versi'),
-                    Select::make('windows_license_status')->label('Lisensi')->options(self::licenseOptions())->default('unverified')->required(),
-                    TextInput::make('office_version')->label('Versi Microsoft Office'),
-                    Select::make('office_license_status')->label('Lisensi Microsoft Office')->options(self::licenseOptions())->default('unverified')->required(),
+                    TextInput::make('windows_version')->label('Version'),
+                    Select::make('windows_license_status')->label('License')->options(self::licenseOptions())->default('unverified')->required(),
+                    TextInput::make('office_version')->label('Microsoft Office version'),
+                    Select::make('office_license_status')->label('Microsoft Office License')->options(self::licenseOptions())->default('unverified')->required(),
                     TextInput::make('ram_gb')->label('RAM (GB)')->numeric()->minValue(0.01),
                     Repeater::make('storage_devices')->label('HDD / SSD')->schema([
-                        Select::make('type')->label('Jenis media')->options(['hdd' => 'HDD', 'ssd' => 'SSD', 'nvme' => 'NVMe SSD'])->required(),
-                        TextInput::make('capacity_gb')->label('Kapasitas (GB)')->numeric()->minValue(0.01)->required(),
-                    ])->defaultItems(0)->compact()->table([TableColumn::make('Jenis media'), TableColumn::make('Kapasitas (GB)')])->maxItems(8)->reorderable(false)->addActionLabel('Tambah HDD / SSD')->columnSpanFull(),
+                        Select::make('type')->label('Media type')->options(['hdd' => 'HDD', 'ssd' => 'SSD', 'nvme' => 'NVMe SSD'])->required(),
+                        TextInput::make('capacity_gb')->label('Capacity (GB)')->numeric()->minValue(0.01)->required(),
+                    ])->defaultItems(0)->compact()->table([TableColumn::make('Jenis media'), TableColumn::make('Kapasitas (GB)')])->maxItems(8)->reorderable(false)->addActionLabel('Add HDD / SSD')->columnSpanFull(),
                 ]),
-                Tab::make('Pemakaian')->columns(['md' => 2, 'xl' => 3])->schema([
-                    Select::make('assigned_employee_id')->label('User terdaftar')->options(fn (?ItDevice $record): array => Employee::query()
+                Tab::make('Usage')->columns(['md' => 2, 'xl' => 3])->schema([
+                    Select::make('assigned_employee_id')->label('User registered')->options(fn (?ItDevice $record): array => Employee::query()
                         ->where(fn (Builder $query) => $query->where(fn (Builder $query) => $query->where('is_active', true)->whereHas('user'))->orWhere('id', $record?->assigned_employee_id))
                         ->with('user')->orderBy('name')->get()->mapWithKeys(fn (Employee $employee) => [$employee->id => $employee->user?->name ?? $employee->name])->all())
-                        ->searchable()->live()->hidden($isRoom)->helperText('Opsional. Kosongkan untuk aset stok atau unit yang belum dialokasikan.')->afterStateUpdated(fn ($state, Set $set) => $set('assigned_user_name', Employee::query()->with('user')->find($state)?->user?->name)),
-                    TextEntry::make('assigned_position')->label('Jabatan')->state(fn (Get $get) => self::assignedEmployee($get)?->position)->placeholder('Belum tercatat')->hidden($isRoom),
-                    TextEntry::make('assigned_division')->label('Divisi')->state(fn (Get $get) => self::assignedEmployee($get)?->department?->name)->placeholder('Belum tercatat')->hidden($isRoom),
-                    TextInput::make('assigned_user_name')->label('Nama User')->placeholder('Kosongkan jika belum ada pemakai')->maxLength(255)->hidden(fn (Get $get) => $isRoom($get) || filled($get('assigned_employee_id'))),
-                    Select::make('lifecycle_status')->label('Status Pemakaian')->default('in_use')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all())->hidden($isRoom)->required(fn (Get $get) => $get('device_type') !== 'server_room')->helperText('Pilih Stok / Belum Digunakan untuk aset yang belum dialokasikan. Aset stok yang aktif tetap dapat diperiksa.')->live(),
-                    Toggle::make('is_active')->label('Aktif untuk pemeriksaan baru')->default(true)->required(),
-                    DatePicker::make('disposed_at')->label('Tanggal penghapusan')->maxDate(today())->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
-                    Textarea::make('disposal_reason')->label('Alasan penghapusan')->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
-                    Textarea::make('notes')->label('Keterangan')->rows(2)->columnSpanFull(),
+                        ->searchable()->live()->hidden($isRoom)->helperText('Optional. Empty for unallocated stock assets or units.')->afterStateUpdated(fn ($state, Set $set) => $set('assigned_user_name', Employee::query()->with('user')->find($state)?->user?->name)),
+                    TextEntry::make('assigned_position')->label('Position')->state(fn (Get $get) => self::assignedEmployee($get)?->position)->placeholder('Unrecorded')->hidden($isRoom),
+                    TextEntry::make('assigned_division')->label('Division')->state(fn (Get $get) => self::assignedEmployee($get)?->department?->name)->placeholder('Unrecorded')->hidden($isRoom),
+                    TextInput::make('assigned_user_name')->label('User Name')->placeholder('Empty if no user has yet')->maxLength(255)->hidden(fn (Get $get) => $isRoom($get) || filled($get('assigned_employee_id'))),
+                    Select::make('lifecycle_status')->label('Usage Status')->default('in_use')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all())->hidden($isRoom)->required(fn (Get $get) => $get('device_type') !== 'server_room')->helperText('Select Stock / Unused for unallocated assets. Active stock assets can still be checked.')->live(),
+                    Toggle::make('is_active')->label('Active for new checks')->default(true)->required(),
+                    DatePicker::make('disposed_at')->label('Disposal date')->maxDate(today())->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
+                    Textarea::make('disposal_reason')->label('The reason for the removal')->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
+                    Textarea::make('notes')->label('Description')->rows(2)->columnSpanFull(),
                 ]),
-                Tab::make('Riwayat')->visible(fn (?ItDevice $record) => $record?->exists === true)->schema([View::make('filament.components.it-device-history')]),
+                Tab::make('History')->visible(fn (?ItDevice $record) => $record?->exists === true)->schema([View::make('filament.components.it-device-history')]),
             ])->columnSpanFull(),
         ]);
     }
@@ -173,43 +173,43 @@ class ItDeviceResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->extraAttributes(['class' => 'it-infrastructure-table'])->columns([
-            TextColumn::make('asset_number')->label('Nomor Aset')->searchable()->sortable()->placeholder('Belum diisi'),
-            TextColumn::make('name')->label('Nama Perangkat')->searchable()->sortable(),
-            TextColumn::make('device_type')->label('Jenis')->formatStateUsing(fn ($state) => $state->label()),
+            TextColumn::make('asset_number')->label('Asset Number')->searchable()->sortable()->placeholder('Not entered'),
+            TextColumn::make('name')->label('Device Name')->searchable()->sortable(),
+            TextColumn::make('device_type')->label('Type')->formatStateUsing(fn ($state) => $state->label()),
             TextColumn::make('serial_number')->label('Serial Number')->searchable()->toggleable(isToggledHiddenByDefault: true),
-            TextColumn::make('managingDepartment.name')->label('Pengelola')->sortable(),
-            TextColumn::make('location_name')->label('Lokasi')->formatStateUsing(fn (ItDeviceLocation $state) => $state->value)->placeholder('Belum dipilih')->sortable(),
+            TextColumn::make('managingDepartment.name')->label('Managed by')->sortable(),
+            TextColumn::make('location_name')->label('Location')->formatStateUsing(fn (ItDeviceLocation $state) => $state->value)->placeholder('Unselected')->sortable(),
             TextColumn::make('floor')->label('LT')->formatStateUsing(fn (?ItSwitchFloor $state) => $state?->label())->sortable()->toggleable(),
-            TextColumn::make('assigned_user_name')->label('Pemilik / pemakai unit')->placeholder(fn (ItDevice $record) => $record->assigneeLabel())->searchable(),
-            TextColumn::make('lifecycle_status')->label('Status Pemakaian')->formatStateUsing(fn ($state) => $state?->label() ?? 'Objek ruangan'),
-            TextColumn::make('is_active')->label('Aktif')->formatStateUsing(fn ($state) => $state ? 'Ya' : 'Tidak'),
+            TextColumn::make('assigned_user_name')->label('Owner/user unit')->placeholder(fn (ItDevice $record) => $record->assigneeLabel())->searchable(),
+            TextColumn::make('lifecycle_status')->label('Usage Status')->formatStateUsing(fn ($state) => $state?->label() ?? 'Room equipment'),
+            TextColumn::make('is_active')->label('Active')->formatStateUsing(fn ($state) => $state ? 'Yes' : 'No'),
         ])->filters([
-            SelectFilter::make('category')->label('Kategori')->options(collect(ItDeviceCategory::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
-            SelectFilter::make('device_type')->label('Jenis perangkat')->options(collect(ItDeviceType::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
-            SelectFilter::make('lifecycle_status')->label('Status Pemakaian')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
-            TernaryFilter::make('is_active')->label('Aktif'),
+            SelectFilter::make('category')->label('Category')->options(collect(ItDeviceCategory::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
+            SelectFilter::make('device_type')->label('Device type')->options(collect(ItDeviceType::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
+            SelectFilter::make('lifecycle_status')->label('Usage Status')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
+            TernaryFilter::make('is_active')->label('Active'),
         ])->recordActions([
             ActionGroup::make([
                 EditAction::make()->label('Edit'),
                 TransferItDeviceAction::make(),
-                DeleteAction::make()->label('Hapus')->authorize('delete')
-                    ->modalHeading(fn (ItDevice $record) => 'Hapus '.$record->name.'?')
-                    ->modalDescription('Perangkat akan dihapus dari Master Perangkat dan pilihan pengecekan baru, termasuk jika memiliki hasil Critical. Riwayat pemeriksaan dan tindak lanjut tetap tersimpan.')
-                    ->modalSubmitActionLabel('Hapus perangkat')->modalCancelActionLabel('Batal')
-                    ->successNotificationTitle('Perangkat berhasil dihapus')->failureNotification(null)
+                DeleteAction::make()->label('Delete')->authorize('delete')
+                    ->modalHeading(fn (ItDevice $record) => 'Delete '.$record->name.'?')
+                    ->modalDescription('Device will be deleted from Master Device and new check options, including if it has a Critical result. Check history and follow-up will be saved.')
+                    ->modalSubmitActionLabel('Delete device')->modalCancelActionLabel('Cancel')
+                    ->successNotificationTitle('Device successfully removed')->failureNotification(null)
                     ->using(function (ItDevice $record): bool {
                         try {
                             return app(ItDeviceService::class)->delete(auth()->user(), $record);
                         } catch (ValidationException $exception) {
-                            Notification::make()->title('Perangkat tidak dapat dihapus')->body(collect($exception->errors())->flatten()->first())->danger()->send();
+                            Notification::make()->title('The device could not be removed')->body(collect($exception->errors())->flatten()->first())->danger()->send();
 
                             return false;
                         }
                     }),
-            ])->label('Aksi perangkat')->icon('heroicon-m-ellipsis-vertical')->iconButton()->tooltip('Aksi perangkat'),
-            ViewAction::make()->label('Lihat')->hidden(fn (ItDevice $record) => Gate::allows('update', $record)),
-            Action::make('inspect')->label('Periksa')->url(fn (ItDevice $record) => ItInspectionPage::getUrl(['device' => $record->id]))->visible(fn (ItDevice $record) => Gate::allows('inspectDevice', [ItInspection::class, $record])),
-        ])->defaultSort('name')->emptyStateHeading('Belum ada perangkat')->emptyStateDescription('Klik Tambah Perangkat untuk mendaftarkan laptop, server, perangkat jaringan, atau ruang server.');
+            ])->label('Device actions')->icon('heroicon-m-ellipsis-vertical')->iconButton()->tooltip('Device actions'),
+            ViewAction::make()->label('View')->hidden(fn (ItDevice $record) => Gate::allows('update', $record)),
+            Action::make('inspect')->label('Review')->url(fn (ItDevice $record) => ItInspectionPage::getUrl(['device' => $record->id]))->visible(fn (ItDevice $record) => Gate::allows('inspectDevice', [ItInspection::class, $record])),
+        ])->defaultSort('name')->emptyStateHeading('No device yet')->emptyStateDescription('Click Add Device to list laptops, servers, network devices, or server spaces.');
     }
 
     public static function getEloquentQuery(): Builder

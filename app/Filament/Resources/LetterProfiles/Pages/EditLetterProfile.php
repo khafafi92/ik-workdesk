@@ -13,11 +13,11 @@ class EditLetterProfile extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Ubah Profil Surat';
+        return 'Change Mail Profile';
     }
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Simpan perubahan');
+        return parent::getSaveFormAction()->label('Save changes');
     }
 }

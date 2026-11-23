@@ -20,7 +20,7 @@ class KblisRelationManager extends RelationManager
 {
     protected static string $relationship = 'kblis';
 
-    protected static ?string $title = 'Daftar KBLI';
+    protected static ?string $title = 'KBLI List';
 
     public function form(Schema $schema): Schema
     {
@@ -41,7 +41,7 @@ class KblisRelationManager extends RelationManager
                         ->where('code', trim((string) $get('code'))),
                 )
                 ->validationMessages([
-                    'unique' => 'Nomor dan nama KBLI yang sama sudah terdaftar pada Permit Company tersebut.',
+                    'unique' => 'The same number and name of the KBLI are already registered to the Permit Company.',
                 ])
                 ->maxLength(255),
             Textarea::make('description')

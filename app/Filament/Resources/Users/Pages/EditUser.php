@@ -46,7 +46,7 @@ class EditUser extends EditRecord
             $actor
                 && UserResource::canEdit($this->record),
             403,
-            'Anda tidak memiliki izin mengubah user ini.'
+            'You do not have permission to change this user.'
         );
 
         $this->selectedEmployeeId = filled($data['employee_id'] ?? null)
@@ -61,7 +61,7 @@ class EditUser extends EditRecord
 
         if (! app(UserAccessHierarchyService::class)->canAssign($actor, $this->selectedAccessLevel)) {
             throw ValidationException::withMessages([
-                'access_level' => 'Level akses tidak tersedia atau tidak dapat Anda berikan.',
+                'access_level' => 'The access level is unavailable or cannot be provided.',
             ]);
         }
 
@@ -133,7 +133,7 @@ class EditUser extends EditRecord
 
             if (! $otherSuperAdminExists) {
                 throw ValidationException::withMessages([
-                    'is_admin' => 'Super Administrator terakhir tidak dapat diturunkan.',
+                    'is_admin' => 'The last super administrator could not be lowered.',
                 ]);
             }
         }
@@ -232,7 +232,7 @@ class EditUser extends EditRecord
                             $this->record
                         ),
                         403,
-                        'User ini tidak dapat dihapus.'
+                        'This user could not be deleted.'
                     );
 
                     Employee::query()

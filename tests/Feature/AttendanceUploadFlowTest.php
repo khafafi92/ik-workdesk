@@ -97,7 +97,7 @@ class AttendanceUploadFlowTest extends TestCase
         $this->assertSame(0, $import->results()->count());
         $page->assertRedirect(AttendanceReportCenter::getUrl(['periode' => $import->id]));
         Livewire::withQueryParams(['periode' => $import->id])->test(AttendanceReportCenter::class)
-            ->assertSee('Gagal diproses')->assertSee('Perbaiki file')->assertDontSee('Lihat hasil laporan');
+            ->assertSee('Failed to process')->assertSee('Fix files')->assertDontSee('View report results');
     }
 
     public function test_uploader_can_save_but_cannot_process_or_download(): void
@@ -107,7 +107,7 @@ class AttendanceUploadFlowTest extends TestCase
         Livewire::test(CreateAttendanceImport::class)->assertSee('Upload data')->fillForm($this->files())->call('create')->assertHasNoFormErrors();
         $import = AttendanceImport::sole();
         $this->assertSame('uploaded', $import->status);
-        $page = Livewire::test(AttendanceReportCenter::class)->assertSee('Menunggu proses')->assertActionHidden('process');
+        $page = Livewire::test(AttendanceReportCenter::class)->assertSee('Waiting for process')->assertActionHidden('process');
         $page->call('mountAction', 'process')->assertActionNotMounted('process');
         $this->assertSame('uploaded', $import->fresh()->status);
         $this->get(route('attendance-imports.download', $import))->assertForbidden();
@@ -117,8 +117,8 @@ class AttendanceUploadFlowTest extends TestCase
     {
         $user = $this->user(['attendance.view']);
         AttendanceImport::create(['uploaded_by_user_id' => $user->id, 'period_name' => 'August', 'status' => 'processed']);
-        Livewire::test(AttendanceReportCenter::class)->assertSee('Lihat hasil laporan')
-            ->assertSee('Unduh Excel')->assertActionHidden('upload')->assertActionHidden('manageUploads');
+        Livewire::test(AttendanceReportCenter::class)->assertSee('View report results')
+            ->assertSee('Download Excel')->assertActionHidden('upload')->assertActionHidden('manageUploads');
         $this->get('/panel/attendance-imports/create')->assertForbidden();
         $this->assertFalse(AttendanceImportResource::shouldRegisterNavigation());
     }
@@ -126,8 +126,8 @@ class AttendanceUploadFlowTest extends TestCase
     public function test_empty_history_has_no_dead_result_links_and_files_are_required(): void
     {
         $this->user(['attendance.manage']);
-        Livewire::test(AttendanceReportCenter::class)->assertSee('Belum ada laporan attendance.')
-            ->assertDontSee('Lihat hasil laporan')->assertActionVisible('upload');
+        Livewire::test(AttendanceReportCenter::class)->assertSee('No attendance reports yet.')
+            ->assertDontSee('View report results')->assertActionVisible('upload');
         Livewire::test(CreateAttendanceImport::class)->call('create')
             ->assertHasFormErrors(['attendance_file_path' => 'required', 'work_hour_file_path' => 'required']);
         $this->assertDatabaseCount('attendance_imports', 0);
@@ -154,8 +154,8 @@ class AttendanceUploadFlowTest extends TestCase
         $user->directPermissions()->attach(Permission::firstOrCreate(['code' => 'attendance.manage'], ['name' => 'Manage', 'is_active' => true]));
         $this->actingAs($user->fresh());
         Livewire::withQueryParams(['periode' => $import->id])->test(AttendanceReportCenter::class)
-            ->callAction('process')->assertSee('Gagal diproses')->assertSee('Proses belum berhasil.')
-            ->assertSee('Perbaiki file')->assertDontSee('Lihat hasil laporan');
+            ->callAction('process')->assertSee('Failed to process')->assertSee('Process not yet successful.')
+            ->assertSee('Fix files')->assertDontSee('View report results');
         $this->assertSame('failed', $import->fresh()->status);
     }
 }

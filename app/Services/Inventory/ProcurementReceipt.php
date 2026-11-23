@@ -48,21 +48,21 @@ class ProcurementReceipt
                     && $existing->notes === ($data['notes'] ?? null)
                     && $savedLines === $requestedLines;
                 if (! $same) {
-                    throw ValidationException::withMessages(['receipt' => 'Penerimaan ini sudah disimpan dengan data berbeda. Muat ulang dan periksa riwayat penerimaan.']);
+                    throw ValidationException::withMessages(['receipt' => 'This reception has been saved with different data. Reload and check the acceptance history.']);
                 }
 
                 return $existing;
             }
             if ($request->kind !== 'PR' || ! in_array($request->status, ['selected', 'legal', 'completed'], true) || $request->cbe?->status !== 'final' || ! $request->cbe->selected_vendor_id) {
-                throw ValidationException::withMessages(['receipt' => 'Penerimaan barang memerlukan PR dengan CBE final dan vendor terpilih.']);
+                throw ValidationException::withMessages(['receipt' => 'Reception requires homework with CBE finals and a select vendor.']);
             }
             $order = $request->purchaseOrder()->lockForUpdate()->first();
             if (! $order || (int) $order->cbe_id !== (int) $request->cbe->id) {
-                throw ValidationException::withMessages(['receipt' => 'Penerimaan barang memerlukan PO untuk PR ini.']);
+                throw ValidationException::withMessages(['receipt' => 'Reception requires PO for this purchase request.']);
             }
             $warehouse = InventoryWarehouse::findOrFail($data['warehouse_id']);
             if (! InventoryAccess::warehouseMatches($warehouse, $request->company, $request->need_type, $request->project_numbering_id)) {
-                throw ValidationException::withMessages(['warehouse_id' => 'Gudang tujuan harus sesuai entitas dan HO/Project pada PR.']);
+                throw ValidationException::withMessages(['warehouse_id' => 'The destination warehouse should be appropriate entity and HO/Project on the purchase request.']);
             }
             $receipt = InventoryReceipt::create(['token' => $data['token'], 'request_id' => $request->id, 'purchase_order_id' => $order->id, 'warehouse_id' => $warehouse->id,
                 'received_on' => $data['received_on'], 'reference' => $data['reference'], 'notes' => $data['notes'] ?? null, 'created_by' => $actor->id]);
@@ -75,10 +75,10 @@ class ProcurementReceipt
                 $received = (int) InventoryMovement::where('request_item_id', $source->id)->where('type', 'pr_receipt')->sum('quantity_milli');
                 if (! $item->is_active || $quantity <= 0 || $quantity + $received > $source->quantity_milli
                     || ($item->kind === 'atk' && $quantity % 10 !== 0) || ($item->kind === 'device' && $quantity % 1000 !== 0)) {
-                    throw ValidationException::withMessages(['receipt' => 'Periksa jumlah diterima. Jumlah tidak boleh melebihi sisa PR; ATK maksimal dua desimal dan perangkat harus utuh.']);
+                    throw ValidationException::withMessages(['receipt' => 'Check the number received. The number must not exceed the remaining purchase request quantity; the max of two decimals and the device must be intact.']);
                 }
                 if (($source->inventory_item_id && (int) $source->inventory_item_id !== $item->id) || strcasecmp(trim($source->unit), trim($item->unit)) !== 0) {
-                    throw ValidationException::withMessages(['receipt' => 'Master barang dan satuan penerimaan harus sesuai baris PR.']);
+                    throw ValidationException::withMessages(['receipt' => 'Masters of goods and admissions units must match the purchase request line.']);
                 }
                 if (! $source->inventory_item_id) {
                     $source->update(['inventory_item_id' => $item->id]);
@@ -91,7 +91,7 @@ class ProcurementReceipt
                     AtkStockMovement::create(['atk_item_id' => $atk->id, 'movement_type' => 'incoming', 'qty' => $quantity / 1000,
                         'balance_before' => $beforeAtk, 'balance_after' => $atk->fresh()->current_stock,
                         'reference_type' => InventoryReceipt::class, 'reference_id' => $receipt->id,
-                        'description' => 'Penerimaan '.$request->number.' ke '.$warehouse->label(), 'created_by' => $actor->id]);
+                        'description' => 'Acceptance '.$request->number.' to '.$warehouse->label(), 'created_by' => $actor->id]);
                 }
             }
             app(Workflow::class)->audit($actor, $request, 'penerimaan_gudang', ['receipt_id' => $receipt->id,

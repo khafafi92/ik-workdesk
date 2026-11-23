@@ -44,7 +44,7 @@ class EmployeeForm
                     ->multiple()
                     ->searchable()
                     ->preload()
-                    ->helperText('Chat Room Global hanya menampilkan company yang dipilih. Tanpa pilihan company, karyawan tidak dapat membuka room.'),
+                    ->helperText('The Global Room chat shows only the selected company. Without company options, employees cannot open rooms.'),
 
                 TextInput::make('employee_no')
                     ->label('Employee No')
@@ -69,14 +69,14 @@ class EmployeeForm
                     ->maxLength(255),
 
                 Select::make('position_level')
-                    ->label('Jenjang Jabatan')
+                    ->label('Job Level')
                     ->extraAttributes(['class' => 'employee-hierarchy-field'])
                     ->options(EmployeeHierarchy::levels())
                     ->native(false)
-                    ->helperText('Jenjang organisasi. Level akses dan izin menu diatur melalui User Management.'),
+                    ->helperText('Organizational extensions, access and menu clearance set through User Management.'),
 
                 Select::make('supervisor_employee_id')
-                    ->label('Atasan Langsung')
+                    ->label('Direct Top')
                     ->extraAttributes(['class' => 'employee-hierarchy-field'])
                     ->options(fn (?Employee $record): array => Employee::query()
                         ->where(fn (Builder $query): Builder => $query->where('is_active', true)
@@ -85,7 +85,7 @@ class EmployeeForm
                         ->with('department')
                         ->orderBy('name')
                         ->get()
-                        ->mapWithKeys(fn (Employee $employee): array => [$employee->id => $employee->name.' ('.($employee->department?->name ?? 'Tanpa department').')'.($employee->is_active ? '' : ' - Tidak aktif')])
+                        ->mapWithKeys(fn (Employee $employee): array => [$employee->id => $employee->name.' ('.($employee->department?->name ?? 'No department').')'.($employee->is_active ? '' : ' - Inactive')])
                         ->all())
                     ->searchable()
                     ->preload()
@@ -98,7 +98,7 @@ class EmployeeForm
                             $fail(collect($exception->errors())->flatten()->first());
                         }
                     })
-                    ->helperText('Pilih karyawan yang menjadi atasan langsungnya.'),
+                    ->helperText('Pick an employee to be his direct superior.'),
 
                 Toggle::make('is_active')
                     ->label('Active')

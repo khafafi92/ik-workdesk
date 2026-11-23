@@ -29,7 +29,7 @@ class AtkItemImportService
         $rows = $reader->rows ?? collect();
 
         if ($rows->isEmpty()) {
-            throw ValidationException::withMessages(['file' => 'File impor tidak memiliki baris data.']);
+            throw ValidationException::withMessages(['file' => 'Import files have no data lines.']);
         }
 
         $normalizedRows = $rows
@@ -139,9 +139,9 @@ class AtkItemImportService
 
                 $warehouse = app(AtkWarehouseStockService::class);
                 if ($difference > 0) {
-                    $warehouse->incoming($item, $difference, $actor, 'Impor stok ATK', $inventoryWarehouse);
+                    $warehouse->incoming($item, $difference, $actor, 'Import office supplies stock', $inventoryWarehouse);
                 } else {
-                    $warehouse->adjust($item, $difference, $actor, 'Penyesuaian dari impor stok ATK', $inventoryWarehouse);
+                    $warehouse->adjust($item, $difference, $actor, 'Adjustment of office supplies stock imports', $inventoryWarehouse);
                 }
                 $stockAdjusted++;
             }
@@ -197,7 +197,7 @@ class AtkItemImportService
 
             $code = filled($row['code'] ?? null) ? $row['code'] : null;
             if ($code && in_array($code, $codes, true)) {
-                $errors['file.row_'.($index + 2)][] = "Kode {$code} muncul lebih dari satu kali.";
+                $errors['file.row_'.($index + 2)][] = "Code {$code} it appears more than once.";
             }
             $codes[] = $code;
         }

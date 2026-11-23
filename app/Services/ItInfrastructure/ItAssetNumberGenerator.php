@@ -12,7 +12,7 @@ class ItAssetNumberGenerator
         return DB::transaction(function () use ($company, $year): string {
             $sequence = DB::table('it_asset_number_sequences')->where('id', 1)->lockForUpdate()->firstOrFail();
             if ($sequence->last_number >= 99999) {
-                throw ValidationException::withMessages(['asset_number' => 'Nomor urut aset 5 digit sudah mencapai 99999.']);
+                throw ValidationException::withMessages(['asset_number' => 'The 5-digit asset sequence has reached 99999.']);
             }
             $number = $sequence->last_number + 1;
             DB::table('it_asset_number_sequences')->where('id', 1)->update(['last_number' => $number]);

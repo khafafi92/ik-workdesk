@@ -33,7 +33,7 @@ class DailyActivityDataService
 
         if (! $end->greaterThan($start)) {
             throw ValidationException::withMessages([
-                'end_time' => 'Jam selesai harus setelah jam mulai pada hari yang sama.',
+                'end_time' => 'The clock should end after hours start on the same day.',
             ]);
         }
 
@@ -47,7 +47,7 @@ class DailyActivityDataService
 
         if ($overlaps) {
             throw ValidationException::withMessages([
-                'start_time' => 'Waktu pekerjaan bertabrakan dengan aktivitas lain pada tanggal yang sama.',
+                'start_time' => 'Time of work collides with other activities on the same date.',
             ]);
         }
 
@@ -78,15 +78,15 @@ class DailyActivityDataService
         $errors = [];
 
         if (($data['source_type'] ?? null) === 'task' && blank($data['work_task_id'] ?? null)) {
-            $errors['work_task_id'] = 'Source Task wajib dipilih.';
+            $errors['work_task_id'] = 'The task source must be selected.';
         }
 
         if (($data['work_context'] ?? null) === 'project' && blank($data['work_project_id'] ?? null)) {
-            $errors['work_project_id'] = 'Project wajib dipilih untuk pekerjaan project.';
+            $errors['work_project_id'] = 'Project is mandatory for project work.';
         }
 
         if (($data['work_context'] ?? null) === 'operational' && blank($data['activity_category_id'] ?? null)) {
-            $errors['activity_category_id'] = 'Kategori wajib dipilih untuk pekerjaan operasional.';
+            $errors['activity_category_id'] = 'Category is mandatory for operational work.';
         }
 
         $requesterField = match ($data['requester_type'] ?? null) {
@@ -97,9 +97,9 @@ class DailyActivityDataService
         };
 
         if ($requesterField === null) {
-            $errors['requester_type'] = 'Jenis pemberi pekerjaan wajib dipilih.';
+            $errors['requester_type'] = 'The type of job giver is mandatory.';
         } elseif (blank($data[$requesterField] ?? null)) {
-            $errors[$requesterField] = 'Detail pemberi pekerjaan wajib diisi.';
+            $errors[$requesterField] = 'The details of the job giver are mandatory.';
         }
 
         if ($errors !== []) {

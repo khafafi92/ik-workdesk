@@ -21,13 +21,13 @@ class LocationReportForm
 
                 TextInput::make('period_name')
                     ->label('Period Name')
-                    ->placeholder('Contoh: 21 Mei - 20 Juni 2026')
+                    ->placeholder('Example: May 21 - June 20, 2026')
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
 
                 FileUpload::make('attendance_file_path')
-                    ->label('File Lokasi Absen')
+                    ->label('Attendance Location File')
                     ->disk('local')
                     ->directory('attendance-imports')
                     ->acceptedFileTypes([

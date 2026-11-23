@@ -19,11 +19,11 @@ class AtkDepartmentStockMovementResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsUpDown;
 
-    protected static ?string $navigationLabel = 'Mutasi Departemen';
+    protected static ?string $navigationLabel = 'Department Stock Movements';
 
-    protected static ?string $modelLabel = 'Mutasi Stok Departemen';
+    protected static ?string $modelLabel = 'Department Stock Mutation';
 
-    protected static ?string $pluralModelLabel = 'Mutasi Stok Departemen';
+    protected static ?string $pluralModelLabel = 'Department Stock Mutation';
 
     protected static ?int $navigationSort = 9;
 
@@ -36,17 +36,17 @@ class AtkDepartmentStockMovementResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('created_at')->label('Waktu')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('department.name')->label('Departemen')->searchable()->sortable(),
-                TextColumn::make('item.name')->label('Barang ATK')->searchable(),
-                TextColumn::make('movement_type')->label('Jenis')->badge()->formatStateUsing(fn (string $state): string => str($state)->title()->toString()),
-                TextColumn::make('qty')->label('Jumlah')->numeric(decimalPlaces: 2),
-                TextColumn::make('balance_after')->label('Saldo akhir')->numeric(decimalPlaces: 2),
-                TextColumn::make('request.request_number')->label('Permintaan')->searchable()->toggleable(),
-                TextColumn::make('performer.name')->label('Oleh')->toggleable(),
+                TextColumn::make('created_at')->label('Time')->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('department.name')->label('Department')->searchable()->sortable(),
+                TextColumn::make('item.name')->label('Office Supply Items')->searchable(),
+                TextColumn::make('movement_type')->label('Type')->badge()->formatStateUsing(fn (string $state): string => str($state)->title()->toString()),
+                TextColumn::make('qty')->label('Quantity')->numeric(decimalPlaces: 2),
+                TextColumn::make('balance_after')->label('End balance')->numeric(decimalPlaces: 2),
+                TextColumn::make('request.request_number')->label('Request')->searchable()->toggleable(),
+                TextColumn::make('performer.name')->label('By')->toggleable(),
             ])
             ->filters([
-                SelectFilter::make('movement_type')->label('Jenis')->options(['received' => 'Diterima', 'used' => 'Digunakan']),
+                SelectFilter::make('movement_type')->label('Type')->options(['received' => 'Received', 'used' => 'In Use']),
             ])
             ->defaultSort('created_at', 'desc');
     }

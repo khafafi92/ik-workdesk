@@ -39,7 +39,7 @@ class ModuleAccessSettingsPage extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Pengaturan Modul';
+        return 'Module Settings';
     }
 
     public static function getNavigationSort(): ?int
@@ -60,13 +60,13 @@ class ModuleAccessSettingsPage extends Page
     {
         $toggles = collect(app(ModuleAccessService::class)->modules())
             ->map(fn (array $module): Toggle => Toggle::make("modules.{$module['key']}")
-                ->label($module['label']))
+                ->label(ModuleAccessService::displayLabel($module['label'])))
             ->all();
 
         return $schema
             ->components([
-                Section::make('Ketersediaan Modul')
-                    ->description('Pengaturan berlaku untuk semua pengguna. Modul nonaktif disembunyikan dan tidak dapat dibuka sampai diaktifkan kembali. Modul aktif tetap mengikuti hak akses role.')
+                Section::make('Module Availability')
+                    ->description('Settings apply to all users. The disabled module is hidden and cannot be opened until restarted. The active module remains following role privileges.')
                     ->schema($toggles)
                     ->columns(2),
             ])
@@ -85,7 +85,7 @@ class ModuleAccessSettingsPage extends Page
             array_diff(array_keys($states), $moduleKeys) !== []
                 || array_diff($moduleKeys, array_keys($states)) !== [],
             422,
-            'Daftar modul berubah. Muat ulang halaman sebelum menyimpan.',
+            'The module list changed. Reload the page before saving.',
         );
 
         DB::transaction(function () use ($modules, $states): void {
@@ -103,7 +103,7 @@ class ModuleAccessSettingsPage extends Page
         $this->form->fill(['modules' => $states]);
 
         Notification::make()
-            ->title('Pengaturan modul tersimpan')
+            ->title('Module settings saved')
             ->success()
             ->send();
     }

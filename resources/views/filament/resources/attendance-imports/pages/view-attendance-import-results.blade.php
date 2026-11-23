@@ -14,7 +14,7 @@
                 <div>
                     <div class="att-section-title">Download Report</div>
                     <div class="att-section-desc">
-                        Download hasil Activity Check dan Work Hour Summary dalam 1 file Excel.
+                        Download the results of Activity Check and Work Hour Summary in 1 file Excel.
                     </div>
                 </div>
 
@@ -23,7 +23,7 @@
                         Download Excel
                     </a>
                 @else
-                    <span class="att-badge att-badge-warning">Laporan belum selesai diproses</span>
+                    <span class="att-badge att-badge-warning">Reports are not yet processed</span>
                 @endif
             </div>
         </div>
@@ -35,18 +35,18 @@
             </div>
 
             <div class="att-stat-card">
-                <div class="att-stat-label">Lokasi Sesuai</div>
+                <div class="att-stat-label">Matching Location</div>
                 <div class="att-stat-value att-stat-success">{{ number_format($stats['location_ok']) }}</div>
             </div>
 
             <div class="att-stat-card">
-                <div class="att-stat-label">Tidak Sesuai</div>
+                <div class="att-stat-label">Does Not Match</div>
                 <div class="att-stat-value att-stat-danger">{{ number_format($stats['location_not_ok']) }}</div>
             </div>
 
             @if ($stats['location_unconfigured'] > 0)
                 <div class="att-stat-card">
-                    <div class="att-stat-label">Lokasi Belum Dikonfigurasi</div>
+                    <div class="att-stat-label">Location Not Configured</div>
                     <div class="att-stat-value att-stat-warning">
                         {{ number_format($stats['location_unconfigured']) }}
                     </div>
@@ -54,7 +54,7 @@
             @endif
 
             <div class="att-stat-card">
-                <div class="att-stat-label">Pulang 19:00 UP</div>
+                <div class="att-stat-label">Clocked Out at or After 19:00</div>
                 <div class="att-stat-value att-stat-warning">{{ number_format($stats['checkout_late']) }}</div>
             </div>
 
@@ -71,7 +71,7 @@
 
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <input type="text" wire:model="search" wire:keydown.enter="applyFilters"
-                            placeholder="Cari employee, lokasi, alamat..." class="att-input">
+                            placeholder="Search employee, location, address..." class="att-input">
 
                         <button type="button" wire:click="applyFilters" wire:loading.attr="disabled"
                             class="att-download-btn">
@@ -86,22 +86,22 @@
                 </div>
 
                 <div>
-                    <label class="att-label">Cek Lokasi</label>
+                    <label class="att-label">Location Check</label>
                     <select wire:model.live="locationCheck" class="att-select">
                         <option value="">All</option>
-                        <option value="Sesuai">Sesuai</option>
-                        <option value="Tidak Sesuai">Tidak Sesuai</option>
-                        <option value="Lokasi Belum Dikonfigurasi">Lokasi Belum Dikonfigurasi</option>
+                        <option value="Sesuai">Matches</option>
+                        <option value="Tidak Sesuai">Does Not Match</option>
+                        <option value="Lokasi Belum Dikonfigurasi">Location Not Configured</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="att-label">Cek Pulang</label>
+                    <label class="att-label">Clock-out Check</label>
                     <select wire:model.live="checkoutCheck" class="att-select">
                         <option value="">All</option>
-                        <option value="Pulang Sebelum 19:00">Pulang Sebelum 19:00</option>
-                        <option value="Pulang 19:00 UP">Pulang 19:00 UP</option>
-                        <option value="Clock Out Tidak Ada">Clock Out Tidak Ada</option>
+                        <option value="Pulang Sebelum 19:00">Clocked Out Before 19:00</option>
+                        <option value="Pulang 19:00 UP">Clocked Out at or After 19:00</option>
+                        <option value="Clock Out Tidak Ada">No Clock Out</option>
                     </select>
                 </div>
             </div>
@@ -111,8 +111,8 @@
             <div class="att-section-header">
                 <div class="att-section-title">Activity Check</div>
                 <div class="att-section-desc">
-                    Hasil pengecekan lokasi, durasi kerja, dan pulang sebelum/di atas jam 19:00.
-                    Karyawan dari file Total Jam Kerja yang tidak memiliki activity tetap ditampilkan.
+                    Review work locations, shift duration, and whether employees clocked out before 19:00.
+                    The report also includes employees with work hours but no activity.
                 </div>
             </div>
 
@@ -134,9 +134,9 @@
                             <th>Description</th>
                             <th>Mobile Flag</th>
                             <th>Status</th>
-                            <th class="att-check-head">cek lokasi</th>
-                            <th class="att-check-head">cek waktu</th>
-                            <th class="att-check-head">Cek Pulang</th>
+                            <th class="att-check-head">check location</th>
+                            <th class="att-check-head">time check</th>
+                            <th class="att-check-head">Clock-out Check</th>
                             {{-- <th>Matched Location</th>
                             <th>Distance</th> --}}
                         </tr>
@@ -147,7 +147,7 @@
                             <tr>
                                 <td class="att-nowrap">{{ $row->attendance_date?->format('Y-m-d') }}</td>
                                 <td class="att-nowrap">{{ $row->check_time }}</td>
-                                <td class="att-nowrap">{{ $row->check_type }}</td>
+                                <td class="att-nowrap">{{ __($row->check_type) }}</td>
                                 <td class="att-nowrap">{{ $row->employee_code }}</td>
                                 <td class="att-nowrap">{{ $row->employee_name }}</td>
                                 <td class="att-nowrap">{{ $row->job_position }}</td>
@@ -162,13 +162,13 @@
 
                                 <td class="att-nowrap">
                                     @if ($row->location_check === 'Sesuai')
-                                        <span class="att-badge att-badge-success">Sesuai</span>
+                                        <span class="att-badge att-badge-success">Matches</span>
                                     @elseif ($row->location_check === 'Tidak Ada Activity')
-                                        <span class="att-badge att-badge-gray">Tidak Ada Activity</span>
+                                        <span class="att-badge att-badge-gray">No Activity</span>
                                     @elseif ($row->location_check === 'Lokasi Belum Dikonfigurasi')
-                                        <span class="att-badge att-badge-warning">Lokasi Belum Dikonfigurasi</span>
+                                        <span class="att-badge att-badge-warning">Location Not Configured</span>
                                     @else
-                                        <span class="att-badge att-badge-danger">Tidak Sesuai</span>
+                                        <span class="att-badge att-badge-danger">Does Not Match</span>
                                     @endif
                                 </td>
 
@@ -178,11 +178,11 @@
 
                                 <td class="att-nowrap">
                                     @if ($row->checkout_check === 'Pulang 19:00 UP')
-                                        <span class="att-badge att-badge-warning">{{ $row->checkout_check }}</span>
+                                        <span class="att-badge att-badge-warning">{{ __($row->checkout_check) }}</span>
                                     @elseif ($row->checkout_check === 'Clock Out Tidak Ada')
-                                        <span class="att-badge att-badge-danger">{{ $row->checkout_check }}</span>
+                                        <span class="att-badge att-badge-danger">{{ __($row->checkout_check) }}</span>
                                     @else
-                                        <span class="att-badge att-badge-gray">{{ $row->checkout_check }}</span>
+                                        <span class="att-badge att-badge-gray">{{ __($row->checkout_check) }}</span>
                                     @endif
                                 </td>
 
@@ -193,7 +193,7 @@
                         @empty
                             <tr>
                                 <td colspan="17" style="text-align: center; padding: 28px;">
-                                    Belum ada hasil activity.
+                                    No activity results yet.
                                 </td>
                             </tr>
                         @endforelse
@@ -210,7 +210,7 @@
             <div class="att-section-header">
                 <div class="att-section-title">Work Hour Summary</div>
                 <div class="att-section-desc">
-                    Total jam kerja periode {{ $import->period_name }} dari file all time.xlsx.
+                    Total hours of period work {{ $import->period_name }} from all time.xlsx file.
                 </div>
             </div>
 
@@ -221,7 +221,7 @@
                             <th>Employee ID</th>
                             <th>Full Name</th>
                             <th class="att-check-head">{{ $import->period_name }}</th>
-                            <th>Status Data</th>
+                            <th>Data Status</th>
                         </tr>
                     </thead>
 
@@ -233,16 +233,16 @@
                                 <td class="att-nowrap"><strong>{{ $row->work_hours_text }}</strong></td>
                                 <td class="att-nowrap">
                                     @if (data_get($row->raw_data, 'status') === 'Tidak Ada Total Jam Kerja')
-                                        <span class="att-badge att-badge-warning">Tidak Ada Total Jam Kerja</span>
+                                        <span class="att-badge att-badge-warning">No Work Hours Recorded</span>
                                     @else
-                                        <span class="att-badge att-badge-success">Tersedia</span>
+                                        <span class="att-badge att-badge-success">Available</span>
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
                                 <td colspan="4" style="text-align: center; padding: 28px;">
-                                    Belum ada summary total jam kerja.
+                                    There's no total summary of working hours.
                                 </td>
                             </tr>
                         @endforelse

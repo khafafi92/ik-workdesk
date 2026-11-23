@@ -19,9 +19,9 @@ class TravelApprovalRules extends Page
 
     protected static ?string $slug = 'perjalanan-dinas/master-approval';
 
-    protected static ?string $title = 'Master Approval SPD/LPJ';
+    protected static ?string $title = 'SPD/LPJ Approval Rules';
 
-    protected static ?string $navigationLabel = 'Master Approval';
+    protected static ?string $navigationLabel = 'Approval Rules';
 
     protected static string|UnitEnum|null $navigationGroup = 'Perjalanan Dinas';
 
@@ -87,7 +87,7 @@ class TravelApprovalRules extends Page
         abort_unless(static::canAccess(), 403);
         app(TravelApprovalPolicies::class)->save(auth()->user(), $this->rule, $this->editingId, $this->version);
         $this->newRule();
-        Notification::make()->title('Master Approval SPD/LPJ tersimpan')->success()->send();
+        Notification::make()->title('SPD/LPJ approval rules saved')->success()->send();
     }
 
     public function deleteRule(int $id, int $version): void
@@ -97,7 +97,7 @@ class TravelApprovalRules extends Page
         if ($this->editingId === $id) {
             $this->newRule();
         }
-        Notification::make()->title('Aturan dihapus; dokumen berjalan tetap tersimpan')->success()->send();
+        Notification::make()->title('Rule removed; documents are kept saved')->success()->send();
     }
 
     protected function getViewData(): array
@@ -114,13 +114,13 @@ class TravelApprovalRules extends Page
             foreach (array_keys($signerOptions) as $role) {
                 $reasons = [];
                 if (! $user->isActiveForAccess()) {
-                    $reasons[] = 'Akun tidak aktif';
+                    $reasons[] = 'Account is disabled';
                 } else {
                     if (! $canAssignActive && ! TravelAccess::approver($user)) {
-                        $reasons[] = 'Belum memiliki izin persetujuan SPD/LPJ';
+                        $reasons[] = 'No SPD/LPJ permissions yet';
                     }
                     if ($role === 'hr' && ! TravelAccess::manager($user)) {
-                        $reasons[] = 'Jenjang belum minimal Manager';
+                        $reasons[] = 'Single is not at least a manager';
                     }
                 }
                 $eligibleCounts[$role] += (int) empty($reasons);

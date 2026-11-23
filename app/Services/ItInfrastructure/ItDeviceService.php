@@ -44,13 +44,13 @@ class ItDeviceService
             if ($validated['destination'] === 'user') {
                 $employee = Employee::query()->with('user')->lockForUpdate()->findOrFail($validated['assigned_employee_id']);
                 if (! $employee->is_active || ! $employee->user?->isActiveForAccess()) {
-                    throw ValidationException::withMessages(['assigned_employee_id' => 'Pilih user terdaftar dengan data karyawan aktif.']);
+                    throw ValidationException::withMessages(['assigned_employee_id' => 'Select a user registered with active employee data.']);
                 }
                 if ((int) $device->assigned_employee_id === $employee->id) {
-                    throw ValidationException::withMessages(['assigned_employee_id' => 'User tersebut sudah menjadi pemakai perangkat ini.']);
+                    throw ValidationException::withMessages(['assigned_employee_id' => 'The user is already a user of this device.']);
                 }
             } elseif (! $device->assigned_employee_id && blank($device->assigned_user_name) && $device->lifecycle_status === ItAssetLifecycle::Unused) {
-                throw ValidationException::withMessages(['destination' => 'Perangkat ini sudah berada di stok tanpa pemakai.']);
+                throw ValidationException::withMessages(['destination' => 'This device is already in stock with no users.']);
             }
             $device->fill([
                 'assigned_employee_id' => $employee?->id,
@@ -68,7 +68,7 @@ class ItDeviceService
     private function assertAssignmentVersion(ItDevice $device, string $version): void
     {
         if (! hash_equals($device->assignmentVersion(), $version)) {
-            throw ValidationException::withMessages(['assigned_employee_id' => 'Pemakaian perangkat sudah berubah. Muat ulang perangkat sebelum menyimpan.']);
+            throw ValidationException::withMessages(['assigned_employee_id' => 'Device usage has changed. Reload the device before saving.']);
         }
     }
 
@@ -135,7 +135,7 @@ class ItDeviceService
                         }
                         $legacy = str_replace('/IT/', '//IT/', $value);
                         if (ItDevice::withTrashed()->where('asset_number', $legacy)->where('id', '!=', $device->id ?? 0)->exists()) {
-                            $fail('Nomor Aset sudah digunakan oleh perangkat lain.');
+                            $fail('Asset numbers have been used by other devices.');
                         }
                     }],
                     'asset_company' => [$generateAssetNumber ? 'required' : 'nullable', 'in:APCA,KPMOG'],
@@ -172,7 +172,7 @@ class ItDeviceService
                     $catalogue = InventoryItem::findOrFail($catalogueId);
                     if ((! $catalogue->is_active && (int) $device->inventory_item_id !== (int) $catalogueId)
                         || ($device->inventory_movement_id && (int) $device->inventory_item_id !== (int) $catalogueId)) {
-                        throw ValidationException::withMessages(['inventory_item_id' => 'Master barang nonaktif atau unit sudah terhubung dengan penerimaan stok.']);
+                        throw ValidationException::withMessages(['inventory_item_id' => 'Masters of inactive goods or units are already connected with stock receipts.']);
                     }
                     $device->inventory_item_id = $catalogueId;
                     $device->manufacturer = $catalogue->brand;
@@ -196,7 +196,7 @@ class ItDeviceService
                 } elseif (filled($validated['assigned_employee_id'] ?? null)) {
                     $employee = Employee::query()->with('user')->findOrFail($validated['assigned_employee_id']);
                     if ((! $employee->is_active || ! $employee->user) && (int) $device->assigned_employee_id !== $employee->id) {
-                        throw ValidationException::withMessages(['assigned_employee_id' => 'Pilih user terdaftar dengan data karyawan aktif.']);
+                        throw ValidationException::withMessages(['assigned_employee_id' => 'Select a user registered with active employee data.']);
                     }
                     $validated['assigned_user_name'] = $employee->user?->name ?? $employee->name;
                 }
@@ -213,7 +213,7 @@ class ItDeviceService
                 $assigneeChanged = (int) $beforeEmployeeId !== (int) $device->assigned_employee_id
                     || (! $beforeEmployeeId && ! $device->assigned_employee_id && $beforeUserName !== trim($device->assigned_user_name ?? ''));
                 if ($beforeAssignment !== null && $assigneeChanged) {
-                    $this->recordTransfer($actor, $device, $beforeAssignment, today()->format('Y-m-d'), 'Perubahan pemakai melalui edit perangkat.');
+                    $this->recordTransfer($actor, $device, $beforeAssignment, today()->format('Y-m-d'), 'The user changes through the device edit.');
                 }
                 if ($computer) {
                     $detail = $device->computerDetail()->firstOrNew();

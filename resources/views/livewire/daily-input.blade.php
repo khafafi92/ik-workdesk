@@ -183,7 +183,7 @@
 
         @if ($errors->any())
         <div class="no-print border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
-            <div class="font-semibold">Data input belum lengkap.</div>
+            <div class="font-semibold">Incomplete input data.</div>
             <ul class="mt-2 list-disc space-y-1 pl-5">
                 @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
@@ -555,7 +555,7 @@
 
         <div class="daily-actions no-print daily-action-bar">
             <a href="{{ url('/panel') }}" class="btn btn-dark">
-                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Kembali ke Dashboard
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Return to Dashboard
             </a>
 
             <a href="{{ route('monitoring') }}" class="btn btn-dark">
@@ -567,14 +567,14 @@
             </a>
 
             <button type="button" onclick="window.print()" class="btn btn-warning">
-                <i class="ti ti-printer" aria-hidden="true"></i> Cetak A4
+                <i class="ti ti-printer" aria-hidden="true"></i> Print A4
             </button>
 
             <button type="submit" wire:loading.attr="disabled" wire:target="save"
                 class="btn btn-primary disabled:cursor-wait disabled:opacity-60">
                 <i class="ti ti-device-floppy" aria-hidden="true"></i>
-                <span wire:loading.remove wire:target="save">Simpan Input Daily</span>
-                <span wire:loading wire:target="save">Menyimpan...</span>
+                <span wire:loading.remove wire:target="save">Save Daily Input</span>
+                <span wire:loading wire:target="save">Saving...</span>
             </button>
         </div>
     </form>

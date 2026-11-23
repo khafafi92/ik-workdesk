@@ -23,18 +23,18 @@ class AiChatService
         $settings = AiAssistantSettings::query()->where('provider', $provider)->first();
 
         if (! $aiProvider || ! $settings || ! $settings->is_enabled || ! $settings->hasApiKey() || blank($settings->model)) {
-            throw new AiAssistantException('Layanan Tanya Aku belum disiapkan administrator.');
+            throw new AiAssistantException('Ask Me is unavailable until an administrator configures an AI provider.');
         }
 
         if ($settings->monthly_token_limit < 1) {
-            throw new AiAssistantException('Administrator belum menetapkan batas token bulanan.');
+            throw new AiAssistantException('Ask your administrator to set a monthly token limit.');
         }
 
         $usedTokens = $this->monthlyTokenUsage($provider);
         $remainingTokens = max(0, $settings->monthly_token_limit - $usedTokens);
 
         if ($remainingTokens === 0) {
-            throw new AiAssistantException('Batas token bulanan Tanya Aku sudah tercapai. Hubungi administrator.');
+            throw new AiAssistantException('Ask Me has reached its monthly token limit.');
         }
 
         $history = AiAssistantMessage::query()
@@ -53,7 +53,7 @@ class AiChatService
             ->values()
             ->all();
 
-        $systemPrompt = 'Anda adalah asisten AI umum untuk pengguna IK WorkDesk. Jawab dengan jelas sesuai bahasa pengguna. Anda tidak memiliki akses ke data internal IK WorkDesk kecuali pengguna menuliskannya dalam percakapan. Jangan mengaku telah memeriksa data atau dokumen yang tidak diberikan.';
+        $systemPrompt = 'You are a general AI assistant for IK WorkDesk. Reply clearly in the user\'s language. You have access only to internal data the user shares in the conversation. Never claim to have checked data or documents the user did not provide.';
         $maxTokens = min(self::MAX_COMPLETION_TOKENS, $remainingTokens);
         $messages = [...$history, ['role' => 'user', 'content' => $question]];
         $payload = [
@@ -107,19 +107,19 @@ class AiChatService
 
             $response = $request->post($aiProvider->endpoint($settings->model), $payload);
         } catch (ConnectionException $exception) {
-            throw new AiAssistantException("Tidak dapat tersambung ke {$providerLabel}. Coba lagi beberapa saat.", previous: $exception);
+            throw new AiAssistantException("Could not connect to {$providerLabel}. Try again later.", previous: $exception);
         }
 
         if ($response->status() === 401 || $response->status() === 403) {
-            throw new AiAssistantException("{$providerLabel} menolak API key. Minta administrator memeriksa pengaturan.");
+            throw new AiAssistantException("{$providerLabel} rejected the API key. Ask your administrator to check the settings.");
         }
 
         if ($response->status() === 402 || $response->status() === 429) {
-            throw new AiAssistantException("{$providerLabel} membatasi permintaan atau saldo API tidak mencukupi. Hubungi administrator.");
+            throw new AiAssistantException("{$providerLabel} limited requests or the account has insufficient credit. Contact your administrator.");
         }
 
         if (! $response->successful()) {
-            throw new AiAssistantException("{$providerLabel} belum dapat menjawab. Coba lagi nanti.");
+            throw new AiAssistantException("{$providerLabel} could not answer the request.");
         }
 
         $answer = $response->json('choices.0.message.content');
@@ -156,7 +156,7 @@ class AiChatService
             || ! is_int($promptTokens) || $promptTokens < 0
             || ! is_int($completionTokens) || $completionTokens < 0
         ) {
-            throw new AiAssistantException("Respons {$providerLabel} tidak lengkap. Coba lagi nanti.");
+            throw new AiAssistantException("{$providerLabel} returned an incomplete response.");
         }
 
         if ($aiProvider === AiProvider::Anthropic) {
@@ -164,7 +164,7 @@ class AiChatService
                 $cachedTokens = $response->json("usage.{$tokenField}", 0) ?? 0;
 
                 if (! is_int($cachedTokens) || $cachedTokens < 0) {
-                    throw new AiAssistantException("Respons {$providerLabel} tidak lengkap. Coba lagi nanti.");
+                    throw new AiAssistantException("{$providerLabel} returned an incomplete response.");
                 }
 
                 $promptTokens += $cachedTokens;
@@ -173,7 +173,7 @@ class AiChatService
             $thoughtTokens = $response->json('usageMetadata.thoughtsTokenCount', 0) ?? 0;
 
             if (! is_int($thoughtTokens) || $thoughtTokens < 0) {
-                throw new AiAssistantException("Respons {$providerLabel} tidak lengkap. Coba lagi nanti.");
+                throw new AiAssistantException("{$providerLabel} returned an incomplete response.");
             }
 
             $completionTokens += $thoughtTokens;

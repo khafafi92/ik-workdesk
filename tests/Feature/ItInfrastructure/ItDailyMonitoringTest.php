@@ -221,13 +221,13 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
     {
         Livewire::test(CreateItDailyMonitoring::class)->fillForm($this->data('vsphere'))
             ->callAction(TestAction::make('loadVmNames')->schemaComponent('checks', 'form'))
-            ->assertNotified('Belum ada VM aktif di master IT');
+            ->assertNotified('No VM active on the IT master yet');
         $this->device(ItDeviceType::VirtualMachine, ['name' => 'VM aktif']);
         $this->device(ItDeviceType::VirtualMachine, ['name' => 'VM nonaktif', 'is_active' => false]);
         $otherDepartment = Department::query()->create(['code' => 'VM-OTHER', 'name' => 'Department VM lain']);
         $this->device(ItDeviceType::VirtualMachine, ['name' => 'VM department lain', 'managing_department_id' => $otherDepartment->id]);
         $component = Livewire::test(CreateItDailyMonitoring::class)->fillForm($this->data('vsphere'))
-            ->callAction(TestAction::make('loadVmNames')->schemaComponent('checks', 'form'))->assertNotified('1 nama VM ditambahkan');
+            ->callAction(TestAction::make('loadVmNames')->schemaComponent('checks', 'form'))->assertNotified('1 VM name added');
         $checks = array_values($component->get('data.checks'));
         $this->assertCount(2, $checks);
         $this->assertSame('VM uji', $checks[0]['name']);
@@ -267,7 +267,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         $data = $this->data();
         unset($data['managing_department_id']);
         Livewire::test(CreateItDailyMonitoring::class)->assertFormFieldDoesNotExist('managing_department_id')
-            ->fillForm($data)->assertSee('Pengelola: IT')->assertSee('Koneksi internet per link')->assertSee('Target uji koneksi')->assertSee('Simpan Draft')->assertSee('Finalisasi')
+            ->fillForm($data)->assertSee('Managed by IT')->assertSee('Internet connection per link')->assertSee('Target uji koneksi')->assertSee('Save Draft')->assertSee('Finalisasi')
             ->call('create')->assertHasNoFormErrors();
         $this->assertSame(2, ItDailyMonitoring::query()->where('managing_department_id', $this->department->id)->count());
         $this->expectException(AuthorizationException::class);
@@ -307,7 +307,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
             $source = app(ItDailyMonitoringService::class)->save($this->inspector, $data);
             $component = Livewire::withQueryParams(['repeat' => (string) $source->id])->test(CreateItDailyMonitoring::class)
                 ->assertFormSet(['monitoring_type' => $type->value, 'source_name' => $source->source_name, 'location' => $source->location, 'finalize' => false, 'revision' => 1])
-                ->assertSee('Semua hasil dikosongkan untuk pemeriksaan baru.');
+                ->assertSee('Results are blank for the new inspection.');
             $checks = array_values($component->get('data.checks'));
             $expected = [...$type->emptyCheck(), 'name' => $data['checks'][0]['name']];
             if ($type === ItMonitoringType::Firewall) {
@@ -348,7 +348,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         $this->assertSame(1, ItDailyMonitoring::query()->count());
     }
 
-    public function test_form_and_server_validation_explain_corrections_in_indonesian(): void
+    public function test_form_and_server_validation_explain_corrections_in_english(): void
     {
         $component = Livewire::test(CreateItDailyMonitoring::class)->fillForm([
             'monitoring_type' => 'synology', 'checks' => [[...ItMonitoringType::Synology->emptyCheck(), 'status' => 'success']],
@@ -378,7 +378,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         Livewire::test(EditItDailyMonitoring::class, ['record' => $record->id])->call('save')->assertHasNoFormErrors();
         $this->assertSame($data['notes'], $record->fresh()->notes);
         $view = Livewire::test(ViewItDailyMonitoring::class, ['record' => $record->id])->assertSuccessful()
-            ->assertSee('Link uji')->assertSee('Terhubung')->assertSee('gateway uji')->assertSee('Tidak dicatat')->assertSee('Tidak ada catatan')
+            ->assertSee('Link uji')->assertSee('Connected')->assertSee('gateway uji')->assertSee('Unrecorded')->assertSee('No note')
             ->assertSee('Catatan baris pertama')->assertSee('Catatan baris kedua')->assertSeeInOrder(['Latency (ms)', '0', 'Packet loss (%)', '0']);
         $this->assertStringNotContainsString('<textarea', $view->html());
         $this->assertStringNotContainsString('<select', $view->html());
@@ -387,6 +387,6 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         $backup = $this->data('synology');
         $backup['checks'] = [[...ItMonitoringType::Synology->emptyCheck(), 'name' => 'Job belum diperiksa']];
         $record = app(ItDailyMonitoringService::class)->save($this->inspector, $backup);
-        Livewire::test(ViewItDailyMonitoring::class, ['record' => $record->id])->assertSee('Tidak dicatat')->assertDontSee(now()->format('d/m/Y H:i'));
+        Livewire::test(ViewItDailyMonitoring::class, ['record' => $record->id])->assertSee('Unrecorded')->assertDontSee(now()->format('d/m/Y H:i'));
     }
 }

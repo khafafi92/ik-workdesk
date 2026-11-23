@@ -44,7 +44,7 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
         $firstId = $form->get('inspectionId');
         $form->call('saveDraft')->assertHasNoErrors();
         $this->assertSame(1, ItInspection::query()->count());
-        $form->call('finalizeInspection')->assertHasNoErrors()->assertSee('Pengecekan berikutnya');
+        $form->call('finalizeInspection')->assertHasNoErrors()->assertSee('Next inspection');
         $first = ItInspection::query()->findOrFail($firstId);
         $before = $first->getRawOriginal();
         $beforeResults = $first->results()->get()->map->getRawOriginal()->all();
@@ -77,12 +77,12 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
             $this->assertCount(3, $rows);
             $columns = array_flip($rows[0]);
             $this->assertSame($rows[1][0], $rows[2][0]);
-            $this->assertNotSame($rows[1][$columns['Nomor pemeriksaan']], $rows[2][$columns['Nomor pemeriksaan']]);
-            $this->assertNotSame($rows[1][$columns['Tanggal pemeriksaan']], $rows[2][$columns['Tanggal pemeriksaan']]);
-            $this->assertSame('Critical', $rows[1][$columns['Kondisi']]);
-            $this->assertSame('Normal', $rows[2][$columns['Kondisi']]);
-            $this->assertSame(1, $rows[1][$columns['Temuan terbuka']]);
-            $this->assertSame(0, $rows[2][$columns['Temuan terbuka']]);
+            $this->assertNotSame($rows[1][$columns['Inspection Number']], $rows[2][$columns['Inspection Number']]);
+            $this->assertNotSame($rows[1][$columns['Inspection Date']], $rows[2][$columns['Inspection Date']]);
+            $this->assertSame('Critical', $rows[1][$columns['Condition']]);
+            $this->assertSame('Normal', $rows[2][$columns['Condition']]);
+            $this->assertSame(1, $rows[1][$columns['Open Findings']]);
+            $this->assertSame(0, $rows[2][$columns['Open Findings']]);
             $workbook->disconnectWorksheets();
         } finally {
             unlink($file);
@@ -101,7 +101,7 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
         $page = Livewire::test(ItInfrastructureReportPage::class)->assertSee($inspection->referenceNumber())->assertDontSee('Periksa lagi');
         $this->assertArrayHasKey($device->id, $page->instance()->deviceOptions);
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])
-            ->assertSee('Critical')->assertDontSee('Pengecekan berikutnya');
+            ->assertSee('Critical')->assertDontSee('Next inspection');
         $this->assertSame([], Livewire::test(ItInspectionPage::class)->instance()->deviceSearchResults($device->name));
         $response = $page->instance()->exportSummary();
         $file = $response->getFile()->getPathname();
@@ -111,8 +111,8 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
             $rows = $workbook->getSheet(0)->toArray(null, true, false);
             $columns = array_flip($rows[0]);
             $this->assertCount(2, $rows);
-            $this->assertSame('Critical', $rows[1][$columns['Kondisi']]);
-            $this->assertSame('Tidak', $rows[1][$columns['Aktif untuk pemeriksaan baru']]);
+            $this->assertSame('Critical', $rows[1][$columns['Condition']]);
+            $this->assertSame('Tidak', $rows[1][$columns['Active for new checks']]);
             $workbook->disconnectWorksheets();
         } finally {
             unlink($file);

@@ -14,7 +14,12 @@ if (PHP_SAPI !== 'cli' || ! $app->environment('local') || $runtime['driver'] !==
     || ! in_array($runtime['host'], ['127.0.0.1', 'localhost', '::1'], true)) {
     throw new RuntimeException('This benchmark requires a local CLI and loopback PostgreSQL.');
 }
-$options = getopt('', ['output:', 'pg-bin:']);
+$options = getopt('', ['output:', 'pg-bin:', 'users:', 'workers:']);
+$users = filter_var($options['users'] ?? 40, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+$workers = (string) ($options['workers'] ?? '1,8');
+if ($users === false || ! in_array($workers, ['1', '8', '1,8'], true)) {
+    throw new InvalidArgumentException('Use a positive --users count and --workers=1, 8, or 1,8.');
+}
 $output = $options['output'] ?? $root.'/output/concurrency-review-20261021';
 $pgBin = $options['pg-bin'] ?? 'C:/Program Files/PostgreSQL/18/bin';
 if (! is_dir($output)) {
@@ -85,7 +90,7 @@ try {
     }
     $password = bin2hex(random_bytes(18));
     $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-    for ($i = 1; $i <= 40; $i++) {
+    for ($i = 1; $i <= $users; $i++) {
         $target->table('users')->insert([
             'name' => 'Concurrent test '.$i, 'email' => 'load-'.$token.'-'.$i.'@example.test',
             'password' => $hash, 'is_admin' => true, 'email_verified_at' => now(),
@@ -128,7 +133,7 @@ try {
     file_put_contents($temporary.'/credentials.json', json_encode(['token' => $token, 'password' => $password]));
     file_put_contents($output.'/environment.json', json_encode([
         'php' => PHP_VERSION, 'postgres' => $source->selectOne('SHOW server_version')->server_version,
-        'database_isolated' => true, 'accounts' => 40, 'account_role' => 'is_admin=true',
+        'database_isolated' => true, 'accounts' => $users, 'account_role' => 'is_admin=true',
         'bcrypt_cost' => 12, 'session' => 'file', 'cache' => 'file', 'source_table_counts' => $before['counts'],
         'postgres_max_connections' => $source->selectOne('SHOW max_connections')->max_connections,
         'source_database_bytes' => $source->selectOne('SELECT pg_database_size(current_database()) AS bytes')->bytes,
@@ -137,7 +142,8 @@ try {
     ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     DB::disconnect('load_target');
     $process = new Process(['python', $root.'/scripts/test-concurrent-users.py', '--root', $root,
-        '--runtime', $temporary, '--output', $output, '--php', PHP_BINARY], $root, ['APP_CONFIG_CACHE' => 'storage/framework/loadtest-'.$token.'/config.php']);
+        '--runtime', $temporary, '--output', $output, '--php', PHP_BINARY,
+        '--users', (string) $users, '--workers', $workers], $root, ['APP_CONFIG_CACHE' => 'storage/framework/loadtest-'.$token.'/config.php']);
     $process->setTimeout(1800);
     $exit = $process->run(function ($type, $buffer): void {
         echo $buffer;

@@ -20,24 +20,24 @@ class AtkReportExport implements WithMultipleSheets
     public function sheets(): array
     {
         return [
-            new AtkCollectionSheet('Rekap Bulanan', [
-                'Bulan Permintaan', 'Departemen', 'Entitas', 'Kode Barang', 'Barang ATK', 'Ukuran', 'Satuan',
-                'Jumlah Permintaan', 'Jumlah Diminta', 'Jumlah Diserahkan', 'Jumlah Diterima',
+            new AtkCollectionSheet('Monthly Summary', [
+                'Request Month', 'Department', 'Entity', 'Item Code', 'Office Supply Items', 'Size', 'Unit',
+                'Request Count', 'Quantity Requested', 'Quantity Issued', 'Quantity Received',
             ], $this->monthlyRequestSummaryRows()),
-            new AtkCollectionSheet('Rekap Department', [
-                'Departemen', 'Barang ATK', 'Jumlah Diterima', 'Satuan',
+            new AtkCollectionSheet('Department Summary', [
+                'Department', 'Office Supply Items', 'Quantity Received', 'Unit',
             ], $this->departmentReceiptSummaryRows()),
-            new AtkCollectionSheet('Permintaan', [
-                'Nomor Permintaan', 'Tanggal', 'Entitas', 'Peminta', 'Departemen', 'Keperluan', 'Status', 'Item', 'Jumlah Diminta', 'Jumlah Diserahkan', 'Jumlah Diterima', 'Satuan',
+            new AtkCollectionSheet('Request', [
+                'Request Number', 'Date', 'Entity', 'Peminta', 'Department', 'Requirement', 'Status', 'Item', 'Quantity Requested', 'Quantity Issued', 'Quantity Received', 'Unit',
             ], $this->requestRows()),
-            new AtkCollectionSheet('Stok Gudang Utama', [
-                'Kode', 'Barang ATK', 'Kategori', 'Stok Gudang Utama', 'Stok Minimum', 'Satuan', 'Status',
+            new AtkCollectionSheet('Main Warehouse Stock', [
+                'Code', 'Office Supply Items', 'Category', 'Main Warehouse Stock', 'Minimum Stock', 'Unit', 'Status',
             ], $this->warehouseRows()),
-            new AtkCollectionSheet('Stok Departemen', [
-                'Departemen', 'Kode', 'Barang ATK', 'Saldo', 'Satuan', 'Penerimaan Terakhir', 'Pemakaian Terakhir',
+            new AtkCollectionSheet('Department Stock', [
+                'Department', 'Code', 'Office Supply Items', 'Balance', 'Unit', 'Last Receipt', 'Last Usage',
             ], $this->departmentRows()),
-            new AtkCollectionSheet('Pemakaian', [
-                'Tanggal', 'Departemen', 'Kode', 'Barang ATK', 'Jumlah', 'Satuan', 'Keperluan', 'Dicatat Oleh',
+            new AtkCollectionSheet('Usage', [
+                'Date', 'Department', 'Code', 'Office Supply Items', 'Quantity', 'Unit', 'Requirement', 'Recorded By',
             ], $this->usageRows()),
         ];
     }
@@ -54,12 +54,12 @@ class AtkReportExport implements WithMultipleSheets
             ->flatMap(fn (AtkRequest $request) => $request->items->map(fn ($item): array => [
                 'month' => $request->request_date?->format('Y-m'),
                 'department_id' => $request->department_id,
-                'department' => $request->department?->name ?? 'Tanpa departemen',
+                'department' => $request->department?->name ?? 'No department',
                 'company_id' => $request->permit_company_id,
-                'company' => $request->company?->code ?? 'Belum ditetapkan',
+                'company' => $request->company?->code ?? 'Unassigned',
                 'item_id' => $item->atk_item_id,
                 'code' => $item->item?->code ?? '',
-                'item' => $item->item?->name ?? 'Barang tidak ditemukan',
+                'item' => $item->item?->name ?? 'Item not found',
                 'size' => $item->item?->size ?? '',
                 'unit' => $item->unit,
                 'request_id' => $request->id,
@@ -103,7 +103,7 @@ class AtkReportExport implements WithMultipleSheets
             ->flatMap(fn (AtkRequest $request) => $request->items->map(fn ($item): array => [
                 $request->request_number,
                 $request->request_date?->format('Y-m-d'),
-                $request->company?->code ?? 'Belum ditetapkan',
+                $request->company?->code ?? 'Unassigned',
                 $request->requester?->name,
                 $request->department?->name,
                 $this->safe($request->purpose),
@@ -127,8 +127,8 @@ class AtkReportExport implements WithMultipleSheets
             ->flatMap(fn (AtkRequest $request) => $request->items
                 ->filter(fn ($item): bool => (float) $item->qty_received > 0)
                 ->map(fn ($item): array => [
-                    'department' => $request->department?->name ?? 'Tanpa departemen',
-                    'item' => $item->item?->name ?? 'Barang tidak ditemukan',
+                    'department' => $request->department?->name ?? 'No department',
+                    'item' => $item->item?->name ?? 'Item not found',
                     'unit' => $item->unit,
                     'quantity' => (float) $item->qty_received,
                 ]))
@@ -153,7 +153,7 @@ class AtkReportExport implements WithMultipleSheets
             (float) $item->current_stock,
             $item->minimum_stock === null ? null : (float) $item->minimum_stock,
             $item->unit,
-            $item->is_active ? 'Aktif' : 'Tidak aktif',
+            $item->is_active ? 'Active' : 'Inactive',
         ])->all();
     }
 

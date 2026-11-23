@@ -53,9 +53,9 @@ class AttendanceActivitySheet implements FromCollection, ShouldAutoSize, WithCol
             'Description',
             'Mobile Flag',
             'Status',
-            'cek lokasi',
-            'cek waktu',
-            'Cek Pulang',
+            'Location Check',
+            'Time Check',
+            'Clock-out Check',
             // 'Matched Location',
             // 'Distance Meters',
         ];
@@ -66,7 +66,7 @@ class AttendanceActivitySheet implements FromCollection, ShouldAutoSize, WithCol
         return [
             $row->attendance_date?->format('Y-m-d'),
             $row->check_time,
-            $row->check_type,
+            __($row->check_type),
             (string) $row->employee_code,
             $row->employee_name,
             $row->job_position,
@@ -78,9 +78,9 @@ class AttendanceActivitySheet implements FromCollection, ShouldAutoSize, WithCol
             $row->description,
             $row->mobile_flag,
             $row->approval_status,
-            $row->location_check,
+            __($row->location_check),
             $row->duration_text,
-            $row->checkout_check,
+            __($row->checkout_check),
         ];
     }
 

@@ -35,11 +35,11 @@ class TicketCreatedNotification extends Notification implements ShouldQueue
     public function toDatabase(object $notifiable): array
     {
         return FilamentNotification::make()
-            ->title("Permintaan baru: {$this->ticket->ticket_no}")
+            ->title("New request: {$this->ticket->ticket_no}")
             ->body(e($this->ticket->subject))
             ->icon('heroicon-o-inbox')->info()
             ->actions([
-                Action::make('open')->label('Buka permintaan')->button()
+                Action::make('open')->label('Open request')->button()
                     ->url(route('filament.admin.resources.service-desk.view', ['record' => $this->ticket->id]))
                     ->markAsRead(),
             ])->getDatabaseMessage();
@@ -62,18 +62,18 @@ class TicketCreatedNotification extends Notification implements ShouldQueue
         return (new MailMessage)
             ->mailer($this->mailerName)
             ->from($fromAddress, $fromName)
-            ->subject("[IK WorkDesk] Ticket Baru: {$ticket->ticket_no}")
+            ->subject("[IK WorkDesk] New Ticket: {$ticket->ticket_no}")
             ->greeting("Halo, {$notifiable->name}!")
-            ->line('Ada **ticket baru** yang masuk ke departemen Anda dan membutuhkan penanganan.')
+            ->line('There\'s a new **ticket that goes into your department and needs handling.')
             ->line('---')
             ->line("**No. Ticket :** {$ticket->ticket_no}")
-            ->line("**Subjek     :** {$ticket->subject}")
-            ->line("**Prioritas  :** {$priority}")
-            ->line("**Dari       :** {$ticket->employee?->name} ({$ticket->requesterDepartment?->name})")
-            ->line("**Ke         :** {$ticket->handlerDepartment?->name}")
-            ->line("**Dibuat     :** {$ticket->created_at?->format('d M Y H:i')}")
-            ->action('Lihat Ticket', $viewUrl)
-            ->line('Segera tindak lanjuti ticket ini.')
+            ->line("**Subject:** {$ticket->subject}")
+            ->line("**Priority:** {$priority}")
+            ->line("**From the ** {$ticket->employee?->name} ({$ticket->requesterDepartment?->name})")
+            ->line("**To:** {$ticket->handlerDepartment?->name}")
+            ->line("**Made:* {$ticket->created_at?->format('d M Y H:i')}")
+            ->action('View Ticket', $viewUrl)
+            ->line('Please follow up on this ticket.')
             ->salutation('IK WorkDesk System');
     }
 }

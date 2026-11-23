@@ -16,14 +16,14 @@ enum ItPermission: string
     public function label(): string
     {
         return match ($this) {
-            self::DevicesView => 'Lihat Master Perangkat IT',
-            self::DevicesManage => 'Kelola Master Perangkat IT',
-            self::InspectionsView => 'Lihat Pengecekan Infrastruktur',
-            self::InspectionsCreate => 'Isi Pengecekan Infrastruktur',
-            self::InspectionsManage => 'Kelola Pengecekan Infrastruktur',
-            self::FollowUpsManage => 'Kelola Tindak Lanjut Infrastruktur',
-            self::ReportsView => 'Lihat Laporan Infrastruktur',
-            self::ReportsExport => 'Ekspor Laporan Infrastruktur',
+            self::DevicesView => 'View IT Device Catalog',
+            self::DevicesManage => 'Manage IT Device Catalog',
+            self::InspectionsView => 'View Infrastructure Inspections',
+            self::InspectionsCreate => 'Record Infrastructure Inspections',
+            self::InspectionsManage => 'Manage Infrastructure Inspections',
+            self::FollowUpsManage => 'Manage Infrastructure Follow-ups',
+            self::ReportsView => 'View Infrastructure Reports',
+            self::ReportsExport => 'Export Infrastructure Reports',
         };
     }
 }

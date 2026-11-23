@@ -54,7 +54,7 @@ class ItDailyMonitoringFormatTest extends ItInfrastructureTestCase
             $this->assertNull($record->backup_date);
             $this->assertSame($this->department->id, $record->managing_department_id);
             Livewire::test(ViewItDailyMonitoring::class, ['record' => $record->id])->assertSuccessful()
-                ->assertSee($record->checks[0]['name'])->assertSee('Tanggal dan jam')->assertSee(now()->format('d/m/Y'));
+                ->assertSee($record->checks[0]['name'])->assertSee('Date and hour')->assertSee(now()->format('d/m/Y'));
             Livewire::test(EditItDailyMonitoring::class, ['record' => $record->id])->call('save')->assertHasNoFormErrors();
             $this->assertSame($record->checks, $record->fresh()->checks);
         }
@@ -194,7 +194,7 @@ class ItDailyMonitoringFormatTest extends ItInfrastructureTestCase
     {
         $component = Livewire::test(CreateItDailyMonitoring::class)->fillForm($this->data(ItMonitoringType::Synology))
             ->callAction(TestAction::make('add')->schemaComponent('checks', 'form'))
-            ->assertSee('1 dari 2 hasil sudah dipilih.');
+            ->assertSee('1 of 2 the results have been selected.');
         $checks = array_values($component->get('data.checks'));
         $this->assertCount(2, $checks);
         $this->assertSame('File Station 1', $checks[0]['name']);

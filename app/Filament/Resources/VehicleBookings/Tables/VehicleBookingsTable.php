@@ -91,7 +91,7 @@ class VehicleBookingsTable
                     )
                     ->requiresConfirmation()
                     ->modalDescription(
-                        'Perjalanan akan ditandai selesai dan kendaraan langsung tersedia.'
+                        'The journey will be marked completed and the vehicle available directly.'
                     )
                     ->action(
                         function (VehicleBooking $record): void {

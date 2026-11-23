@@ -67,7 +67,7 @@ class ReminderForm
                             $set('reminder_at', $task->due_at);
                         }
                     })
-                    ->helperText('Pilih task yang ingin diingatkan, atau kosongkan untuk reminder manual.')
+                    ->helperText('Select task to remind of, or empty it for manual reminder.')
                     ->columnSpanFull(),
 
                 Select::make('reminder_type')
@@ -119,20 +119,20 @@ class ReminderForm
 
                 DateTimePicker::make('reminder_at')
                     ->label('Deadline / Reminder At')
-                    ->helperText('Email alarm akan dikirim sebelum tanggal ini selama status masih Pending.')
+                    ->helperText('The alarm email will be sent before this date as long as the status is still Pending.')
                     ->required(),
 
                 CheckboxList::make('email_alarm_days')
                     ->label('Email Alarm')
                     ->options([
-                        90 => '3 Bulan',
-                        30 => '1 Bulan',
-                        3 => '3 hari sebelum deadline (H-3)',
-                        1 => '1 hari sebelum deadline (H-1)',
+                        90 => '3 Months',
+                        30 => '1 Month',
+                        3 => '3 days before deadline (H-3)',
+                        1 => '1 day before deadline (H-1)',
                     ])
                     ->default([3, 1])
                     ->columns(2)
-                    ->helperText('Pilih satu atau beberapa waktu pengingat. Kosongkan jika tidak ingin menerima email.')
+                    ->helperText('Select a reminder time or some time. Blank if you do not want to receive an email.')
                     ->columnSpanFull(),
 
                 Select::make('status')

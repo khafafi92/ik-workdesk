@@ -13,7 +13,7 @@ class ListItDailyMonitorings extends ListRecords
 
     public function getBreadcrumb(): string
     {
-        return 'Daftar';
+        return 'List';
     }
 
     protected function getHeaderActions(): array
@@ -22,7 +22,7 @@ class ListItDailyMonitorings extends ListRecords
             ->label(match ($type) {
                 ItMonitoringType::Internet => 'Cek internet',
                 ItMonitoringType::Firewall => 'Cek firewall',
-                ItMonitoringType::ServerRoom => 'Cek ruang server',
+                ItMonitoringType::ServerRoom => 'Check the server room',
                 ItMonitoringType::Synology => 'Cek backup',
                 ItMonitoringType::Vsphere => 'Cek VM',
             })->color('gray')->url(ItDailyMonitoringResource::getUrl('create', ['type' => $type->value])))->all();

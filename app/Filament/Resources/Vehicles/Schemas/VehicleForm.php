@@ -16,7 +16,7 @@ class VehicleForm
         return $schema->components([
             Section::make('Vehicle Information')
                 ->description(
-                    'Nama, nomor polisi, dan informasi kendaraan dapat diubah kapan saja.'
+                    'Names, police numbers, and vehicle information can be changed at any time.'
                 )
                 ->schema([
                     TextInput::make('name')

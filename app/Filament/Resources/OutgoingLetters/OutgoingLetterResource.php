@@ -45,11 +45,11 @@ class OutgoingLetterResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedEnvelope;
 
-    protected static ?string $navigationLabel = 'Surat Keluar';
+    protected static ?string $navigationLabel = 'Outgoing Letters';
 
-    protected static ?string $modelLabel = 'Surat Keluar';
+    protected static ?string $modelLabel = 'Outgoing Letters';
 
-    protected static ?string $pluralModelLabel = 'Surat Keluar';
+    protected static ?string $pluralModelLabel = 'Outgoing Letters';
 
     protected static ?string $recordTitleAttribute = 'document_number';
 
@@ -58,12 +58,12 @@ class OutgoingLetterResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('1. Tentukan profil dan identitas surat')
-                ->description('Pilih profil sesuai kelompok surat. Entitas dan departemen terisi dari profil atau akun pembuat, lalu lengkapi jenis serta tanggal surat.')
+            Section::make('1. Choose a profile and identify the letter')
+                ->description('Select profiles according to mail groups. Entity and department are filled from the author\'s profile or account, and complete the mail type and date.')
                 ->columns(3)
                 ->schema([
-                    Select::make('letter_profile_id')->label('Profil surat')->relationship('profile', 'name')->searchable()->preload()->required()->live()
-                        ->helperText('Contoh: Surat Umum APCA, HR APCA, HR KPMOG, atau Team Project/BD KPMOG.')
+                    Select::make('letter_profile_id')->label('Mail profile')->relationship('profile', 'name')->searchable()->preload()->required()->live()
+                        ->helperText('Example: APCA General Letter, H.R. APCA, HR KPMOG, or Team Project/BD KPMOG.')
                         ->afterStateUpdated(function ($state, Set $set): void {
                             $profile = LetterProfile::find($state);
 
@@ -77,51 +77,51 @@ class OutgoingLetterResource extends Resource
                                 : $profile->department_id);
                         })
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    Select::make('permit_company_id')->label('Entitas penerbit')->relationship('company', 'name')->searchable()->preload()->required()->live()
-                        ->helperText('Pilih entitas yang menerbitkan surat.')
+                    Select::make('permit_company_id')->label('Issuer entity')->relationship('company', 'name')->searchable()->preload()->required()->live()
+                        ->helperText('Select the entity that publishes the mail.')
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    Select::make('department_id')->label('Departemen penerbit')->relationship('department', 'name')->searchable()->preload()->live()
+                    Select::make('department_id')->label('Publisher Department')->relationship('department', 'name')->searchable()->preload()->live()
                         ->helperText(fn (Get $get): string => static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))
                             ? (auth()->user()?->is_admin
-                                ? 'Pilih departemen yang menerbitkan surat.'
-                                : 'Kode departemen diambil dari departemen akun pembuat surat.')
-                            : 'Pilih departemen pengirim jika surat menggunakan kode departemen.')
+                                ? 'Select the department that publishes the mail.'
+                                : 'Department code was taken from the Mailman\'s Department account.')
+                            : 'Select the sender department if mail uses department code.')
                         ->disabled(fn (Get $get, ?OutgoingLetter $record): bool => static::isNumberLocked($record)
                             || (static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))
                                 && auth()->user()?->is_admin !== true))
                         ->dehydrated(fn (Get $get): bool => static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))),
-                    Select::make('document_type_id')->label('Jenis surat')->relationship('documentType', 'name')->searchable()->preload()->live()
-                        ->helperText('Jenis surat menentukan kode pada nomor surat, bila template menggunakannya.')
+                    Select::make('document_type_id')->label('Mail type')->relationship('documentType', 'name')->searchable()->preload()->live()
+                        ->helperText('The type of mail determines the code in the mail number, if the template uses it.')
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required()->live()
+                    DatePicker::make('document_date')->label('Mail date')->default(today())->required()->live()
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
                 ]),
-            Section::make('2. Lengkapi tujuan dan isi')
-                ->description('Isi penerima dan perihal surat. Project, PIN, nama PIC, kode lokasi, serta keterangan hanya diisi bila diperlukan oleh surat ini.')
+            Section::make('2. Add the recipient and letter content')
+                ->description('Project, PIN, PIC name, location code, and description are only filled if needed by this letter.')
                 ->columns(3)
                 ->schema([
                     Select::make('work_project_id')->label('Project / Job Order')->relationship('project', 'code')->getOptionLabelFromRecordUsing(fn ($record): string => trim($record->code.' - '.$record->name))->searchable()->preload(),
                     TextInput::make('pin')->label('PIN')->maxLength(100),
                     Select::make('pic_user_id')->label('PIC user')->relationship('picUser', 'name')->searchable()->preload(),
-                    TextInput::make('pic_name')->label('Nama PIC')->maxLength(255),
-                    TextInput::make('recipient')->label('Tujuan surat')->helperText('Nama instansi, perusahaan, atau pihak penerima surat.')->maxLength(255),
-                    TextInput::make('subject')->label('Perihal surat')->helperText('Tulis ringkasan isi surat secara singkat.')->required()->maxLength(255)->columnSpanFull(),
-                    TextInput::make('location_code')->label('Kode lokasi / referensi')->maxLength(100)->live()
-                        ->helperText('Isi hanya jika template nomor surat menggunakan kode lokasi.'),
-                    Textarea::make('description')->label('Keterangan tambahan')->helperText('Opsional. Isi jika perlu catatan internal untuk surat ini.')->maxLength(4000)->columnSpanFull(),
+                    TextInput::make('pic_name')->label('PIC Name')->maxLength(255),
+                    TextInput::make('recipient')->label('Mail destination')->helperText('The name of the agency, the company, or the recipient of the mail.')->maxLength(255),
+                    TextInput::make('subject')->label('Subject')->helperText('Summarize what the letter is about.')->required()->maxLength(255)->columnSpanFull(),
+                    TextInput::make('location_code')->label('Location / reference code')->maxLength(100)->live()
+                        ->helperText('Fill only when template mail numbers using location code.'),
+                    Textarea::make('description')->label('Additional description')->helperText('Optional. Contents if necessary internal notes for this message.')->maxLength(4000)->columnSpanFull(),
                 ]),
-            Section::make('3. Tinjau nomor dan simpan draft')
-                ->description('Nomor di bawah adalah preview. Simpan sebagai draft terlebih dahulu. Nomor menjadi final dan dicadangkan hanya saat surat diterbitkan.')
+            Section::make('3. Review the number and save the draft')
+                ->description('The number below is preview. Save it as a draft first. Number becomes final and reserved only when mail is published.')
                 ->schema([
-                    Toggle::make('is_legacy_number')->label('Input nomor existing / legacy')->live()
-                        ->helperText('Gunakan hanya untuk mencatat surat lama yang sudah memiliki nomor.')
+                    Toggle::make('is_legacy_number')->label('Input executing / legacy number')->live()
+                        ->helperText('Use it only to record old letters that already have numbers.')
                         ->visible(fn (): bool => static::canUseLegacyNumbers())
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    TextInput::make('document_number')->label('Nomor surat existing')->maxLength(500)->unique(ignoreRecord: true)
+                    TextInput::make('document_number')->label('Existing message number')->maxLength(500)->unique(ignoreRecord: true)
                         ->visible(fn (Get $get): bool => (bool) $get('is_legacy_number'))
                         ->required(fn (Get $get): bool => (bool) $get('is_legacy_number'))
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    Placeholder::make('number_preview')->label('Preview nomor surat')->content(fn (Get $get): string => static::preview($get)),
+                    Placeholder::make('number_preview')->label('Preview mail numbers')->content(fn (Get $get): string => static::preview($get)),
                     Placeholder::make('number_status')->label('Status')->content(fn (?OutgoingLetter $record): string => $record?->status ? static::statusLabel($record->status) : 'Draft'),
                 ]),
         ]);
@@ -130,36 +130,36 @@ class OutgoingLetterResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('document_number')->label('Nomor surat')->searchable()->sortable()->placeholder('Draft'),
-            TextColumn::make('document_date')->label('Tanggal')->date('d M Y')->sortable(),
-            TextColumn::make('profile.name')->label('Profil')->placeholder('-')->toggleable(),
+            TextColumn::make('document_number')->label('Mail number')->searchable()->sortable()->placeholder('Draft'),
+            TextColumn::make('document_date')->label('Date')->date('d M Y')->sortable(),
+            TextColumn::make('profile.name')->label('Profiles')->placeholder('-')->toggleable(),
             TextColumn::make('company.code')->label('Company')->sortable(),
             TextColumn::make('department.code')->label('Department')->placeholder('-'),
-            TextColumn::make('documentType.name')->label('Jenis surat')->placeholder('-')->toggleable(),
+            TextColumn::make('documentType.name')->label('Mail type')->placeholder('-')->toggleable(),
             TextColumn::make('project.code')->label('Project / Job Order')->placeholder('-')->searchable()->toggleable(),
             TextColumn::make('pic_name')->label('PIC')->placeholder('-')->searchable()->toggleable(),
-            TextColumn::make('recipient')->label('Tujuan')->limit(35)->searchable()->toggleable(),
-            TextColumn::make('subject')->label('Perihal')->limit(55)->searchable(),
+            TextColumn::make('recipient')->label('Destination')->limit(35)->searchable()->toggleable(),
+            TextColumn::make('subject')->label('Subject')->limit(55)->searchable(),
             TextColumn::make('status')->label('Status')->badge()->formatStateUsing(fn (string $state): string => static::statusLabel($state))
                 ->color(fn (string $state): string => match ($state) {
                     'issued' => 'success', 'archived' => 'gray', 'cancelled' => 'danger', default => 'warning'
                 }),
         ])->filters([
-            SelectFilter::make('letter_profile_id')->label('Profil surat')->relationship('profile', 'name'),
-            SelectFilter::make('permit_company_id')->label('Entitas penerbit')->relationship('company', 'name'),
-            SelectFilter::make('department_id')->label('Departemen penerbit')->relationship('department', 'name'),
-            SelectFilter::make('document_type_id')->label('Jenis surat')->relationship('documentType', 'name'),
+            SelectFilter::make('letter_profile_id')->label('Mail profile')->relationship('profile', 'name'),
+            SelectFilter::make('permit_company_id')->label('Issuer entity')->relationship('company', 'name'),
+            SelectFilter::make('department_id')->label('Publisher Department')->relationship('department', 'name'),
+            SelectFilter::make('document_type_id')->label('Mail type')->relationship('documentType', 'name'),
             SelectFilter::make('work_project_id')->label('Project')->relationship('project', 'code'),
             SelectFilter::make('status')->label('Status')->options(static::statusOptions()),
-            Filter::make('document_date')->label('Tahun / bulan')->form([
-                Select::make('year')->label('Tahun')->options(fn (): array => OutgoingLetter::query()
+            Filter::make('document_date')->label('Year / month')->form([
+                Select::make('year')->label('Year')->options(fn (): array => OutgoingLetter::query()
                     ->orderByDesc('document_date')
                     ->pluck('document_date')
                     ->map(fn ($date): int => Carbon::parse($date)->year)
                     ->unique()
                     ->mapWithKeys(fn (int $year): array => [$year => $year])
                     ->all()),
-                Select::make('month')->label('Bulan')->options(collect(range(1, 12))->mapWithKeys(
+                Select::make('month')->label('Month')->options(collect(range(1, 12))->mapWithKeys(
                     fn (int $month): array => [$month => Carbon::create()->month($month)->translatedFormat('F')]
                 )->all()),
             ])->query(function (Builder $query, array $data): Builder {
@@ -168,40 +168,40 @@ class OutgoingLetterResource extends Resource
                     ->when($data['month'] ?? null, fn (Builder $builder, $month): Builder => $builder->whereMonth('document_date', $month));
             }),
         ])->defaultSort('document_date', 'desc')->headerActions([
-            CreateAction::make()->label('Buat draft surat')->visible(fn (): bool => static::canCreate()),
+            CreateAction::make()->label('Create a mail draft')->visible(fn (): bool => static::canCreate()),
         ])->recordActions([
             Action::make('issue')
-                ->label('Terbitkan Surat')
+                ->label('Publish Mail')
                 ->icon(Heroicon::OutlinedPaperAirplane)
                 ->color('success')
                 ->requiresConfirmation()
-                ->modalDescription('Pastikan data surat benar. Nomor surat akan menjadi final dan tidak dapat digunakan kembali.')
+                ->modalDescription('Make sure the mail data is correct. The mail number will be final and cannot be used again.')
                 ->visible(fn (OutgoingLetter $record): bool => static::canIssue($record))
                 ->action(function (OutgoingLetter $record): void {
                     app(DocumentNumberService::class)->issue($record, auth()->user());
-                    Notification::make()->title('Surat berhasil diterbitkan.')->success()->send();
+                    Notification::make()->title('Mail successfully published.')->success()->send();
                 }),
             Action::make('archive')
-                ->label('Arsipkan')
+                ->label('Archive')
                 ->icon(Heroicon::OutlinedArchiveBox)
                 ->color('gray')
                 ->requiresConfirmation()
                 ->visible(fn (OutgoingLetter $record): bool => $record->status === 'issued' && static::canManageLifecycle())
                 ->action(function (OutgoingLetter $record): void {
                     $record->update(['status' => 'archived']);
-                    Notification::make()->title('Surat telah diarsipkan.')->success()->send();
+                    Notification::make()->title('The letter has been filed.')->success()->send();
                 }),
             Action::make('cancel')
-                ->label('Batalkan draft')
+                ->label('Cancel draft')
                 ->icon(Heroicon::OutlinedXCircle)
                 ->color('danger')
                 ->requiresConfirmation()
                 ->visible(fn (OutgoingLetter $record): bool => $record->status === 'draft' && static::canManageLifecycle())
                 ->action(function (OutgoingLetter $record): void {
                     $record->update(['status' => 'cancelled']);
-                    Notification::make()->title('Draft surat dibatalkan.')->success()->send();
+                    Notification::make()->title('Draft mail canceled.')->success()->send();
                 }),
-            EditAction::make()->label('Ubah draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
+            EditAction::make()->label('Change draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
         ]);
     }
 
@@ -287,11 +287,11 @@ class OutgoingLetterResource extends Resource
     private static function preview(Get $get): string
     {
         if ($get('is_legacy_number')) {
-            return filled($get('document_number')) ? (string) $get('document_number') : 'Masukkan nomor surat existing.';
+            return filled($get('document_number')) ? (string) $get('document_number') : 'Enter Existing mail number.';
         }
 
         if (blank($get('permit_company_id')) || blank($get('document_date'))) {
-            return 'Pilih entitas penerbit dan tanggal surat untuk melihat preview.';
+            return 'Select the publisher\'s entity and the mail date to view.';
         }
 
         $departmentId = $get('department_id');
@@ -303,8 +303,8 @@ class OutgoingLetterResource extends Resource
 
             if ($departmentId === null) {
                 return auth()->user()?->is_admin
-                    ? 'Pilih departemen penerbit untuk melihat preview nomor APCA.'
-                    : 'Akun pembuat surat harus memiliki departemen aktif untuk membuat nomor APCA.';
+                    ? 'Select the publisher\'s department to view APCA\'s number preview.'
+                    : 'The mailmaker\'s account must have an active department to make an APCA number.';
             }
         }
 
@@ -318,7 +318,7 @@ class OutgoingLetterResource extends Resource
 
             return app(DocumentNumberService::class)->preview($letter);
         } catch (Throwable $exception) {
-            return 'Preview belum tersedia. Lengkapi data yang dipakai template nomor surat atau minta pengelola Surat memeriksa templatenya.';
+            return 'Preview is not available. Complete the data used by the mail template or request that the mail manager examine the template.';
         }
     }
 
@@ -329,7 +329,7 @@ class OutgoingLetterResource extends Resource
 
     private static function statusOptions(): array
     {
-        return ['draft' => 'Draft', 'issued' => 'Terbit', 'archived' => 'Diarsipkan', 'cancelled' => 'Dibatalkan'];
+        return ['draft' => 'Draft', 'issued' => 'Issue', 'archived' => 'Archived', 'cancelled' => 'Cancelled'];
     }
 
     private static function statusLabel(string $status): string

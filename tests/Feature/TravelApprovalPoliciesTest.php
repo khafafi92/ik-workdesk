@@ -156,7 +156,7 @@ class TravelApprovalPoliciesTest extends TestCase
         $khafafi = $this->khafafi();
         $replacement = $this->actor('Atasan Pilihan Khafafi QA', ['travel.approve'], 'manager');
         $page = Livewire::actingAs($khafafi)->test(TravelSpd::class)->call('createDocument')
-            ->assertSee('Pengaturan Khafafi')->set('input.requester_id', '')->assertSet('input.employee_id', '')
+            ->assertSee('Khafafi Settings')->set('input.requester_id', '')->assertSet('input.employee_id', '')
             ->set('input.requester_id', (string) $this->author->id)
             ->assertSet('input.employee_id', (string) $this->author->employee->id)
             ->set('input', $this->arrangedInput(['approver_ids' => ['supervisor' => $replacement->id, 'finance' => $this->finance->id, 'hr' => $this->hr->id]]))
@@ -197,7 +197,7 @@ class TravelApprovalPoliciesTest extends TestCase
                     $this->assertSame(0, TravelDocument::count());
                 }
             }
-            Livewire::actingAs($actor)->test(TravelSpd::class)->call('createDocument')->assertDontSee('Pengaturan Khafafi')
+            Livewire::actingAs($actor)->test(TravelSpd::class)->call('createDocument')->assertDontSee('Khafafi Settings')
                 ->assertDontSee('wire:model.live="input.requester_id"', false)
                 ->assertDontSee('wire:model.live="input.approver_ids.', false);
         }
@@ -210,7 +210,7 @@ class TravelApprovalPoliciesTest extends TestCase
         $document = $workflow->save($khafafi, 'spd', null, 0, $this->arrangedInput());
         $this->assertTrue(TravelAccess::editable($this->author, $document));
         $this->actingAs($this->author);
-        Livewire::test(TravelSpd::class)->call('openDocument', $document->id)->assertDontSee('Pengaturan Khafafi')
+        Livewire::test(TravelSpd::class)->call('openDocument', $document->id)->assertDontSee('Khafafi Settings')
             ->assertDontSee('wire:model.live="input.approver_ids.', false);
         foreach ([['requester_id' => $this->finance->id], ['arrange_approvals' => false],
             ['approver_ids' => ['hr' => $this->supervisor->id, 'finance' => $this->finance->id, 'supervisor' => $this->hr->id]]] as $changes) {
@@ -253,7 +253,7 @@ class TravelApprovalPoliciesTest extends TestCase
             $workflow->submit($khafafi, $document->id, $document->version);
             $this->fail('Requester approved own document.');
         } catch (ValidationException $exception) {
-            $this->assertStringContainsString('sendiri', $exception->errors()['approval_policy'][0]);
+            $this->assertStringContainsString('their own documents', $exception->errors()['approval_policy'][0]);
         }
     }
 
@@ -323,7 +323,7 @@ class TravelApprovalPoliciesTest extends TestCase
 
     public function test_master_form_supports_create_edit_copy_and_delete_with_audit(): void
     {
-        $page = Livewire::actingAs($this->admin)->test(TravelApprovalRules::class)->assertSee('Belum ada aturan approval')
+        $page = Livewire::actingAs($this->admin)->test(TravelApprovalRules::class)->assertSee('Add approval rules for each company')
             ->set('rule', $this->rule())->call('saveRule')->assertHasNoErrors();
         $policy = TravelApprovalPolicy::sole();
         $this->assertSame(1, $policy->version);
@@ -345,8 +345,8 @@ class TravelApprovalPoliciesTest extends TestCase
         $inactive = $this->actor('Pemeriksa Nonaktif QA', ['travel.approve'], 'manager');
         $inactive->employee->update(['is_active' => false]);
         $page = Livewire::actingAs($this->admin)->test(TravelApprovalRules::class)
-            ->assertSee('Cari nama pemeriksa')->assertSee('Belum memiliki izin persetujuan SPD/LPJ')
-            ->assertSee('Jenjang belum minimal Manager')->assertSee('Akun tidak aktif');
+            ->assertSee('Search reviewers')->assertSee('No SPD/LPJ permissions yet')
+            ->assertSee('Single is not at least a manager')->assertSee('Account is disabled');
         $inspect = function (string $html, string $role, int $userId): ?\DOMElement {
             $dom = new \DOMDocument;
             $previous = libxml_use_internal_errors(true);
@@ -372,15 +372,15 @@ class TravelApprovalPoliciesTest extends TestCase
         $this->assertFalse($withoutAccess->fresh()->hasPermission('travel.approve'));
     }
 
-    public function test_empty_hr_eligibility_and_missing_selection_explain_access_setup_in_indonesian(): void
+    public function test_empty_hr_eligibility_and_missing_selection_explain_access_setup_in_english(): void
     {
         $this->hr->directPermissions()->detach();
         $this->supervisor->directPermissions()->detach();
         $page = Livewire::actingAs($this->admin)->test(TravelApprovalRules::class)
             ->assertSee('Belum ada akun yang memenuhi syarat untuk HRGA / HR Manager.')
-            ->assertSee('Setujui SPD dan LPJ yang ditugaskan')->assertSee('Buka User Management (tab baru)')
+            ->assertSee('Approve assigned SPD and LPJ')->assertSee('Open User Management in a new tab')
             ->assertSee('novalidate', false)->set('rule', $this->rule(['hr_id' => '']))
-            ->call('saveRule')->assertHasErrors(['hr_id'])->assertSee('Pilih HRGA / HR Manager.');
+            ->call('saveRule')->assertHasErrors(['hr_id'])->assertSee('Select HRGA / HR Manager.');
         $this->assertSame(0, TravelApprovalPolicy::count());
         $this->hr->directPermissions()->attach(Permission::where('code', 'travel.approve')->value('id'));
         $page->set('rule.hr_id', $this->hr->id)->call('saveRule')->assertHasNoErrors();
@@ -399,7 +399,7 @@ class TravelApprovalPoliciesTest extends TestCase
             $this->assertFalse(TravelAccess::approver($actor));
         }
         $page = Livewire::actingAs($khafafi)->test(TravelApprovalRules::class)
-            ->assertSee('Khusus Khafafi: pilih akun aktif yang bertugas.')
+            ->assertSee('Khafafi can assign active accounts.')
             ->set('rule', $this->rule(['hr_id' => $hr->id, 'finance_id' => $finance->id, 'supervisor_id' => $head->id]))
             ->call('saveRule')->assertHasNoErrors();
         $policy = TravelApprovalPolicy::sole();

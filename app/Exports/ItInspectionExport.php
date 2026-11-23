@@ -25,7 +25,7 @@ class ItInspectionExport extends StringValueBinder implements FromQuery, ShouldA
 
     public function headings(): array
     {
-        return [...ItDeviceExportFields::headings(), 'Nomor pemeriksaan', 'Tanggal pemeriksaan', 'Petugas', 'Kelompok', 'Pemeriksaan', 'Hasil', 'Nilai / rincian', 'Catatan', 'Temuan', 'Tindak lanjut', 'Penanggung jawab', 'Status tindak lanjut', 'Catatan penyelesaian', 'Diselesaikan oleh', 'Waktu penyelesaian'];
+        return [...ItDeviceExportFields::headings(), 'Inspection Number', 'Inspection Date', 'Inspector', 'Group', 'Inspection', 'Result', 'Reading / details', 'Notes', 'Findings', 'Follow-up', 'Assignee', 'Follow-up Status', 'Completion Notes', 'Completed by', 'Completion time'];
     }
 
     public function map($result): array
@@ -36,7 +36,7 @@ class ItInspectionExport extends StringValueBinder implements FromQuery, ShouldA
         return [
             ...ItDeviceExportFields::forInspection($inspection),
             $inspection->referenceNumber(), $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
-            $result->item_snapshot['section'], $result->item_snapshot['label'], $result->condition->label(),
+            __($result->item_snapshot['section']), __($result->item_snapshot['label']), $result->condition->label(),
             $result->measured_value['value'] ?? ($result->measured_value ? json_encode($result->measured_value, JSON_UNESCAPED_UNICODE) : ''),
             $result->notes, $result->finding, $followUp?->action_plan, $followUp?->assignee?->name, $followUp?->status?->label(),
             $followUp?->resolution_notes, $followUp?->resolver?->name, $followUp?->resolved_at?->format('Y-m-d H:i'),

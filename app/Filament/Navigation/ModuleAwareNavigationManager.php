@@ -14,7 +14,7 @@ class ModuleAwareNavigationManager extends NavigationManager
 
         return collect(parent::get())
             ->filter(fn (NavigationGroup $group): bool => $access->isEnabled(
-                $group->getLabel() ?? 'Menu Utama',
+                $group->getLabel() ?? 'Main Menu',
             ))
             ->values()
             ->all();

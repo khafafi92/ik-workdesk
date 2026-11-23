@@ -180,7 +180,7 @@ class FindingsRelationManager extends RelationManager
 
                 TextEntry::make('requester_response')
                     ->label('Requester Response / Clarification')
-                    ->placeholder('Belum ada respons dari requester.')
+                    ->placeholder('No response yet from the register.')
                     ->visible(
                         fn (?WorkTaskFinding $record): bool => filled($record?->requester_response)
                     )
@@ -188,7 +188,7 @@ class FindingsRelationManager extends RelationManager
 
                 TextEntry::make('response_attachments')
                     ->label('Requester Response Attachments')
-                    ->placeholder('Tidak ada attachment respons.')
+                    ->placeholder('No response attachment.')
                     ->listWithLineBreaks()
                     ->bulleted()
                     ->formatStateUsing(function (
@@ -296,7 +296,7 @@ class FindingsRelationManager extends RelationManager
                 TextColumn::make('requester_response')
                     ->label('Requester Response')
                     ->limit(40)
-                    ->placeholder('Belum ada respons'),
+                    ->placeholder('No response yet'),
 
                 TextColumn::make('created_at')
                     ->label('Created At')
@@ -314,7 +314,7 @@ class FindingsRelationManager extends RelationManager
                         abort_unless(
                             $this->currentUserCanManageFindings(),
                             403,
-                            'Anda bukan anggota department reviewer untuk Work Log ini.'
+                            'You are not a department reviewer for this Work Log.'
                         );
                     })
                     ->mutateDataUsing(function (array $data): array {
@@ -335,7 +335,7 @@ class FindingsRelationManager extends RelationManager
                         abort_unless(
                             $this->currentUserCanManageFindings(),
                             403,
-                            'Anda bukan anggota department reviewer untuk Work Log ini.'
+                            'You are not a department reviewer for this Work Log.'
                         );
                     }),
 
@@ -347,7 +347,7 @@ class FindingsRelationManager extends RelationManager
                         abort_unless(
                             $this->currentUserCanManageFindings(),
                             403,
-                            'Anda bukan anggota department reviewer untuk Work Log ini.'
+                            'You are not a department reviewer for this Work Log.'
                         );
                     }),
             ])

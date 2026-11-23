@@ -21,7 +21,7 @@ class DocumentTypeNavigationTest extends TestCase
         $this->assertTrue(DocumentTypeResource::canViewAny());
         $this->get('/panel')
             ->assertOk()
-            ->assertSeeText('Jenis Surat')
+            ->assertSeeText('Letter Types')
             ->assertSee(DocumentTypeResource::getUrl());
     }
 }

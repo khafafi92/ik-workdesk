@@ -24,11 +24,11 @@ class ItDeviceComputerDetail extends Model
     {
         static::saving(function (self $detail): void {
             if (ItDevice::query()->findOrFail($detail->it_device_id)->category !== ItDeviceCategory::Computer) {
-                throw ValidationException::withMessages(['it_device_id' => 'Detail komputer hanya untuk Laptop/PC.']);
+                throw ValidationException::withMessages(['it_device_id' => 'Computer details are for laptops/PCs only.']);
             }
 
             if ($detail->exists && $detail->isDirty('it_device_id')) {
-                throw ValidationException::withMessages(['it_device_id' => 'Detail komputer tidak dapat dipindahkan ke perangkat lain.']);
+                throw ValidationException::withMessages(['it_device_id' => 'Computer details cannot be moved to another device.']);
             }
 
             Validator::make($detail->only(['ram_gb', 'storage_devices']), [
@@ -45,10 +45,10 @@ class ItDeviceComputerDetail extends Model
                 $verifiedAt = $detail->{$product.'_verified_at'};
                 $notes = $detail->{$product.'_verification_notes'};
                 if ($status !== ItLicenseStatus::Unverified && (! $verifiedBy || ! $verifiedAt || $verifiedAt->isFuture() || ! User::query()->findOrFail($verifiedBy)->isActiveForAccess())) {
-                    throw ValidationException::withMessages([$product.'_license_status' => 'Status lisensi memerlukan petugas aktif dan waktu pencatatan.']);
+                    throw ValidationException::withMessages([$product.'_license_status' => 'License status requires active officers and logging time.']);
                 }
                 if ($status === ItLicenseStatus::Unverified && ($verifiedBy || $verifiedAt || filled($notes))) {
-                    throw ValidationException::withMessages([$product.'_license_status' => 'Bersihkan data verifikasi saat status Belum Diverifikasi.']);
+                    throw ValidationException::withMessages([$product.'_license_status' => 'Clear data verification on unverified status.']);
                 }
             }
         });

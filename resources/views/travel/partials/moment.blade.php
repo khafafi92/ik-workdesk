@@ -6,12 +6,12 @@
 <div class="travel-moment">
     @if($printing || !$editable)
         <span class="travel-value">{{ \App\Services\Travel\TravelPresentation::date($momentDate) }}</span>
-        <span class="travel-value">Jam {{ $momentTba ? 'TBA' : $momentTime }}</span>
+        <span class="travel-value">{{ $formLabel('Jam') }} {{ $momentTba ? 'TBA' : $momentTime }}</span>
     @else
-        <input type="date" aria-label="Tanggal {{ $momentLabel }}" wire:model.live="input.{{ $prefix }}_date" value="{{ $momentDate }}">
+        <input type="date" aria-label="{{ $formLabel('Tanggal') }} {{ $momentLabel }}" wire:model.live="input.{{ $prefix }}_date" value="{{ $momentDate }}">
         <div class="travel-moment-time">
-            <label class="travel-tba"><input type="checkbox" wire:model.live="input.{{ $prefix }}_time_tba">Jam TBA</label>
-            @if(!$momentTba)<input type="time" aria-label="Jam {{ $momentLabel }}" wire:model.live="input.{{ $prefix }}_time" value="{{ $momentTime }}">@endif
+            <label class="travel-tba"><input type="checkbox" wire:model.live="input.{{ $prefix }}_time_tba">{{ $formLabel('Jam TBA') }}</label>
+            @if(!$momentTba)<input type="time" aria-label="{{ $formLabel('Jam') }} {{ $momentLabel }}" wire:model.live="input.{{ $prefix }}_time" value="{{ $momentTime }}">@endif
         </div>
     @endif
 </div>

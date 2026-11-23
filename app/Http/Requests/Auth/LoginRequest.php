@@ -55,7 +55,7 @@ class LoginRequest extends FormRequest
             RateLimiter::hit($this->throttleKey());
 
             throw ValidationException::withMessages([
-                'email' => 'Akun employee sudah tidak aktif.',
+                'email' => 'Employee account is disabled.',
             ]);
         }
 

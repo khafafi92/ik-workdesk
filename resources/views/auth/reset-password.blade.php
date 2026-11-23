@@ -1,9 +1,9 @@
 <x-guest-layout>
     <section class="wd-login-card" aria-labelledby="reset-password-title">
         <div class="wd-login-card-heading">
-            <span class="wd-login-card-kicker">Pemulihan akun</span>
-            <h2 id="reset-password-title">Buat password baru</h2>
-            <p>Masukkan password baru dan ulangi untuk memastikan keduanya sama.</p>
+            <span class="wd-login-card-kicker">Account recovery</span>
+            <h2 id="reset-password-title">Create new password</h2>
+            <p>Enter the new password and repeat it to make sure they're the same.</p>
         </div>
 
         <form method="POST" action="{{ route('password.store') }}" class="wd-login-form">
@@ -31,7 +31,7 @@
             </div>
 
             <div x-data="{ showPassword: false }">
-                <label for="password">Password baru</label>
+                <label for="password">New password</label>
                 <div class="wd-login-input-wrap">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M16.5 10.5V6.75a4.5 4.5 0 0 0-9 0v3.75m-.75 9h10.5a2.25 2.25 0 0 0 2.25-2.25v-4.5a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v4.5a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -43,13 +43,13 @@
                         name="password"
                         required
                         autocomplete="new-password"
-                        placeholder="Masukkan password baru"
+                        placeholder="Enter new password"
                     >
                     <button
                         type="button"
                         class="wd-login-password-toggle"
                         x-on:click="showPassword = !showPassword"
-                        x-bind:aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+                        x-bind:aria-label="showPassword ? 'Hide password' : 'Show password'"
                         x-bind:aria-pressed="showPassword"
                     >
                         <svg x-show="!showPassword" viewBox="0 0 24 24" aria-hidden="true">
@@ -65,7 +65,7 @@
             </div>
 
             <div x-data="{ showPassword: false }">
-                <label for="password_confirmation">Konfirmasi password baru</label>
+                <label for="password_confirmation">Confirm new password</label>
                 <div class="wd-login-input-wrap">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M16.5 10.5V6.75a4.5 4.5 0 0 0-9 0v3.75m-.75 9h10.5a2.25 2.25 0 0 0 2.25-2.25v-4.5a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v4.5a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -77,13 +77,13 @@
                         name="password_confirmation"
                         required
                         autocomplete="new-password"
-                        placeholder="Ulangi password baru"
+                        placeholder="Repeat new password"
                     >
                     <button
                         type="button"
                         class="wd-login-password-toggle"
                         x-on:click="showPassword = !showPassword"
-                        x-bind:aria-label="showPassword ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'"
+                        x-bind:aria-label="showPassword ? 'Hide password confirmation' : 'Show password confirmation'"
                         x-bind:aria-pressed="showPassword"
                     >
                         <svg x-show="!showPassword" viewBox="0 0 24 24" aria-hidden="true">

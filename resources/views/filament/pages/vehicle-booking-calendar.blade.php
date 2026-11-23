@@ -9,7 +9,7 @@
                 <p class="mr-calendar-eyebrow">VEHICLE BOOKING</p>
                 <h1>Weekly vehicle schedule</h1>
                 <p>
-                    Lihat kendaraan yang tersedia dan rencanakan perjalanan tanpa jadwal bentrok.
+                    See what vehicles are available and plan an unscheduled journey.
                 </p>
             </div>
 
@@ -35,8 +35,8 @@
         @if ($calendar['vehicles']->isEmpty())
             <div class="mr-calendar-empty">
                 <x-heroicon-o-truck />
-                <strong>Belum ada kendaraan aktif</strong>
-                <p>Admin atau GA dapat menambahkan kendaraan melalui menu Vehicles.</p>
+                <strong>No active vehicles yet</strong>
+                <p>Admins or GAs can add vehicles through the Vehicles menu.</p>
             </div>
         @else
             <div class="mr-calendar-scroll">
@@ -127,7 +127,7 @@
         <div class="mr-calendar-legend">
             <span><i class="is-booked"></i> Booked</span>
             <span><i class="is-open"></i> Available</span>
-            <span>Calendar menggunakan waktu Asia/Jakarta.</span>
+            <span>Calendar uses Asia/Jakarta time.</span>
         </div>
     </div>
 </x-filament-panels::page>

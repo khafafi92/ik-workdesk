@@ -7,7 +7,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 
 class ItAssetNumber implements ValidationRule
 {
-    public const FORMAT_MESSAGE = 'Gunakan format 00035/APCA/IT/2025: 5 digit nomor, kode perusahaan, /IT/, dan 4 digit tahun.';
+    public const FORMAT_MESSAGE = 'Use form 00035/APCA/IT/2025: 5 digits number, company code, /IT/, and 4 digits a year.';
 
     public function __construct(private ?string $existing = null) {}
 

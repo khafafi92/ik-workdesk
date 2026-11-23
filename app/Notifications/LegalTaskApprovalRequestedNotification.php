@@ -42,11 +42,11 @@ class LegalTaskApprovalRequestedNotification extends Notification implements Sho
         return FilamentNotification::make()
             ->title("Approval Work Log: {$task->task_no}")
             ->body(
-                ($task->title ?: 'Work Log Legal baru')
+                ($task->title ?: 'New Legal Log Work')
                 .($task->ticket
-                    ? " · Induk {$task->ticket->ticket_no}"
+                    ? " · Parent {$task->ticket->ticket_no}"
                     : '')
-                .' menunggu keputusan CBO.'
+                .' waiting for CBO\'s decision.'
             )
             ->icon('heroicon-o-shield-check')
             ->warning()
@@ -74,19 +74,19 @@ class LegalTaskApprovalRequestedNotification extends Notification implements Sho
             ->from($fromAddress, $fromName)
             ->subject("[IK WorkDesk] Approval Work Log: {$task->task_no}")
             ->greeting("Halo, {$notifiable->name}!")
-            ->line('Ada Work Log Legal baru yang membutuhkan approval Anda.')
+            ->line('There\'s a new Legal Log Work that needs your approval.')
             ->line('---')
             ->line("**No. Task  :** {$task->task_no}")
-            ->line("**Judul     :** {$task->title}")
-            ->line("**Departemen:** {$task->department?->name}")
+            ->line("**Title:* {$task->title}")
+            ->line("**Departement:* {$task->department?->name}")
             ->when(
                 $task->ticket,
                 fn (MailMessage $mail) => $mail->line(
-                    "**Dari Ticket:** {$task->ticket->ticket_no} — {$task->ticket->subject}"
+                    "**From Ticket:* {$task->ticket->ticket_no} — {$task->ticket->subject}"
                 )
             )
             ->action('Review Work Log', $viewUrl)
-            ->line('Silakan approve atau reject Work Log tersebut sesuai hasil review.')
+            ->line('Please approve or reject Work Log according to the review.')
             ->salutation('IK WorkDesk System');
     }
 }

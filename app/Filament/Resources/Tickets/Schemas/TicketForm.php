@@ -42,7 +42,7 @@ class TicketForm
                     ->label('Request No')
                     ->disabled()
                     ->dehydrated(false)
-                    ->placeholder('Auto generate saat disimpan'),
+                    ->placeholder('Auto generation on saved'),
 
                 Hidden::make('employee_id')
                     ->default(fn () => auth()->user()?->employee?->id)
@@ -56,13 +56,13 @@ class TicketForm
                     ->label('Requester')
                     ->default(
                         fn () => auth()->user()?->employee?->name
-                            ?? 'Employee belum di-link ke user login'
+                            ?? 'Employee has not been linked to login user'
                     )
                     ->afterStateHydrated(function (TextInput $component, ?Ticket $record): void {
                         if ($record && $record->exists) {
                             $component->state(
                                 $record->employee?->name
-                                    ?? 'Employee belum di-link'
+                                    ?? 'Employee has not been linked'
                             );
                         }
                     })
@@ -73,13 +73,13 @@ class TicketForm
                     ->label('Requester / Lead Department')
                     ->default(
                         fn () => auth()->user()?->employee?->department?->name
-                            ?? 'Department belum diisi'
+                            ?? 'Department is not charged'
                     )
                     ->afterStateHydrated(function (TextInput $component, ?Ticket $record): void {
                         if ($record && $record->exists) {
                             $component->state(
                                 $record->requesterDepartment?->name
-                                    ?? 'Department belum diisi'
+                                    ?? 'Department is not charged'
                             );
                         }
                     })
@@ -272,12 +272,12 @@ class TicketForm
                             ->exists();
                     })
                     ->helperText(
-                        'Requester adalah lead permintaan. Pilih department tambahan yang ikut mengerjakan atau melakukan review.'
+                        'Requester is the lead request. Select the additional department that comes along or reviews.'
                     )
                     ->columnSpanFull(),
 
                 Section::make('Permit')
-                    ->description('Wajib untuk Request Category yang membutuhkan data Permit dan KBLI.')
+                    ->description('Obligatory for the Category Request that requires Permit and KBLI data.')
                     ->visible(function (Get $get, ?Ticket $record): bool {
                         $categoryId = $get('ticket_category_id')
                             ?? $record?->ticket_category_id;
@@ -310,7 +310,7 @@ class TicketForm
 
                         ModalTableSelect::make('permit_kbli_id')
                             ->label('KBLI')
-                            ->placeholder('Klik untuk memilih KBLI')
+                            ->placeholder('Click to select KBLI')
                             ->relationship(
                                 name: 'permitKbli',
                                 titleAttribute: 'name',
@@ -329,10 +329,10 @@ class TicketForm
                             )
                             ->selectAction(
                                 fn (Action $action): Action => $action
-                                    ->label('Pilih KBLI')
-                                    ->modalHeading('Pilih KBLI')
-                                    ->modalDescription('Cari menggunakan nomor atau nama KBLI, lalu pilih satu baris yang sesuai.')
-                                    ->modalSubmitActionLabel('Gunakan KBLI')
+                                    ->label('Select KBLI')
+                                    ->modalHeading('Select KBLI')
+                                    ->modalDescription('Search using a KBLI number or name, then select a suitable line.')
+                                    ->modalSubmitActionLabel('Use KBLI')
                                     ->modalWidth(Width::SevenExtraLarge)
                                     ->slideOver(false)
                             )
@@ -344,10 +344,10 @@ class TicketForm
                                 fn (Get $get): bool => filled($get('permit_company_id'))
                                     && ! (bool) $get('permit_kbli_unavailable')
                             )
-                            ->helperText('Daftar hanya menampilkan KBLI aktif milik Permit Company yang dipilih.'),
+                            ->helperText('The list only shows the active KBLI of the Selected Simit Company.'),
 
                         Toggle::make('permit_kbli_unavailable')
-                            ->label('Tidak ada / belum terdaftar di KBLI')
+                            ->label('No / not registered on KBLI')
                             ->live()
                             ->afterStateUpdated(function (mixed $state, Set $set): void {
                                 if ($state) {
@@ -358,7 +358,7 @@ class TicketForm
                                 }
                             })
                             ->visible(fn (Get $get): bool => filled($get('permit_company_id')))
-                            ->helperText('Jika aktif, status Service Desk otomatis menjadi Discussion.')
+                            ->helperText('If active, the status of Service Desk automatically becomes Discussion.')
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
@@ -396,14 +396,14 @@ class TicketForm
                             && ($record === null || filled($get('legal_subject_category_id')))
                     )
                     ->visible(fn (Get $get, ?Ticket $record): bool => self::isLegalDestination($get, $record))
-                    ->helperText('Pilih subject dari master Subject Categories.')
+                    ->helperText('Select subject from master subject Categories.')
                     ->columnSpanFull(),
 
                 Textarea::make('description')
                     ->visible(fn (Get $get, ?Ticket $record): bool => ! ManpowerRequestFields::isVisible($get, $record))
                     ->label(
                         fn (Get $get, ?Ticket $record): string => self::isLegalDestination($get, $record)
-                            ? 'Nama Proyek / Kegiatan / Transaksi'
+                            ? 'Project / Activity Name'
                             : 'Description'
                     )
                     ->rows(4)
@@ -414,44 +414,44 @@ class TicketForm
 
                 ManpowerRequestFields::section(),
 
-                Section::make('Detail Permintaan Legal')
-                    ->description('Informasi ini wajib dilengkapi untuk permintaan yang ditujukan ke Legal.')
+                Section::make('Legal Request Details')
+                    ->description('This information is mandatory for requests directed to Legal.')
                     ->visible(
                         fn (Get $get, ?Ticket $record): bool => self::isLegalDestination($get, $record)
                     )
                     ->schema([
                         Textarea::make('legal_background')
-                            ->label('Latar Belakang')
-                            ->helperText('Uraikan kondisi, permasalahan, atau kebutuhan bisnis yang mendasari permintaan kepada Divisi Legal.')
+                            ->label('Background')
+                            ->helperText('Describe the conditions, problems, or business needs underlying the request to Legal Division.')
                             ->rows(4)
                             ->required(),
 
                         Textarea::make('legal_objective')
-                            ->label('Tujuan Permintaan')
-                            ->helperText('Jelaskan hasil atau output yang diharapkan dari Divisi Legal.')
+                            ->label('Purpose of Request')
+                            ->helperText('Explain the expected results or output from Legal Division.')
                             ->rows(4)
                             ->required(),
 
                         Textarea::make('legal_desired_scheme')
-                            ->label('Skema yang Diinginkan')
-                            ->helperText('Jelaskan skema kerja sama, transaksi, mekanisme pelaksanaan, struktur, dan pihak yang terlibat bila diperlukan.')
+                            ->label('Preferred arrangement')
+                            ->helperText('Explain the scheme of cooperation, transactions, mechanisms of execution, structure, and party involved when needed.')
                             ->rows(4)
                             ->required(),
 
                         CheckboxList::make('legal_document_types')
-                            ->label('Dokumen Pendukung')
+                            ->label('Supporter Documents')
                             ->options([
-                                'draft_agreement' => 'Draft Perjanjian',
+                                'draft_agreement' => 'Draft Agreement',
                                 'proposal' => 'Proposal',
                                 'term_sheet_loi' => 'Term Sheet / LOI',
                                 'correspondence' => 'Korespondensi',
                                 'company_profile' => 'Company Profile',
-                                'permit_document' => 'Dokumen Perizinan',
-                                'articles_of_association_related_party' => 'AD ART Pihak Terkait',
-                                'other' => 'Dokumen Lainnya',
+                                'permit_document' => 'Permission Document',
+                                'articles_of_association_related_party' => 'ART associated party',
+                                'other' => 'Other Documents',
                             ])
                             ->columns(2)
-                            ->helperText('Opsional. Centang jenis dokumen yang dilampirkan.')
+                            ->helperText('Optional. Check the type of document attached.')
                             ->columnSpanFull(),
                     ])
                     ->columns(1)
@@ -460,7 +460,7 @@ class TicketForm
                 FileUpload::make('attachments')
                     ->label(
                         fn (Get $get, ?Ticket $record): string => self::isLegalDestination($get, $record)
-                            ? 'Upload Dokumen Pendukung (Opsional)'
+                            ? 'Upload Supportor Documents (Optional)'
                             : 'Attachments'
                     )
                     ->multiple()
@@ -597,7 +597,7 @@ class TicketForm
                         ? LegalRequestSchedule::minimumDueAt($get('reported_at'))
                         : null)
                     ->helperText(fn (Get $get, ?Ticket $record): ?string => self::isLegalDestination($get, $record)
-                        ? 'Permintaan Legal tersedia sebelum 15:00 WIB dan Due At minimal 3 hari setelah Reported At.'
+                        ? 'Legal requests are available before 3:00 p.m. and Due At minimum 3 days after Reported At.'
                         : null),
             ]);
     }

@@ -194,7 +194,7 @@ class AttendanceReportProcessorTest extends TestCase
             $this->fail('Periode selain tanggal 21–20 seharusnya ditolak.');
         } catch (\RuntimeException $exception) {
             $this->assertStringContainsString(
-                'harus tanggal 21 sampai 20',
+                'must cover the 21st through the 20th',
                 $exception->getMessage()
             );
         }

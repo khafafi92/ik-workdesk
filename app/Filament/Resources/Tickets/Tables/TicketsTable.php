@@ -70,7 +70,7 @@ class TicketsTable
                 TextColumn::make('permitKbli.code')
                     ->label('KBLI')
                     ->placeholder(fn ($record): string => $record->permit_kbli_unavailable
-                        ? 'Belum terdaftar'
+                        ? 'Unlisted'
                         : '-')
                     ->toggleable(),
 
@@ -111,7 +111,7 @@ class TicketsTable
 
                 TextColumn::make('workTasks.employee.name')
                     ->label('Assigned To')
-                    ->placeholder('Belum ditentukan')
+                    ->placeholder('Undetermined')
                     ->separator(', ')
                     ->searchable()
                     ->toggleable(),
@@ -151,7 +151,7 @@ class TicketsTable
                         abort_unless(
                             TicketResource::canDelete($record),
                             403,
-                            'Service request ini tidak dapat dihapus.'
+                            'This request service could not be deleted.'
                         );
                     }),
             ])
@@ -165,7 +165,7 @@ class TicketsTable
                             abort_unless(
                                 TicketResource::canDeleteAny(),
                                 403,
-                                'Anda tidak memiliki izin menghapus service request.'
+                                'You do not have permission to delete request service.'
                             );
                         }),
                 ]),

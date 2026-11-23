@@ -29,7 +29,7 @@ class CreateUser extends CreateRecord
             $actor
                 && $actor->hasPermission('users.manage'),
             403,
-            'Anda tidak memiliki izin membuat user.'
+            'You don\'t have a user-make permit.'
         );
 
         $this->selectedEmployeeId =
@@ -45,7 +45,7 @@ class CreateUser extends CreateRecord
 
         if (! app(UserAccessHierarchyService::class)->canAssign($actor, $this->selectedAccessLevel)) {
             throw ValidationException::withMessages([
-                'access_level' => 'Level akses tidak tersedia atau tidak dapat Anda berikan.',
+                'access_level' => 'The access level is unavailable or cannot be provided.',
             ]);
         }
 

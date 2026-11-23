@@ -24,7 +24,7 @@ class WorkTaskMutationGuard
         abort_unless(
             $isManager || $isAssignedPic,
             403,
-            'Anda tidak memiliki izin mengelola Work Log.'
+            'You don\'t have permission to manage the Work Log.'
         );
 
         if ($isAssignedPic && ! $isManager) {
@@ -46,7 +46,7 @@ class WorkTaskMutationGuard
                 ->exists()
         ) {
             throw ValidationException::withMessages([
-                'department_id' => 'Department tidak aktif atau berada di luar akses Anda.',
+                'department_id' => 'The department is either inactive or out of your access.',
             ]);
         }
 
@@ -73,7 +73,7 @@ class WorkTaskMutationGuard
             && ! $this->canAssignPic($actor, $departmentId, $record)
         ) {
             throw ValidationException::withMessages([
-                'employee_id' => 'PIC Legal hanya dapat ditentukan Manager. Di department lain, PIC hanya dapat ditentukan Manager atau Supervisor.',
+                'employee_id' => 'PIC Legal can only be determined manager. In other departments, the PIC can only be determined manager or Supervisor.',
             ]);
         }
 
@@ -86,7 +86,7 @@ class WorkTaskMutationGuard
                 ->exists()
         ) {
             throw ValidationException::withMessages([
-                'employee_id' => 'PIC harus merupakan employee aktif dari department Work Log.',
+                'employee_id' => 'PIC must be an active employee of the Department of Work Log.',
             ]);
         }
 
@@ -134,7 +134,7 @@ class WorkTaskMutationGuard
 
         if ($candidate->isDirty($forbiddenFields)) {
             throw ValidationException::withMessages([
-                'status' => 'PIC hanya dapat memperbarui priority, due date, status pelaksanaan, progress, waktu mulai, notes, dan hasil Permit jika tersedia.',
+                'status' => 'PIC can only update priority, due date, execution status, progress, start time, notes, and permit results if available.',
             ]);
         }
 
@@ -143,7 +143,7 @@ class WorkTaskMutationGuard
             && ! in_array($data['status'], ['planned', 'in_progress', 'hold', 'cancel'], true)
         ) {
             throw ValidationException::withMessages([
-                'status' => 'PIC dapat memilih Planned, In Progress, Hold, atau Cancel. Done dikonfirmasi oleh requester.',
+                'status' => 'PIC can choose Planned, In Progress, Hold, or Cancel. Done confirmed by the register.',
             ]);
         }
 
@@ -152,13 +152,13 @@ class WorkTaskMutationGuard
             && ! $record->canBeCancelledBy(auth()->user())
         ) {
             throw ValidationException::withMessages([
-                'status' => 'Hanya department penerima task yang dapat melakukan Cancel.',
+                'status' => 'Only the task-receiver department can perform the Cancel.',
             ]);
         }
 
         if ((int) ($data['progress_percent'] ?? $record->progress_percent) >= 100) {
             throw ValidationException::withMessages([
-                'progress_percent' => 'Progress PIC maksimal 99%. Status Done dikonfirmasi oleh requester.',
+                'progress_percent' => 'Progress PIC is 99% maximum.',
             ]);
         }
     }
@@ -176,7 +176,7 @@ class WorkTaskMutationGuard
             && (int) $data['ticket_id'] !== (int) $record->ticket_id
         ) {
             throw ValidationException::withMessages([
-                'ticket_id' => 'Service Desk sumber Work Log tidak dapat diubah.',
+                'ticket_id' => 'The Log Work Service source could not be changed.',
             ]);
         }
 
@@ -185,7 +185,7 @@ class WorkTaskMutationGuard
             && (int) $data['department_id'] !== (int) $record->department_id
         ) {
             throw ValidationException::withMessages([
-                'department_id' => 'Department Work Log dari Service Desk tidak dapat diubah.',
+                'department_id' => 'Department Log of Service Desk could not be changed.',
             ]);
         }
     }
@@ -200,7 +200,7 @@ class WorkTaskMutationGuard
 
         if (! $ticket || ! TicketResource::canView($ticket)) {
             throw ValidationException::withMessages([
-                'ticket_id' => 'Service Desk berada di luar akses Anda.',
+                'ticket_id' => 'Service Desk is beyond your access.',
             ]);
         }
 
@@ -212,7 +212,7 @@ class WorkTaskMutationGuard
 
         if (! $departmentIsAssigned) {
             throw ValidationException::withMessages([
-                'department_id' => 'Department harus sesuai dengan assignment Service Desk.',
+                'department_id' => 'Department should fit the assignment Service Desk.',
             ]);
         }
     }

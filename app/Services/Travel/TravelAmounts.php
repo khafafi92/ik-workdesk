@@ -34,7 +34,7 @@ class TravelAmounts
             $quantity = $this->number($item['quantity'], "costs.{$index}.quantity", 3);
             $unitCost = $this->number($item['unit_cost'], "costs.{$index}.unit_cost");
             if ($quantity <= 0) {
-                throw ValidationException::withMessages(["costs.{$index}.quantity" => 'Jumlah harus lebih dari nol.']);
+                throw ValidationException::withMessages(["costs.{$index}.quantity" => 'Quantity must be greater than zero.']);
             }
             $amount = Decimal::gross($quantity, $unitCost);
             $total = $this->add($total, $amount);
@@ -81,14 +81,14 @@ class TravelAmounts
         try {
             return Decimal::parse($value, $places);
         } catch (ValidationException) {
-            throw ValidationException::withMessages([$field => 'Isi angka tanpa pemisah ribuan, maksimal '.$places.' angka desimal.']);
+            throw ValidationException::withMessages([$field => 'Enter an amount without thousands separators, using up to '.$places.' decimal places.']);
         }
     }
 
     private function add(int $left, int $right): int
     {
         if ($right > PHP_INT_MAX - $left) {
-            throw ValidationException::withMessages(['travel' => 'Total biaya melebihi batas angka yang didukung.']);
+            throw ValidationException::withMessages(['travel' => 'The total cost exceeds the supported amount.']);
         }
 
         return $left + $right;

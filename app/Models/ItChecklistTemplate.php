@@ -23,15 +23,15 @@ class ItChecklistTemplate extends Model
     {
         static::saving(function (self $template): void {
             if (! $template->device_type || $template->category !== $template->device_type->category() || $template->version < 1 || blank($template->code) || blank($template->name)) {
-                throw ValidationException::withMessages(['template' => 'Kategori, jenis, kode, nama, dan versi template harus sesuai.']);
+                throw ValidationException::withMessages(['template' => 'Category, type, code, name, and version template must match.']);
             }
             if ($template->exists && $template->isDirty(['code', 'version', 'name', 'category', 'device_type']) && $template->inspections()->exists()) {
-                throw ValidationException::withMessages(['template' => 'Buat versi baru untuk mengubah template yang sudah digunakan.']);
+                throw ValidationException::withMessages(['template' => 'Create a new version to modify the already used template.']);
             }
         });
         static::deleting(function (self $template): void {
             if ($template->inspections()->exists() || $template->items()->exists()) {
-                throw ValidationException::withMessages(['template' => 'Template yang memiliki item atau pemeriksaan tidak dapat dihapus.']);
+                throw ValidationException::withMessages(['template' => 'The template that has items or checks cannot be deleted.']);
             }
         });
     }

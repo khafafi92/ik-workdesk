@@ -61,7 +61,7 @@ class RolesTable
                         abort_unless(
                             RoleResource::canDelete($record),
                             403,
-                            'Role ini tidak dapat dihapus.'
+                            'This role cannot be removed.'
                         );
                     }),
             ])

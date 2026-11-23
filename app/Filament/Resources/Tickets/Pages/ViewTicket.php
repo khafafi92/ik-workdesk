@@ -20,22 +20,22 @@ class ViewTicket extends ViewRecord
     {
         return [
             Action::make('promoteToCollaborative')
-                ->label('Jadikan kolaboratif')
+                ->label('Enable collaboration')
                 ->icon('heroicon-o-user-group')
                 ->color('primary')
-                ->modalHeading('Jadikan Service Desk kolaboratif')
-                ->modalDescription('Work Log utama tetap berjalan. Sistem akan membuat Work Log baru untuk setiap departemen tambahan yang dipilih.')
+                ->modalHeading('Make Service Desk collaborative')
+                ->modalDescription('Main Log work is running. System will create a new Log Work for each selected additional department.')
                 ->form([
                     Select::make('department_ids')
-                        ->label('Departemen tambahan')
+                        ->label('Extra department')
                         ->options(fn (): array => app(TicketCollaborationService::class)->additionalDepartmentOptions($this->record))
                         ->multiple()
                         ->searchable()
                         ->preload()
                         ->required()
-                        ->helperText('Pilih departemen yang perlu ikut mengerjakan atau melakukan review.'),
+                        ->helperText('Choose a department that needs to come along and do reviews.'),
                 ])
-                ->modalSubmitActionLabel('Tambahkan ke kolaborasi')
+                ->modalSubmitActionLabel('Add to collaboration')
                 ->visible(fn (): bool => TicketResource::canPromoteToCollaborative($this->record))
                 ->action(function (array $data): void {
                     $ticket = app(TicketCollaborationService::class)->promote(
@@ -46,13 +46,13 @@ class ViewTicket extends ViewRecord
                     $this->record = $ticket;
 
                     Notification::make()
-                        ->title('Service Desk sudah menjadi kolaboratif')
-                        ->body('Work Log utama dipertahankan dan departemen tambahan telah menerima Work Log baru.')
+                        ->title('Service Desk has become collaborative')
+                        ->body('Main Log work is maintained and additional departments have received a new Log Work.')
                         ->success()
                         ->send();
                 }),
             Action::make('reviseAndResubmit')
-                ->label('Perbaiki & Ajukan Ulang')
+                ->label('Fix & Resubmit')
                 ->icon('heroicon-o-arrow-path')
                 ->color('warning')
                 ->url(fn (): string => TicketResource::getUrl('edit', [

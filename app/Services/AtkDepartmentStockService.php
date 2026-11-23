@@ -69,7 +69,7 @@ class AtkDepartmentStockService
             $quantity = round($quantity, 2);
 
             if ($quantity <= 0 || $quantity > (float) $balance->qty_available) {
-                throw ValidationException::withMessages(['qty_used' => 'Jumlah penggunaan harus lebih dari nol dan tidak boleh melebihi saldo department.']);
+                throw ValidationException::withMessages(['qty_used' => 'The amount of use must be more than zero and must not exceed the department balance.']);
             }
 
             $before = (float) $balance->qty_available;

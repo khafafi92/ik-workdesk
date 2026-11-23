@@ -11,7 +11,7 @@ class InventoryBackfill
     {
         $now = now();
         $warehouseId = DB::table('inventory_warehouses')->where('code', 'HO-ATK-LEGACY')->value('id')
-            ?? DB::table('inventory_warehouses')->insertGetId(['code' => 'HO-ATK-LEGACY', 'name' => 'Gudang Utama ATK',
+            ?? DB::table('inventory_warehouses')->insertGetId(['code' => 'HO-ATK-LEGACY', 'name' => 'Office supplies\'s Main Storage',
                 'kind' => 'HO', 'legacy_atk' => true, 'created_at' => $now, 'updated_at' => $now]);
         DB::table('atk_items')->whereNull('inventory_item_id')->orderBy('id')->chunkById(200, function ($items) use ($warehouseId, $now): void {
             foreach ($items as $item) {
@@ -25,7 +25,7 @@ class InventoryBackfill
                     'created_at' => $now, 'updated_at' => $now]);
                 DB::table('inventory_movements')->insert(['transaction_key' => 'opening-atk-'.$item->id, 'balance_id' => $balanceId,
                     'type' => 'opening', 'quantity_milli' => $quantity, 'balance_before_milli' => 0, 'balance_after_milli' => $quantity,
-                    'reference_type' => 'atk_item', 'reference_id' => $item->id, 'notes' => 'Saldo Gudang Utama sebelum integrasi inventori.',
+                    'reference_type' => 'atk_item', 'reference_id' => $item->id, 'notes' => 'Main Storage Saldo before inventory integration.',
                     'created_at' => $now, 'updated_at' => $now]);
             }
         });
@@ -40,7 +40,7 @@ class InventoryBackfill
             }
         });
         foreach (['KPMOG', 'APCA'] as $company) {
-            DB::table('inventory_warehouses')->insertOrIgnore(['code' => 'HO-'.$company, 'name' => 'Gudang HO', 'kind' => 'HO',
+            DB::table('inventory_warehouses')->insertOrIgnore(['code' => 'HO-'.$company, 'name' => 'HO warehouse', 'kind' => 'HO',
                 'company' => $company, 'created_at' => $now, 'updated_at' => $now]);
             foreach (DB::table('scm_project_numbering')->get() as $project) {
                 DB::table('inventory_warehouses')->insertOrIgnore(['code' => 'PROJECT-'.$company.'-'.$project->id, 'name' => $project->name,

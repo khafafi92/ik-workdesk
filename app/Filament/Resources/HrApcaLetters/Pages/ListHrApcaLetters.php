@@ -12,16 +12,16 @@ class ListHrApcaLetters extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'Register Surat HR APCA';
+        return 'HR APCA Letter Register';
     }
 
     public function getBreadcrumb(): string
     {
-        return 'Daftar';
+        return 'List';
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Gunakan nomor berikutnya untuk membuat draft. Setelah isi surat lengkap, terbitkan surat dari daftar ini.';
+        return 'Use the next number to create a draft. After the complete mail content, publish mail from this list.';
     }
 }

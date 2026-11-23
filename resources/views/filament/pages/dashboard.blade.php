@@ -75,8 +75,8 @@
             <section class="ik-module-summary" aria-labelledby="module-summary-heading">
                 <div class="ik-module-summary-heading">
                     <div>
-                        <h2 id="module-summary-heading">Ringkasan Modul</h2>
-                        <p>Data operasional sesuai akses Anda.</p>
+                        <h2 id="module-summary-heading">Module Summary</h2>
+                        <p>View the modules you have access to.</p>
                     </div>
                 </div>
 
@@ -88,7 +88,7 @@
                                     <h3>{{ $module['title'] }}</h3>
                                     <p>{{ $module['description'] }}</p>
                                 </div>
-                                <a href="{{ $module['url'] }}" aria-label="Buka {{ $module['title'] }}">Buka modul</a>
+                                <a href="{{ $module['url'] }}" aria-label="Open {{ $module['title'] }}">Open module</a>
                             </div>
 
                             <dl class="ik-module-summary-metrics">
@@ -130,7 +130,7 @@
                         </x-filament::input.wrapper>
                     </div>
                     <div>
-                        <label for="dashboard-pr-sr-company">Perusahaan</label>
+                        <label for="dashboard-pr-sr-company">Company</label>
                         <x-filament::input.wrapper>
                             <x-filament::input.select id="dashboard-pr-sr-company" wire:model.live="scmCompany">
                                 <option value="">Semua perusahaan</option>

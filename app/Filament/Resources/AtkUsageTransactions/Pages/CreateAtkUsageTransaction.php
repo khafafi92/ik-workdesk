@@ -20,7 +20,7 @@ class CreateAtkUsageTransaction extends CreateRecord
 
         if (! $user || ! $departmentId) {
             throw ValidationException::withMessages([
-                'atk_item_id' => 'Akun Anda belum terhubung ke departemen employee.',
+                'atk_item_id' => 'Your account hasn\'t been connected to the employee department.',
             ]);
         }
 

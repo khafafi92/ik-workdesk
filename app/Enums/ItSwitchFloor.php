@@ -19,7 +19,7 @@ enum ItSwitchFloor: string
     {
         return match ($this) {
             self::Basement2 => 'B2',
-            self::Lobby => 'Lobi',
+            self::Lobby => 'Lobby',
             default => 'LT '.$this->value,
         };
     }

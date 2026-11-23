@@ -49,19 +49,19 @@
                         </span>
 
                         <h2 class="mt-6 text-4xl lg:text-5xl font-bold tracking-tight text-slate-950">
-                            Starter project siap pakai untuk aplikasi internal.
+                            Starter project is ready for internal applications.
                         </h2>
 
                         <p class="mt-5 text-lg text-slate-600 leading-8">
-                            Boilerplate ini disiapkan sebagai pondasi awal untuk membuat aplikasi seperti
-                            dashboard, absensi, inventory, report, project control, dan sistem internal lainnya.
+                            This boilerplate is prepared as the initial foundation for creating applications like
+                            dashboard, attendance, inventory, reporting, project control, and other internal systems.
                         </p>
 
                         <div class="mt-8 flex flex-wrap gap-3">
                             @auth
                             <a href="{{ url('/dashboard') }}"
                                 class="px-5 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-700">
-                                Masuk Dashboard
+                                Enter Dashboard
                             </a>
                             @else
                             <a href="{{ route('login') }}"

@@ -28,16 +28,16 @@ class ItDailyMonitoring extends Model
             if ($record->exists) {
                 $stored = self::query()->findOrFail($record->id);
                 if ($stored->status === ItInspectionStatus::Finalized || $record->isDirty(['managing_department_id', 'monitoring_type', 'inspector_id', 'inspector_name'])) {
-                    throw ValidationException::withMessages(['monitoring' => 'Catatan final dan identitas pencatatan tidak dapat diubah.']);
+                    throw ValidationException::withMessages(['monitoring' => 'The final record and login identity could not be changed.']);
                 }
             }
             if ($record->status === ItInspectionStatus::Finalized && (! $record->finalized_at || ! $record->finalized_by)) {
-                throw ValidationException::withMessages(['monitoring' => 'Finalisasi memerlukan waktu dan petugas.']);
+                throw ValidationException::withMessages(['monitoring' => 'Finalization takes time and officers.']);
             }
             $record->attention_count = collect($record->checks)->filter(fn (array $check): bool => $record->monitoring_type->needsAttention($check))->count();
         });
         static::deleting(function (): void {
-            throw ValidationException::withMessages(['monitoring' => 'Riwayat monitoring tidak dapat dihapus.']);
+            throw ValidationException::withMessages(['monitoring' => 'The monitoring history could not be deleted.']);
         });
     }
 

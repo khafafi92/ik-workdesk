@@ -24,9 +24,9 @@ class FinanceBudgets extends Page
 {
     protected static ?string $slug = 'finance/master-anggaran';
 
-    protected static ?string $title = 'Master anggaran';
+    protected static ?string $title = 'Budget Settings';
 
-    protected static ?string $navigationLabel = 'Master anggaran';
+    protected static ?string $navigationLabel = 'Budget Settings';
 
     protected static string|UnitEnum|null $navigationGroup = 'Finance';
 
@@ -69,7 +69,7 @@ class FinanceBudgets extends Page
         $record = app(BudgetMasters::class)->createBudget(auth()->user(), $this->budget);
         $this->reset('budget');
         $this->openBudget($record->id);
-        Notification::make()->title('Anggaran utama tersimpan.')->success()->send();
+        Notification::make()->title('Main budgets are stored.')->success()->send();
     }
 
     public function openBudget(int $id): void
@@ -110,7 +110,7 @@ class FinanceBudgets extends Page
     {
         app(BudgetMasters::class)->updateAmount(auth()->user(), $this->editLevel, $this->editId, $this->editVersion, $this->editAmount);
         $this->cancelEdit();
-        Notification::make()->title('Anggaran diperbarui.')->success()->send();
+        Notification::make()->title('Budget updated.')->success()->send();
     }
 
     public function createScope(): void
@@ -118,7 +118,7 @@ class FinanceBudgets extends Page
         app(BudgetMasters::class)->createScope(auth()->user(), $this->selectedBudget, $this->scope);
         $this->reset('scope');
         $this->resetValidation();
-        Notification::make()->title('Alokasi HO atau project tersimpan.')->success()->send();
+        Notification::make()->title('Ho or project allocation stored.')->success()->send();
     }
 
     public function createLine(): void
@@ -128,7 +128,7 @@ class FinanceBudgets extends Page
         app(BudgetMasters::class)->createLine(auth()->user(), $scope->id, $this->line);
         $this->reset('line');
         $this->resetValidation();
-        Notification::make()->title('Alokasi departemen tersimpan.')->success()->send();
+        Notification::make()->title('The department\'s allocation is stored.')->success()->send();
     }
 
     public function exportBudget()
@@ -138,7 +138,7 @@ class FinanceBudgets extends Page
             ->findOrFail($this->selectedBudget);
         $report = app(BudgetLedger::class)->budgetReport($budget);
         $filename = sprintf(
-            'penggunaan-anggaran-%s-%d-%s.xlsx',
+            'budget-usage-%s-%d-%s.xlsx',
             strtolower($budget->company),
             $budget->year,
             strtolower($budget->currency),

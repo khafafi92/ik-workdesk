@@ -38,7 +38,7 @@ class AttendanceWorkHourSummarySheet implements FromCollection, ShouldAutoSize, 
             'Employee ID',
             'Full Name',
             $this->import->period_name,
-            'Status Data',
+            'Data Status',
         ];
     }
 
@@ -48,7 +48,7 @@ class AttendanceWorkHourSummarySheet implements FromCollection, ShouldAutoSize, 
             (string) $row->employee_code,
             $row->employee_name,
             $row->work_hours_text,
-            data_get($row->raw_data, 'status', 'Tersedia'),
+            __(data_get($row->raw_data, 'status', 'Tersedia')),
         ];
     }
 

@@ -974,10 +974,10 @@
         </div>
         <div class="header-right">
             <a href="{{ url('/panel') }}" class="btn-input">
-                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Kembali ke Dashboard
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Return to Dashboard
             </a>
             <a href="{{ route('daily.input') }}" class="btn-input">
-                <i class="ti ti-plus" aria-hidden="true"></i> Input Harian
+                <i class="ti ti-plus" aria-hidden="true"></i> Daily Input
             </a>
             <a href="{{ route('availability.ltro-1b') }}" class="btn-input">
                 <i class="ti ti-chart-bar" aria-hidden="true"></i> Availability LTRO-1B
@@ -994,7 +994,7 @@
             <div class="stat-card blue">
                 <div class="stat-label">Total Event</div>
                 <div class="stat-value">{{ number_format($totalRecords) }}</div>
-                <span class="stat-badge badge-blue">Bulan ini</span>
+                <span class="stat-badge badge-blue">This month</span>
             </div>
             <div class="stat-card amber">
                 <div class="stat-label">Downtime Unplan</div>
@@ -1011,12 +1011,12 @@
                 <span class="stat-badge badge-green">Planned</span>
             </div>
             <div class="stat-card blue">
-                <div class="stat-label">Unit Aktif</div>
+                <div class="stat-label">Active Unit</div>
                 <div class="stat-value">{{ count($unitDashboard) }}</div>
                 <span class="stat-badge badge-blue">Unit</span>
             </div>
             <div class="stat-card amber">
-                <div class="stat-label">MTTR Rata-rata</div>
+                <div class="stat-label">Average MTTR</div>
                 <div class="stat-value">
                     {{ $totalRecords > 0 ? number_format($unplannedDowntime / $totalRecords, 0) : 0 }}<span
                         class="unit">mnt</span>
@@ -1033,8 +1033,8 @@
                 <div class="section-line"></div>
                 <span class="section-count">{{ $recentRecords->count() }} record</span>
             </div>
-            <p class="scroll-hint"><i class="ti ti-arrows-horizontal" aria-hidden="true"></i> Geser untuk lihat semua
-                kolom</p>
+            <p class="scroll-hint"><i class="ti ti-arrows-horizontal" aria-hidden="true"></i> Move to see all
+                column</p>
             <div class="table-wrap">
                 <table class="dark-table" style="min-width:1400px;">
                     <thead>
@@ -1101,7 +1101,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="{{ $rhPk100Enabled ? 15 : 13 }}" class="empty-cell">Belum ada event MTTR.</td>
+                            <td colspan="{{ $rhPk100Enabled ? 15 : 13 }}" class="empty-cell">No MTTR event yet.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -1112,7 +1112,7 @@
         <!-- ===== DONUT SUMMARY ===== -->
         <div>
             <div class="section-head">
-                <span class="section-title">Ringkasan</span>
+                <span class="section-title">Summary</span>
                 <div class="section-line"></div>
             </div>
             <div class="donut-grid">
@@ -1128,7 +1128,7 @@
 
                 <div class="donut-card">
                     <div class="donut-card-header">Downtime Unplan</div>
-                    <div class="donut-card-sub">Menit per unit</div>
+                    <div class="donut-card-sub">Minutes per unit</div>
                     <div class="donut-wrap">
                         <svg class="donut-svg" width="84" height="84" viewBox="0 0 84 84" role="img"
                             aria-label="Downtime unplan per unit. Total {{ number_format($unplannedDowntime) }} menit.">
@@ -1202,7 +1202,7 @@
                 <!-- Shutdown per Category -->
                 <div class="donut-card">
                     <div class="donut-card-header">Total Shutdown</div>
-                    <div class="donut-card-sub">Event per kategori</div>
+                    <div class="donut-card-sub">Events per category</div>
                     <div class="donut-wrap">
                         <svg class="donut-svg" width="84" height="84" viewBox="0 0 84 84" role="img"
                             aria-label="Total shutdown per kategori. Total {{ number_format($totalRecords) }} event.">
@@ -1379,7 +1379,7 @@
 
             @if (session()->has('import_warnings'))
             <div class="alert-error">
-                <strong>Catatan import:</strong>
+                <strong>Import notes:</strong>
                 <ul>
                     @foreach(session('import_warnings') as $warning)
                     <li>{{ $warning }}</li>
@@ -1393,8 +1393,8 @@
                 @csrf
                 <div class="import-bar">
                     <div>
-                        <div class="import-label">Import dari Excel</div>
-                        <div class="import-sub">Format didukung: .xlsx, .xls, .csv</div>
+                        <div class="import-label">Import from Excel</div>
+                        <div class="import-sub">Supported formats:.xlsx,.xls,.csv</div>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <input id="mttr_file" name="mttr_file" type="file" accept=".xlsx,.xls,.csv" required
@@ -1424,7 +1424,7 @@
                                 <th style="width:96px;">Unit</th>
                                 <th style="width:90px;">Time<br>Shutdown</th>
                                 <th style="width:90px;">Time<br>Running</th>
-                                <th style="width:96px;">Downtime<br>(Menit)</th>
+                                <th style="width:96px;">Downtime<br>(menite)</th>
                                 @if($rhPk100Enabled)
                                 <th style="width:90px;">RH</th>
                                 <th style="width:90px;">PK-100</th>
@@ -1473,11 +1473,11 @@
                                     </select>
                                 </td>
                                 <td><textarea wire:model="indication" rows="3"
-                                        placeholder="Deskripsi indikasi..."></textarea></td>
+                                        placeholder="Describe the issue..."></textarea></td>
                                 <td><textarea wire:model="immediate_cause" rows="3"
-                                        placeholder="Penyebab langsung..."></textarea></td>
+                                        placeholder="The direct cause..."></textarea></td>
                                 <td><textarea wire:model="activity_troubleshooting" rows="3"
-                                        placeholder="Langkah troubleshooting..."></textarea></td>
+                                        placeholder="Step troubleshooting..."></textarea></td>
                             </tr>
                         </tbody>
                     </table>
@@ -1485,7 +1485,7 @@
 
                 @if ($errors->any())
                 <div class="alert-error" style="margin: 0 1.5rem 0.75rem;">
-                    <strong>Data input belum lengkap.</strong>
+                    <strong>Incomplete input data.</strong>
                     <ul>
                         @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -1501,9 +1501,9 @@
                     <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save"
                         class="btn-save">
                         <span wire:loading.remove wire:target="save">
-                            <i class="ti ti-device-floppy" aria-hidden="true"></i> Simpan Data MTTR
+                            <i class="ti ti-device-floppy" aria-hidden="true"></i> Save MTTR Data
                         </span>
-                        <span wire:loading wire:target="save">Menyimpan...</span>
+                        <span wire:loading wire:target="save">Saving...</span>
                     </button>
                 </div>
             </form>
@@ -1516,7 +1516,7 @@
       const el = document.getElementById('live-clock');
       if (!el) return;
       const now = new Date();
-      const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
       const d  = String(now.getDate()).padStart(2, '0');
       const m  = months[now.getMonth()];
       const y  = now.getFullYear();

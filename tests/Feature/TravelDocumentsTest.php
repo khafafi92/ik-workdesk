@@ -109,22 +109,22 @@ class TravelDocumentsTest extends TestCase
 
         $detailPath = '/panel/perjalanan-dinas/spd?dokumen='.$document->id;
         $this->get('/panel')->assertOk()->assertSeeInOrder([
-            $document->number, 'Lokasi Pengujian', '16/11/2026 s.d. 18/11/2026', 'Menunggu persetujuan Manager Project',
+            $document->number, 'Lokasi Pengujian', '16/11/2026 to 18/11/2026', 'Awaiting approval from Project Manager',
         ])->assertSee($detailPath, false);
         $this->get($detailPath)->assertOk();
 
         $this->actingAs($this->outsider)->get('/panel')->assertOk()
-            ->assertSeeText('Belum ada SPD yang dapat Anda lihat.')
+            ->assertSeeText('No travel orders to show.')
             ->assertDontSeeText($document->number);
 
         $document = $workflow->decide($this->finance, $document->id, $document->version, false, 'Perbarui rincian kegiatan.');
         $this->actingAs($this->requester)->get('/panel')->assertOk()
             ->assertSeeText($document->displayNumber())
-            ->assertSeeText('Dikembalikan untuk revisi');
+            ->assertSeeText('Returned for revision');
 
         $workflow->submit($this->requester, $document->id, $document->version);
         $this->get('/panel')->assertOk()
-            ->assertSeeText('Menunggu persetujuan HRGA / HR Manager')
+            ->assertSeeText('Awaiting approval from HRGA / HR Manager')
             ->assertDontSeeText('Menunggu persetujuan Atasan Langsung');
     }
 
@@ -176,13 +176,13 @@ class TravelDocumentsTest extends TestCase
 
         Livewire::actingAs($this->requester)->test(TravelSpd::class)->call('createDocument')
             ->assertSet('input.finance_budget_line_id', (string) $line->id)
-            ->assertSee('Sisa IDR 800,00')->assertDontSee('SPD-BUDGET')->assertDontSee('Biaya perjalanan');
+            ->assertSee('Remaining IDR 800,00')->assertDontSee('SPD-BUDGET')->assertDontSee('Biaya perjalanan');
     }
 
     public function test_spd_revision_field_renders_instead_of_showing_blade_source(): void
     {
         Livewire::actingAs($this->requester)->test(TravelSpd::class)->call('createDocument')
-            ->assertSeeHtml('aria-label="Revisi SPD"')
+            ->assertSeeHtml('aria-label="SPD revision"')
             ->assertDontSee("@include('travel.partials.field', ['field' => 'revision'");
     }
 
@@ -208,18 +208,18 @@ class TravelDocumentsTest extends TestCase
         $line = $scope->lines()->sole();
 
         Livewire::actingAs($this->requester)->test(TravelSpd::class)->call('createDocument')
-            ->assertSeeInOrder(['Perusahaan', 'Anggaran SPD'])
-            ->assertSee('HO / Kantor Pusat')
+            ->assertSeeInOrder(['Company', 'SPD budget'])
+            ->assertSee('HO / Head Office')
             ->set('input.company', 'KPMOG')
             ->assertSet('input.finance_budget_line_id', (string) $hoScope->lines()->sole()->id)
-            ->assertSee('Sisa IDR 300,00')
+            ->assertSee('Remaining IDR 300,00')
             ->set('input.project_numbering_id', (string) $project->id)
             ->assertSet('input.finance_budget_line_id', (string) $line->id)
-            ->assertSee('Anggaran SPD')
-            ->assertSee('Sisa IDR 800,00')
+            ->assertSee('SPD budget')
+            ->assertSee('Remaining IDR 800,00')
             ->set('input.project_numbering_id', '')
             ->assertSet('input.finance_budget_line_id', (string) $hoScope->lines()->sole()->id)
-            ->assertSee('Sisa IDR 300,00')
+            ->assertSee('Remaining IDR 300,00')
             ->assertDontSee('SPD-PROJECT-BUDGET')->assertDontSee('Biaya perjalanan project');
     }
 
@@ -455,12 +455,12 @@ class TravelDocumentsTest extends TestCase
 
     public function test_forms_follow_template_and_livewire_saves_and_submits_without_scm_permissions(): void
     {
-        $page = Livewire::test(TravelSpd::class)->assertSee('Belum ada SPD')->call('createDocument')
-            ->assertSee('FORMULIR PERMOHONAN PERJALANAN DINAS')->assertSee('PERINCIAN DANA PERJALANAN')
+        $page = Livewire::test(TravelSpd::class)->assertSee('No SPD')->call('createDocument')
+            ->assertSee('BUSINESS TRAVEL REQUEST')->assertSee('ESTIMATED TRAVEL COSTS')
             ->set('input', $this->input('KPMOG'))->call('saveDraft')->assertHasNoErrors();
         $id = $page->get('selected');
         $this->assertSame(1, TravelDocument::count());
-        $page->call('submitDocument')->assertHasNoErrors()->assertSee('Menunggu persetujuan');
+        $page->call('submitDocument')->assertHasNoErrors()->assertSee('Awaiting approval');
         $document = TravelDocument::findOrFail($id);
         $this->get(route('travel.print', $document))->assertOk()->assertSee('PT. KPM OIL &amp; GAS', false)->assertSee('belum disetujui seluruh pemeriksa.');
         $this->assertTrue(Access::signs($this->requester));
@@ -469,7 +469,7 @@ class TravelDocumentsTest extends TestCase
             Livewire::actingAs($actor)->test(TravelSpd::class, ['selected' => $id])->call('approveDocument')->assertHasNoErrors();
         }
         Livewire::actingAs($this->requester)->test(TravelLpj::class)->call('createDocument')->set('input.spd_id', (string) $id)
-            ->assertSet('input.company', 'KPMOG')->assertSet('input.advance_one', '450000,00')->assertSee('LAPORAN PERTANGGUNG JAWABAN (LPJ)')->assertSee('Uang Muka 1')
+            ->assertSet('input.company', 'KPMOG')->assertSet('input.advance_one', '450000,00')->assertSee('TRAVEL EXPENSE REPORT (LPJ)')->assertSee('Advance 1')
             ->set('input.expenses', $this->lpjInput($document)['expenses'])
             ->set('input.advance_one', '400000')
             ->call('saveDraft')->assertHasNoErrors();
@@ -735,7 +735,7 @@ class TravelDocumentsTest extends TestCase
     {
         $page = Livewire::test(TravelSpd::class)->call('createDocument')->set('input', $this->input())
             ->set('input.lodgings', [])
-            ->assertSee('wire:model.live="input.depart_date"', false)->assertSee('Jam TBA')
+            ->assertSee('wire:model.live="input.depart_date"', false)->assertSee('Time TBA')
             ->assertSee('wire:model.blur="input.costs.0.unit"', false)
             ->set('input.depart_date', '2026-08-13')->set('input.return_date', '2026-09-01')
             ->assertSet('input.days', 20)->assertSet('input.nights', 19)
@@ -774,23 +774,23 @@ class TravelDocumentsTest extends TestCase
     public function test_duration_result_guides_date_selection_and_updates_without_waiting_for_times(): void
     {
         $page = Livewire::test(TravelSpd::class)->call('createDocument')
-            ->assertSee('Belum dihitung')->assertSee('Pilih tanggal berangkat dan tanggal kembali untuk menghitung durasi.')
-            ->assertSee('<output aria-label="Total durasi perjalanan">', false)
+            ->assertSee('Pending calculation')->assertSee('Select the date of departure and the return date to calculate duration.')
+            ->assertSee('<output aria-label="Total travel duration">', false)
             ->set('input.depart_time_tba', false)->set('input.return_time_tba', false)
-            ->set('input.depart_date', '2026-08-13')->assertSee('Belum dihitung')
+            ->set('input.depart_date', '2026-08-13')->assertSee('Pending calculation')
             ->set('input.return_date', '2026-09-01')->assertSet('input.days', 20)->assertSet('input.nights', 19)
-            ->assertSee('20 hari / 19 malam')->assertSee('Dihitung otomatis dari tanggal berangkat dan kembali.')
-            ->set('input.return_date', '2026-08-13')->assertSee('1 hari / 0 malam')
-            ->set('input.return_date', '2026-08-12')->assertSee('Belum dihitung')
-            ->assertSee('Tanggal kembali tidak boleh sebelum tanggal berangkat.');
+            ->assertSee('20 days / 19 nights')->assertSee('Calculated from the departure and return dates.')
+            ->set('input.return_date', '2026-08-13')->assertSee('1 day / 0 nights')
+            ->set('input.return_date', '2026-08-12')->assertSee('Pending calculation')
+            ->assertSee('The return date must not be before the departure date.');
         $this->assertArrayNotHasKey('days', $page->get('input'));
-        $page->set('input.return_date', '2026-09-01')->assertSee('20 hari / 19 malam')
-            ->set('input.depart_date', '')->assertSee('Belum dihitung');
+        $page->set('input.return_date', '2026-09-01')->assertSee('20 days / 19 nights')
+            ->set('input.depart_date', '')->assertSee('Pending calculation');
         $this->assertArrayNotHasKey('days', $page->get('input'));
         $page->set('input', [...$this->input(), 'lodgings' => [], 'days' => 999, 'nights' => 998,
             'depart_date' => '2026-08-13', 'return_date' => '2026-09-01', 'depart_time_tba' => false,
             'return_time_tba' => false, 'depart_time' => '', 'return_time' => ''])
-            ->assertSee('20 hari / 19 malam')->call('saveDraft')->assertHasErrors(['depart_time']);
+            ->assertSee('20 days / 19 nights')->call('saveDraft')->assertHasErrors(['depart_time']);
         $page->set('input.depart_time', '08:00')->set('input.return_time', '17:00')->call('saveDraft')->assertHasNoErrors();
         $document = TravelDocument::findOrFail($page->get('selected'));
         $this->assertSame(20, $document->data['days']);
@@ -804,7 +804,7 @@ class TravelDocumentsTest extends TestCase
             ['description' => 'Tunjangan lapangan', 'quantity' => '20', 'unit' => 'Hari', 'unit_cost' => '255000', 'notes' => 'Catatan tunjangan'],
         ]];
         $page = Livewire::test(TravelSpd::class)->call('createDocument')->set('input', $input)
-            ->assertSee('wire:model.blur="input.cost_notes"', false)->assertSee('Catatan per item tersimpan')
+            ->assertSee('wire:model.blur="input.cost_notes"', false)->assertSee('Saved item notes')
             ->assertSee('wire:model.blur="input.costs.0.notes"', false)
             ->call('saveDraft')->assertHasNoErrors();
         $workflow = app(TravelWorkflow::class);

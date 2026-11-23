@@ -28,7 +28,7 @@ class TravelSpd extends Page
 
     protected static ?string $slug = 'perjalanan-dinas/spd';
 
-    protected static ?string $title = 'Surat Perjalanan Dinas (SPD)';
+    protected static ?string $title = 'Business Travel Request (SPD)';
 
     protected static ?string $navigationLabel = 'SPD';
 
@@ -132,7 +132,7 @@ class TravelSpd extends Page
         }
         $requester = app(TravelDocumentAdministration::class)->requesters()->find($this->input['requester_id']);
         if (! $requester) {
-            throw ValidationException::withMessages(['input.requester_id' => 'Pilih pembuat / pengaju aktif yang terhubung ke Master Employee dan departemen.']);
+            throw ValidationException::withMessages(['input.requester_id' => 'Select the active driver/juggler connected to Master Employee and department.']);
         }
         if (static::$kind === 'spd') {
             $this->input['employee_id'] = (string) $requester->employee->id;
@@ -292,7 +292,7 @@ class TravelSpd extends Page
     {
         $document = app(TravelWorkflow::class)->save(auth()->user(), static::$kind, $this->selected ?: null, $this->version, $this->input, $this->uploads);
         $this->openDocument($document->id);
-        Notification::make()->title('Draft '.strtoupper(static::$kind).' tersimpan')->success()->send();
+        Notification::make()->title('Draft '.strtoupper(static::$kind).' saved')->success()->send();
     }
 
     public function submitDocument(): void
@@ -301,7 +301,7 @@ class TravelSpd extends Page
         $this->openDocument($document->id);
         $document = app(TravelWorkflow::class)->submit(auth()->user(), $document->id, $document->version);
         $this->openDocument($document->id);
-        Notification::make()->title('Dokumen diajukan untuk persetujuan')->success()->send();
+        Notification::make()->title('Document filed for approval')->success()->send();
     }
 
     public function approveDocument(): void
@@ -319,7 +319,7 @@ class TravelSpd extends Page
         app(TravelWorkflow::class)->document(auth()->user(), $this->selected, static::$kind);
         $document = app(TravelWorkflow::class)->decide(auth()->user(), $this->selected, $this->version, $approve, $this->returnReason);
         $this->openDocument($document->id);
-        Notification::make()->title($approve ? 'Persetujuan tercatat' : 'Dokumen dikembalikan untuk diperbaiki')->success()->send();
+        Notification::make()->title($approve ? 'Approval noted' : 'Document returned to be repaired')->success()->send();
     }
 
     public function removeAttachment(int $fileId): void
@@ -369,7 +369,7 @@ class TravelSpd extends Page
                 $approvalPlan = $preview['plan'];
                 $approvalPlanError = $preview['error'];
             } else {
-                $approvalPlanError = $kind === 'lpj' ? 'Pilih SPD acuan untuk melihat aturan approval.' : 'Pilih karyawan untuk melihat aturan approval.';
+                $approvalPlanError = $kind === 'lpj' ? 'Select the SPD reference to see the approval rules.' : 'Select employees to see the approval rules.';
             }
         }
         $totals = null;
@@ -403,7 +403,7 @@ class TravelSpd extends Page
         $budgetLineOptions = $budgetLineOptions->mapWithKeys(function ($line): array {
             $available = app(BudgetLedger::class)->lineSummary($line)['available_minor'];
 
-            return [$line->id => 'Sisa '.($available < 0 ? '-' : '').Decimal::money(abs($available), $line->scope->budget->currency)];
+            return [$line->id => 'Remaining '.($available < 0 ? '-' : '').Decimal::money(abs($available), $line->scope->budget->currency)];
         })->all();
         $duration = null;
         $durationError = null;

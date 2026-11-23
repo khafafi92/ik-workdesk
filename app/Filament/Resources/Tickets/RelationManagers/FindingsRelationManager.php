@@ -113,7 +113,7 @@ class FindingsRelationManager extends RelationManager
                 Textarea::make('requester_response')
                     ->label('Requester Response / Clarification')
                     ->helperText(
-                        'Tuliskan klarifikasi, jawaban, atau tindak lanjut terhadap temuan ini.'
+                        'Write down a clarifying, an answer, or a follow - up on this find.'
                     )
                     ->rows(5)
                     ->required()
@@ -250,7 +250,7 @@ class FindingsRelationManager extends RelationManager
                 TextColumn::make('requester_response')
                     ->label('Requester Response')
                     ->limit(40)
-                    ->placeholder('Belum ada respons'),
+                    ->placeholder('No response yet'),
 
                 TextColumn::make('responded_at')
                     ->label('Responded At')
@@ -270,7 +270,7 @@ class FindingsRelationManager extends RelationManager
                         abort_unless(
                             $this->currentUserCanRespond(),
                             403,
-                            'Hanya requester yang dapat memberikan respons.'
+                            'Only the requester can give a response.'
                         );
                     })
                     ->mutateDataUsing(

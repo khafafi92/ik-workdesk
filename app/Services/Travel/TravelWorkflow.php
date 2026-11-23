@@ -126,7 +126,7 @@ class TravelWorkflow
                 $document->approved_at = null;
                 $document->save();
                 if ($document->files()->count() + count($files) > 20) {
-                    throw ValidationException::withMessages(['files' => 'Maksimal 20 lampiran per dokumen.']);
+                    throw ValidationException::withMessages(['files' => 'Maximum 20 attachments per document.']);
                 }
                 foreach ($files as $file) {
                     $path = 'travel/'.now()->format('Y/m').'/'.Str::uuid().'.'.match ($file->getMimeType()) {
@@ -134,7 +134,7 @@ class TravelWorkflow
                     };
                     $paths[] = $path;
                     if (! Storage::disk('local')->putFileAs(dirname($path), $file, basename($path))) {
-                        throw new \RuntimeException('Lampiran tidak dapat disimpan.');
+                        throw new \RuntimeException('The attachment could not be saved.');
                     }
                     $document->files()->create(['uploaded_by' => $actor->id, 'path' => $path,
                         'original_name' => mb_substr(basename(str_replace('\\', '/', $file->getClientOriginalName())), 0, 255),
@@ -155,7 +155,7 @@ class TravelWorkflow
                 Storage::disk('local')->delete($path);
             }
             if ($exception instanceof UniqueConstraintViolationException) {
-                throw ValidationException::withMessages(['number' => 'Nomor dokumen sudah dipakai, atau SPD ini sudah mempunyai LPJ. Muat ulang data.']);
+                throw ValidationException::withMessages(['number' => 'Document number already used, or this SPD already has LPJ. Reload the data.']);
             }
             throw $exception;
         }
@@ -180,7 +180,7 @@ class TravelWorkflow
             Validator::make($input, ['spd_id' => ['required', 'integer']])->validate();
             $spd = $this->eligibleSpds($actor, $document?->id)->lockForUpdate()->findOrFail($input['spd_id']);
             if ($document && (int) $document->spd_id !== (int) $spd->id) {
-                throw ValidationException::withMessages(['spd_id' => 'SPD acuan tidak dapat diganti setelah LPJ disimpan.']);
+                throw ValidationException::withMessages(['spd_id' => 'SPD references cannot be replaced after LPJ is saved.']);
             }
             $employeeSnapshot = $spd->employee_snapshot;
             $employeeId = $spd->employee_id;
@@ -194,7 +194,7 @@ class TravelWorkflow
             $actual = $amounts->actual($input['expenses'] ?? [], $input['advance_one'] ?? '0', $input['advance_two'] ?? '0');
             foreach ($actual['rows'] as $index => $row) {
                 if ($row['date'] < substr($data['depart_at'], 0, 10) || $row['date'] > substr($data['return_at'], 0, 10)) {
-                    throw ValidationException::withMessages(["expenses.{$index}.date" => 'Tanggal biaya harus berada dalam periode perjalanan SPD.']);
+                    throw ValidationException::withMessages(["expenses.{$index}.date" => 'The cost date must be in the SPD travel period.']);
                 }
             }
             $data['expenses'] = $actual['rows'];
@@ -215,7 +215,7 @@ class TravelWorkflow
             if (filled($input['project_numbering_id'] ?? null)) {
                 $project = ProjectNumbering::where('is_active', true)->find($input['project_numbering_id']);
                 if (! $project) {
-                    throw ValidationException::withMessages(['project_numbering_id' => 'Pilih kode Project yang aktif dari master.']);
+                    throw ValidationException::withMessages(['project_numbering_id' => 'Select the active Project code from the master.']);
                 }
             }
             $projectNumberingId = $project?->id;
@@ -236,7 +236,7 @@ class TravelWorkflow
             $data['lodgings'] = [];
             foreach ($input['lodgings'] ?? [] as $index => $row) {
                 if ($row['check_out'] < $row['check_in'] || $row['check_in'] < $depart->toDateString() || $row['check_out'] > $return->toDateString()) {
-                    throw ValidationException::withMessages(["lodgings.{$index}.check_out" => 'Periksa tanggal penginapan dan periode perjalanan.']);
+                    throw ValidationException::withMessages(["lodgings.{$index}.check_out" => 'Check the inn dates and travel periods.']);
                 }
                 $data['lodgings'][] = [...array_intersect_key($row, array_flip(['name', 'location', 'rooms', 'check_in', 'check_out'])),
                     'nights' => (int) CarbonImmutable::parse($row['check_in'])->diffInDays(CarbonImmutable::parse($row['check_out']))];
@@ -275,7 +275,7 @@ class TravelWorkflow
             $document = TravelAccess::query($actor)->lockForUpdate()->findOrFail($id);
             $this->assertEditable($actor, $document, $version);
             if (empty($document->data[$document->kind === 'spd' ? 'routes' : 'expenses'])) {
-                throw ValidationException::withMessages(['travel' => $document->kind === 'spd' ? 'Isi sedikitnya satu rute perjalanan sebelum mengajukan SPD.' : 'Isi sedikitnya satu baris pengeluaran sebelum mengajukan LPJ.']);
+                throw ValidationException::withMessages(['travel' => $document->kind === 'spd' ? 'Fill in at least one travel route before filing SPD.' : 'Fill in at least a line of expenses before filing LPJ.']);
             }
             if ($document->kind === 'lpj') {
                 $this->eligibleSpds($actor, $document->id)->lockForUpdate()->findOrFail($document->spd_id);
@@ -283,7 +283,7 @@ class TravelWorkflow
                 $line = FinanceBudgetLine::lockForUpdate()->findOrFail($document->finance_budget_line_id);
                 $available = app(BudgetLedger::class)->lineSummary($line)['available_minor'];
                 if ($document->total_minor > $available) {
-                    throw ValidationException::withMessages(['travel' => 'Estimasi SPD melebihi sisa anggaran pada peruntukan yang dipilih.']);
+                    throw ValidationException::withMessages(['travel' => 'SPD estimate exceeds the remaining budget on selected income.']);
                 }
             }
             $plan = app(TravelDocumentAdministration::class)->plan($document->company, (int) $document->department_id,
@@ -291,7 +291,7 @@ class TravelWorkflow
                 $document->data['approval_override'] ?? null, true, self::travelType($document->project_numbering_id));
             $requesterId = (int) ($document->data['requester_id'] ?? $document->created_by);
             if ($requesterId !== (int) $actor->id) {
-                throw ValidationException::withMessages(['travel' => 'Pembuat / pengaju harus membuka dan mengajukan dokumen sendiri untuk menandatanganinya.']);
+                throw ValidationException::withMessages(['travel' => 'The designer must open and file his own documents to sign it.']);
             }
             $signature = $this->signature($actor);
             $approvers = [];
@@ -379,7 +379,7 @@ class TravelWorkflow
     {
         $signature = app(Signatures::class)->current($actor);
         if (! $signature || ! Storage::disk('scm')->exists($signature->path)) {
-            throw ValidationException::withMessages(['travel' => 'Simpan gambar tanda tangan di profil terlebih dahulu.']);
+            throw ValidationException::withMessages(['travel' => 'Keep the signature image in the profile first.']);
         }
 
         return ['name' => $actor->name, 'position' => $actor->employee?->position, 'signed_at' => now()->toIso8601String(),
@@ -389,9 +389,9 @@ class TravelWorkflow
     private function notifySigner(User $user, TravelDocument $document, bool $requester = false): void
     {
         $page = $document->kind === 'spd' ? TravelSpd::class : TravelLpj::class;
-        Notification::make()->title(strtoupper($document->kind).' menunggu tanda tangan')
-            ->body('Dokumen '.$document->displayNumber().($requester ? ' siap diperiksa dan diajukan oleh Anda.' : ' menunggu persetujuan Anda.'))
-            ->actions([Action::make('open')->label('Buka dokumen')->url($page::getUrl(['dokumen' => $document->id]))->markAsRead()])
+        Notification::make()->title(strtoupper($document->kind).' waiting for signature')
+            ->body('Documents '.$document->displayNumber().($requester ? ' ready to be examined and filed by you.' : ' waiting for your approval.'))
+            ->actions([Action::make('open')->label('Open document')->url($page::getUrl(['dokumen' => $document->id]))->markAsRead()])
             ->sendToDatabase($user);
     }
 
@@ -404,7 +404,7 @@ class TravelWorkflow
     private function assertVersion(TravelDocument $document, int $version): void
     {
         if ($document->version !== $version) {
-            throw ValidationException::withMessages(['travel' => 'Data sudah berubah. Buka ulang dokumen sebelum melanjutkan.']);
+            throw ValidationException::withMessages(['travel' => 'Data has changed. Reopen the document before proceeding.']);
         }
     }
 

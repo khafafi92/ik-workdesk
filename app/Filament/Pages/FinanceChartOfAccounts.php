@@ -86,7 +86,7 @@ class FinanceChartOfAccounts extends Page
             'company' => ['required', Rule::in(array_keys(config('scm.companies')))],
             'code' => ['required', 'string', 'max:100', Rule::unique('finance_accounts')->where('company', $input['company'] ?? '')->ignore($this->accountId ?: null)],
             'name' => 'required|string|max:255', 'parent_id' => 'nullable|integer|exists:finance_accounts,id', 'is_active' => 'required|boolean',
-        ], [], ['company' => 'Perusahaan', 'code' => 'Kode COA', 'name' => 'Nama akun'])->validate();
+        ], [], ['company' => 'Company', 'code' => 'Kode COA', 'name' => 'Account name'])->validate();
 
         DB::transaction(function () use ($data): void {
             $old = $this->accountId ? FinanceAccount::findOrFail($this->accountId) : null;
@@ -94,26 +94,26 @@ class FinanceChartOfAccounts extends Page
             sort($companies);
             $locks = DB::table('finance_account_hierarchy_locks')->whereIn('company', $companies)->orderBy('company')->lockForUpdate()->get();
             if ($locks->count() !== count($companies)) {
-                throw ValidationException::withMessages(['account' => 'Pengaturan perusahaan COA belum lengkap.']);
+                throw ValidationException::withMessages(['account' => 'The COA company\'s arrangement is incomplete.']);
             }
             $account = $this->accountId ? FinanceAccount::lockForUpdate()->findOrFail($this->accountId) : new FinanceAccount;
             if ($this->accountId && $account->version !== $this->accountVersion) {
-                throw ValidationException::withMessages(['account' => 'Data COA berubah. Buka kembali akun sebelum menyimpan.']);
+                throw ValidationException::withMessages(['account' => 'Data COA changed. Reopen account before saving.']);
             }
             if ($account->exists && $account->company !== $data['company']
                 && ($account->children()->exists() || (Schema::hasTable('finance_budget_lines') && DB::table('finance_budget_lines')->where('account_id', $account->id)->exists()))) {
-                throw ValidationException::withMessages(['company' => 'Perusahaan akun yang memiliki turunan atau alokasi anggaran tidak dapat diubah.']);
+                throw ValidationException::withMessages(['company' => 'Account companies that have derivatives or budget allocation cannot be changed.']);
             }
             $all = FinanceAccount::where('company', $data['company'])->get()->keyBy('id');
             $parent = $data['parent_id'] ? $all->get((int) $data['parent_id']) : null;
             if ($data['parent_id'] && ! $parent) {
-                throw ValidationException::withMessages(['parent_id' => 'Induk COA harus dari perusahaan yang sama.']);
+                throw ValidationException::withMessages(['parent_id' => 'The COA parent must be from the same company.']);
             }
             $depth = 1;
             $seen = [];
             while ($parent) {
                 if ((int) $parent->id === (int) $account->id || isset($seen[$parent->id])) {
-                    throw ValidationException::withMessages(['parent_id' => 'Induk COA membentuk hubungan berputar.']);
+                    throw ValidationException::withMessages(['parent_id' => 'The selected parent would create a circular account hierarchy.']);
                 }
                 $seen[$parent->id] = true;
                 $depth++;
@@ -129,13 +129,13 @@ class FinanceChartOfAccounts extends Page
                     }
                     $subtreeDepth++;
                     if ($subtreeDepth > 3) {
-                        throw ValidationException::withMessages(['parent_id' => 'Hierarki COA tidak valid.']);
+                        throw ValidationException::withMessages(['parent_id' => 'Invalid COA hierarchy.']);
                     }
                     $descendants = $next;
                 }
             }
             if ($depth + $subtreeDepth > 3) {
-                throw ValidationException::withMessages(['parent_id' => 'COA maksimal tiga tingkat termasuk akun induk.']);
+                throw ValidationException::withMessages(['parent_id' => 'COA maximum three levels including the parent account.']);
             }
             $before = $account->exists ? $account->getAttributes() : null;
             $account->fill($data);
@@ -146,7 +146,7 @@ class FinanceChartOfAccounts extends Page
             app(Workflow::class)->audit(auth()->user(), $account, 'simpan_coa', ['before' => $before, 'after' => $account->getAttributes()]);
         });
         $this->newAccount();
-        Notification::make()->title('COA tersimpan.')->success()->send();
+        Notification::make()->title('COA\'s saved.')->success()->send();
     }
 
     protected function getViewData(): array

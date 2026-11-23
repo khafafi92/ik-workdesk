@@ -11,15 +11,15 @@ class UserAccessHierarchyService
     public const REQUESTER = 'requester';
 
     private const LEVELS = [
-        'system-admin' => 'Sys Administrator — seluruh akses sistem',
-        'administrator' => 'Administrator — kelola user dan penetapan akses',
-        'admin' => 'Admin — operasional sesuai menu yang ditugaskan',
-        'department-manager' => 'Manager — batas department dan proses kerja',
-        'supervisor' => 'SPV — batas department dan supervisi pekerjaan',
-        'general-affairs' => 'General Affairs — proses kerja operasional',
+        'system-admin' => 'Sys Administrator JUNE whole system access',
+        'administrator' => 'Administrator ▪ manage user and access setup',
+        'admin' => 'Admin ▪ operates according to assigned menu',
+        'department-manager' => 'Managers of the department limit and work process',
+        'supervisor' => 'SPV\'s department limits and work supervisors',
+        'general-affairs' => 'General Affairs - Operations',
         'attendance-operator' => 'Attendance Operator — proses attendance',
         'management' => 'Management (CBO, COO I, II, III)',
-        'requester' => 'Requester — proses permintaan milik sendiri',
+        'requester' => 'Requester\'s own request process',
     ];
 
     public function optionsFor(?User $actor): array
@@ -82,7 +82,7 @@ class UserAccessHierarchyService
             ->where('is_active', true)
             ->value('id');
 
-        abort_unless($roleId, 422, 'Level akses tidak tersedia.');
+        abort_unless($roleId, 422, 'Access level not available.');
 
         $primaryRoleIds = Role::query()
             ->whereIn('code', [...array_keys(self::LEVELS), 'cbo'])

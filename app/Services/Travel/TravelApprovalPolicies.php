@@ -13,9 +13,9 @@ use Illuminate\Validation\ValidationException;
 
 class TravelApprovalPolicies
 {
-    public const KINDS = ['ALL' => 'SPD dan LPJ', 'SPD' => 'SPD', 'LPJ' => 'LPJ'];
+    public const KINDS = ['ALL' => 'SPD and LPJ', 'SPD' => 'SPD', 'LPJ' => 'LPJ'];
 
-    public const TRAVEL_TYPES = ['HO' => 'HO (diperiksa Finance)', 'PROJECT' => 'Project (diperiksa Manager Project)'];
+    public const TRAVEL_TYPES = ['HO' => 'HO (Finance review)', 'PROJECT' => 'Project (Project Manager review)'];
 
     public static function reviewerLabel(string $travelType): string
     {
@@ -42,9 +42,9 @@ class TravelApprovalPolicies
             'travel_type' => ['required', 'in:HO,PROJECT'],
             'hr_id' => ['required', 'integer', 'exists:users,id'], 'finance_id' => ['required', 'integer', 'different:hr_id', 'exists:users,id'],
             'supervisor_id' => ['nullable', 'integer', 'different:hr_id', 'different:finance_id', 'exists:users,id'],
-            'is_active' => ['required', 'boolean']], ['required' => 'Pilih :attribute.'], [
-                'company' => 'perusahaan', 'department_id' => 'departemen', 'document_kind' => 'jenis dokumen', 'travel_type' => 'jenis perjalanan',
-                'hr_id' => 'HRGA / HR Manager', 'finance_id' => 'pemeriksa',
+            'is_active' => ['required', 'boolean']], ['required' => 'Select :attribute.'], [
+                'company' => 'company', 'department_id' => 'department', 'document_kind' => 'document type', 'travel_type' => 'travel type',
+                'hr_id' => 'HRGA / HR Manager', 'finance_id' => 'reviewer',
             ])->validate();
         $data['department_id'] = (int) $data['department_id'];
         $data['hr_id'] = (int) $data['hr_id'];
@@ -60,10 +60,10 @@ class TravelApprovalPolicies
             return DB::transaction(function () use ($actor, $data, $id, $version, $assignedAccess): TravelApprovalPolicy {
                 $policy = $id ? TravelApprovalPolicy::lockForUpdate()->findOrFail($id) : null;
                 if (($policy?->version ?? 0) !== $version) {
-                    throw ValidationException::withMessages(['rule' => 'Aturan sudah berubah. Buka ulang sebelum menyimpan.']);
+                    throw ValidationException::withMessages(['rule' => 'The rules have changed, reopen before saving.']);
                 }
                 if ($policy && $policy->only(['company', 'department_id', 'document_kind', 'travel_type']) !== array_intersect_key($data, array_flip(['company', 'department_id', 'document_kind', 'travel_type']))) {
-                    throw ValidationException::withMessages(['rule' => 'Cakupan aturan tidak dapat diganti saat Edit. Gunakan Salin untuk membuat cakupan baru.']);
+                    throw ValidationException::withMessages(['rule' => 'The scope of rules cannot be changed when Editing. Use Copy to create new coverage.']);
                 }
                 $before = $policy?->getAttributes();
                 $policy ??= new TravelApprovalPolicy;
@@ -75,7 +75,7 @@ class TravelApprovalPolicies
                 return $policy;
             });
         } catch (UniqueConstraintViolationException) {
-            throw ValidationException::withMessages(['rule' => 'Aturan untuk perusahaan, departemen, jenis dokumen, dan jenis perjalanan ini sudah ada. Gunakan Edit atau pilih cakupan lain.']);
+            throw ValidationException::withMessages(['rule' => 'The rules for this company, department, type of document, and type of travel already exist. Use Edit or select other coverage.']);
         }
     }
 
@@ -86,7 +86,7 @@ class TravelApprovalPolicies
         DB::transaction(function () use ($actor, $id, $version): void {
             $policy = TravelApprovalPolicy::lockForUpdate()->findOrFail($id);
             if ($policy->version !== $version) {
-                throw ValidationException::withMessages(['rule' => 'Aturan sudah berubah. Muat ulang sebelum menghapus.']);
+                throw ValidationException::withMessages(['rule' => 'The rules have changed. Reload before deleting.']);
             }
             $this->audit($actor, $policy, 'deleted', ['before' => $policy->getAttributes()]);
             $policy->delete();
@@ -98,19 +98,19 @@ class TravelApprovalPolicies
         $this->assertInstalled();
         $travelType = strtoupper($travelType);
         if (! array_key_exists($travelType, self::TRAVEL_TYPES)) {
-            throw ValidationException::withMessages(['approval_policy' => 'Jenis perjalanan SPD tidak dikenal.']);
+            throw ValidationException::withMessages(['approval_policy' => 'Unknown SPD travel type.']);
         }
         $query = TravelApprovalPolicy::where('company', $company)->where('department_id', $departmentId)->where('is_active', true)
             ->where('travel_type', $travelType)->whereIn('document_kind', [strtoupper($kind), 'ALL'])
             ->orderByRaw('CASE WHEN document_kind = ? THEN 0 ELSE 1 END', [strtoupper($kind)]);
         $policy = ($lock ? $query->lockForUpdate() : $query)->first();
         if (! $policy) {
-            throw ValidationException::withMessages(['approval_policy' => 'Master Approval '.strtoupper($kind).' untuk perjalanan '.self::TRAVEL_TYPES[$travelType].' pada perusahaan dan departemen ini belum diatur. Hubungi administrator.']);
+            throw ValidationException::withMessages(['approval_policy' => 'Master Approval '.strtoupper($kind).' for the ride '.self::TRAVEL_TYPES[$travelType].' contact the administrator.']);
         }
         $ids = ['hr' => $policy->hr_id, 'finance' => $policy->finance_id,
             'supervisor' => $policy->supervisor_id ?: ($employee['supervisor_user_id'] ?? null)];
         if (! $ids['supervisor']) {
-            throw ValidationException::withMessages(['approval_policy' => 'Atasan Langsung belum tersedia. Lengkapi Master Employee atau penetapan atasan pada aturan approval.']);
+            throw ValidationException::withMessages(['approval_policy' => 'The immediate boss is not available, complete Master Employee or the superior establishment on the approval rules.']);
         }
         $authorizer = $this->assignmentAuthorizer($policy);
         $signers = $this->validateSigners($ids, $employee, $creatorId, ! $authorizer, (bool) $authorizer);
@@ -141,15 +141,15 @@ class TravelApprovalPolicies
         foreach ($ids as $role => $id) {
             $user = $this->signer((int) $id, $role, $assignedAccess);
             if (in_array((int) $id, [$creatorId, (int) ($employee['user_id'] ?? 0)], true)) {
-                throw ValidationException::withMessages(['approval_policy' => 'Pengaju atau karyawan yang bepergian tidak boleh menyetujui dokumennya sendiri. Periksa Master Approval.']);
+                throw ValidationException::withMessages(['approval_policy' => 'Travelers or travel employees should not approve their own documents.']);
             }
             $signers[$role] = $user;
         }
         if (count(array_unique(array_map('intval', $ids))) !== 3) {
-            throw ValidationException::withMessages(['approval_policy' => 'HR, Pemeriksa, dan Atasan Langsung harus berbeda. Periksa Master Approval dan Master Employee.']);
+            throw ValidationException::withMessages(['approval_policy' => 'H.R., Examiner, and Chief Direct should be different, check on Master Approval and Master Employee.']);
         }
         if ($matchSupervisor && ! empty($employee['supervisor_user_id']) && (int) $ids['supervisor'] !== (int) $employee['supervisor_user_id']) {
-            throw ValidationException::withMessages(['approval_policy' => 'Atasan pada aturan harus sesuai Atasan Langsung di Master Employee. Kosongkan penetapan atasan untuk memakai Master Employee otomatis.']);
+            throw ValidationException::withMessages(['approval_policy' => 'The superior should be the direct superior in Master Employee, empty the top\'s setup to use Master Employee automatically.']);
         }
 
         return $signers;
@@ -187,10 +187,10 @@ class TravelApprovalPolicies
         $user = User::with('employee')->find($id);
         if (! $user || ! $user->isActiveForAccess() || (! $assignedAccess && ! TravelAccess::approver($user))) {
             throw ValidationException::withMessages(['approval_policy' => (TravelWorkflow::ROLES[$role] ?? $role)
-                .($assignedAccess ? ' harus memakai akun aktif.' : ' harus memakai akun aktif dengan Hak Akses persetujuan SPD/LPJ. Periksa Master Approval.')]);
+                .($assignedAccess ? ' must use an active account.' : ' must use an active account with SPD/LPJ approval access rights. Check Master Approval.')]);
         }
         if ($role === 'hr' && ! TravelAccess::manager($user)) {
-            throw ValidationException::withMessages(['approval_policy' => 'HRGA / HR Manager pada aturan harus memiliki jenjang jabatan minimal Manager.']);
+            throw ValidationException::withMessages(['approval_policy' => 'HRGA/HR Manager on the rule must have a minimal rank manager.']);
         }
 
         return $user;
@@ -199,7 +199,7 @@ class TravelApprovalPolicies
     private function assertInstalled(): void
     {
         if (! $this->installed()) {
-            throw ValidationException::withMessages(['approval_policy' => 'Master Approval SPD/LPJ belum disiapkan. Hubungi administrator.']);
+            throw ValidationException::withMessages(['approval_policy' => 'Master Approval SPD/LPJ is not set up. Contact administrator.']);
         }
     }
 

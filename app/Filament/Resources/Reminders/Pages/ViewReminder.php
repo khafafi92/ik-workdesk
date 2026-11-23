@@ -20,13 +20,13 @@ class ViewReminder extends ViewRecord
                 ->color('success')
                 ->visible(fn (): bool => $this->record->status !== 'done')
                 ->requiresConfirmation()
-                ->modalHeading('Tandai reminder sebagai Done?')
-                ->modalDescription('Reminder ini akan diselesaikan dan email pengingat berikutnya tidak akan dikirim.')
+                ->modalHeading('Mark the reminder as Done?')
+                ->modalDescription('This reminder will be completed and the next reminder email will not be sent.')
                 ->action(function (): void {
                     $this->record->markAsDone();
 
                     Notification::make()
-                        ->title('Reminder berhasil ditandai Done')
+                        ->title('Reminder successfully marked Done')
                         ->success()
                         ->send();
                 }),

@@ -17,8 +17,8 @@ class HrApcaLetterService
     public function kinds(): array
     {
         return [
-            'SKK' => 'SKK - Surat Keterangan Kerja',
-            'SKET' => 'SKET - Surat Keterangan / Nonaktif BPJS',
+            'SKK' => 'SKK - A Job Description',
+            'SKET' => 'SKET - Certificate / BPJS Deactivation',
         ];
     }
 
@@ -120,7 +120,7 @@ class HrApcaLetterService
         $documentCode = $letter->documentType?->code;
 
         if (! $this->isValidCode($documentCode)) {
-            throw ValidationException::withMessages(['subject' => 'Lengkapi dan simpan keterangan surat untuk membentuk nomor HR APCA.']);
+            throw ValidationException::withMessages(['subject' => 'Complete and save a letter to form an APCA HR number.']);
         }
 
         $letter->update(['department_id' => $this->department()->id, 'updated_by' => auth()->id()]);
@@ -129,7 +129,7 @@ class HrApcaLetterService
         $template = $letter->numberingTemplate;
 
         if ($template === null) {
-            throw ValidationException::withMessages(['document_number' => 'Template nomor surat tidak ditemukan.']);
+            throw ValidationException::withMessages(['document_number' => 'The mail number template was not found.']);
         }
 
         $letter->update([
@@ -156,7 +156,7 @@ class HrApcaLetterService
 
         if ($company === null || $department === null) {
             throw ValidationException::withMessages([
-                'profile' => 'Entitas APCA atau departemen HR belum tersedia pada master data.',
+                'profile' => 'An APCA entity or HR department is not available on the data master.',
             ]);
         }
 
@@ -167,7 +167,7 @@ class HrApcaLetterService
                 'permit_company_id' => $company->id,
                 'department_id' => $department->id,
                 'form_variant' => 'hr',
-                'description' => 'Register nomor surat HR APCA.',
+                'description' => 'Register letter number H.R. APCA.',
                 'is_active' => true,
             ],
         );
@@ -202,7 +202,7 @@ class HrApcaLetterService
         $kind = strtoupper(trim($kind));
 
         if (! $this->isValidCode($kind)) {
-            throw ValidationException::withMessages(['subject' => 'Kode surat harus berisi 1 sampai 20 huruf atau angka, dimulai dengan huruf. Contoh: [SKC] Surat keterangan kerja.']);
+            throw ValidationException::withMessages(['subject' => 'Mail code must contain from 1 to 20 letters or numbers, starting with letters. Example: [SKC] Paper description work.']);
         }
 
         return DocumentType::query()->where('code', $kind)->first() ?? DocumentType::query()->firstOrCreate(
@@ -216,7 +216,7 @@ class HrApcaLetterService
         if (str_starts_with(ltrim($subject), '[')) {
             if (! preg_match('/^\s*\[([^\]\r\n]*)\]/', $subject, $matches)
                 || ! $this->isValidCode($kind = strtoupper(trim($matches[1])))) {
-                throw ValidationException::withMessages(['subject' => 'Tulis kode dalam [ ], berisi 1 sampai 20 huruf atau angka, dimulai dengan huruf. Contoh: [SKC] Surat keterangan kerja.']);
+                throw ValidationException::withMessages(['subject' => 'Write code in [ ], containing 1 to 20 letters or numbers, starting with letters. Examples: [SKC] Paper information work.']);
             }
 
             return $kind;
@@ -258,7 +258,7 @@ class HrApcaLetterService
 
         if ($department === null) {
             throw ValidationException::withMessages([
-                'department_id' => 'Departemen HR yang aktif belum tersedia pada master data.',
+                'department_id' => 'The active HR department is not yet available on the data master.',
             ]);
         }
 

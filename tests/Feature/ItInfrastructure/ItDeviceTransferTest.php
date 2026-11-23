@@ -82,7 +82,7 @@ class ItDeviceTransferTest extends ItInfrastructureTestCase
         $this->assertSame(ItAssetLifecycle::Unused, $device->fresh()->lifecycle_status);
         $this->assertSame(2, $device->transfers()->count());
         $this->assertSame($new->name, $device->transfers()->latest('id')->first()->from_snapshot['name']);
-        $this->assertSame('Stok (belum dialokasikan)', $device->transfers()->latest('id')->first()->to_snapshot['name']);
+        $this->assertSame('Stock (unallocated)', $device->transfers()->latest('id')->first()->to_snapshot['name']);
     }
 
     public function test_editing_the_assignee_also_records_history_and_unrelated_saves_do_not_duplicate_it(): void

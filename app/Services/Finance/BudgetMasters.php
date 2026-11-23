@@ -33,7 +33,7 @@ class BudgetMasters
             'amount' => 'required'])->validate();
         $amount = Decimal::parse($data['amount']);
         if ($amount <= 0) {
-            throw ValidationException::withMessages(['amount' => 'Anggaran utama harus lebih dari nol.']);
+            throw ValidationException::withMessages(['amount' => 'Main budget must be more than zero.']);
         }
 
         return DB::transaction(function () use ($actor, $data, $amount): FinanceBudget {
@@ -52,21 +52,21 @@ class BudgetMasters
             'project_numbering_id' => 'nullable|integer|exists:scm_project_numbering,id', 'amount' => 'required'])->validate();
         $projectId = ($data['project_numbering_id'] ?? null) ?: null;
         if (($data['need_type'] === 'HO' && $projectId) || ($data['need_type'] === 'PROJECT' && (! $projectId || ! ProjectNumbering::whereKey($projectId)->where('is_active', true)->exists()))) {
-            throw ValidationException::withMessages(['project_numbering_id' => 'Pilih project aktif untuk anggaran Project; kosongkan untuk HO.']);
+            throw ValidationException::withMessages(['project_numbering_id' => 'Select active project for Project budget; empty it for HO.']);
         }
         $amount = Decimal::parse($data['amount']);
         if ($amount <= 0) {
-            throw ValidationException::withMessages(['amount' => 'Alokasi harus lebih dari nol.']);
+            throw ValidationException::withMessages(['amount' => 'Allocation must be more than zero.']);
         }
 
         return DB::transaction(function () use ($actor, $budgetId, $data, $projectId, $amount): FinanceBudgetScope {
             $budget = FinanceBudget::lockForUpdate()->findOrFail($budgetId);
             $key = $projectId ? 'PROJECT:'.$projectId : 'HO';
             if ($budget->scopes()->where('scope_key', $key)->exists()) {
-                throw ValidationException::withMessages(['need_type' => 'Alokasi HO atau project ini sudah ada.']);
+                throw ValidationException::withMessages(['need_type' => 'This HO allocation or project already exists.']);
             }
             if ($budget->scopes()->sum('amount_minor') + $amount > $budget->amount_minor) {
-                throw ValidationException::withMessages(['amount' => 'Total alokasi HO dan project melebihi anggaran utama.']);
+                throw ValidationException::withMessages(['amount' => 'Head office and project allocations exceed the main budget.']);
             }
             $scope = $budget->scopes()->create(['need_type' => $data['need_type'], 'project_numbering_id' => $projectId, 'scope_key' => $key, 'amount_minor' => $amount, 'version' => 1]);
             app(Workflow::class)->audit($actor, $scope, 'alokasi_anggaran_ho_project', ['budget_id' => $budget->id, 'after' => $scope->getAttributes()]);
@@ -81,18 +81,18 @@ class BudgetMasters
         $data = Validator::make($input, ['department_id' => 'required|integer|exists:departments,id', 'account_id' => 'required|integer|exists:finance_accounts,id', 'amount' => 'required'])->validate();
         $amount = Decimal::parse($data['amount']);
         if ($amount <= 0) {
-            throw ValidationException::withMessages(['amount' => 'Alokasi harus lebih dari nol.']);
+            throw ValidationException::withMessages(['amount' => 'Allocation must be more than zero.']);
         }
         DB::transaction(function () use ($actor, $scopeId, $data, $amount): void {
             $scope = FinanceBudgetScope::lockForUpdate()->with('budget')->findOrFail($scopeId);
             if (! FinanceAccount::whereKey($data['account_id'])->where('company', $scope->budget->company)->where('is_active', true)->exists()) {
-                throw ValidationException::withMessages(['account_id' => 'Pilih COA aktif untuk perusahaan anggaran ini.']);
+                throw ValidationException::withMessages(['account_id' => 'Select active COA for this budget company.']);
             }
             if ($scope->lines()->where('department_id', $data['department_id'])->where('account_id', $data['account_id'])->exists()) {
-                throw ValidationException::withMessages(['account_id' => 'Alokasi departemen dan COA ini sudah ada.']);
+                throw ValidationException::withMessages(['account_id' => 'This department and COA allocation already exists.']);
             }
             if ($scope->lines()->sum('amount_minor') + $amount > $scope->amount_minor) {
-                throw ValidationException::withMessages(['amount' => 'Total alokasi departemen melebihi anggaran HO atau project.']);
+                throw ValidationException::withMessages(['amount' => 'Total department allocation exceeds the HO budget or project.']);
             }
             $line = $scope->lines()->create(['department_id' => $data['department_id'], 'account_id' => $data['account_id'], 'amount_minor' => $amount, 'version' => 1]);
             app(Workflow::class)->audit($actor, $line, 'alokasi_anggaran_departemen', ['scope_id' => $scope->id, 'after' => $line->getAttributes()]);
@@ -104,7 +104,7 @@ class BudgetMasters
         $this->allowed($actor);
         $amount = Decimal::parse($value);
         if ($amount <= 0) {
-            throw ValidationException::withMessages(['amount' => 'Anggaran harus lebih dari nol.']);
+            throw ValidationException::withMessages(['amount' => 'Budget must be more than zero.']);
         }
         DB::transaction(function () use ($actor, $level, $id, $version, $amount): void {
             if ($level === 'budget') {
@@ -117,7 +117,7 @@ class BudgetMasters
                 $allocated = $record->lines()->sum('amount_minor');
                 $other = $budget->scopes()->whereKeyNot($id)->sum('amount_minor');
                 if ($other + $amount > $budget->amount_minor) {
-                    throw ValidationException::withMessages(['amount' => 'Total alokasi HO dan project melebihi anggaran utama.']);
+                    throw ValidationException::withMessages(['amount' => 'Head office and project allocations exceed the main budget.']);
                 }
             } elseif ($level === 'line') {
                 $scopeId = FinanceBudgetLine::findOrFail($id)->scope_id;
@@ -127,19 +127,19 @@ class BudgetMasters
                 $used = app(BudgetLedger::class)->lineSummary($record)['used_minor'];
                 $other = $scope->lines()->whereKeyNot($id)->sum('amount_minor');
                 if ($other + $amount > $scope->amount_minor) {
-                    throw ValidationException::withMessages(['amount' => 'Total alokasi departemen melebihi anggaran HO atau project.']);
+                    throw ValidationException::withMessages(['amount' => 'Total department allocation exceeds the HO budget or project.']);
                 }
                 if ($amount < $used) {
-                    throw ValidationException::withMessages(['amount' => 'Anggaran tidak boleh lebih kecil dari realisasi dan komitmen yang sudah tercatat.']);
+                    throw ValidationException::withMessages(['amount' => 'Budgets should not be less than recorded realization and commitment.']);
                 }
             } else {
                 abort(404);
             }
             if ($record->version !== $version) {
-                throw ValidationException::withMessages(['amount' => 'Anggaran berubah. Buka kembali data sebelum menyimpan.']);
+                throw ValidationException::withMessages(['amount' => 'Budget changed. Reopen data before saving.']);
             }
             if ($amount < $allocated) {
-                throw ValidationException::withMessages(['amount' => 'Anggaran tidak boleh lebih kecil dari alokasi yang sudah dibuat.']);
+                throw ValidationException::withMessages(['amount' => 'Budgets should not be smaller than any known allocation.']);
             }
             $before = $record->getAttributes();
             $record->amount_minor = $amount;

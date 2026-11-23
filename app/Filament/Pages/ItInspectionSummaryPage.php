@@ -13,7 +13,7 @@ use Livewire\Attributes\Url;
 
 class ItInspectionSummaryPage extends ItInfrastructurePage
 {
-    protected static ?string $title = 'Ringkasan Pemeriksaan';
+    protected static ?string $title = 'Check Summary';
 
     protected static ?string $slug = 'it-inspection-summary';
 

@@ -11,9 +11,9 @@ enum ItFollowUpStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Open => 'Terbuka',
-            self::InProgress => 'Dalam Proses',
-            self::Resolved => 'Selesai',
+            self::Open => 'Open',
+            self::InProgress => 'In Progress',
+            self::Resolved => 'Completed',
         };
     }
 }

@@ -177,7 +177,12 @@ def main():
     parser = argparse.ArgumentParser()
     for name in ['root', 'runtime', 'output', 'php']:
         parser.add_argument('--' + name, required=True)
+    parser.add_argument('--users', type=int, default=40)
+    parser.add_argument('--workers', choices=['1', '8', '1,8'], default='1,8')
     args = parser.parse_args()
+    if args.users < 1:
+        parser.error('--users must be positive')
+    worker_counts = [int(count) for count in args.workers.split(',')]
     runtime, output = Path(args.runtime), Path(args.output)
     credentials = json.loads((runtime / 'credentials.json').read_text())
     samples, summaries, processes, logs = [], [], [], []
@@ -185,7 +190,7 @@ def main():
     resources = ResourceSampler()
     resources.thread.start()
     sockets, ports = [], []
-    for _ in range(8):
+    for _ in range(max(worker_counts)):
         listener = socket.socket()
         listener.bind(('127.0.0.1', 0))
         ports.append(listener.getsockname()[1])
@@ -224,6 +229,20 @@ def main():
             print(json.dumps(samples), flush=True)
             raise RuntimeError('Single-user authentication preflight failed')
 
+        accessible_paths, denied_paths = [], []
+        for path in paths:
+            smoke.page(path, 'page-preflight')
+            probe = samples[-1]
+            if probe['status'] == 403:
+                denied_paths.append(path)
+            elif probe['ok']:
+                accessible_paths.append(path)
+            else:
+                raise RuntimeError(f'Page preflight failed for {path}: HTTP {probe["status"]}')
+        if not {'/panel', '/panel/service-desk'}.issubset(accessible_paths):
+            raise RuntimeError('The dashboard and Service Desk are required for this benchmark')
+        print(json.dumps({'tested_pages': accessible_paths, 'access_denied_pages': denied_paths}), flush=True)
+
         def phase(name, clients, action, workers):
             resources.phase = name
             before = len(samples)
@@ -236,9 +255,9 @@ def main():
             (output / 'http-samples.json').write_text(json.dumps(samples, indent=2))
             (output / 'http-summary.json').write_text(json.dumps(summaries, indent=2))
 
-        for workers in [1, 8]:
+        for workers in worker_counts:
             clients = [Client(i + 1, f'http://127.0.0.1:{ports[i % workers]}',
-                              credentials, samples, lock) for i in range(40)]
+                              credentials, samples, lock) for i in range(args.users)]
             prefix = f'{workers}worker'
             phase(prefix + '-login-form', clients, lambda c: c.login_page(prefix + '-login-form'), workers)
             phase(prefix + '-login-burst', clients, lambda c: c.login(prefix + '-login-burst'), workers)
@@ -247,26 +266,26 @@ def main():
                 raise RuntimeError('Login or independent identity verification failed')
 
             def warm(client):
-                for path in paths:
+                for path in accessible_paths:
                     client.page(path, prefix + '-warmup')
             phase(prefix + '-warmup', clients[:workers], warm, workers)
-            for count in [1, 10, 20, 40]:
+            for count in sorted({count for count in [1, 10, 20, args.users] if count <= args.users}):
                 name = prefix + f'-mixed-{count}'
                 def browse(client):
                     for iteration in range(3):
-                        client.page(paths[(client.number + iteration - 1) % len(paths)], name)
+                        client.page(accessible_paths[(client.number + iteration - 1) % len(accessible_paths)], name)
                         time.sleep(.5)
                 phase(name, clients[:count], browse, workers)
 
-            name = prefix + '-service-desk-40'
+            name = prefix + f'-service-desk-{args.users}'
             phase(name, clients, lambda c: c.page('/panel/service-desk', name), workers)
-            name = prefix + '-livewire-40'
+            name = prefix + f'-livewire-{args.users}'
             def refresh(client):
                 for _ in range(3):
                     client.refresh(name)
                     time.sleep(.5)
             phase(name, clients, refresh, workers)
-            name = prefix + '-logout-40'
+            name = prefix + f'-logout-{args.users}'
             def logout(client):
                 data = urllib.parse.urlencode({'_token': client.csrf}).encode()
                 _, _, sample = client.request('/logout', name, 'POST', data,
@@ -278,11 +297,12 @@ def main():
 
         timestamp = datetime.now(timezone(timedelta(hours=7))).isoformat()
         (output / 'run.json').write_text(json.dumps({'completed_at_wib': timestamp,
-            'workers': [1, 8], 'think_time_seconds': .5, 'iterations_per_mixed_user': 3,
+            'workers': worker_counts, 'users': args.users, 'think_time_seconds': .5, 'iterations_per_mixed_user': 3,
+            'tested_pages': accessible_paths, 'access_denied_pages': denied_paths,
             'thresholds_ms': {'login_p95': 5000, 'page_p95': 2000, 'livewire_p95': 2000},
-            'any_http_or_content_failures': any(not row['ok'] for row in samples),
+            'any_http_or_content_failures': any(not row['ok'] and row['phase'] != 'page-preflight' for row in samples),
             'worker_model': '1 or 8 PHP built-in servers; clients assigned round robin, no proxy; not PHP-FPM'}, indent=2))
-        if any(not row['ok'] for row in samples):
+        if any(not row['ok'] and row['phase'] != 'page-preflight' for row in samples):
             raise RuntimeError('At least one HTTP status or content validation failed')
     finally:
         for process in processes:

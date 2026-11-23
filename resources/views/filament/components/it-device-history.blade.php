@@ -1,25 +1,25 @@
 <section class="it-review-section" aria-labelledby="device-transfer-heading">
-    <h2 id="device-transfer-heading">Riwayat perpindahan aset</h2>
-    <p class="it-review-help">Pemakai saat ini: {{ $this->getRecord()->assigneeLabel() }}. Nama pada riwayat mengikuti data saat perpindahan dicatat.</p>
+    <h2 id="device-transfer-heading">Asset displacement history</h2>
+    <p class="it-review-help">Current user: {{ $this->getRecord()->assigneeLabel() }}Name on history follows data while displacement is recorded.</p>
     @php($transfers = $this->transferHistory())
-    <div class="it-review-table-wrap" role="region" aria-label="Riwayat perpindahan aset" tabindex="0">
+    <div class="it-review-table-wrap" role="region" aria-label="Asset displacement history" tabindex="0">
         <table class="it-infrastructure-table">
-            <thead><tr><th scope="col">Tanggal perpindahan</th><th scope="col">Dari pemakai</th><th scope="col">Ke pemakai</th><th scope="col">Dicatat oleh</th><th scope="col">Catatan serah terima</th></tr></thead>
+            <thead><tr><th scope="col">Transfer date</th><th scope="col">From user</th><th scope="col">To the user</th><th scope="col">Noted by</th><th scope="col">Handover notes</th></tr></thead>
             <tbody>
                 @forelse ($transfers as $transfer)
                     <tr><td>{{ $transfer->transferred_on->format('d/m/Y') }}</td><td>{{ $transfer->from_snapshot['name'] }}</td><td>{{ $transfer->to_snapshot['name'] }}</td><td>{{ $transfer->actor_snapshot['name'] }}<br>{{ $transfer->created_at->format('d/m/Y H:i') }}</td><td>{{ $transfer->notes }}</td></tr>
                 @empty
-                    <tr><td colspan="5">Belum ada perpindahan aset yang dicatat. Pemakaian sebelum fitur ini aktif tidak dibuatkan riwayat baru.</td></tr>
+                    <tr><td colspan="5">No asset transfer has been recorded. The use before this feature is active is not created new history.</td></tr>
                 @endforelse
             </tbody>
         </table>
     </div>
     <x-filament::pagination :paginator="$transfers" />
 </section>
-<h2>Riwayat pemeriksaan</h2>
-<div class="it-review-table-wrap" role="region" aria-label="Riwayat perangkat" tabindex="0">
+<h2>Check history</h2>
+<div class="it-review-table-wrap" role="region" aria-label="Device history" tabindex="0">
     <table class="it-infrastructure-table">
-        <thead><tr><th scope="col">Pemeriksaan</th><th scope="col">Waktu</th><th scope="col">Petugas</th><th scope="col">Dokumen</th><th scope="col">Kondisi</th></tr></thead>
+        <thead><tr><th scope="col">Inspection</th><th scope="col">Time</th><th scope="col">Inspector</th><th scope="col">Documents</th><th scope="col">Condition</th></tr></thead>
         <tbody>
             @forelse ($this->inspectionHistory() as $inspection)
                 <tr>
@@ -28,11 +28,11 @@
                     <td><span class="it-review-status" data-condition="{{ $inspection->overall_condition->value }}">{{ $inspection->overall_condition->label() }}</span></td>
                 </tr>
             @empty
-                <tr><td colspan="5">Belum ada riwayat pemeriksaan untuk perangkat ini.</td></tr>
+                <tr><td colspan="5">No check history yet for this device.</td></tr>
             @endforelse
         </tbody>
     </table>
 </div>
 @if (\App\Filament\Pages\ItInfrastructureReportPage::canAccess())
-    <div class="it-review-actions"><x-filament::button tag="a" color="gray" :href="\App\Filament\Pages\ItInfrastructureReportPage::getUrl(['deviceFilter' => $this->getRecord()->id, 'reportTab' => 'history'])">Lihat seluruh riwayat</x-filament::button></div>
+    <div class="it-review-actions"><x-filament::button tag="a" color="gray" :href="\App\Filament\Pages\ItInfrastructureReportPage::getUrl(['deviceFilter' => $this->getRecord()->id, 'reportTab' => 'history'])">View entire history</x-filament::button></div>
 @endif

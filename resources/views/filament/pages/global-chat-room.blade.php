@@ -18,11 +18,11 @@
                 aria-live="polite"
             >
                 @if ($realtimeConnected)
-                    Tersambung langsung
+                    Connected
                 @elseif ($realtimeConfigured)
-                    Menyambungkan. Pesan diperbarui otomatis sementara.
+                    Connecting. Messages refresh automatically in the meantime.
                 @else
-                    Layanan real-time belum disiapkan. Pesan diperbarui otomatis.
+                    Live updates are unavailable. Messages refresh automatically.
                 @endif
             </p>
         </header>
@@ -33,11 +33,11 @@
             wire:loading
             wire:target="refreshMessages,loadOlderMessages,addMessage"
         >
-            Memuat percakapan...
+            Loading chats...
         </p>
 
         @if ($companies->isNotEmpty())
-            <nav class="ik-global-chat-companies" aria-label="Pilih company">
+            <nav class="ik-global-chat-companies" aria-label="Choose company">
                 @foreach ($companies as $chatCompany)
                     <button
                         type="button"
@@ -64,7 +64,7 @@
                 <div
                     class="ik-global-chat-messages"
                     role="log"
-                    aria-label="Riwayat pesan {{ $company->name }}"
+                    aria-label="Message history {{ $company->name }}"
                     aria-live="polite"
                     aria-relevant="additions"
                     tabindex="0"
@@ -77,7 +77,7 @@
                             wire:loading.attr="disabled"
                             wire:target="loadOlderMessages"
                         >
-                            Muat pesan sebelumnya
+                            Load previous message
                         </button>
                     @endif
 
@@ -87,7 +87,7 @@
                             wire:key="global-chat-message-{{ $chatMessage->id }}"
                         >
                             <div class="ik-global-chat-message-meta">
-                                <strong>{{ $chatMessage->user?->name ?? 'Pengguna tidak tersedia' }}</strong>
+                                <strong>{{ $chatMessage->user?->name ?? 'User not available' }}</strong>
                                 <time datetime="{{ $chatMessage->created_at->toIso8601String() }}">
                                     {{ $chatMessage->created_at->format('d M Y, H:i') }}
                                 </time>
@@ -98,7 +98,7 @@
                             @endif
 
                             @if ($chatMessage->attachments->isNotEmpty())
-                                <ul class="ik-global-chat-attachments" aria-label="Lampiran">
+                                <ul class="ik-global-chat-attachments" aria-label="Attachment">
                                     @foreach ($chatMessage->attachments as $attachment)
                                         <li wire:key="global-chat-attachment-{{ $attachment->id }}">
                                             <a
@@ -114,7 +114,7 @@
                         </article>
                     @empty
                         <p class="ik-global-chat-empty">
-                            Belum ada pesan di grup {{ $company->name }}. Mulai percakapan dengan mengirim pesan atau lampiran.
+                            No messages in group yet {{ $company->name }}Start a conversation by sending a message or attachment.
                         </p>
                     @endforelse
                 </div>
@@ -126,7 +126,7 @@
                         wire:model="message"
                         rows="3"
                         maxlength="5000"
-                        placeholder="Ketik pesan untuk grup {{ $company->name }}"
+                        placeholder="Type a message for the group {{ $company->name }}"
                     ></textarea>
                     @error('message')
                         <p class="ik-global-chat-error" role="alert">{{ $message }}</p>
@@ -140,7 +140,7 @@
 
                     <div class="ik-global-chat-composer-actions">
                         <label class="ik-global-chat-file-label">
-                            Pilih lampiran
+                            Select attachment
                             <input
                                 id="global-chat-attachments"
                                 class="ik-global-chat-file-input"
@@ -162,23 +162,23 @@
                     </div>
 
                     <p class="ik-global-chat-help">
-                        Maksimal 10 file, 10 MB per file. Format: PDF, Word, Excel, JPG, atau PNG.
+                        Maximum 10 files, 10 MB per file. Format: PDF, Word, Excel, JPG or PNG.
                     </p>
                     <p class="ik-global-chat-uploading" wire:loading wire:target="attachments">
-                        Mengunggah lampiran...
+                        Uploading attachment...
                     </p>
 
                     @if (count($attachments) > 0)
-                        <ul class="ik-global-chat-selected-files" aria-label="Lampiran yang dipilih">
+                        <ul class="ik-global-chat-selected-files" aria-label="Selected attachment">
                             @foreach ($attachments as $index => $file)
                                 <li wire:key="global-chat-selected-file-{{ $index }}">
                                     <span>{{ $file->getClientOriginalName() }}</span>
                                     <button
                                         type="button"
                                         wire:click="removeAttachment({{ $index }})"
-                                        aria-label="Hapus {{ $file->getClientOriginalName() }}"
+                                        aria-label="Delete {{ $file->getClientOriginalName() }}"
                                     >
-                                        Hapus
+                                        Delete
                                     </button>
                                 </li>
                             @endforeach
@@ -188,7 +188,7 @@
             </div>
         @else
             <div class="ik-global-chat-empty ik-global-chat-no-company" role="status">
-                Akun ini belum ditetapkan ke company untuk Chat Room Global. Hubungi administrator untuk menetapkan APCA atau KPMOG.
+                Your account is not assigned to a company. Ask your administrator to assign it to APCA or KPMOG.
             </div>
         @endif
     </section>

@@ -2,8 +2,8 @@
     <section class="wd-login-card" aria-labelledby="login-title">
         <div class="wd-login-card-heading">
             <span class="wd-login-card-kicker">Welcome back</span>
-            <h2 id="login-title">Masuk ke akun Anda</h2>
-            <p>Gunakan akun perusahaan untuk melanjutkan.</p>
+            <h2 id="login-title">Sign in to IK WorkDesk</h2>
+            <p>Use your company account.</p>
         </div>
 
         <x-auth-session-status
@@ -28,7 +28,7 @@
                         required
                         autofocus
                         autocomplete="username"
-                        placeholder="nama@perusahaan.com"
+                        placeholder="name@example.com"
                     >
                 </div>
                 <x-input-error :messages="$errors->get('email')" class="wd-login-error" />
@@ -38,7 +38,7 @@
                 <div class="wd-login-label-row">
                     <label for="password">Password</label>
                     @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}">Lupa password?</a>
+                        <a href="{{ route('password.request') }}">Forgot your password?</a>
                     @endif
                 </div>
 
@@ -53,13 +53,13 @@
                         name="password"
                         required
                         autocomplete="current-password"
-                        placeholder="Masukkan password"
+                        placeholder="Enter password"
                     >
                     <button
                         type="button"
                         class="wd-login-password-toggle"
                         x-on:click="showPassword = !showPassword"
-                        x-bind:aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+                        x-bind:aria-label="showPassword ? 'Hide password' : 'Show password'"
                         x-bind:aria-pressed="showPassword"
                     >
                         <svg x-show="!showPassword" viewBox="0 0 24 24" aria-hidden="true">
@@ -75,7 +75,7 @@
             </div>
 
             <button type="submit" class="wd-login-submit">
-                <span>MASUK</span>
+                <span>Sign in</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>
@@ -84,7 +84,7 @@
 
         <div class="wd-login-card-foot">
             <span></span>
-            <a href="{{ route('vendor.index') }}">Portal Vendor</a>
+            <a href="{{ route('vendor.index') }}">Vendor Portal</a>
             <span></span>
         </div>
     </section>

@@ -24,7 +24,7 @@ class BudgetApprovalPolicies
     {
         abort_unless(Access::has($actor, 'scm.configure'), 403);
         if (! Schema::hasTable('finance_budget_approval_policies')) {
-            throw ValidationException::withMessages(['scm' => 'Master persetujuan anggaran belum disiapkan di database.']);
+            throw ValidationException::withMessages(['scm' => 'Master budget approval isn\'t set up in the database.']);
         }
         $data = Validator::make($input, [
             'company' => ['required', Rule::in(array_keys(config('scm.companies')))],
@@ -35,13 +35,13 @@ class BudgetApprovalPolicies
             'version' => 'required|integer|min:0',
         ])->validate();
         if (User::whereIn('id', [$data['finance_manager_id'], $data['cbo_id'], $data['coo_id']])->get()->contains(fn ($user) => ! $user->isActiveForAccess())) {
-            throw ValidationException::withMessages(['scm' => 'Penandatangan harus memakai akun aktif.']);
+            throw ValidationException::withMessages(['scm' => 'Signature must use an active account.']);
         }
         try {
             return DB::transaction(function () use ($actor, $data): FinanceBudgetApprovalPolicy {
                 $policy = FinanceBudgetApprovalPolicy::where('company', $data['company'])->where('need_type', $data['need_type'])->lockForUpdate()->first();
                 if (($policy?->version ?? 0) !== (int) $data['version']) {
-                    throw ValidationException::withMessages(['scm' => 'Aturan persetujuan anggaran berubah. Buka ulang sebelum menyimpan.']);
+                    throw ValidationException::withMessages(['scm' => 'Budget approval rules change, reopen before saving.']);
                 }
                 $before = $policy?->getAttributes();
                 $policy ??= new FinanceBudgetApprovalPolicy;
@@ -53,7 +53,7 @@ class BudgetApprovalPolicies
                 return $policy;
             }, 3);
         } catch (UniqueConstraintViolationException) {
-            throw ValidationException::withMessages(['scm' => 'Aturan persetujuan anggaran sudah berubah. Buka ulang sebelum menyimpan.']);
+            throw ValidationException::withMessages(['scm' => 'Budget agreement rules have changed, reopen before saving.']);
         }
     }
 }

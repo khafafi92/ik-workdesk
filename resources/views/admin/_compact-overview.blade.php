@@ -3,7 +3,7 @@
         <section class="ik-compact-card">
             <div class="ik-compact-card-heading">
                 <strong>Service Desk</strong>
-                <a href="{{ url('/panel/service-desk') }}">Lihat semua</a>
+                <a href="{{ url('/panel/service-desk') }}">View all</a>
             </div>
             <div class="ik-compact-metrics ik-compact-metrics--six">
                 @foreach ([
@@ -22,7 +22,7 @@
         <section class="ik-compact-card">
             <div class="ik-compact-card-heading">
                 <strong>Work Logs</strong>
-                <a href="{{ url('/panel/work-tasks') }}">Lihat semua</a>
+                <a href="{{ url('/panel/work-tasks') }}">View all</a>
             </div>
             <div class="ik-compact-metrics ik-compact-metrics--five">
                 @foreach ([
@@ -44,16 +44,16 @@
                 <span class="ik-compact-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 8.25h18M5.25 5.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25A2.25 2.25 0 0 1 18.75 21H5.25A2.25 2.25 0 0 1 3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25Z" /></svg>
                 </span>
-                <div><strong>Meeting</strong><span>Ringkasan ruangan dan jadwal hari ini.</span></div>
+                <div><strong>Meeting</strong><span>Summary of the room and schedule today.</span></div>
             </div>
             <div class="ik-compact-actions">
-                <a href="{{ url('/panel/meeting-room-calendar') }}">Kalender</a>
+                <a href="{{ url('/panel/meeting-room-calendar') }}">Calendar</a>
                 <a href="{{ url('/panel/meeting-bookings') }}" class="ik-compact-action-primary">Booking Saya</a>
             </div>
         </div>
         <div class="ik-compact-meeting-metrics">
-            <div><i class="is-success"></i><strong>{{ $meetingSummary['available'] }}</strong><span>ruangan tersedia</span></div>
-            <div><i class="is-danger"></i><strong>{{ $meetingSummary['busy'] }}</strong><span>sedang dipakai</span></div>
+            <div><i class="is-success"></i><strong>{{ $meetingSummary['available'] }}</strong><span>available space</span></div>
+            <div><i class="is-danger"></i><strong>{{ $meetingSummary['busy'] }}</strong><span>in use</span></div>
             <div><i class="is-info"></i><strong>{{ $meetingSummary['mine'] }}</strong><span>meeting saya</span></div>
         </div>
     </section>
@@ -64,15 +64,15 @@
                 <span class="ik-compact-icon">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" /></svg>
                 </span>
-                <div><strong>Reminder</strong><span>Jadwal pengingat aktif Anda.</span></div>
+                <div><strong>Reminder</strong><span>Your active reminder schedule.</span></div>
             </div>
-            <div class="ik-compact-actions"><a href="{{ url('/panel/reminders') }}" class="ik-compact-action-primary">Buka Reminder</a></div>
+            <div class="ik-compact-actions"><a href="{{ url('/panel/reminders') }}" class="ik-compact-action-primary">Open Reminder</a></div>
         </div>
         <div class="ik-compact-reminder-grid">
             @foreach ([
-                ['Hari Ini', $todayReminders, 'Tidak ada reminder hari ini.', false],
-                ['Akan Datang', $upcomingReminders, 'Belum ada jadwal berikutnya.', false],
-                ['Terlambat', $overdueReminders, 'Tidak ada reminder terlambat.', true],
+                ['Today', $todayReminders, 'No reminders today.', false],
+                ['Will Come', $upcomingReminders, 'No upcoming reminders.', false],
+                ['Too late', $overdueReminders, 'No overdue reminders.', true],
             ] as [$label, $reminders, $emptyText, $danger])
                 <div class="ik-compact-reminder-lane {{ $danger ? 'is-danger' : '' }}">
                     <div class="ik-compact-lane-heading"><strong>{{ $label }}</strong><span>{{ $reminders->count() }}</span></div>

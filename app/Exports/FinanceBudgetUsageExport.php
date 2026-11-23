@@ -33,7 +33,7 @@ class FinanceBudgetUsageExport extends DefaultValueBinder implements FromArray, 
 
     public function title(): string
     {
-        return 'Penggunaan Anggaran';
+        return 'Budget Usage';
     }
 
     public function array(): array
@@ -46,20 +46,20 @@ class FinanceBudgetUsageExport extends DefaultValueBinder implements FromArray, 
         $committed = (int) $this->budgetReport->sum('committed_minor');
 
         $rows = [
-            $this->row(['LAPORAN PENGGUNAAN ANGGARAN']),
-            $this->row(['Perusahaan', $this->budget->company, null, 'Tahun', $this->budget->year, null, 'Mata uang', $this->budget->currency]),
-            $this->row(['Tanggal ekspor', now()->format('d/m/Y H:i')]),
-            $this->row(['Anggaran utama', null, null, null, null, null, null, $this->money($this->budget->amount_minor)]),
+            $this->row(['USE REPORT REPORT RELIGION']),
+            $this->row(['Company', $this->budget->company, null, 'Year', $this->budget->year, null, 'Currency', $this->budget->currency]),
+            $this->row(['Export date', now()->format('d/m/Y H:i')]),
+            $this->row(['Main budget', null, null, null, null, null, null, $this->money($this->budget->amount_minor)]),
             $this->row(['Total alokasi HO / project', null, null, null, null, null, null, $this->money($scopeAllocation)]),
-            $this->row(['Belum dialokasikan ke HO / project', null, null, null, null, null, null, $this->money($this->budget->amount_minor - $scopeAllocation)]),
-            $this->row(['Total realisasi', null, null, null, null, null, null, null, null, $this->money($realized)]),
-            $this->row(['Total komitmen', null, null, null, null, null, null, null, null, null, $this->money($committed)]),
-            $this->row(['Sisa anggaran', null, null, null, null, null, null, null, null, null, null, $this->money($this->budget->amount_minor - $realized - $committed)]),
+            $this->row(['Unallocated to HO / project', null, null, null, null, null, null, $this->money($this->budget->amount_minor - $scopeAllocation)]),
+            $this->row(['Total realization', null, null, null, null, null, null, null, null, $this->money($realized)]),
+            $this->row(['Total commitment', null, null, null, null, null, null, null, null, null, $this->money($committed)]),
+            $this->row(['Budget remaining', null, null, null, null, null, null, null, null, null, null, $this->money($this->budget->amount_minor - $realized - $committed)]),
             $this->row(),
             $this->row([
-                'Peruntukan / uraian', 'Jenis / nomor dokumen', 'COA / dokumen terkait', 'Tanggal',
-                'Divisi', 'Project / HO', 'Status', 'Anggaran / alokasi', 'Nilai dokumen',
-                'Realisasi', 'Komitmen', 'Sisa anggaran',
+                'Service / description', 'Type / document number', 'COA / related document', 'Date',
+                'Division', 'Project / HO', 'Status', 'Budget / allocation', 'Document value',
+                'Actual spending', 'Commitment', 'Budget remaining',
             ]),
         ];
 
@@ -72,7 +72,7 @@ class FinanceBudgetUsageExport extends DefaultValueBinder implements FromArray, 
             $projectLabel = $scope->need_type === 'HO'
                 ? 'HO'
                 : trim(implode(' · ', array_filter([$scope->project?->code, $scope->project?->name])));
-            $scopeLabel = $scope->need_type === 'HO' ? 'ALOKASI HO / KANTOR PUSAT' : 'ALOKASI PROJECT';
+            $scopeLabel = $scope->need_type === 'HO' ? 'HEAD OFFICE ALLOCATION' : 'PROJECT ALLOCATION';
 
             $rows[] = $this->row([
                 $scopeLabel, null, null, null, null, $projectLabel, null, $this->money($scope->amount_minor),
@@ -82,7 +82,7 @@ class FinanceBudgetUsageExport extends DefaultValueBinder implements FromArray, 
             $this->scopeRows[] = count($rows);
 
             if ($scopeReport->isEmpty()) {
-                $rows[] = $this->row(['Belum ada alokasi departemen / COA untuk alokasi ini.']);
+                $rows[] = $this->row(['There\'s no department allocation/CoA for this allocation.']);
 
                 continue;
             }
@@ -90,7 +90,7 @@ class FinanceBudgetUsageExport extends DefaultValueBinder implements FromArray, 
             foreach ($scopeReport as $reportLine) {
                 $line = $reportLine['line'];
                 $rows[] = $this->row([
-                    'ALOKASI DIVISI / COA', null, $line->account->code.' · '.$line->account->name, null,
+                    'DIVISION / COA ALLOCATION', null, $line->account->code.' · '.$line->account->name, null,
                     $line->department->name, $projectLabel, null, $this->money($line->amount_minor), null,
                     $this->money($reportLine['realized_minor']), $this->money($reportLine['committed_minor']),
                     $this->money($reportLine['available_minor']),
@@ -100,7 +100,7 @@ class FinanceBudgetUsageExport extends DefaultValueBinder implements FromArray, 
                 foreach ($reportByLine->get($line->id)['entries'] as $entry) {
                     $relatedKind = $entry['kind'] === 'SPD' ? 'LPJ' : 'PO';
                     $rows[] = $this->row([
-                        $entry['purpose'] ?: 'Rincian penggunaan',
+                        $entry['purpose'] ?: 'Use details',
                         strtoupper($entry['kind']).' · '.$entry['number'],
                         $entry['related_number'] ? $relatedKind.' · '.$entry['related_number'] : null,
                         $entry['date'] ? Date::dateTimeToExcel($entry['date']) : null,
@@ -117,7 +117,7 @@ class FinanceBudgetUsageExport extends DefaultValueBinder implements FromArray, 
         }
 
         if ($this->budget->scopes->isEmpty()) {
-            $rows[] = $this->row(['Belum ada alokasi HO / project.']);
+            $rows[] = $this->row(['No Ho/project allocation yet.']);
         }
 
         return $rows;

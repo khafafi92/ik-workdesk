@@ -22,7 +22,7 @@ class VehicleBookingForm
         return $schema->components([
             Section::make('Book Vehicle')
                 ->description(
-                    'Pilih kendaraan, waktu keberangkatan, dan durasi pemakaian.'
+                    'Select vehicles, departure time, and the duration of use.'
                 )
                 ->schema([
                     TextInput::make('title')

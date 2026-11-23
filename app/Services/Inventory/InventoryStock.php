@@ -35,7 +35,7 @@ class InventoryStock
         }
         $before = (int) $balance->quantity_milli;
         if ($before + $quantity < 0 || abs($quantity) > 999999999999999 || abs($before + $quantity) > 999999999999999) {
-            throw ValidationException::withMessages(['stock' => 'Jumlah melampaui saldo tersedia atau batas pencatatan.']);
+            throw ValidationException::withMessages(['stock' => 'Number exceeds balance available or logging limit.']);
         }
         $balance->update(['quantity_milli' => $before + $quantity]);
         if (! in_array($type, ['opening', 'atk_sync'], true) && $balance->item->kind === 'atk') {
@@ -56,12 +56,12 @@ class InventoryStock
         $beforeMilli = Decimal::parse(number_format($before, 3, '.', ''), 3) - $other;
         $afterMilli = Decimal::parse(number_format($after, 3, '.', ''), 3) - $other;
         if (! InventoryMovement::where('balance_id', $balance->id)->exists() && $beforeMilli !== 0) {
-            $this->move($balance, $beforeMilli, 'opening', 'opening-atk-'.$atk->id, null, 'Saldo awal Gudang Utama ATK.');
+            $this->move($balance, $beforeMilli, 'opening', 'opening-atk-'.$atk->id, null, 'The first balance of the office supplies main warehouse.');
         }
         if ((int) $balance->quantity_milli !== $beforeMilli) {
-            throw ValidationException::withMessages(['stock' => 'Saldo ATK dan inventori berbeda. Periksa mutasi sebelum melanjutkan.']);
+            throw ValidationException::withMessages(['stock' => 'The office supplies balance and inventory are different.']);
         }
-        $this->move($balance, $afterMilli - $beforeMilli, 'atk_sync', $key, $actor, 'Mutasi Gudang Utama melalui alur ATK.', ['reference_type' => 'atk_item', 'reference_id' => $atk->id]);
+        $this->move($balance, $afterMilli - $beforeMilli, 'atk_sync', $key, $actor, 'The Mutation of the Main Storage through the ATT flow.', ['reference_type' => 'atk_item', 'reference_id' => $atk->id]);
     }
 
     public function availableAtk(AtkItem $item, ?int $warehouseId): float
@@ -80,7 +80,7 @@ class InventoryStock
         if ($request->inventoryWarehouse && ! $request->inventoryWarehouse->legacy_atk) {
             $warehouse = $request->inventoryWarehouse;
             if (! InventoryAccess::warehouseMatches($warehouse, $request->company?->code ?? '', $request->need_type ?? 'HO', $request->project_numbering_id)) {
-                throw ValidationException::withMessages(['warehouse' => 'Gudang tidak sesuai entitas dan kebutuhan permintaan ATK.']);
+                throw ValidationException::withMessages(['warehouse' => 'The warehouse doesn\'t fit the entity and needs the office supplies request.']);
             }
 
             return $warehouse;
@@ -89,7 +89,7 @@ class InventoryStock
             return app(Warehouses::class)->forContext($request->company->code, $request->need_type ?? 'HO', $request->project_numbering_id);
         }
 
-        throw ValidationException::withMessages(['warehouse' => 'Tetapkan entitas permintaan ATK sebelum menyerahkan barang.']);
+        throw ValidationException::withMessages(['warehouse' => 'Set the office supplies request entity before handing over stuff.']);
     }
 
     public function allocateLegacy(User $actor, AtkItem $atk, array $quantities, string $token): void
@@ -113,12 +113,12 @@ class InventoryStock
                     continue;
                 }
                 $warehouse = app(Warehouses::class)->forContext($company, 'HO', null);
-                $this->move($source, -$quantity, 'allocation_out', $token.'-'.$company.'-out', $actor, 'Pemetaan saldo ATK lama ke '.$company.'.');
+                $this->move($source, -$quantity, 'allocation_out', $token.'-'.$company.'-out', $actor, 'Old office supplies balance mapping into '.$company.'.');
                 $target = $this->balance($warehouse, $item, null);
-                $this->move($target, $quantity, 'allocation_in', $token.'-'.$company.'-in', $actor, 'Pemetaan saldo ATK lama dari Gudang Utama.');
+                $this->move($target, $quantity, 'allocation_in', $token.'-'.$company.'-in', $actor, 'Old office supplies balance mapping from the main warehouse.');
             }
             if ($total === 0) {
-                throw ValidationException::withMessages(['stock' => 'Isi jumlah yang dialokasikan ke KPMOG atau APCA.']);
+                throw ValidationException::withMessages(['stock' => 'Fill in the amount allocated to KPMOG or APCA.']);
             }
         }, 3);
     }
@@ -128,12 +128,12 @@ class InventoryStock
         $remaining = Decimal::parse(number_format($quantity, 3, '.', ''), 3);
         $balances = InventoryBalance::where('warehouse_id', $warehouse->id)->where('inventory_item_id', $atk->inventory_item_id)->orderBy('id')->lockForUpdate()->get();
         if ($balances->sum('quantity_milli') < $remaining) {
-            throw ValidationException::withMessages(['qty' => 'Stok gudang permintaan ATK tidak mencukupi.']);
+            throw ValidationException::withMessages(['qty' => 'There\'s not enough office supplies request storage.']);
         }
         foreach ($balances as $balance) {
             $take = min($remaining, (int) $balance->quantity_milli);
             if ($take > 0) {
-                $this->move($balance, -$take, 'atk_issue', (string) Str::uuid(), $actor, 'Penyerahan ATK dari gudang permintaan.', ['reference_type' => 'atk_request_item', 'reference_id' => $requestItemId]);
+                $this->move($balance, -$take, 'atk_issue', (string) Str::uuid(), $actor, 'The ATT surrender from the request warehouse.', ['reference_type' => 'atk_request_item', 'reference_id' => $requestItemId]);
                 $remaining -= $take;
             }
         }
@@ -147,7 +147,7 @@ class InventoryStock
         abort_unless(in_array($operation, ['incoming', 'outgoing', 'transfer', 'department_transfer'], true), 422);
         $quantity = Decimal::parse($data['quantity'], 3);
         if ($quantity <= 0) {
-            throw ValidationException::withMessages(['quantity' => 'Jumlah harus lebih dari nol.']);
+            throw ValidationException::withMessages(['quantity' => 'The amount must be more than zero.']);
         }
         DB::transaction(function () use ($actor, $data, $quantity, $operation): void {
             $source = InventoryBalance::findOrFail($data['balance_id']);
@@ -157,7 +157,7 @@ class InventoryStock
             }
             $item = InventoryItem::lockForUpdate()->findOrFail($source->inventory_item_id);
             if (($item->kind === 'atk' && $quantity % 10 !== 0) || ($item->kind === 'device' && $quantity % 1000 !== 0)) {
-                throw ValidationException::withMessages(['quantity' => 'Jumlah ATK maksimal dua desimal dan perangkat harus utuh.']);
+                throw ValidationException::withMessages(['quantity' => 'The maximum number of office suppliess two decimals and devices must be intact.']);
             }
             $source = InventoryBalance::lockForUpdate()->findOrFail($source->id);
             if (InventoryMovement::where('transaction_key', $data['token'].'-source')->exists()) {
@@ -165,24 +165,24 @@ class InventoryStock
             }
             $source->load('warehouse');
             if (! $source->warehouse->is_active || ! $item->is_active || $source->warehouse->legacy_atk) {
-                throw ValidationException::withMessages(['stock' => 'Gunakan transaksi ATK untuk saldo Gudang Utama lama. Barang dan gudang harus aktif.']);
+                throw ValidationException::withMessages(['stock' => 'Use the office supplies transactions for the old main warehouse balance, the goods and warehouses must be activated.']);
             }
             if ($operation === 'incoming' && $source->warehouse->kind === 'PROJECT' && ! $source->warehouse->project?->is_active) {
-                throw ValidationException::withMessages(['stock' => 'Project sudah nonaktif.']);
+                throw ValidationException::withMessages(['stock' => 'Project\'s down.']);
             }
             $sign = $operation === 'incoming' ? 1 : -1;
             $this->move($source, $quantity * $sign, in_array($operation, ['transfer', 'department_transfer'], true) ? 'transfer_out' : $operation, $data['token'].'-source', $actor, $data['notes']);
             if (in_array($operation, ['transfer', 'department_transfer'], true)) {
                 if ($operation === 'department_transfer') {
                     if (! $source->department_id) {
-                        throw ValidationException::withMessages(['destination_id' => 'Saldo belum memiliki departemen asal PR.']);
+                        throw ValidationException::withMessages(['destination_id' => 'Saldo doesn\'t have a PR department yet.']);
                     }
                     $warehouse = app(Warehouses::class)->forDepartment($source->warehouse, $source->department()->firstOrFail());
                 } else {
                     $warehouse = InventoryWarehouse::findOrFail($data['destination_id'] ?? null);
                 }
                 if (! $warehouse->is_active || ($warehouse->kind === 'PROJECT' && ! $warehouse->project?->is_active) || $warehouse->legacy_atk || $warehouse->company !== $source->warehouse->company || $warehouse->id === $source->warehouse_id) {
-                    throw ValidationException::withMessages(['destination_id' => 'Pilih gudang tujuan aktif lain dalam entitas yang sama.']);
+                    throw ValidationException::withMessages(['destination_id' => 'Select another destination warehouse in the same entity.']);
                 }
                 $target = $this->balance($warehouse, $item, $source->department_id);
                 $this->move($target, $quantity, 'transfer_in', $data['token'].'-destination', $actor, $data['notes']);

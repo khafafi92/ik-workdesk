@@ -15,7 +15,7 @@ class AssetRegistration
     {
         Gate::forUser($actor)->authorize('update', $device);
         if ($device->inventory_movement_id) {
-            throw ValidationException::withMessages(['inventory_balance_id' => 'Unit ini sudah didaftarkan dari stok gudang.']);
+            throw ValidationException::withMessages(['inventory_balance_id' => 'This unit\'s been registered from storage.']);
         }
         $source = InventoryAccess::scopeBalances(InventoryBalance::query(), $actor)->findOrFail($balanceId);
         InventoryItem::whereKey($source->inventory_item_id)->lockForUpdate()->firstOrFail();
@@ -24,10 +24,10 @@ class AssetRegistration
             || ! $source->warehouse->is_active || ! $source->item->is_active || $source->quantity_milli < 1000
             || ! $actor->canAccessDepartment($source->department_id ?? 0)
             || ! str_contains($device->asset_number ?? '', '/'.$source->warehouse->company.'/')) {
-            throw ValidationException::withMessages(['inventory_balance_id' => 'Stok, master barang, departemen, atau entitas aset tidak sesuai.']);
+            throw ValidationException::withMessages(['inventory_balance_id' => 'Stocks, master of goods, departments, or assets entity don\'t match.']);
         }
         $movement = app(InventoryStock::class)->move($source, -1000, 'asset_registration', 'device-'.$device->id, $actor,
-            'Pendaftaran unit aset '.$device->asset_number, ['reference_type' => 'it_device', 'reference_id' => $device->id]);
+            'Asset registration '.$device->asset_number, ['reference_type' => 'it_device', 'reference_id' => $device->id]);
         $device->forceFill(['inventory_warehouse_id' => $source->warehouse_id, 'inventory_movement_id' => $movement->id])->saveQuietly();
     }
 }

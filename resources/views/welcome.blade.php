@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight">Amanah System</h1>
-                    <p class="text-xs text-slate-400">Bekerja, Mengabdi, dan Bertanggung Jawab</p>
+                    <p class="text-xs text-slate-400">Working, Devoting, and Responsible</p>
                 </div>
             </div>
 
@@ -68,36 +68,36 @@
                 <div
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-sm text-emerald-300 mb-6">
                     <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    Pengingat untuk setiap amanah
+                    A reminder to every trust
                 </div>
 
                 <h2 class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
-                    Dimanapun tugasmu,
-                    <span class="text-emerald-400">ingat Allah.</span>
+                    Wherever you work,
+                    <span class="text-emerald-400">remember God.</span>
                 </h2>
 
                 <p class="mt-6 text-lg md:text-xl text-slate-300 leading-relaxed max-w-2xl">
-                    Anda mau tugas dimana saja, jika kamu muslim ingat Allah.
-                    Karena jabatan bukan hanya tentang posisi, tetapi tentang amanah
-                    yang harus diselesaikan dengan benar.
+                    You want a job anywhere, if you're Muslim remember God.
+                    Because office is not just about position, but about trust
+                    that needs to be done right.
                 </p>
 
                 <div class="mt-8 flex flex-wrap gap-4">
                     @auth
                     <a href="{{ url('/dashboard') }}"
                         class="px-6 py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
-                        Masuk Dashboard
+                        Enter Dashboard
                     </a>
                     @else
                     <a href="{{ route('login') }}"
                         class="px-6 py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
-                        Mulai Bekerja
+                        Start Working
                     </a>
                     @endauth
 
                     <a href="#pesan"
                         class="px-6 py-3 rounded-xl border border-white/20 font-semibold hover:bg-white/10 transition">
-                        Baca Pesan
+                        Read Message
                     </a>
                 </div>
             </section>
@@ -115,27 +115,27 @@
                     </div>
 
                     <p class="text-xl md:text-2xl leading-relaxed font-semibold text-white">
-                        Anda tidak akan ditanya,
-                        <span class="text-emerald-300">berapa banyak yang telah dikumpulkan</span>
-                        dari pangkat dan jabatan.
+                        You won't be asked,
+                        <span class="text-emerald-300">how much has been collected</span>
+                        of rank and rank.
                     </p>
 
                     <div class="my-8 h-px bg-white/10"></div>
 
                     <p class="text-slate-300 text-lg mb-4">
-                        Pertanyaan pertamanya:
+                        First question:
                     </p>
 
                     <div class="space-y-4">
                         <div class="p-5 rounded-2xl bg-slate-900/70 border border-emerald-500/20">
                             <p class="text-emerald-300 font-bold text-lg">
-                                Berapa amanah Allah yang telah engkau berhasil selesaikan?
+                                How many trusts of God have you accomplished?
                             </p>
                         </div>
 
                         <div class="p-5 rounded-2xl bg-slate-900/70 border border-cyan-500/20">
                             <p class="text-cyan-300 font-bold text-lg">
-                                Kenal Allah nggak?
+                                Do you know Allah?
                             </p>
                         </div>
                     </div>
@@ -146,7 +146,7 @@
                             ✓
                         </div>
                         <p>
-                            Sistem ini bukan hanya mencatat pekerjaan, tapi mengingatkan tentang tanggung jawab.
+                            This system not only records work, but reminds us of responsibility.
                         </p>
                     </div>
                 </div>

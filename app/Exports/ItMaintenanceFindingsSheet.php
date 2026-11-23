@@ -21,7 +21,7 @@ class ItMaintenanceFindingsSheet extends StringValueBinder implements FromQuery,
 
     public function title(): string
     {
-        return 'Temuan dan Perawatan';
+        return 'Findings and Maintenance';
     }
 
     public function query(): Builder
@@ -31,7 +31,7 @@ class ItMaintenanceFindingsSheet extends StringValueBinder implements FromQuery,
 
     public function headings(): array
     {
-        return [...ItDeviceExportFields::headings(), 'Nomor pemeriksaan', 'Tanggal pemeriksaan', 'Petugas pemeriksaan', 'Kelompok', 'Pemeriksaan', 'Kondisi saat diperiksa', 'Temuan', 'Rencana perawatan / tindak lanjut', 'Penanggung jawab', 'Batas waktu tindak lanjut', 'Status tindak lanjut saat ekspor', 'Catatan penyelesaian', 'Diselesaikan oleh', 'Waktu penyelesaian'];
+        return [...ItDeviceExportFields::headings(), 'Inspection Number', 'Inspection Date', 'Inspector', 'Group', 'Inspection', 'Inspection Condition', 'Findings', 'Maintenance / Follow-up Plan', 'Assignee', 'Follow-up Due Date', 'Follow-up Status', 'Completion Notes', 'Completed by', 'Completion time'];
     }
 
     public function map($finding): array
@@ -41,7 +41,7 @@ class ItMaintenanceFindingsSheet extends StringValueBinder implements FromQuery,
         return [
             ...ItDeviceExportFields::forInspection($inspection),
             $inspection->referenceNumber(), $inspection->checked_at->format('Y-m-d H:i'), $inspection->inspector_snapshot['name'],
-            $finding->result->item_snapshot['section'], $finding->result->item_snapshot['label'], $finding->result->condition->label(),
+            __($finding->result->item_snapshot['section']), __($finding->result->item_snapshot['label']), $finding->result->condition->label(),
             $finding->result->finding, $finding->action_plan, $finding->assignee?->name, $finding->due_at?->format('Y-m-d H:i'),
             $finding->status->label(), $finding->resolution_notes, $finding->resolver?->name, $finding->resolved_at?->format('Y-m-d H:i'),
         ];

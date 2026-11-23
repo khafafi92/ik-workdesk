@@ -22,7 +22,7 @@ class CreateOutgoingLetter extends CreateRecord
 
                 if ($departmentId === null) {
                     throw ValidationException::withMessages([
-                        'department_id' => 'Pilih departemen aktif untuk surat APCA.',
+                        'department_id' => 'Select active department for APCA mail.',
                     ]);
                 }
 
@@ -35,7 +35,7 @@ class CreateOutgoingLetter extends CreateRecord
 
             if ($departmentId === null) {
                 throw ValidationException::withMessages([
-                    'department_id' => 'Akun pembuat surat harus memiliki departemen aktif untuk membuat nomor APCA.',
+                    'department_id' => 'The mailmaker\'s account must have an active department to make an APCA number.',
                 ]);
             }
 
@@ -47,11 +47,11 @@ class CreateOutgoingLetter extends CreateRecord
 
     public function getSubheading(): ?string
     {
-        return 'Isi data surat secara berurutan, simpan sebagai draft, lalu terbitkan setelah data dan preview nomor diperiksa.';
+        return 'File mail in order, save as a draft, and then publish after data and preview numbers are checked.';
     }
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Draft surat tersimpan. Periksa kembali sebelum menerbitkannya.';
+        return 'Draft mail saved. Check back before publishing it.';
     }
 }

@@ -735,14 +735,14 @@ class DocumentNumberServiceTest extends TestCase
         $service = app(AteGeneralLetterService::class);
 
         $this->assertSame([
-            'perdin' => 'Surat Perdin',
-            'tugas' => 'Surat Tugas',
-            'pernyataan' => 'Surat Pernyataan',
-            'pengantar' => 'Surat Pengantar',
-            'permohonan' => 'Surat Permohonan',
-            'keputusan' => 'Surat Keputusan',
+            'perdin' => 'Business Travel Letter',
+            'tugas' => 'Assignment Letter',
+            'pernyataan' => 'Statement',
+            'pengantar' => 'Cover Letter',
+            'permohonan' => 'Request Letter',
+            'keputusan' => 'Decision Letter',
             'sket' => 'SKET',
-            'tanda_terima_dok' => 'Tanda Terima Dok',
+            'tanda_terima_dok' => 'Document Receipt',
             'info_memo_luwuk' => 'Info Memo Luwuk',
         ], $service->kinds());
 

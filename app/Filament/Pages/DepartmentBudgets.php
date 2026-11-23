@@ -17,9 +17,9 @@ class DepartmentBudgets extends Page
 
     protected static ?string $slug = 'permintaan/anggaran-departemen';
 
-    protected static ?string $title = 'Anggaran departemen';
+    protected static ?string $title = 'Department budget';
 
-    protected static ?string $navigationLabel = 'Anggaran departemen';
+    protected static ?string $navigationLabel = 'Department budget';
 
     protected static string|UnitEnum|null $navigationGroup = 'Permintaan';
 

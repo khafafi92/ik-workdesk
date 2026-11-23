@@ -19,12 +19,12 @@ class CreateAtkRequest extends CreateRecord
 
     public function getSubheading(): ?string
     {
-        return 'Kirim kebutuhan ATK ke GA. Setelah barang diserahkan, konfirmasikan penerimaannya dari daftar Permintaan ATK.';
+        return 'Send office supplies needs to GA. After the item is submitted, confirm the reception of the office supplies request list.';
     }
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Permintaan ATK terkirim ke GA.';
+        return 'Office supplies request sent to GA.';
     }
 
     protected function afterCreate(): void
@@ -50,13 +50,13 @@ class CreateAtkRequest extends CreateRecord
 
         if (! $user || ! $departmentId) {
             throw ValidationException::withMessages([
-                'purpose' => 'Akun Anda belum terhubung ke departemen employee.',
+                'purpose' => 'Your account hasn\'t been connected to the employee department.',
             ]);
         }
 
         if (blank($data['permit_company_id'] ?? null)) {
             throw ValidationException::withMessages([
-                'permit_company_id' => 'Entitas peminta wajib dipilih.',
+                'permit_company_id' => 'Request entity must be selected.',
             ]);
         }
 

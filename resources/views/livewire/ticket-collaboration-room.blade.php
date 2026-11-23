@@ -74,15 +74,15 @@
             <div class="ik-collab-post-restriction">
                 <strong>
                     {{ $isWaitingForApproval
-                        ? 'Menunggu approval CBO'
-                        : ($isWaitingForPic ? 'Menunggu penugasan PIC' : 'Post to group tidak aktif') }}
+                        ? 'Waiting for CBO approval'
+                        : ($isWaitingForPic ? 'Waiting for PIC assignment' : 'Post to group disabled') }}
                 </strong>
                 <p>
                     {{ $isWaitingForApproval
-                        ? 'Divisi Legal hanya dapat melihat request ini sampai Work Log di-approve oleh CBO.'
+                        ? 'Legal Division can only see this request until the Log Work is appproved by CBO.'
                         : ($isWaitingForPic
-                            ? 'Post to group akan aktif setelah Manager menetapkan Anda sebagai PIC Work Log department ini.'
-                            : 'Hanya requester, System Administrator, atau PIC Work Log yang ditugaskan yang dapat mengirim pesan.') }}
+                            ? 'Post to group will be active once the manager sets you up as this PIC Log Department work.'
+                            : 'Only the assigned PIC Log, System Administrator, or PIC Work Log can send a message.') }}
                 </p>
             </div>
             <textarea

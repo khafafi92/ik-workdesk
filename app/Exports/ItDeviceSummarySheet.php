@@ -21,7 +21,7 @@ class ItDeviceSummarySheet extends StringValueBinder implements FromQuery, Shoul
 
     public function title(): string
     {
-        return 'Ringkasan Perangkat';
+        return 'Device Summary';
     }
 
     public function query(): Builder
@@ -41,7 +41,7 @@ class ItDeviceSummarySheet extends StringValueBinder implements FromQuery, Shoul
 
     public function headings(): array
     {
-        return [...ItDeviceExportFields::headings(), 'Nomor pemeriksaan', 'Tanggal pemeriksaan', 'Petugas', 'Kondisi', 'Temuan terbuka', 'Temuan dalam proses', 'Temuan selesai', 'Total temuan belum selesai'];
+        return [...ItDeviceExportFields::headings(), 'Inspection Number', 'Inspection Date', 'Inspector', 'Condition', 'Open Findings', 'Findings In Progress', 'Completed Findings', 'Unresolved Findings'];
     }
 
     public function map($inspection): array

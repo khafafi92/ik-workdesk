@@ -55,7 +55,7 @@ class HrKpmogLetterService
         $template = $letter->numberingTemplate;
 
         if ($template === null) {
-            throw ValidationException::withMessages(['document_number' => 'Template nomor surat tidak ditemukan.']);
+            throw ValidationException::withMessages(['document_number' => 'The mail number template was not found.']);
         }
 
         $letter->update([
@@ -81,7 +81,7 @@ class HrKpmogLetterService
 
         if ($company === null || $department === null) {
             throw ValidationException::withMessages([
-                'profile' => 'Entitas KPMOG atau departemen HR belum tersedia pada master data.',
+                'profile' => 'KPMOG entity or HR department is not yet available on the data master.',
             ]);
         }
 
@@ -92,7 +92,7 @@ class HrKpmogLetterService
                 'permit_company_id' => $company->id,
                 'department_id' => $department->id,
                 'form_variant' => 'hr',
-                'description' => 'Register nomor surat HR KPMOG.',
+                'description' => 'Register letter number H.R. KPMOG.',
                 'is_active' => true,
             ],
         );
@@ -102,7 +102,7 @@ class HrKpmogLetterService
                 'letter_profile_id' => $profile->id,
                 'permit_company_id' => $company->id,
                 'department_id' => $department->id,
-                'name' => 'Nomor urut HR KPMOG',
+                'name' => 'HR KPMOG sequence number',
             ],
             [
                 'template' => '{running:3}/{company_code}-{department_code}/{roman_month}/{year}',

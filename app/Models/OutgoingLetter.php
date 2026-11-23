@@ -36,7 +36,7 @@ class OutgoingLetter extends Model
 
                 if ($changedFields !== []) {
                     throw ValidationException::withMessages([
-                        'letter' => 'Surat yang sudah diterbitkan tidak dapat diubah.',
+                        'letter' => 'The published message could not be changed.',
                     ]);
                 }
             }

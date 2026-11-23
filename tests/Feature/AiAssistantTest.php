@@ -191,7 +191,7 @@ class AiAssistantTest extends TestCase
             app(OpenAiChatService::class)->respond($user, 'Pertanyaan');
             $this->fail('Expected disabled assistant to reject the request.');
         } catch (AiAssistantException $exception) {
-            $this->assertStringContainsString('belum disiapkan', $exception->getMessage());
+            $this->assertStringContainsString('unavailable until an administrator configures', $exception->getMessage());
         }
 
         $settings->update(['is_enabled' => true, 'monthly_token_limit' => 10]);
@@ -207,7 +207,7 @@ class AiAssistantTest extends TestCase
             app(OpenAiChatService::class)->respond($user, 'Pertanyaan baru');
             $this->fail('Expected exhausted monthly token budget to reject the request.');
         } catch (AiAssistantException $exception) {
-            $this->assertStringContainsString('sudah tercapai', $exception->getMessage());
+            $this->assertStringContainsString('has reached its monthly token limit', $exception->getMessage());
         }
 
         Http::assertNothingSent();
@@ -228,7 +228,7 @@ class AiAssistantTest extends TestCase
             app(OpenAiChatService::class)->respond($user, 'Pertanyaan');
             $this->fail('Expected invalid API key to be reported.');
         } catch (AiAssistantException $exception) {
-            $this->assertStringContainsString('menolak API key', $exception->getMessage());
+            $this->assertStringContainsString('rejected the API key', $exception->getMessage());
         }
 
         $this->assertDatabaseCount('ai_assistant_messages', 0);

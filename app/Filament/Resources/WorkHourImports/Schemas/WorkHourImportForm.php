@@ -21,7 +21,7 @@ class WorkHourImportForm
 
                 TextInput::make('period_name')
                     ->label('Period Name')
-                    ->placeholder('Contoh: 21 Mei - 20 Juni 2026')
+                    ->placeholder('Example: May 21 - June 20, 2026')
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
@@ -30,7 +30,7 @@ class WorkHourImportForm
                     ->default(null),
 
                 FileUpload::make('work_hour_file_path')
-                    ->label('File Total Jam Kerja')
+                    ->label('Total Workhours File')
                     ->disk('local')
                     ->directory('attendance-imports')
                     ->acceptedFileTypes([

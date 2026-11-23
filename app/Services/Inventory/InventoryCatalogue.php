@@ -35,12 +35,12 @@ class InventoryCatalogue
             if ($id) {
                 abort_unless(InventoryAccess::editItem($actor, $item->kind), 403);
                 if ($item->version !== $version || $item->kind !== $data['kind']) {
-                    throw ValidationException::withMessages(['catalogue' => 'Data berubah atau jenis barang berbeda. Muat ulang master barang.']);
+                    throw ValidationException::withMessages(['catalogue' => 'Data changes or different types of goods. Reload the master of goods.']);
                 }
                 if ($item->unit !== $data['unit'] && (DB::table('scm_request_items')->where('inventory_item_id', $id)->exists()
                     || DB::table('inventory_movements')->whereIn('balance_id', DB::table('inventory_balances')->where('inventory_item_id', $id)->select('id'))->exists()
                     || $item->atkItem?->requestItems()->exists())) {
-                    throw ValidationException::withMessages(['catalogue' => 'Satuan barang yang sudah dipakai transaksi tidak dapat diubah. Buat master terpisah untuk satuan lain.']);
+                    throw ValidationException::withMessages(['catalogue' => 'The transaction item could not be changed. Create a separate master for another one.']);
                 }
                 $data['version'] = $item->version + 1;
             }
@@ -81,7 +81,7 @@ class InventoryCatalogue
         }
         if ($device->inventory_item_id) {
             if (! InventoryItem::whereKey($device->inventory_item_id)->where('kind', 'device')->exists()) {
-                throw ValidationException::withMessages(['inventory_item_id' => 'Perangkat harus memakai master barang jenis Perangkat/aset.']);
+                throw ValidationException::withMessages(['inventory_item_id' => 'Device must use the device\'s device/asset master item.']);
             }
 
             return;

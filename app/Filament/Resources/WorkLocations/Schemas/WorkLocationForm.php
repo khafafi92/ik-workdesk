@@ -14,42 +14,42 @@ class WorkLocationForm
         return $schema
             ->components([
                 TextInput::make('gps_name')
-                    ->label('Nama Kelompok Lokasi')
-                    ->helperText('Untuk beberapa titik di lokasi yang sama, gunakan nama yang sama, misalnya KPMOG Office.')
+                    ->label('Location Group Name')
+                    ->helperText('For some points in the same location, use the same name, such as the KPMOG Office.')
                     ->maxLength(255)
                     ->required(),
                 Textarea::make('address')
-                    ->label('Keterangan Titik')
-                    ->helperText('Contoh: pintu depan, gedung utama, parkiran, atau pintu belakang.')
+                    ->label('Point Description')
+                    ->helperText('Example: front door, main building, parking, or back door.')
                     ->columnSpanFull(),
                 TextInput::make('latitude')
                     ->label('Latitude')
-                    ->helperText('Contoh: -6.2849340')
+                    ->helperText('Example: -6,2849340')
                     ->numeric()
                     ->minValue(-90)
                     ->maxValue(90)
                     ->required(),
                 TextInput::make('longitude')
                     ->label('Longitude')
-                    ->helperText('Contoh: 106.8069252')
+                    ->helperText('Example: 106,8069252')
                     ->numeric()
                     ->minValue(-180)
                     ->maxValue(180)
                     ->required(),
                 TextInput::make('radius_meters')
                     ->label('Radius (meter)')
-                    ->helperText('Gunakan 30–75 meter sebagai awal; sesuaikan berdasarkan hasil GPS di lapangan.')
+                    ->helperText('Use 1005 feet [30 considered m] early; adjust it according to GPS results in the field.')
                     ->required()
                     ->numeric()
                     ->minValue(5)
                     ->maxValue(1000)
                     ->default(50),
                 Toggle::make('is_flexible')
-                    ->label('Lokasi Fleksibel')
-                    ->helperText('Aktifkan hanya jika absensi memang boleh dilakukan dari lokasi mana pun.')
+                    ->label('Flexible Location')
+                    ->helperText('Enable only if absenteeship is permissible from any location.')
                     ->default(false),
                 Toggle::make('is_active')
-                    ->label('Aktif')
+                    ->label('Active')
                     ->default(true),
             ]);
     }

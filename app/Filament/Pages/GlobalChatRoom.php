@@ -136,7 +136,7 @@ class GlobalChatRoom extends Page
 
         if ($body === '' && $this->attachments === []) {
             throw ValidationException::withMessages([
-                'message' => 'Tulis pesan atau pilih lampiran sebelum mengirim.',
+                'message' => 'Write message or select attachment before sending.',
             ]);
         }
 
@@ -154,7 +154,7 @@ class GlobalChatRoom extends Page
                     $path = $file->store('global-chat/'.$company->getKey(), 'local');
 
                     if ($path === false) {
-                        throw new \RuntimeException('Lampiran tidak dapat disimpan.');
+                        throw new \RuntimeException('The attachment could not be saved.');
                     }
 
                     $storedPaths[] = $path;
@@ -197,7 +197,7 @@ class GlobalChatRoom extends Page
         );
 
         Notification::make()
-            ->title('Pesan terkirim')
+            ->title('Message sent')
             ->success()
             ->send();
     }

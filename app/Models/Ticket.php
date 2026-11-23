@@ -91,7 +91,7 @@ class Ticket extends Model
 
             if (! $ticket->permit_company_id) {
                 throw ValidationException::withMessages([
-                    'permit_company_id' => 'Permit Company wajib dipilih untuk kategori ini.',
+                    'permit_company_id' => 'The Company\'s firm is required to be selected for this category.',
                 ]);
             }
 
@@ -104,7 +104,7 @@ class Ticket extends Model
 
             if (! $ticket->permit_kbli_id) {
                 throw ValidationException::withMessages([
-                    'permit_kbli_id' => 'Pilih KBLI atau tandai bahwa KBLI belum tersedia.',
+                    'permit_kbli_id' => 'Select KBLI or mark that the KBLI is not available.',
                 ]);
             }
 
@@ -115,7 +115,7 @@ class Ticket extends Model
 
             if (! $validKbli) {
                 throw ValidationException::withMessages([
-                    'permit_kbli_id' => 'KBLI tidak sesuai dengan Permit Company yang dipilih.',
+                    'permit_kbli_id' => 'The KBLI doesn\'t match the Permit Company.',
                 ]);
             }
 

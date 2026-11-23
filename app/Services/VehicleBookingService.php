@@ -80,7 +80,7 @@ class VehicleBookingService
 
         if (! $booking->canBeCancelled()) {
             throw ValidationException::withMessages([
-                'status' => 'Booking ini tidak dapat dibatalkan.',
+                'status' => 'This booking cannot be undone.',
             ]);
         }
 
@@ -104,7 +104,7 @@ class VehicleBookingService
 
         if (! $booking->canBeCompleted()) {
             throw ValidationException::withMessages([
-                'status' => 'Hanya perjalanan yang sedang berlangsung yang dapat diselesaikan.',
+                'status' => 'Only an ongoing journey can be completed.',
             ]);
         }
 
@@ -124,7 +124,7 @@ class VehicleBookingService
     ): void {
         if (! $vehicle->is_active) {
             throw ValidationException::withMessages([
-                'data.vehicle_id' => 'Kendaraan ini sedang tidak aktif.',
+                'data.vehicle_id' => 'This vehicle is down.',
             ]);
         }
 
@@ -133,7 +133,7 @@ class VehicleBookingService
         if ($passengersCount < 1 || $passengersCount > $vehicle->capacity) {
             throw ValidationException::withMessages([
                 'data.passengers_count' => sprintf(
-                    'Jumlah penumpang harus antara 1 dan %d sesuai kapasitas %s.',
+                    'The number of passengers must be between 1 and %d to the capacity of %s.',
                     $vehicle->capacity,
                     $vehicle->name
                 ),
@@ -145,13 +145,13 @@ class VehicleBookingService
 
         if ($end->lessThanOrEqualTo($start)) {
             throw ValidationException::withMessages([
-                'data.duration_hours' => 'Durasi perjalanan tidak valid.',
+                'data.duration_hours' => 'Invalid travel duration.',
             ]);
         }
 
         if (! $start->isSameDay($end)) {
             throw ValidationException::withMessages([
-                'data.duration_hours' => 'Booking harus selesai pada hari yang sama.',
+                'data.duration_hours' => 'Booking should be finished on the same day.',
             ]);
         }
 
@@ -168,7 +168,7 @@ class VehicleBookingService
         ) {
             throw ValidationException::withMessages([
                 'data.start_time' => sprintf(
-                    '%s hanya tersedia pukul %s–%s.',
+                    '%s is only available from %s to %s.',
                     $vehicle->name,
                     substr($vehicle->available_from, 0, 5),
                     substr($vehicle->available_until, 0, 5)
@@ -191,7 +191,7 @@ class VehicleBookingService
         if ($conflict) {
             throw ValidationException::withMessages([
                 'data.start_time' => sprintf(
-                    '%s sudah dibooking pukul %s–%s menuju %s.',
+                    '%s is booked at %s-%s heading for %s.',
                     $vehicle->name,
                     $conflict->start_at->format('H:i'),
                     $conflict->end_at->format('H:i'),

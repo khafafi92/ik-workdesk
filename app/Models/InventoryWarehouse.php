@@ -30,10 +30,10 @@ class InventoryWarehouse extends Model
     public function label(): string
     {
         if ($this->legacy_atk) {
-            return 'Gudang HO / Saldo ATK lama';
+            return 'HO Warehouse / Legacy Office Supply Balance';
         }
         $location = $this->kind === 'HO' ? 'HO' : ($this->project?->name ?? $this->name);
 
-        return ($this->department_id ? 'Gudang '.$this->department?->name : 'Gudang Utama').' / '.$location.' / '.$this->company;
+        return ($this->department_id ? 'Warehouse '.$this->department?->name : 'Main Warehouse').' / '.$location.' / '.$this->company;
     }
 }

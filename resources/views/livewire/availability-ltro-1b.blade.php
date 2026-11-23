@@ -101,7 +101,7 @@
             </div>
             <div>
                 <div class="header-title">AVAILABILITY LTRO-<span class="accent">1B</span></div>
-                <div class="header-sub">Periode report mengikuti tanggal 21 sampai tanggal 20</div>
+                <div class="header-sub">Report period follows the 21st to the 20th</div>
             </div>
         </div>
 
@@ -110,7 +110,7 @@
                 <i class="ti ti-arrow-left" aria-hidden="true"></i> Monitoring
             </a>
             <a href="{{ url('/panel') }}" class="btn btn-dark">
-                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Kembali ke Dashboard
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Return to Dashboard
             </a>
         </div>
     </header>
@@ -120,14 +120,14 @@
             <div class="panel-header">
                 <div>
                     <div class="panel-title">Period Availability</div>
-                    <div class="panel-sub">Pilih period aktif atau buat period baru sampai tanggal 20.</div>
+                    <div class="panel-sub">Choose active period or create a new period until the 20th.</div>
                 </div>
 
                 <div class="availability-controls">
                     <div class="field">
                         <label>Period</label>
                         <select wire:model.live="selectedPeriodStart">
-                            <option value="">Belum ada period</option>
+                            <option value="">No period yet</option>
                             @foreach($periods as $period)
                                 <option value="{{ $period['value'] }}">{{ $period['label'] }}</option>
                             @endforeach
@@ -136,11 +136,11 @@
 
                     <form wire:submit.prevent="createPeriod" class="availability-controls">
                         <div class="field">
-                            <label>Buat period sampai tanggal 20</label>
+                            <label>Make period until the 20th</label>
                             <input type="month" wire:model="newPeriodEndMonth">
                         </div>
                         <button type="submit" class="btn btn-blue">
-                            <i class="ti ti-calendar-plus" aria-hidden="true"></i> Buat Period
+                            <i class="ti ti-calendar-plus" aria-hidden="true"></i> Create Period
                         </button>
                     </form>
 
@@ -149,9 +149,9 @@
                             type="button"
                             class="btn btn-danger"
                             wire:click="deletePeriod"
-                            wire:confirm="Hapus semua data pada period ini?"
+                            wire:confirm="Delete all records for this period?"
                         >
-                            <i class="ti ti-trash" aria-hidden="true"></i> Hapus Period
+                            <i class="ti ti-trash" aria-hidden="true"></i> Remove Period
                         </button>
                     @endif
                 </div>
@@ -162,7 +162,7 @@
                     <div class="summary-card">
                         <div class="summary-label">Total Days</div>
                         <div class="summary-value blue">{{ number_format($summary['days']) }}</div>
-                        <div class="summary-caption">Hari</div>
+                        <div class="summary-caption">Day</div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Required Hours</div>
@@ -208,12 +208,12 @@
             </div>
 
             <p class="scroll-hint">
-                <i class="ti ti-arrows-horizontal" aria-hidden="true"></i> Geser untuk lihat semua kolom
+                <i class="ti ti-arrows-horizontal" aria-hidden="true"></i> Move to see all columns
             </p>
 
             @if(empty($rows))
                 <div class="table-wrap">
-                    <div class="empty-cell">Belum ada data. Buat period baru lalu isi data manual.</div>
+                    <div class="empty-cell">No data yet. Create new period and then manual data content.</div>
                 </div>
             @else
                 <form wire:submit.prevent="save">
@@ -287,7 +287,7 @@
                                                     type="button"
                                                     class="btn btn-danger btn-mini"
                                                     wire:click="deleteRow({{ $row['id'] }})"
-                                                    wire:confirm="Hapus baris tanggal {{ \Carbon\Carbon::parse($row['report_date'])->format('d-M-y') }}?"
+                                                    wire:confirm="Delete the record dated {{ \Carbon\Carbon::parse($row['report_date'])->format('d-M-y') }}?"
                                                 >
                                                     <i class="ti ti-trash" aria-hidden="true"></i> Delete
                                                 </button>
@@ -300,11 +300,11 @@
                     </div>
 
                     <div class="form-actions" style="border-top:0.5px solid #e5e7eb;">
-                        <span class="edit-note">Edit data langsung di tabel, lalu klik Simpan Data.</span>
+                        <span class="edit-note">Edit data directly on the table, then click Save Data.</span>
                         <button type="submit" class="btn btn-blue" wire:loading.attr="disabled" wire:target="save">
                             <i class="ti ti-device-floppy" aria-hidden="true"></i>
-                            <span wire:loading.remove wire:target="save">Simpan Data</span>
-                            <span wire:loading wire:target="save">Menyimpan...</span>
+                            <span wire:loading.remove wire:target="save">Save Data</span>
+                            <span wire:loading wire:target="save">Saving...</span>
                         </button>
                     </div>
                 </form>

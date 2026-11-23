@@ -118,7 +118,7 @@ class GlobalChatRoomTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(GlobalChatRoom::class)
-            ->assertSee('belum ditetapkan ke company')
+            ->assertSee('not assigned to a company')
             ->assertDontSee('Company Alpha')
             ->assertDontSee('Company Beta')
             ->call('selectCompany', $this->beta->id)
@@ -137,7 +137,7 @@ class GlobalChatRoomTest extends TestCase
 
         Livewire::actingAs($user)
             ->test(GlobalChatRoom::class)
-            ->assertSee('belum ditetapkan ke company')
+            ->assertSee('not assigned to a company')
             ->assertDontSee('Company Alpha')
             ->assertDontSee('Company Beta')
             ->call('selectCompany', $this->beta->id)
@@ -293,7 +293,7 @@ class GlobalChatRoomTest extends TestCase
             ->get('/panel/global-chat-room')
             ->assertOk()
             ->assertSee('Chat Room Global')
-            ->assertSee('Layanan real-time belum disiapkan.');
+            ->assertSee('Live updates are unavailable.');
     }
 
     private function employeeUser(PermitCompany $company): User

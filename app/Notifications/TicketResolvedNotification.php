@@ -38,20 +38,20 @@ class TicketResolvedNotification extends Notification implements ShouldQueue
 
         return (new MailMessage)
             ->from($fromAddress, $fromName)
-            ->subject("[IK WorkDesk] ✅ Ticket Selesai: {$ticket->ticket_no}")
+            ->subject("[IK WorkDesk] [Finished]: {$ticket->ticket_no}")
             ->greeting("Halo, {$notifiable->name}!")
-            ->line('Ticket Anda telah **diselesaikan** oleh tim handler.')
+            ->line('Your tickets have been motherfucking done by the handler team.')
             ->line('---')
             ->line("**No. Ticket     :** {$ticket->ticket_no}")
-            ->line("**Subjek         :** {$ticket->subject}")
-            ->line("**Diselesaikan   :** {$resolvedAt}")
+            ->line("**Subject:** {$ticket->subject}")
+            ->line("**Resolved:** {$resolvedAt}")
             ->when(
                 filled($ticket->resolution_notes),
                 fn (MailMessage $mail) => $mail
-                    ->line("**Catatan Resolusi:** {$ticket->resolution_notes}")
+                    ->line("**Resolution Notes:* {$ticket->resolution_notes}")
             )
-            ->action('Lihat Detail Ticket', $viewUrl)
-            ->line('Jika masih ada yang perlu ditindaklanjuti, silakan buka ticket baru atau tambahkan komentar.')
+            ->action('View Ticket Details', $viewUrl)
+            ->line('If there is anything left to follow up on, please open a new ticket or add a comment.')
             ->salutation('IK WorkDesk System');
     }
 }

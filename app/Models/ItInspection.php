@@ -45,25 +45,25 @@ class ItInspection extends Model
     {
         static::saving(function (self $inspection): void {
             if ($inspection->exists && self::query()->findOrFail($inspection->id)->status === ItInspectionStatus::Finalized) {
-                throw ValidationException::withMessages(['inspection' => 'Pemeriksaan final tidak dapat diubah.']);
+                throw ValidationException::withMessages(['inspection' => 'The final check could not be changed.']);
             }
             if (blank($inspection->inspection_number) || ! $inspection->checked_at || $inspection->checked_at->isFuture()) {
-                throw ValidationException::withMessages(['checked_at' => 'Nomor dan waktu pemeriksaan yang sudah terjadi wajib diisi.']);
+                throw ValidationException::withMessages(['checked_at' => 'The number and time of the already-examination is mandatory.']);
             }
 
             $inspector = User::query()->findOrFail($inspection->inspector_id);
             if (! $inspector->isActiveForAccess()) {
-                throw ValidationException::withMessages(['inspector_id' => 'Petugas pemeriksaan harus aktif.']);
+                throw ValidationException::withMessages(['inspector_id' => 'The inspection officer must be active.']);
             }
 
             if (! $inspection->exists) {
                 $device = ItDevice::query()->findOrFail($inspection->it_device_id);
                 $template = ItChecklistTemplate::query()->findOrFail($inspection->it_checklist_template_id);
                 if (! $device->is_active || $device->lifecycle_status === ItAssetLifecycle::Disposed || ! $template->is_active || $device->device_type !== $template->device_type || $device->category !== $template->category || ! $template->items()->exists()) {
-                    throw ValidationException::withMessages(['it_device_id' => 'Objek dan template aktif dengan jenis yang cocok diperlukan.']);
+                    throw ValidationException::withMessages(['it_device_id' => 'Active objects and templates with matching types are required.']);
                 }
                 if ($inspection->status !== ItInspectionStatus::Draft) {
-                    throw ValidationException::withMessages(['status' => 'Pemeriksaan baru harus disimpan sebagai draft.']);
+                    throw ValidationException::withMessages(['status' => 'New check must be saved as a draft.']);
                 }
                 $inspection->managing_department_id = $device->managing_department_id;
                 $inspection->device_snapshot = $device->inspectionSnapshot();
@@ -72,18 +72,18 @@ class ItInspection extends Model
                 }
                 $inspection->location_detail ??= $device->location_detail;
             } elseif ($inspection->isDirty(['it_device_id', 'it_checklist_template_id', 'managing_department_id', 'device_snapshot', 'inspection_number'])) {
-                throw ValidationException::withMessages(['inspection' => 'Objek, template, nomor, department, dan salinan identitas tidak dapat diganti.']);
+                throw ValidationException::withMessages(['inspection' => 'Objects, templates, numbers, departments, and copies of identities cannot be replaced.']);
             }
 
             if ($inspection->exists && $inspection->isDirty(['inspector_snapshot', 'location_snapshot'])) {
-                throw ValidationException::withMessages(['inspection' => 'Salinan petugas dan lokasi hanya diisi dari data induk.']);
+                throw ValidationException::withMessages(['inspection' => 'A copy of the officer and location is only filled out from the parent data.']);
             }
             if (! $inspection->exists || $inspection->isDirty('inspector_id')) {
                 $inspection->inspector_snapshot = $inspector->only(['id', 'name']);
             }
             $hasHistoricalLocation = $inspection->exists && ! $inspection->isDirty(['work_location_id', 'location_name']) && filled($inspection->location_snapshot['location']['gps_name'] ?? null);
             if (($inspection->device_snapshot['object_kind'] ?? null) === ItObjectKind::Room->value && ! $inspection->work_location_id && ! $inspection->location_name && ! $hasHistoricalLocation) {
-                throw ValidationException::withMessages(['location_name' => 'Pemeriksaan ruang wajib memiliki lokasi aktual.']);
+                throw ValidationException::withMessages(['location_name' => 'A room inspection is mandatory to have an actual location.']);
             }
             if (! $inspection->exists || $inspection->isDirty(['work_location_id', 'location_name', 'location_detail'])) {
                 $location = $inspection->work_location_id ? WorkLocation::query()->findOrFail($inspection->work_location_id) : null;
@@ -100,14 +100,14 @@ class ItInspection extends Model
                 $inspection->validateFinalization();
             } else {
                 if ($inspection->finalized_at || $inspection->finalized_by || filled($inspection->finalization_notes)) {
-                    throw ValidationException::withMessages(['status' => 'Data finalisasi hanya diisi saat finalisasi.']);
+                    throw ValidationException::withMessages(['status' => 'The finalization data is only filled in on the finalization.']);
                 }
                 $inspection->overall_condition = ItInspectionCondition::Unchecked;
                 $inspection->condition_counts = null;
             }
         });
 
-        static::deleting(fn () => throw ValidationException::withMessages(['inspection' => 'Pemeriksaan disimpan sebagai riwayat dan tidak dapat dihapus.']));
+        static::deleting(fn () => throw ValidationException::withMessages(['inspection' => 'The check was saved as history and could not be deleted.']));
     }
 
     private function validateFinalization(): void
@@ -115,18 +115,18 @@ class ItInspection extends Model
         $results = $this->results()->with('followUp')->get();
         $itemIds = $this->template()->firstOrFail()->items()->pluck('id')->sort()->values()->all();
         if ($results->pluck('it_checklist_item_id')->sort()->values()->all() !== $itemIds || $results->contains(fn (ItInspectionResult $result): bool => $result->condition === ItInspectionCondition::Unchecked)) {
-            throw ValidationException::withMessages(['results' => 'Seluruh butir checklist harus dinilai atau diberi N/A beralasan.']);
+            throw ValidationException::withMessages(['results' => 'All checklist items must be judged or given an N/A reason.']);
         }
         foreach ($results as $result) {
             if ($result->condition->isFinding() && (blank($result->finding) || ! $result->followUp || blank($result->followUp->action_plan) || ! $result->followUp->assignee()->firstOrFail()->isActiveForAccess())) {
-                throw ValidationException::withMessages(['results' => 'Setiap Warning/Critical memerlukan temuan dan tindak lanjut.']);
+                throw ValidationException::withMessages(['results' => 'Every warning/critical requires findings and follow-up.']);
             }
             if ($result->condition === ItInspectionCondition::NotApplicable && blank($result->not_applicable_reason)) {
-                throw ValidationException::withMessages(['results' => 'Setiap N/A memerlukan alasan.']);
+                throw ValidationException::withMessages(['results' => 'Every N/A needs a reason.']);
             }
         }
         if (! $this->finalized_at || $this->finalized_at->isFuture() || $this->finalized_at->lt($this->checked_at) || ! $this->finalized_by || ! User::query()->findOrFail($this->finalized_by)->isActiveForAccess()) {
-            throw ValidationException::withMessages(['finalized_at' => 'Finalisasi memerlukan waktu yang sah dan petugas aktif.']);
+            throw ValidationException::withMessages(['finalized_at' => 'Finalization takes legal time and active officers.']);
         }
         $conditions = $results->pluck('condition')->all();
         $this->overall_condition = ItInspectionCondition::summarize($conditions);

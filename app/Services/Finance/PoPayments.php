@@ -24,9 +24,9 @@ use Illuminate\Validation\ValidationException;
 
 class PoPayments
 {
-    public const KINDS = ['dp' => 'Uang muka / DP', 'progress' => 'Termin', 'settlement' => 'Pelunasan'];
+    public const KINDS = ['dp' => 'An advance / DP', 'progress' => 'Installment', 'settlement' => 'Pelunasan'];
 
-    public const TIMINGS = ['before_delivery' => 'Sebelum pengiriman', 'after_receipt' => 'Setelah penerimaan barang (PR)', 'other' => 'Sesuai kesepakatan'];
+    public const TIMINGS = ['before_delivery' => 'Before delivery', 'after_receipt' => 'After item reception (PR)', 'other' => 'As agreed'];
 
     public function orders(User $user): Builder
     {
@@ -47,7 +47,7 @@ class PoPayments
             'description' => 'required|string|max:255', 'timing' => ['required', Rule::in(array_keys(self::TIMINGS))],
             'due_on' => 'nullable|date', 'amount' => 'required', 'invoice_number' => 'nullable|string|max:255', 'notes' => 'nullable|string|max:2000'])->validate();
         $amount = Decimal::parse($data['amount']);
-        $this->reject($amount <= 0, 'Nominal termin harus lebih dari nol.');
+        $this->reject($amount <= 0, 'The terminal nomin must be more than zero.');
         if ($invoice) {
             $this->validateFile($invoice);
         }
@@ -56,7 +56,7 @@ class PoPayments
             return DB::transaction(function () use ($actor, $orderId, $data, $amount, $invoice, &$paths): FinancePoPayment {
                 $order = $this->orders($actor)->lockForUpdate()->findOrFail($orderId);
                 $order->load(['request', 'cbe']);
-                $this->reject($order->status === 'cancelled', 'PO sudah dibatalkan dan tidak dapat menerima termin.');
+                $this->reject($order->status === 'cancelled', 'You cannot add an installment to a cancelled PO.');
                 $existing = FinancePoPayment::where('token', $data['token'])->first();
                 if ($existing) {
                     $existingInvoice = $existing->files()->where('type', 'invoice')->first();
@@ -74,18 +74,18 @@ class PoPayments
                             && $existingInvoice->original_name === $this->originalName($invoice)
                             && is_string($savedHash) && is_string($uploadHash) && hash_equals($savedHash, $uploadHash);
                     }
-                    $this->reject(! $same, 'Permintaan termin sudah digunakan. Muat ulang dan periksa data.');
+                    $this->reject(! $same, 'This installment request already exists. Reload the page and review the payments.');
 
                     return $existing;
                 }
                 $this->reject(! $order->cbe || ! app(PurchaseOrders::class)->approved($order->cbe)
-                    || ! app(PurchaseOrders::class)->legalComplete($order->request, $order->cbe), 'CBE dan legalitas vendor harus selesai sebelum mencatat termin pembayaran.');
+                    || ! app(PurchaseOrders::class)->legalComplete($order->request, $order->cbe), 'Complete the CBE and vendor documentation before recording an installment payment.');
                 $snapshot = $order->snapshot;
                 $total = $snapshot['evaluation']['total_minor'] ?? null;
                 $currency = $snapshot['currency'] ?? null;
-                $this->reject(! is_int($total) || $total <= 0 || ! is_string($currency), 'Nilai PO belum lengkap. Periksa PO sebelum mencatat pembayaran.');
+                $this->reject(! is_int($total) || $total <= 0 || ! is_string($currency), 'PO value is incomplete. Check PO before recording payment.');
                 $planned = (int) $order->payments()->whereIn('status', ['planned', 'paid'])->sum('amount_minor');
-                $this->reject($amount > $total - $planned, 'Total termin tidak boleh melebihi Grand Total PO.');
+                $this->reject($amount > $total - $planned, 'The installments cannot exceed the PO total.');
                 $payment = $order->payments()->create(['token' => $data['token'], 'kind' => $data['kind'], 'description' => $data['description'], 'timing' => $data['timing'],
                     'due_on' => $data['due_on'] ?? null, 'amount_minor' => $amount, 'currency' => $currency, 'invoice_number' => $data['invoice_number'] ?? null,
                     'notes' => $data['notes'] ?? null, 'status' => 'planned', 'created_by' => $actor->id]);
@@ -119,20 +119,20 @@ class PoPayments
                 $payment = FinancePoPayment::findOrFail($paymentId);
                 $order = $this->orders($actor)->lockForUpdate()->findOrFail($payment->purchase_order_id);
                 $payment = FinancePoPayment::where('purchase_order_id', $order->id)->lockForUpdate()->findOrFail($paymentId);
-                $this->reject($order->status === 'cancelled', 'PO sudah dibatalkan dan tidak dapat diproses.');
-                $this->reject($payment->status !== 'planned', 'Termin sudah dibayar atau dibatalkan. Muat ulang data.');
+                $this->reject($order->status === 'cancelled', 'PO has been canceled and can\'t be processed.');
+                $this->reject($payment->status !== 'planned', 'Termins are paid or canceled. Reload the data.');
                 $order->load('cbe');
                 $vendor = $order->cbe?->selected_vendor_id
                     ? Vendor::whereKey($order->cbe->selected_vendor_id)->lockForUpdate()->first()
                     : null;
                 $bank = $vendor ? $vendor->only(['bank_name', 'bank_account_number', 'bank_account_name']) : null;
-                $this->reject($expectedBank !== null && $expectedBank !== ($bank ?? []), 'Data rekening vendor berubah. Buka kembali termin dan periksa rekening sebelum menyimpan.');
+                $this->reject($expectedBank !== null && $expectedBank !== ($bank ?? []), 'The vendor bank details changed. Reopen the installment and verify the account before saving.');
                 if ($payment->timing === 'after_receipt') {
                     $order->load('request');
                     $this->reject($order->request->kind !== 'PR' || ! InventoryReceipt::where('purchase_order_id', $order->id)->exists(),
-                        'Termin setelah penerimaan memerlukan penerimaan barang PR yang tercatat pada PO ini.');
+                        'Record at least one receipt for this PO before paying a receipt-based installment.');
                 }
-                $this->reject($invoice && $payment->files()->where('type', 'invoice')->exists(), 'Invoice termin ini sudah tersimpan.');
+                $this->reject($invoice && $payment->files()->where('type', 'invoice')->exists(), 'An invoice already exists for this installment.');
                 if ($invoice) {
                     $this->store($actor, $payment, 'invoice', $invoice, $paths);
                 }
@@ -163,8 +163,8 @@ class PoPayments
                 $candidate = FinancePoPayment::findOrFail($paymentId);
                 $order = $this->orders($actor)->lockForUpdate()->findOrFail($candidate->purchase_order_id);
                 $payment = FinancePoPayment::where('purchase_order_id', $order->id)->lockForUpdate()->findOrFail($paymentId);
-                $this->reject($order->status === 'cancelled', 'Invoice tidak dapat ditambahkan ke PO yang dibatalkan.');
-                $this->reject($payment->status === 'cancelled' || $payment->files()->where('type', 'invoice')->exists(), 'Invoice tidak dapat ditambahkan ke termin ini.');
+                $this->reject($order->status === 'cancelled', 'Invoice cannot be added to canceled PO.');
+                $this->reject($payment->status === 'cancelled' || $payment->files()->where('type', 'invoice')->exists(), 'You cannot add an invoice to this installment.');
                 $this->store($actor, $payment, 'invoice', $file, $paths);
                 $payment->update(['invoice_number' => $number]);
                 $this->audit($actor, $payment, 'lampirkan_invoice_po', ['order_id' => $order->id, 'invoice_number' => $number]);
@@ -184,8 +184,8 @@ class PoPayments
             $candidate = FinancePoPayment::findOrFail($paymentId);
             $order = $this->orders($actor)->lockForUpdate()->findOrFail($candidate->purchase_order_id);
             $payment = FinancePoPayment::where('purchase_order_id', $order->id)->lockForUpdate()->findOrFail($paymentId);
-            $this->reject($order->status === 'cancelled', 'PO sudah dibatalkan.');
-            $this->reject($payment->status !== 'planned', 'Hanya termin yang belum dibayar dapat dibatalkan.');
+            $this->reject($order->status === 'cancelled', 'PO\'s been canceled.');
+            $this->reject($payment->status !== 'planned', 'Only an unpaid term can be canceled.');
             $payment->update(['status' => 'cancelled', 'cancelled_by' => $actor->id, 'cancelled_at' => now()]);
             $this->audit($actor, $payment, 'batal_termin_po', ['order_id' => $order->id], $reason);
         }, 3);
@@ -197,9 +197,9 @@ class PoPayments
 
         return DB::transaction(function () use ($actor, $orderId, $reason): PurchaseOrder {
             $order = $this->orders($actor)->with('request')->lockForUpdate()->findOrFail($orderId);
-            $this->reject($order->status === 'cancelled', 'PO sudah dibatalkan.');
-            $this->reject($order->payments()->where('status', 'paid')->exists(), 'PO tidak dapat dibatalkan setelah ada pembayaran.');
-            $this->reject($order->receipts()->exists(), 'PO tidak dapat dibatalkan setelah penerimaan barang tercatat.');
+            $this->reject($order->status === 'cancelled', 'PO\'s been canceled.');
+            $this->reject($order->payments()->where('status', 'paid')->exists(), 'You cannot cancel a paid PO.');
+            $this->reject($order->receipts()->exists(), 'The PO cannot be canceled after the receipts are recorded.');
 
             if ($order->request->finance_budget_line_id) {
                 FinanceBudgetLine::lockForUpdate()->findOrFail($order->request->finance_budget_line_id);
@@ -234,14 +234,14 @@ class PoPayments
             'png' => $file->getMimeType() === 'image/png' && $head === "\x89PNG\r\n\x1a\n" && @getimagesize($file->getRealPath()) !== false,
             default => false,
         };
-        $this->reject(! $valid, 'File harus PDF/JPG/PNG yang valid.');
+        $this->reject(! $valid, 'File must be a valid PDF/JPG/PNG.');
     }
 
     private function store(User $actor, FinancePoPayment $payment, string $type, UploadedFile $file, array &$paths): void
     {
         $ext = strtolower($file->getClientOriginalExtension());
         $path = $file->storeAs('finance/'.now()->format('Y/m'), Str::uuid().'.'.$ext, 'scm');
-        $this->reject(! $path, 'File gagal disimpan.');
+        $this->reject(! $path, 'File failed to save.');
         $paths[] = $path;
         FinancePoPaymentFile::create(['payment_id' => $payment->id, 'type' => $type, 'path' => $path,
             'original_name' => $this->originalName($file),
@@ -252,7 +252,7 @@ class PoPayments
     {
         $ext = strtolower($file->getClientOriginalExtension());
 
-        return mb_substr(preg_replace('/[\x00-\x1F\x7F]/', '', basename(str_replace('\\', '/', $file->getClientOriginalName()))) ?: 'dokumen.'.$ext, 0, 255);
+        return mb_substr(preg_replace('/[\x00-\x1F\x7F]/', '', basename(str_replace('\\', '/', $file->getClientOriginalName()))) ?: 'paperwork.'.$ext, 0, 255);
     }
 
     private function reject(bool $condition, string $message): void

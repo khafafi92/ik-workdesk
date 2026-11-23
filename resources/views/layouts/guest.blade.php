@@ -14,14 +14,17 @@
 
 <body class="wd-login-page">
     <div class="wd-login-backdrop" aria-hidden="true">
-        <img src="{{ asset('img/office-login-background.png') }}" alt="">
+        <picture>
+            <source srcset="{{ asset('img/office-login-background.webp') }}" type="image/webp">
+            <img src="{{ asset('img/office-login-background.png') }}" width="1536" height="1024" alt="">
+        </picture>
     </div>
 
     <div class="wd-login-brand" aria-label="Internal9">
         <img src="{{ asset('img/brands/internal9-header.png') }}" alt="Internal9">
     </div>
 
-    <nav class="wd-login-websites" aria-label="Website perusahaan">
+    <nav class="wd-login-websites" aria-label="Company websites">
         <a href="https://www.kpmog.com" target="_blank" rel="noopener noreferrer">
             KPMOG
             <svg viewBox="0 0 24 24" aria-hidden="true">

@@ -26,11 +26,11 @@ class AtkUsageTransactionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
-    protected static ?string $navigationLabel = 'Pemakaian ATK';
+    protected static ?string $navigationLabel = 'Office Supply Usage';
 
-    protected static ?string $modelLabel = 'Pemakaian ATK';
+    protected static ?string $modelLabel = 'Office Supply Usage';
 
-    protected static ?string $pluralModelLabel = 'Riwayat Pemakaian ATK';
+    protected static ?string $pluralModelLabel = 'Office supplies Usage History';
 
     protected static ?int $navigationSort = 8;
 
@@ -39,24 +39,24 @@ class AtkUsageTransactionResource extends Resource
         $departmentId = auth()->user()?->employee?->department_id;
 
         return $schema->components([
-            Section::make('Catat pemakaian')
+            Section::make('Note usage')
                 ->columns(2)
                 ->schema([
                     Select::make('atk_item_id')
-                        ->label('Barang ATK')
+                        ->label('Office Supply Items')
                         ->options(fn (): array => AtkDepartmentBalance::query()
                             ->where('department_id', $departmentId ?? 0)
                             ->where('qty_available', '>', 0)
                             ->with('item')
                             ->get()
                             ->mapWithKeys(fn (AtkDepartmentBalance $balance): array => [
-                                $balance->atk_item_id => "{$balance->item->name} (tersedia: ".number_format((float) $balance->qty_available, 0, ',', '.').')',
+                                $balance->atk_item_id => "{$balance->item->name} (available: ".number_format((float) $balance->qty_available, 0, ',', '.').')',
                             ])->all())
                         ->searchable()
                         ->required(),
-                    DatePicker::make('usage_date')->label('Tanggal pemakaian')->default(today())->required(),
-                    TextInput::make('qty_used')->label('Jumlah dipakai')->numeric()->minValue(0.01)->step(0.01)->required(),
-                    Textarea::make('purpose')->label('Keperluan')->required()->maxLength(1000)->columnSpanFull(),
+                    DatePicker::make('usage_date')->label('Date of use')->default(today())->required(),
+                    TextInput::make('qty_used')->label('Number used')->numeric()->minValue(0.01)->step(0.01)->required(),
+                    Textarea::make('purpose')->label('Requirement')->required()->maxLength(1000)->columnSpanFull(),
                 ]),
         ]);
     }
@@ -65,12 +65,12 @@ class AtkUsageTransactionResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('usage_date')->label('Tanggal')->date('d M Y')->sortable(),
-                TextColumn::make('department.name')->label('Departemen')->searchable()->toggleable(),
-                TextColumn::make('item.name')->label('Barang ATK')->searchable()->sortable(),
-                TextColumn::make('qty_used')->label('Jumlah')->numeric(decimalPlaces: 2),
-                TextColumn::make('purpose')->label('Keperluan')->limit(55)->tooltip(fn (AtkUsageTransaction $record): string => $record->purpose),
-                TextColumn::make('user.name')->label('Dicatat oleh')->toggleable(),
+                TextColumn::make('usage_date')->label('Date')->date('d M Y')->sortable(),
+                TextColumn::make('department.name')->label('Department')->searchable()->toggleable(),
+                TextColumn::make('item.name')->label('Office Supply Items')->searchable()->sortable(),
+                TextColumn::make('qty_used')->label('Quantity')->numeric(decimalPlaces: 2),
+                TextColumn::make('purpose')->label('Requirement')->limit(55)->tooltip(fn (AtkUsageTransaction $record): string => $record->purpose),
+                TextColumn::make('user.name')->label('Noted by')->toggleable(),
             ])
             ->defaultSort('usage_date', 'desc')
             ->headerActions([CreateAction::make()->visible(fn (): bool => static::canCreate())]);

@@ -1,12 +1,12 @@
 <x-mail::message>
-# Pengingat H-{{ $daysBefore }}
+# Reminder H-{{ $daysBefore }}
 
 Halo {{ $recipientName }},
 
-Reminder berikut masih berstatus **Pending** dan akan mencapai deadline dalam {{ $daysBefore }} hari.
+The following reminder is still in **Pending* status and will reach the deadline in {{ $daysBefore }} days.
 
-- **Judul:** {{ $reminder->title }}
-- **Tipe:** {{ str($reminder->reminder_type)->replace('_', ' ')->title() }}
+- **Title:* {{ $reminder->title }}
+- **Type:* {{ str($reminder->reminder_type)->replace('_', ' ')->title() }}
 - **Deadline:** {{ $reminder->reminder_at->format('d M Y H:i') }} WIB
 
 @if ($reminder->workTask)
@@ -14,18 +14,18 @@ Reminder berikut masih berstatus **Pending** dan akan mencapai deadline dalam {{
 @endif
 
 @if ($reminder->description)
-**Catatan:**
+**Note:*
 
 {{ $reminder->description }}
 @endif
 
 <x-mail::button :url="$viewUrl">
-Lihat Reminder
+View reminder
 </x-mail::button>
 
-Email berikutnya hanya akan dikirim sesuai alarm yang dipilih dan akan berhenti jika status diubah menjadi Done atau Cancel.
+The next email will only be sent according to the selected alarm and will stop if the status is changed to Done or Cancel.
 
-Salam,
+Greetings,
 
 IK WorkDesk System
 </x-mail::message>

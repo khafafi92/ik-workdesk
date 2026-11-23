@@ -78,7 +78,7 @@ class UsersTable
                         abort_unless(
                             UserResource::canDelete($record),
                             403,
-                            'User ini tidak dapat dihapus.'
+                            'This user could not be deleted.'
                         );
                     }),
             ])

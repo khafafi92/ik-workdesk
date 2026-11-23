@@ -20,12 +20,12 @@ class WorkHourImportsTable
         return $table
             ->columns([
                 TextColumn::make('period_name')
-                    ->label('Periode')
+                    ->label('Period')
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('work_hour_file_path')
-                    ->label('File Jam Kerja')
+                    ->label('Working Hours File')
                     ->limit(35),
 
                 TextColumn::make('status')
@@ -39,7 +39,7 @@ class WorkHourImportsTable
                     }),
 
                 TextColumn::make('processed_at')
-                    ->label('Diproses')
+                    ->label('In Process')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
 
@@ -51,13 +51,13 @@ class WorkHourImportsTable
             ->defaultSort('created_at', 'desc')
             ->recordActions([
                 Action::make('view_results')
-                    ->label('Lihat Hasil')
+                    ->label('View Results')
                     ->icon('heroicon-o-table-cells')
                     ->color('info')
                     ->url(fn ($record) => AttendanceImportResource::getUrl('results', ['record' => $record])),
 
                 Action::make('process')
-                    ->label('Proses Jam Kerja')
+                    ->label('Working Clock Processes')
                     ->icon('heroicon-o-play')
                     ->color('success')
                     ->requiresConfirmation()
@@ -65,7 +65,7 @@ class WorkHourImportsTable
                         app(AttendanceReportProcessor::class)->process($record);
 
                         Notification::make()
-                            ->title('Laporan jam kerja berhasil diproses')
+                            ->title('Worktime report successfully processed')
                             ->success()
                             ->send();
                     }),

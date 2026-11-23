@@ -24,31 +24,31 @@ class DocumentTypeResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentText;
 
-    protected static ?string $navigationLabel = 'Jenis Surat';
+    protected static ?string $navigationLabel = 'Letter Types';
 
-    protected static ?string $modelLabel = 'Jenis Surat';
+    protected static ?string $modelLabel = 'Letter Types';
 
-    protected static ?string $pluralModelLabel = 'Jenis Surat';
+    protected static ?string $pluralModelLabel = 'Letter Types';
 
     protected static ?int $navigationSort = 2;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('name')->label('Nama')->required()->maxLength(255)->unique(ignoreRecord: true),
-            TextInput::make('code')->label('Kode dokumen')->maxLength(50)->helperText('Contoh: B.08 atau SKK.'),
-            Textarea::make('description')->label('Keterangan')->maxLength(2000)->columnSpanFull(),
-            Toggle::make('is_active')->label('Aktif')->default(true),
+            TextInput::make('name')->label('Name')->required()->maxLength(255)->unique(ignoreRecord: true),
+            TextInput::make('code')->label('Document code')->maxLength(50)->helperText('Example: B.08 or SKK.'),
+            Textarea::make('description')->label('Description')->maxLength(2000)->columnSpanFull(),
+            Toggle::make('is_active')->label('Active')->default(true),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Nama')->searchable()->sortable(),
-            TextColumn::make('code')->label('Kode')->searchable()->sortable()->placeholder('-'),
-            TextColumn::make('description')->label('Keterangan')->limit(70)->toggleable(),
-            IconColumn::make('is_active')->label('Aktif')->boolean(),
+            TextColumn::make('name')->label('Name')->searchable()->sortable(),
+            TextColumn::make('code')->label('Code')->searchable()->sortable()->placeholder('-'),
+            TextColumn::make('description')->label('Description')->limit(70)->toggleable(),
+            IconColumn::make('is_active')->label('Active')->boolean(),
         ])->defaultSort('name')->recordActions([EditAction::make()]);
     }
 

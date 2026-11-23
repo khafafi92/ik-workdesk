@@ -66,7 +66,7 @@ class EditMeetingBooking extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading('Finish this meeting?')
                 ->modalDescription(
-                    'Meeting akan ditandai selesai dan sisa jadwal ruangan langsung tersedia.'
+                    'Meetings will be marked complete and the remaining room schedules are readily available.'
                 )
                 ->action(function (): void {
                     app(MeetingBookingService::class)

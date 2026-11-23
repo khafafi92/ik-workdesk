@@ -33,11 +33,11 @@ class AtkRequestItemIssuedNotification extends Notification
         $quantity = rtrim(rtrim(number_format($this->quantity, 2, ',', '.'), '0'), ',');
 
         return FilamentNotification::make()
-            ->title('Barang ATK telah diserahkan')
+            ->title('The office supplies item has been handed in')
             ->body(sprintf(
-                '%s: %s sejumlah %s %s telah diserahkan oleh GA. Silakan konfirmasi penerimaan.',
-                $requestItem->request?->request_number ?? 'Permintaan ATK',
-                $requestItem->item?->name ?? 'Barang ATK',
+                '%s: %s number %s %s has been handed over by GA. Please confirm receipt.',
+                $requestItem->request?->request_number ?? 'Office Supply Requests',
+                $requestItem->item?->name ?? 'Office Supply Items',
                 $quantity,
                 $requestItem->unit,
             ))
@@ -45,7 +45,7 @@ class AtkRequestItemIssuedNotification extends Notification
             ->success()
             ->actions([
                 Action::make('open')
-                    ->label('Konfirmasi penerimaan')
+                    ->label('Confirm receipt')
                     ->button()
                     ->url(AtkRequestResource::getUrl('index'))
                     ->markAsRead(),

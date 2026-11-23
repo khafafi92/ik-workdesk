@@ -13,9 +13,9 @@ use Illuminate\Validation\ValidationException;
 
 class ManpowerRequestDetails
 {
-    public const REASONS = ['additional' => 'Penambahan tenaga kerja', 'replacement' => 'Penggantian tenaga kerja', 'temporary' => 'Kebutuhan sementara'];
+    public const REASONS = ['additional' => 'Workforce addition', 'replacement' => 'Workforce replacement', 'temporary' => 'Temporal needs'];
 
-    public const EMPLOYMENT_TYPES = ['permanent' => 'Tetap', 'contract' => 'Kontrak', 'project' => 'Proyek', 'daily' => 'Harian', 'other' => 'Lainnya'];
+    public const EMPLOYMENT_TYPES = ['permanent' => 'Fixed', 'contract' => 'Contract', 'project' => 'Project', 'daily' => 'Daily', 'other' => 'Other'];
 
     public static function categoryRequiresManpower(mixed $departmentId, mixed $categoryId): bool
     {
@@ -42,7 +42,7 @@ class ManpowerRequestDetails
             && ! $ticket->isDirty(['handler_department_id', 'ticket_category_id']);
 
         if ($category?->requires_manpower && ! self::categoryRequiresManpower($ticket->handler_department_id, $category->id)) {
-            throw ValidationException::withMessages(['ticket_category_id' => 'Kategori kebutuhan manpower harus sesuai dengan departemen HR tujuan.']);
+            throw ValidationException::withMessages(['ticket_category_id' => 'The Manpower needs category should fit the HR department\'s destination.']);
         }
         if (! $category?->requires_manpower && ! $hasSavedDetails) {
             if (array_key_exists('manpower_details', $ticket->getAttributes())) {
@@ -56,7 +56,7 @@ class ManpowerRequestDetails
             return;
         }
         if ((! $ticket->exists || $ticket->isDirty('ticket_category_id')) && ! $category?->is_active) {
-            throw ValidationException::withMessages(['ticket_category_id' => 'Kategori kebutuhan manpower sudah tidak aktif.']);
+            throw ValidationException::withMessages(['ticket_category_id' => 'Manpower needs category is disabled.']);
         }
 
         $validated = Validator::make(['manpower_details' => $ticket->manpower_details], [
@@ -74,9 +74,9 @@ class ManpowerRequestDetails
             'manpower_details.positions.*.requirements' => ['required', 'string', 'max:3000'],
             'manpower_details.positions.*.employment_type' => ['nullable', Rule::in(array_keys(self::EMPLOYMENT_TYPES))],
         ], [
-            'manpower_details.positions.required' => 'Tambahkan setidaknya satu posisi yang dibutuhkan.',
-            'manpower_details.positions.*.quantity.min' => 'Jumlah kebutuhan minimal 1 orang.',
-            'manpower_details.positions.*.quantity.integer' => 'Jumlah kebutuhan harus berupa bilangan bulat.',
+            'manpower_details.positions.required' => 'Add at least one required position.',
+            'manpower_details.positions.*.quantity.min' => 'The number of needs is at least 1 person.',
+            'manpower_details.positions.*.quantity.integer' => 'The number of needs must be an integer.',
         ])->validate()['manpower_details'];
 
         $details = collect($validated)->only(['purpose', 'work_location', 'needed_at', 'reason', 'notes'])->all();
@@ -86,29 +86,29 @@ class ManpowerRequestDetails
         ])->values()->all();
         $ticket->manpower_details = $details;
         $total = array_sum(array_column($details['positions'], 'quantity'));
-        $ticket->subject = Str::limit('Kebutuhan manpower: '.implode(', ', array_column($details['positions'], 'title')).' ('.$total.' orang)', 255, '');
+        $ticket->subject = Str::limit('Needs manpower: '.implode(', ', array_column($details['positions'], 'title')).' ('.$total.' people)', 255, '');
         $ticket->description = self::description($details, $total);
     }
 
     private static function description(array $details, int $total): string
     {
-        $lines = ['Kebutuhan: '.$details['purpose'], 'Lokasi penempatan: '.$details['work_location'],
-            'Tanggal dibutuhkan: '.Carbon::parse($details['needed_at'])->format('d/m/Y'), 'Total kebutuhan: '.$total.' orang'];
+        $lines = ['Needs: '.$details['purpose'], 'Placement location: '.$details['work_location'],
+            'Date required: '.Carbon::parse($details['needed_at'])->format('d/m/Y'), 'Total needs: '.$total.' orang'];
         if (filled($details['reason'] ?? null)) {
-            $lines[] = 'Alasan pengajuan: '.self::REASONS[$details['reason']];
+            $lines[] = 'Reason for filing: '.self::REASONS[$details['reason']];
         }
         foreach ($details['positions'] as $index => $position) {
             $lines[] = '';
             $lines[] = ($index + 1).'. '.$position['title'].': '.$position['quantity'].' orang';
-            $lines[] = 'Spesifikasi pekerjaan: '.$position['specifications'];
-            $lines[] = 'Persyaratan kandidat: '.$position['requirements'];
+            $lines[] = 'Job specification: '.$position['specifications'];
+            $lines[] = 'Candidate requirements: '.$position['requirements'];
             if (filled($position['employment_type'] ?? null)) {
-                $lines[] = 'Jenis kebutuhan tenaga kerja: '.self::EMPLOYMENT_TYPES[$position['employment_type']];
+                $lines[] = 'Workforce type: '.self::EMPLOYMENT_TYPES[$position['employment_type']];
             }
         }
         if (filled($details['notes'] ?? null)) {
             $lines[] = '';
-            $lines[] = 'Catatan: '.$details['notes'];
+            $lines[] = 'Note: '.$details['notes'];
         }
 
         return implode("\n", $lines);

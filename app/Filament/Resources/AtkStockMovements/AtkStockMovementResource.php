@@ -19,11 +19,11 @@ class AtkStockMovementResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
-    protected static ?string $navigationLabel = 'Mutasi Stok ATK';
+    protected static ?string $navigationLabel = 'Office Supply Stock Movements';
 
-    protected static ?string $modelLabel = 'Mutasi Stok ATK';
+    protected static ?string $modelLabel = 'Office Supply Stock Movements';
 
-    protected static ?string $pluralModelLabel = 'Mutasi Stok ATK';
+    protected static ?string $pluralModelLabel = 'Office Supply Stock Movements';
 
     protected static ?int $navigationSort = 10;
 
@@ -36,18 +36,18 @@ class AtkStockMovementResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('created_at')->label('Waktu')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('item.code')->label('Kode')->searchable(),
-                TextColumn::make('item.name')->label('Barang ATK')->searchable()->sortable(),
-                TextColumn::make('movement_type')->label('Jenis')->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
-                TextColumn::make('qty')->label('Jumlah')->numeric(decimalPlaces: 0),
-                TextColumn::make('balance_after')->label('Saldo akhir')->numeric(decimalPlaces: 0),
-                TextColumn::make('creator.name')->label('Oleh')->toggleable(),
-                TextColumn::make('note')->label('Catatan')->limit(45)->toggleable(),
+                TextColumn::make('created_at')->label('Time')->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('item.code')->label('Code')->searchable(),
+                TextColumn::make('item.name')->label('Office Supply Items')->searchable()->sortable(),
+                TextColumn::make('movement_type')->label('Type')->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
+                TextColumn::make('qty')->label('Quantity')->numeric(decimalPlaces: 0),
+                TextColumn::make('balance_after')->label('End balance')->numeric(decimalPlaces: 0),
+                TextColumn::make('creator.name')->label('By')->toggleable(),
+                TextColumn::make('note')->label('Notes')->limit(45)->toggleable(),
             ])
             ->filters([
-                SelectFilter::make('movement_type')->label('Jenis')->options([
-                    'incoming' => 'Stok masuk', 'outgoing' => 'Penyerahan', 'adjustment' => 'Penyesuaian',
+                SelectFilter::make('movement_type')->label('Type')->options([
+                    'incoming' => 'Stock in', 'outgoing' => 'Issue', 'adjustment' => 'Adjustment',
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

@@ -23,7 +23,7 @@ class UserForm
             ->components([
                 Section::make('Login Account')
                     ->description(
-                        'Hubungkan akun login dengan data employee.'
+                        'Connect login accounts to employee data.'
                     )
                     ->schema([
                         Select::make('employee_id')
@@ -88,7 +88,7 @@ class UserForm
                             )
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->helperText(
-                                'Hanya employee yang belum memiliki akun login yang ditampilkan.'
+                                'Only employee does not yet have the login account displayed.'
                             ),
 
                         TextInput::make('name')
@@ -115,7 +115,7 @@ class UserForm
                             )
                             ->minLength(8)
                             ->helperText(
-                                'Saat edit, kosongkan jika password tidak ingin diubah.'
+                                'When edit, empty if password does not want to be changed.'
                             ),
 
                         Toggle::make('is_admin')
@@ -128,19 +128,19 @@ class UserForm
                                 fn (): bool => auth()->user()?->isSystemAdministrator() === true
                             )
                             ->helperText(
-                                'Satu akun administrator utama diperbolehkan. Sys Administrator dapat mengatur status ini.'
+                                'One primary administrator account allowed. Sys Administrator can set this status.'
                             ),
                     ])
                     ->columns(2)
                     ->columnSpanFull(),
 
-                Section::make('Level Akses')
+                Section::make('Accessible Level')
                     ->description(
-                        'CBO dan COO I, II, III menggunakan level Management. Pilih kewenangan persetujuan dan menu sesuai tugasnya.'
+                        'CBO and COO I, II, III use management levels, select approval authority and menus according to their duties.'
                     )
                     ->schema([
                         Select::make('access_level')
-                            ->label('Level Utama')
+                            ->label('Main Level')
                             ->options(function (): array {
                                 return app(UserAccessHierarchyService::class)
                                     ->optionsFor(auth()->user());
@@ -148,14 +148,14 @@ class UserForm
                             ->default(UserAccessHierarchyService::REQUESTER)
                             ->required()
                             ->native(false)
-                            ->helperText('Untuk CBO, pilih Management lalu centang Approval Legal. Penandatangan SCM ditetapkan di Pengaturan SCM.')
+                            ->helperText('For CBO, select Management and then check Legal Approval. SCM signature set at SCM Settings.')
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
 
                 Section::make('Department Access')
                     ->description(
-                        'Pilih department tambahan yang boleh diakses user.'
+                        'Select additional departments that the user can access.'
                     )
                     ->schema([
                         CheckboxList::make('accessibleDepartments')
@@ -171,15 +171,15 @@ class UserForm
                             ->bulkToggleable()
                             ->columns(3)
                             ->helperText(
-                                'Department asal employee otomatis tetap dapat diakses. Pilih hanya department tambahan.'
+                                'The department of automatic employee is accessible. Select only additional departments.'
                             )
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
 
-                Section::make('Akses Menu')
+                Section::make('Menu Access')
                     ->description(
-                        'Pilih kewenangan persetujuan dan submenu yang diperlukan user ini.'
+                        'Select the approval and submenu authority required by this user.'
                     )
                     ->schema(
                         collect(app(UserAdditionalAccessService::class)->menuGroups())

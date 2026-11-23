@@ -27,7 +27,7 @@ class TravelDocumentAdministration
         abort_unless($requesterId === $previousRequester || $canArrange, 403);
         $requester = User::with('employee.department')->find($requesterId);
         if (! $requester || ! $requester->isActiveForAccess() || ($canArrange && (! $requester->employee || ! $requester->employee->department_id))) {
-            throw ValidationException::withMessages(['requester_id' => 'Pilih pembuat / pengaju aktif yang terhubung ke Master Employee dan departemen.']);
+            throw ValidationException::withMessages(['requester_id' => 'Select the active driver/juggler connected to Master Employee and department.']);
         }
         $oldOverride = $stored['approval_override'] ?? null;
         $enabled = $input['arrange_approvals'] ?? (bool) $oldOverride;
@@ -62,7 +62,7 @@ class TravelDocumentAdministration
         }
         $authorizer = User::find($override['arranged_by'] ?? 0);
         if (! TravelAccess::canArrangeDocument($authorizer)) {
-            throw ValidationException::withMessages(['approval_policy' => 'Penyesuaian pemeriksa perlu ditetapkan ulang oleh Khafafi yang aktif sebagai sys admin.']);
+            throw ValidationException::withMessages(['approval_policy' => 'Checker adjustments need to be re-ordained by the active Khafafi as admin sys.']);
         }
 
         return app(TravelApprovalPolicies::class)->arrange($authorizer, $override['ids'] ?? [], $employee, $requesterId);

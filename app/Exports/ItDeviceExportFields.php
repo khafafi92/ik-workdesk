@@ -15,7 +15,7 @@ class ItDeviceExportFields
 {
     public static function headings(): array
     {
-        return ['Nomor Aset', 'Nama Perangkat', 'Jenis perangkat / objek', 'Department pengelola', 'Lokasi', 'LT (Lantai)', 'Detail ruang / rack', 'Serial Number', 'Spesifikasi', 'OS', 'Versi', 'Lisensi', 'Versi Microsoft Office', 'Lisensi Microsoft Office', 'RAM (GB)', 'HDD / SSD', 'Nama User', 'Jabatan', 'Divisi', 'Status Pemakaian', 'Aktif untuk pemeriksaan baru', 'Tanggal penghapusan', 'Alasan penghapusan', 'Keterangan'];
+        return ['Asset Number', 'Device Name', 'Type of device / object', 'Managing Department', 'Location', 'Floor', 'Room / rack details', 'Serial Number', 'Specification', 'OS', 'Version', 'License', 'Microsoft Office version', 'Microsoft Office License', 'RAM (GB)', 'HDD / SSD', 'User Name', 'Position', 'Division', 'Usage Status', 'Active for new checks', 'Disposal date', 'The reason for the removal', 'Description'];
     }
 
     public static function forDevice(ItDevice $device): array
@@ -55,7 +55,7 @@ class ItDeviceExportFields
             }.' '.($storage['capacity_gb'] ?? '').' GB'))->implode('; '),
             $device['assigned_user_name'] ?? $employee['name'] ?? null, $employee['position'] ?? null, $employee['division'] ?? null,
             self::enumLabel($device['lifecycle_status'] ?? null, ItAssetLifecycle::class),
-            array_key_exists('is_active', $device) ? ($device['is_active'] ? 'Ya' : 'Tidak') : null,
+            array_key_exists('is_active', $device) ? ($device['is_active'] ? 'Yes' : 'No') : null,
             $disposedAt instanceof DateTimeInterface ? $disposedAt->format('Y-m-d') : ($disposedAt ? substr($disposedAt, 0, 10) : null),
             $device['disposal_reason'] ?? null, $device['notes'] ?? null,
         ];

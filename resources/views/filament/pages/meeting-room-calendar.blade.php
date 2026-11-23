@@ -9,7 +9,7 @@
                 <p class="mr-calendar-eyebrow">MEETING ROOM</p>
                 <h1>Weekly room schedule</h1>
                 <p>
-                    Lihat ketersediaan seluruh ruangan dan booking jadwal tanpa bentrok.
+                    See the availableness of the entire room and book the schedule without clashing.
                 </p>
             </div>
 
@@ -35,8 +35,8 @@
         @if ($calendar['rooms']->isEmpty())
             <div class="mr-calendar-empty">
                 <x-heroicon-o-building-office-2 />
-                <strong>Belum ada ruangan aktif</strong>
-                <p>Admin dapat menambahkan atau mengaktifkan ruangan melalui menu Meeting Rooms.</p>
+                <strong>No active room yet</strong>
+                <p>Admins can add or activate spaces via the Meeting Rooms menu.</p>
             </div>
         @else
             <div class="mr-calendar-scroll">
@@ -127,7 +127,7 @@
         <div class="mr-calendar-legend">
             <span><i class="is-booked"></i> Booked</span>
             <span><i class="is-open"></i> Available</span>
-            <span>Calendar menggunakan waktu Asia/Jakarta.</span>
+            <span>Calendar uses Asia/Jakarta time.</span>
         </div>
     </div>
 </x-filament-panels::page>

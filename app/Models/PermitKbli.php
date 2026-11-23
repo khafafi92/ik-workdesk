@@ -37,7 +37,7 @@ class PermitKbli extends Model
 
             if ($duplicateExists) {
                 throw ValidationException::withMessages([
-                    'name' => 'Nomor dan nama KBLI yang sama sudah terdaftar pada Permit Company tersebut.',
+                    'name' => 'The same number and name of the KBLI are already registered to the Permit Company.',
                 ]);
             }
         });

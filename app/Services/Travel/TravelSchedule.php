@@ -14,7 +14,7 @@ class TravelSchedule
         $return = $this->moment($input, 'return');
         if (substr($return, 0, 10) < substr($departure, 0, 10)
             || (strlen($return) > 10 && strlen($departure) > 10 && $return < $departure)) {
-            throw ValidationException::withMessages(['return_date' => 'Tanggal / jam kembali tidak boleh sebelum keberangkatan.']);
+            throw ValidationException::withMessages(['return_date' => 'The date/hour return must not be until departure.']);
         }
 
         return ['depart_at' => $departure, 'return_at' => $return, 'depart_time_tba' => strlen($departure) === 10,
@@ -31,9 +31,9 @@ class TravelSchedule
         }
         Validator::make($dates, ['depart_date' => ['required', 'date_format:Y-m-d'],
             'return_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:depart_date']], [
-                '*.required' => 'Pilih tanggal berangkat dan tanggal kembali untuk menghitung durasi.',
-                '*.date_format' => 'Isi tanggal perjalanan yang valid untuk menghitung durasi.',
-                'return_date.after_or_equal' => 'Tanggal kembali tidak boleh sebelum tanggal berangkat.',
+                '*.required' => 'Select the date of departure and the return date to calculate duration.',
+                '*.date_format' => 'Valid travel date content to calculate duration.',
+                'return_date.after_or_equal' => 'The return date must not be before the departure date.',
             ])->validate();
         $nights = (int) CarbonImmutable::parse($dates['depart_date'])->diffInDays(CarbonImmutable::parse($dates['return_date']));
 

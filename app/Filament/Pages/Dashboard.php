@@ -77,25 +77,25 @@ class Dashboard extends BaseDashboard
                 ->label('Edit Dashboard')
                 ->icon('heroicon-o-adjustments-horizontal')
                 ->color('gray')
-                ->modalHeading('Atur tampilan dashboard')
-                ->modalDescription('Centang ringkasan yang ingin ditampilkan. Pilihan tidak menambah hak akses ke menu atau data.')
-                ->modalSubmitActionLabel('Simpan tampilan')
+                ->modalHeading('Customize dashboard')
+                ->modalDescription('Choose which sections to show. Your access to menus and data stays the same.')
+                ->modalSubmitActionLabel('Save layout')
                 ->fillForm(fn (): array => [
                     'sections' => $this->getVisibleDashboardSections(),
                 ])
                 ->form([
                     CheckboxList::make('sections')
-                        ->label('Ringkasan yang ditampilkan')
+                        ->label('Dashboard sections')
                         ->options(fn (): array => $this->getDashboardSectionOptions())
                         ->columns(1)
-                        ->helperText('Yang tidak sesuai permission atau hierarki akun tidak tersedia untuk dipilih.'),
+                        ->helperText('Your permissions and reporting hierarchy determine which sections are available.'),
                 ])
                 ->action(function (array $data): void {
                     $this->updateDashboardSections($data['sections'] ?? []);
 
                     Notification::make()
                         ->success()
-                        ->title('Tampilan dashboard disimpan')
+                        ->title('Dashboard layout saved')
                         ->send();
                 }),
         ];
@@ -108,43 +108,37 @@ class Dashboard extends BaseDashboard
 
     public function getDashboardData(): array
     {
-        $canViewStatistics = $this->canViewStatistics();
         $visibleSections = $this->getVisibleDashboardSections();
+        $showWorkOverview = in_array('work_overview', $visibleSections, true);
+        $showRecentActivity = in_array('recent_activity', $visibleSections, true);
         $now = now();
         $todayStart = $now->copy()->startOfDay();
         $todayEnd = $now->copy()->endOfDay();
         $monthStart = $now->copy()->startOfMonth();
         $monthEnd = $now->copy()->endOfMonth();
 
-        $ticketsQuery = TicketResource::getEloquentQuery();
-        $workTasksQuery = WorkTaskResource::getEloquentQuery();
-        $remindersQuery = ReminderResource::getEloquentQuery()
-            ->with([
-                'employee',
-                'department',
-            ]);
-
-        $reminderQueries = [
-            'today' => (clone $remindersQuery)->where('status', 'pending')
-                ->whereBetween('reminder_at', [$todayStart, $todayEnd]),
-            'upcoming' => (clone $remindersQuery)->where('status', 'pending')
-                ->where('reminder_at', '>', $todayEnd),
-            'overdue' => (clone $remindersQuery)->where('status', 'pending')
-                ->where('reminder_at', '<', $todayStart),
-        ];
-        $reminderCounts = $this->getReminderCounts(
-            $remindersQuery,
-            $todayStart,
-            $todayEnd,
-        );
-        $reminderPreviews = [];
+        $ticketsQuery = $showWorkOverview || $showRecentActivity ? TicketResource::getEloquentQuery() : null;
+        $workTasksQuery = $showWorkOverview || $showRecentActivity ? WorkTaskResource::getEloquentQuery() : null;
+        $reminderCounts = ['today' => 0, 'upcoming' => 0, 'overdue' => 0];
+        $reminderPreviews = ['today' => collect(), 'upcoming' => collect(), 'overdue' => collect()];
         $reminderUrls = [];
 
-        foreach ($reminderQueries as $schedule => $query) {
-            $reminderPreviews[$schedule] = (clone $query)->orderBy('reminder_at')->orderBy('id')->limit(3)->get();
-            $reminderUrls[$schedule] = ReminderResource::getUrl('index', [
-                'filters' => ['schedule' => ['value' => $schedule]],
-            ]);
+        if (in_array('reminders', $visibleSections, true)) {
+            $remindersQuery = ReminderResource::getEloquentQuery()->withoutEagerLoads();
+            $reminderCounts = $this->getReminderCounts($remindersQuery, $todayStart, $todayEnd);
+            $pendingReminders = (clone $remindersQuery)->where('status', 'pending');
+            $reminderQueries = [
+                'today' => (clone $pendingReminders)->whereBetween('reminder_at', [$todayStart, $todayEnd]),
+                'upcoming' => (clone $pendingReminders)->where('reminder_at', '>', $todayEnd),
+                'overdue' => (clone $pendingReminders)->where('reminder_at', '<', $todayStart),
+            ];
+
+            foreach ($reminderQueries as $schedule => $query) {
+                $reminderPreviews[$schedule] = $query->orderBy('reminder_at')->orderBy('id')->limit(3)->get();
+                $reminderUrls[$schedule] = ReminderResource::getUrl('index', [
+                    'filters' => ['schedule' => ['value' => $schedule]],
+                ]);
+            }
         }
 
         $openTicketStatuses = [
@@ -159,11 +153,11 @@ class Dashboard extends BaseDashboard
             'hold',
         ];
 
-        $ticketCounts = $canViewStatistics
+        $ticketCounts = $showWorkOverview
             ? $this->getTicketCounts($ticketsQuery, $now, $openTicketStatuses)
             : null;
 
-        $ticketStats = $canViewStatistics ? [
+        $ticketStats = $showWorkOverview ? [
             [
                 'label' => 'Total Tickets',
                 'value' => $ticketCounts->total,
@@ -196,11 +190,11 @@ class Dashboard extends BaseDashboard
             ],
         ] : [];
 
-        $workCounts = $canViewStatistics
+        $workCounts = $showWorkOverview
             ? $this->getWorkTaskCounts($workTasksQuery, $now, $openWorkStatuses)
             : null;
 
-        $workStats = $canViewStatistics ? [
+        $workStats = $showWorkOverview ? [
             [
                 'label' => 'Total Work Logs',
                 'value' => $workCounts->total,
@@ -228,7 +222,7 @@ class Dashboard extends BaseDashboard
             ],
         ] : [];
 
-        $reminderStats = $canViewStatistics ? [
+        $reminderStats = $this->canViewStatistics() ? [
             [
                 'label' => 'Pending Reminders',
                 'value' => array_sum($reminderCounts),
@@ -258,29 +252,23 @@ class Dashboard extends BaseDashboard
                 'spd' => in_array('spd', $visibleSections, true) ? $this->getSpdSummary(auth()->user()) : null,
                 'atk-requests' => in_array('atk_requests', $visibleSections, true) ? $this->getAtkRequestSummary(auth()->user()) : null,
             ]),
-            'moduleSummaries' => array_values(array_filter(
-                $this->getModuleSummaries($todayStart, $todayEnd, $monthStart, $monthEnd),
-                fn (array $summary): bool => in_array($summary['key'], $visibleSections, true),
-            )),
+            'moduleSummaries' => $this->getModuleSummaries($visibleSections, $todayStart, $todayEnd, $monthStart, $monthEnd),
             'reminderCounts' => $reminderCounts,
             'reminderUrls' => $reminderUrls,
             'todayReminders' => $reminderPreviews['today'],
             'upcomingReminders' => $reminderPreviews['upcoming'],
             'overdueReminders' => $reminderPreviews['overdue'],
-            'latestTickets' => (clone $ticketsQuery)
-                ->with([
-                    'handlerDepartment',
-                ])
+            'latestTickets' => $showRecentActivity ? (clone $ticketsQuery)
+                ->withoutEagerLoads()
                 ->latest()
                 ->limit(5)
-                ->get(),
-            'latestWorkTasks' => (clone $workTasksQuery)
-                ->with([
-                    'employee',
-                ])
+                ->get() : collect(),
+            'latestWorkTasks' => $showRecentActivity ? (clone $workTasksQuery)
+                ->withoutEagerLoads()
+                ->with('ticket:id,employee_id')
                 ->latest()
                 ->limit(5)
-                ->get(),
+                ->get() : collect(),
             'ticketsUrl' => TicketResource::shouldRegisterNavigation() && TicketResource::canViewAny()
                 ? TicketResource::getUrl('index')
                 : null,
@@ -300,11 +288,11 @@ class Dashboard extends BaseDashboard
         $options = [];
 
         if ($this->canViewStatistics()) {
-            $options['work_overview'] = 'Ringkasan Service Desk dan Work Logs';
+            $options['work_overview'] = 'Service Desk and Work Logs summary';
         }
 
         if ($user->hasPermission('atk.manage') || $user->hasPermission('atk.report')) {
-            $options['atk'] = 'ATK';
+            $options['atk'] = 'Office Supplies';
         }
 
         if ($user->hasPermission('ltro.view')) {
@@ -324,13 +312,13 @@ class Dashboard extends BaseDashboard
         }
 
         if (AtkRequestResource::canViewAny()) {
-            $options['atk_requests'] = 'Permintaan ATK';
+            $options['atk_requests'] = 'Office Supply Requests';
         }
 
         return [
             ...$options,
             'reminders' => 'Reminder',
-            'recent_activity' => 'Service Desk dan Work Logs terbaru',
+            'recent_activity' => 'Recent Service Desk tickets and work logs',
         ];
     }
 
@@ -409,8 +397,8 @@ class Dashboard extends BaseDashboard
         return [
             'title' => 'SPD',
             'url' => TravelSpd::getUrl(),
-            'link' => 'Lihat daftar SPD',
-            'empty' => 'Belum ada SPD yang dapat Anda lihat.',
+            'link' => 'View travel orders',
+            'empty' => 'No travel orders to show.',
             'rows' => $documents->map(function (TravelDocument $document): array {
                 $next = $document->status === 'submitted'
                     ? $document->approvals->firstWhere('round', $document->approval_round)
@@ -421,17 +409,17 @@ class Dashboard extends BaseDashboard
                 $dates = collect([
                     TravelPresentation::date($document->data['depart_at'] ?? null),
                     TravelPresentation::date($document->data['return_at'] ?? null),
-                ])->filter()->unique()->implode(' s.d. ');
+                ])->filter()->unique()->implode(' to ');
                 $destinations = collect($document->data['routes'] ?? [])->pluck('to')->filter()->unique()->implode(', ');
 
                 return [
                     'number' => $document->displayNumber(),
                     'url' => TravelSpd::getUrl(['dokumen' => $document->id]),
-                    'detail' => $destinations === '' ? 'Tujuan belum diisi' : Str::limit($destinations, 120),
-                    'date' => $dates ?: 'Tanggal perjalanan belum diisi',
+                    'detail' => $destinations === '' ? 'Destination pending' : Str::limit($destinations, 120),
+                    'date' => $dates ?: 'Travel dates pending',
                     'status' => match (true) {
-                        $document->status === 'returned' => 'Dikembalikan untuk revisi',
-                        $reviewer !== null => 'Menunggu persetujuan '.$reviewer,
+                        $document->status === 'returned' => 'Returned for revision',
+                        $reviewer !== null => 'Awaiting approval from '.__($reviewer),
                         default => $document->statusLabel(),
                     },
                 ];
@@ -446,18 +434,18 @@ class Dashboard extends BaseDashboard
             ->latest('updated_at')->orderByDesc('id')->limit(3)->get();
 
         return [
-            'title' => 'Permintaan ATK',
+            'title' => 'Office Supply Requests',
             'url' => AtkRequestResource::getUrl('index'),
-            'link' => 'Lihat daftar ATK',
-            'empty' => 'Anda belum memiliki permintaan ATK.',
+            'link' => 'View office supply requests',
+            'empty' => 'No office supply requests to show.',
             'rows' => $requests->map(fn (AtkRequest $request): array => [
                 'number' => $request->request_number,
                 'url' => null,
                 'detail' => Str::limit($request->purpose ?? '', 120),
                 'date' => $request->request_date?->format('d/m/Y'),
-                'status' => $request->status === 'submitted' ? 'Menunggu diproses' : AtkRequestResource::statusLabel($request->status),
+                'status' => $request->status === 'submitted' ? 'Awaiting processing' : AtkRequestResource::statusLabel($request->status),
                 'action' => $request->awaiting_receipt && ! in_array($request->status, ['completed', 'cancelled'], true)
-                    ? 'Konfirmasi barang yang sudah diterima di daftar ATK.'
+                    ? 'Confirm receipt on the Office Supply Requests page.'
                     : null,
             ]),
         ];
@@ -596,33 +584,28 @@ class Dashboard extends BaseDashboard
      * @return array<int, array{key: string, title: string, description: string, url: string, metrics: array<int, array{label: string, value: int|string, tone: string}>}>
      */
     private function getModuleSummaries(
+        array $visibleSections,
         CarbonInterface $todayStart,
         CarbonInterface $todayEnd,
         CarbonInterface $monthStart,
         CarbonInterface $monthEnd,
     ): array {
-        $user = auth()->user();
-
-        if (! $user) {
-            return [];
-        }
-
         $summaries = [];
 
-        if ($user->hasPermission('atk.manage') || $user->hasPermission('atk.report')) {
+        if (in_array('atk', $visibleSections, true)) {
             $summaries[] = [
                 'key' => 'atk',
-                'title' => 'ATK',
-                'description' => 'Permintaan dan ketersediaan stok.',
+                'title' => 'Office Supplies',
+                'description' => 'Track requests and stock availability.',
                 'url' => AtkDashboard::getUrl(),
                 'metrics' => [
                     [
-                        'label' => 'Perlu diproses',
+                        'label' => 'Need processing',
                         'value' => AtkRequest::query()->whereIn('status', ['submitted', 'processing'])->count(),
                         'tone' => 'warning',
                     ],
                     [
-                        'label' => 'Stok minimum',
+                        'label' => 'Minimum stock',
                         'value' => AtkItem::query()
                             ->whereNotNull('minimum_stock')
                             ->whereColumn('current_stock', '<=', 'minimum_stock')
@@ -630,7 +613,7 @@ class Dashboard extends BaseDashboard
                         'tone' => 'danger',
                     ],
                     [
-                        'label' => 'Selesai bulan ini',
+                        'label' => 'Finish this month',
                         'value' => AtkRequest::query()
                             ->where('status', 'completed')
                             ->whereBetween('completed_at', [$monthStart, $monthEnd])
@@ -641,7 +624,7 @@ class Dashboard extends BaseDashboard
             ];
         }
 
-        if ($user->hasPermission('ltro.view')) {
+        if (in_array('ltro', $visibleSections, true)) {
             $availability = LtroAvailabilityRecord::query()
                 ->whereNotNull('availability_percent')
                 ->latest('report_date')
@@ -653,23 +636,23 @@ class Dashboard extends BaseDashboard
             $summaries[] = [
                 'key' => 'ltro',
                 'title' => 'LTRO',
-                'description' => 'Laporan operasi dan indikator keandalan.',
+                'description' => 'Operating reports and reliability metrics.',
                 'url' => LtroDailyReportResource::getUrl('index'),
                 'metrics' => [
                     [
-                        'label' => 'Laporan bulan ini',
+                        'label' => 'Report this month',
                         'value' => LtroDailyReport::query()
                             ->whereBetween('report_date', [$monthStart, $monthEnd])
                             ->count(),
                         'tone' => 'default',
                     ],
                     [
-                        'label' => 'Downtime 30 hari',
+                        'label' => 'Downtime 30 days',
                         'value' => number_format($downtimeHours, 1, ',', '.').' jam',
                         'tone' => $downtimeHours > 0 ? 'danger' : 'success',
                     ],
                     [
-                        'label' => 'Availability terbaru',
+                        'label' => 'The new Availability',
                         'value' => $availability === null
                             ? '-'
                             : number_format((float) $availability, 2, ',', '.').'%',
@@ -679,22 +662,22 @@ class Dashboard extends BaseDashboard
             ];
         }
 
-        if ($user->hasPermission('attendance.view')) {
+        if (in_array('attendance', $visibleSections, true)) {
             $summaries[] = [
                 'key' => 'attendance',
                 'title' => 'Attendance Report',
-                'description' => 'Data absensi yang sudah diimpor.',
+                'description' => 'Imported attendance records.',
                 'url' => AttendanceReportCenter::getUrl(),
                 'metrics' => [
                     [
-                        'label' => 'Data hari ini',
+                        'label' => 'Today\'s data',
                         'value' => AttendanceResult::query()
                             ->whereBetween('attendance_date', [$todayStart, $todayEnd])
                             ->count(),
                         'tone' => 'default',
                     ],
                     [
-                        'label' => 'Data bulan ini',
+                        'label' => 'Data of the month',
                         'value' => AttendanceResult::query()
                             ->whereBetween('attendance_date', [$monthStart, $monthEnd])
                             ->count(),

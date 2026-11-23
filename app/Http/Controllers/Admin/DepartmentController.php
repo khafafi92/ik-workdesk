@@ -37,7 +37,7 @@ class DepartmentController extends Controller
 
         return redirect()
             ->route('admin.departments.index')
-            ->with('success', 'Department berhasil dibuat.');
+            ->with('success', 'The department was successfully created.');
     }
 
     public function edit(Department $department)
@@ -64,7 +64,7 @@ class DepartmentController extends Controller
 
         return redirect()
             ->route('admin.departments.index')
-            ->with('success', 'Department berhasil diupdate.');
+            ->with('success', 'Department updated.');
     }
 
     public function destroy(Department $department)
@@ -73,6 +73,6 @@ class DepartmentController extends Controller
 
         return redirect()
             ->route('admin.departments.index')
-            ->with('success', 'Department berhasil dihapus.');
+            ->with('success', 'Department\'s been deleted.');
     }
 }

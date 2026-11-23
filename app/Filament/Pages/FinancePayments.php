@@ -25,9 +25,9 @@ class FinancePayments extends Page
 
     protected static ?string $slug = 'finance/pembayaran-po';
 
-    protected static ?string $title = 'Pembayaran PO';
+    protected static ?string $title = 'PO Payment';
 
-    protected static ?string $navigationLabel = 'Pembayaran PO';
+    protected static ?string $navigationLabel = 'PO Payment';
 
     protected static string|UnitEnum|null $navigationGroup = 'Finance';
 
@@ -181,7 +181,7 @@ class FinancePayments extends Page
         $this->reset('plan', 'invoiceFile');
         $this->suggestedAmount = $this->suggestedDescription = '';
         $this->resetValidation();
-        Notification::make()->title('Termin pembayaran tersimpan.')->success()->send();
+        Notification::make()->title('Payment installment saved.')->success()->send();
     }
 
     public function preparePaid(int $id): void
@@ -219,7 +219,7 @@ class FinancePayments extends Page
         $this->paymentAction = '';
         $this->reset('lateInvoiceFile', 'lateInvoiceNumber');
         $this->resetValidation();
-        Notification::make()->title('Invoice tersimpan.')->success()->send();
+        Notification::make()->title('Invoice saved.')->success()->send();
     }
 
     public function savePaid(): void
@@ -232,7 +232,7 @@ class FinancePayments extends Page
         $this->paymentAction = '';
         $this->reset('paid', 'proofFile', 'paidInvoiceFile');
         $this->resetValidation();
-        Notification::make()->title('Pembayaran dan bukti tersimpan.')->success()->send();
+        Notification::make()->title('Payment and evidence are stored.')->success()->send();
     }
 
     public function cancelPlan(): void
@@ -244,7 +244,7 @@ class FinancePayments extends Page
         $this->paymentAction = '';
         $this->reset('paid', 'proofFile', 'paidInvoiceFile', 'cancelReason');
         $this->resetValidation();
-        Notification::make()->title('Termin dibatalkan.')->success()->send();
+        Notification::make()->title('Installment cancelled.')->success()->send();
     }
 
     public function prepareCancelOrder(): void
@@ -264,7 +264,7 @@ class FinancePayments extends Page
         $this->paymentAction = '';
         $this->reset('orderCancelReason');
         $this->resetValidation();
-        Notification::make()->title('PO dibatalkan dan komitmen anggaran dilepas.')->success()->send();
+        Notification::make()->title('PO canceled and budget commitment removed.')->success()->send();
     }
 
     protected function getViewData(): array

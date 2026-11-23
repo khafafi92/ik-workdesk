@@ -86,7 +86,7 @@ class WorkTask extends Model
                 && blank($task->status_reason)
             ) {
                 throw ValidationException::withMessages([
-                    'status_reason' => 'Alasan wajib diisi untuk status Hold atau Cancel.',
+                    'status_reason' => 'Reasons to be filled for hold or cancel status.',
                 ]);
             }
 
@@ -95,7 +95,7 @@ class WorkTask extends Model
                 && ! $task->isPermitLegalTask()
             ) {
                 throw ValidationException::withMessages([
-                    'permit_result_notes' => 'Hasil Permit hanya dapat diisi pada task Legal untuk permintaan Permit.',
+                    'permit_result_notes' => 'Permit results can only be filled in the Legal task for the Summit request.',
                 ]);
             }
 
@@ -105,7 +105,7 @@ class WorkTask extends Model
                 && ! $task->canBeCancelledBy(auth()->user())
             ) {
                 throw ValidationException::withMessages([
-                    'status' => 'Hanya department penerima task atau System Administrator yang dapat melakukan Hold atau Cancel.',
+                    'status' => 'Only the task recipient department or System Administrator can perform a Hold or Cancel.',
                 ]);
             }
 
@@ -140,7 +140,7 @@ class WorkTask extends Model
                     && ! $task->isRequesterLeadWorkLog()
                 ) {
                     throw ValidationException::withMessages([
-                        'employee_id' => 'PIC / pelaksana harus ditentukan sebelum Work Log dapat diselesaikan.',
+                        'employee_id' => 'PIC/examination must be determined before the Log Work can be completed.',
                     ]);
                 }
 
@@ -158,7 +158,7 @@ class WorkTask extends Model
 
                     if ($unassignedDepartments->isNotEmpty()) {
                         throw ValidationException::withMessages([
-                            'employee_id' => 'Semua Work Log collaborative harus memiliki PIC / pelaksana sebelum diselesaikan. Belum ada PIC: '
+                            'employee_id' => 'All Collaborative Log Work must have PIC/execution before completion. No PIC: '
                                 .$unassignedDepartments->join(', ').'.',
                         ]);
                     }
@@ -189,7 +189,7 @@ class WorkTask extends Model
                 && ! $task->canBeCompletedBy(auth()->user())
             ) {
                 throw ValidationException::withMessages([
-                    'status' => 'Status Done hanya dapat ditetapkan oleh pihak yang berwenang menyelesaikan pekerjaan.',
+                    'status' => 'Done\'s status can only be established by those in authority to finish the job.',
                 ]);
             }
         });
@@ -430,7 +430,7 @@ class WorkTask extends Model
 
             if (! $task->canBeApprovedBy($approver)) {
                 throw ValidationException::withMessages([
-                    'approval_status' => 'Task ini tidak dapat Anda approve.',
+                    'approval_status' => 'This task can\'t be your approve.',
                 ]);
             }
 
@@ -453,7 +453,7 @@ class WorkTask extends Model
 
         if ($reason === '') {
             throw ValidationException::withMessages([
-                'rejection_reason' => 'Alasan penolakan wajib diisi.',
+                'rejection_reason' => 'The reason for a mandatory rejection.',
             ]);
         }
 
@@ -465,7 +465,7 @@ class WorkTask extends Model
 
             if (! $task->canBeApprovedBy($rejector)) {
                 throw ValidationException::withMessages([
-                    'approval_status' => 'Task ini tidak dapat Anda reject.',
+                    'approval_status' => 'This task can\'t be your reject.',
                 ]);
             }
 
@@ -526,7 +526,7 @@ class WorkTask extends Model
 
             if (! $task->canBeResubmittedBy($requester)) {
                 throw ValidationException::withMessages([
-                    'approval_status' => 'Task ini tidak dapat diajukan ulang oleh Anda.',
+                    'approval_status' => 'This task can\'t be renamed by you.',
                 ]);
             }
 

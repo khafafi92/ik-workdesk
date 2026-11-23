@@ -36,33 +36,33 @@ class DocumentNumberingTemplateResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedHashtag;
 
-    protected static ?string $navigationLabel = 'Template Nomor Surat';
+    protected static ?string $navigationLabel = 'Letter Number Templates';
 
-    protected static ?string $modelLabel = 'Template Nomor Surat';
+    protected static ?string $modelLabel = 'Letter Number Templates';
 
-    protected static ?string $pluralModelLabel = 'Template Nomor Surat';
+    protected static ?string $pluralModelLabel = 'Letter Number Templates';
 
     protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Cakupan template')->columns(3)->schema([
-                Select::make('letter_profile_id')->label('Profil surat')->relationship('profile', 'name')->searchable()->preload()->live()
-                    ->helperText('Pilih profil agar template hanya dipakai untuk kelompok surat tersebut. Kosongkan hanya untuk template umum.'),
+            Section::make('Template scope')->columns(3)->schema([
+                Select::make('letter_profile_id')->label('Mail profile')->relationship('profile', 'name')->searchable()->preload()->live()
+                    ->helperText('Select a profile to use only for such mail groups. Empty only for common templates.'),
                 Select::make('permit_company_id')->label('Company')->relationship('company', 'name')->searchable()->preload()->required()->live(),
                 Select::make('department_id')->label('Department')->relationship('department', 'name')->searchable()->preload()->live(),
-                Select::make('document_type_id')->label('Jenis surat')->relationship('documentType', 'name')->searchable()->preload()->live(),
+                Select::make('document_type_id')->label('Mail type')->relationship('documentType', 'name')->searchable()->preload()->live(),
             ]),
-            Section::make('Format nomor')->columns(2)->schema([
-                TextInput::make('name')->label('Nama template')->required()->maxLength(255),
+            Section::make('Format number')->columns(2)->schema([
+                TextInput::make('name')->label('Template name')->required()->maxLength(255),
                 TextInput::make('template')->label('Template')->required()->maxLength(500)->live()
                     ->helperText('Token: {running}, {running:3}, {company_code}, {department_code}, {document_code}, {roman_month}, {month}, {year}, {year_short}, {location_code}, {project_code}.'),
-                TextInput::make('running_digits')->label('Jumlah digit running')->numeric()->default(3)->minValue(1)->maxValue(10)->required(),
-                Select::make('reset_period')->label('Reset nomor')->options(['yearly' => 'Setiap tahun', 'monthly' => 'Setiap bulan', 'never' => 'Tidak pernah'])->default('yearly')->required(),
-                TextInput::make('priority')->label('Prioritas')->numeric()->default(0)->minValue(0)->required(),
-                Toggle::make('is_active')->label('Aktif')->default(true),
-                Placeholder::make('preview')->label('Preview nomor')->content(fn (Get $get): string => static::preview($get))->columnSpanFull(),
+                TextInput::make('running_digits')->label('Number of digits running')->numeric()->default(3)->minValue(1)->maxValue(10)->required(),
+                Select::make('reset_period')->label('Reset number')->options(['yearly' => 'Every year', 'monthly' => 'Every month', 'never' => 'Never'])->default('yearly')->required(),
+                TextInput::make('priority')->label('Priority')->numeric()->default(0)->minValue(0)->required(),
+                Toggle::make('is_active')->label('Active')->default(true),
+                Placeholder::make('preview')->label('Preview number')->content(fn (Get $get): string => static::preview($get))->columnSpanFull(),
             ]),
         ]);
     }
@@ -70,20 +70,20 @@ class DocumentNumberingTemplateResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Nama')->searchable()->sortable(),
-            TextColumn::make('profile.name')->label('Profil')->placeholder('Umum')->toggleable(),
+            TextColumn::make('name')->label('Name')->searchable()->sortable(),
+            TextColumn::make('profile.name')->label('Profiles')->placeholder('General')->toggleable(),
             TextColumn::make('company.code')->label('Company')->sortable(),
-            TextColumn::make('department.code')->label('Department')->placeholder('Semua'),
-            TextColumn::make('documentType.code')->label('Jenis')->placeholder('Semua'),
+            TextColumn::make('department.code')->label('Department')->placeholder('All'),
+            TextColumn::make('documentType.code')->label('Type')->placeholder('All'),
             TextColumn::make('template')->label('Format')->wrap(),
-            TextColumn::make('reset_period')->label('Reset')->formatStateUsing(fn (string $state) => ['yearly' => 'Tahunan', 'monthly' => 'Bulanan', 'never' => 'Tidak pernah'][$state]),
-            TextColumn::make('priority')->label('Prioritas')->sortable(),
-            IconColumn::make('is_active')->label('Aktif')->boolean(),
+            TextColumn::make('reset_period')->label('Reset')->formatStateUsing(fn (string $state) => ['yearly' => 'Annual', 'monthly' => 'Monthly', 'never' => 'Never'][$state]),
+            TextColumn::make('priority')->label('Priority')->sortable(),
+            IconColumn::make('is_active')->label('Active')->boolean(),
         ])->filters([
-            SelectFilter::make('letter_profile_id')->label('Profil surat')->relationship('profile', 'name'),
+            SelectFilter::make('letter_profile_id')->label('Mail profile')->relationship('profile', 'name'),
             SelectFilter::make('permit_company_id')->label('Company')->relationship('company', 'name'),
             SelectFilter::make('department_id')->label('Department')->relationship('department', 'name'),
-            SelectFilter::make('document_type_id')->label('Jenis surat')->relationship('documentType', 'name'),
+            SelectFilter::make('document_type_id')->label('Mail type')->relationship('documentType', 'name'),
         ])->defaultSort('priority', 'desc')->recordActions([EditAction::make()]);
     }
 
@@ -114,7 +114,7 @@ class DocumentNumberingTemplateResource extends Resource
     private static function preview(Get $get): string
     {
         if (blank($get('template')) || blank($get('permit_company_id'))) {
-            return 'Lengkapi company dan template untuk melihat preview.';
+            return 'Complete company and template for preview.';
         }
 
         try {
@@ -132,7 +132,7 @@ class DocumentNumberingTemplateResource extends Resource
 
             return app(DocumentNumberService::class)->format($template, $letter, 1);
         } catch (Throwable $exception) {
-            return 'Preview memerlukan data untuk semua token yang digunakan.';
+            return 'Preview requires data for all the tokens used.';
         }
     }
 }

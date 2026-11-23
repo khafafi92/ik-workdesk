@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Roles\Schemas;
 
+use App\Enums\ItPermission;
 use App\Models\Permission;
 use App\Models\Role;
 use Filament\Forms\Components\CheckboxList;
@@ -37,13 +38,13 @@ class RoleForm
             ->components([
                 Section::make('Role Information')
                     ->description(
-                        'Role adalah kumpulan hak akses yang dapat diberikan kepada user.'
+                        'Role is a set of access privileges that can be given to users.'
                     )
                     ->schema([
                         TextInput::make('name')
                             ->label('Role Name')
                             ->placeholder(
-                                'Contoh: Legal Reviewer'
+                                'Example: Legal Reviewer'
                             )
                             ->required()
                             ->maxLength(255),
@@ -51,10 +52,10 @@ class RoleForm
                         TextInput::make('code')
                             ->label('Role Code')
                             ->placeholder(
-                                'Contoh: legal-reviewer'
+                                'Example: legal-reviewer'
                             )
                             ->helperText(
-                                'Gunakan huruf kecil dan tanda minus. Jangan diubah setelah digunakan.'
+                                'Use lowercase and minus sign. Do not change after use.'
                             )
                             ->required()
                             ->unique(ignoreRecord: true)
@@ -90,7 +91,7 @@ class RoleForm
 
                 Section::make('Permissions')
                     ->description(
-                        'Pilih akses utama role. Meeting Room dan Vehicle Booking tersedia otomatis sehingga tidak perlu dipilih satu per satu.'
+                        'Select the main role access. Meeting Room and Vehicle Booking are available automatically so that it does not need to be selected one by one.'
                     )
                     ->schema([
                         CheckboxList::make('permissions')
@@ -147,6 +148,7 @@ class RoleForm
                                     );
                                 }
                             )
+                            ->getOptionLabelFromRecordUsing(fn (Permission $record): string => ItPermission::tryFrom($record->code)?->label() ?? __($record->name))
                             ->saveRelationshipsUsing(
                                 function (Role $record, ?array $state): void {
                                     $automaticIds = Permission::query()

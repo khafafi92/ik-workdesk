@@ -26,7 +26,7 @@ class CreateAttendanceImport extends CreateRecord
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Pilih dua file Excel. Periode akan ditentukan otomatis dari tanggal pada file Total Jam Kerja.';
+        return 'Select two Excel files. Period will be automatically determined from date on Total Clock File.';
     }
 
     public function getBreadcrumbs(): array
@@ -37,13 +37,13 @@ class CreateAttendanceImport extends CreateRecord
     protected function getCreateFormAction(): Action
     {
         return parent::getCreateFormAction()->label(
-            auth()->user()?->hasPermission('attendance.manage') ? 'Upload dan proses' : 'Upload data'
+            auth()->user()?->hasPermission('attendance.manage') ? 'Upload and process' : 'Upload data'
         );
     }
 
     protected function getCancelFormAction(): Action
     {
-        return Action::make('cancel')->label('Kembali')->color('gray')->url(AttendanceReportCenter::getUrl());
+        return Action::make('cancel')->label('Back')->color('gray')->url(AttendanceReportCenter::getUrl());
     }
 
     protected function afterCreate(): void
@@ -64,11 +64,11 @@ class CreateAttendanceImport extends CreateRecord
     protected function getCreatedNotification(): ?Notification
     {
         return match ($this->record->status) {
-            'processed' => Notification::make()->success()->title('Laporan selesai diproses'),
-            'failed' => Notification::make()->danger()->title('File tersimpan, proses belum berhasil')
-                ->body('Periksa keterangan pada laporan, lalu perbaiki file dan proses ulang.'),
-            default => Notification::make()->success()->title('File berhasil diupload')
-                ->body('Menunggu pengguna dengan izin proses attendance.'),
+            'processed' => Notification::make()->success()->title('Report completed'),
+            'failed' => Notification::make()->danger()->title('File saved, process not successfully')
+                ->body('Check the description on the report, then fix the file and reprocess.'),
+            default => Notification::make()->success()->title('File successfully uploaded')
+                ->body('Waiting for the user with an attendance process permit.'),
         };
     }
 
@@ -82,7 +82,7 @@ class CreateAttendanceImport extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         $data['uploaded_by_user_id'] = auth()->id();
-        $data['period_name'] = 'Menunggu proses';
+        $data['period_name'] = 'Waiting for process';
         $data['status'] = 'uploaded';
         $data['attendance_file_path'] = $this->normalizeFilePath($data['attendance_file_path'] ?? null);
         $data['work_hour_file_path'] = $this->normalizeFilePath($data['work_hour_file_path'] ?? null);

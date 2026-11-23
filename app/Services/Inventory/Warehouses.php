@@ -17,15 +17,15 @@ class Warehouses
     public function forContext(string $company, string $kind, ?int $projectId): InventoryWarehouse
     {
         if (! in_array($company, ['KPMOG', 'APCA'], true) || ! in_array($kind, ['HO', 'PROJECT'], true)) {
-            throw ValidationException::withMessages(['warehouse' => 'Pilih entitas dan jenis gudang yang sesuai.']);
+            throw ValidationException::withMessages(['warehouse' => 'Select appropriate entity and warehouse type.']);
         }
         $project = $kind === 'PROJECT' ? ProjectNumbering::findOrFail($projectId) : null;
         if ($project && ! $project->is_active) {
-            throw ValidationException::withMessages(['warehouse' => 'Project sudah nonaktif.']);
+            throw ValidationException::withMessages(['warehouse' => 'Project\'s down.']);
         }
 
         return InventoryWarehouse::firstOrCreate(['code' => $kind.'-'.$company.($project ? '-'.$project->id : '')],
-            ['kind' => $kind, 'company' => $company, 'name' => $project?->name ?? 'Gudang HO', 'project_numbering_id' => $project?->id]);
+            ['kind' => $kind, 'company' => $company, 'name' => $project?->name ?? 'HO warehouse', 'project_numbering_id' => $project?->id]);
     }
 
     public function syncProjects(): void
@@ -40,7 +40,7 @@ class Warehouses
     public function forDepartment(InventoryWarehouse $source, Department $department): InventoryWarehouse
     {
         if ($source->legacy_atk || $source->department_id || ! $source->is_active || ! $department->is_active) {
-            throw ValidationException::withMessages(['destination_id' => 'Pilih gudang utama dan departemen yang aktif.']);
+            throw ValidationException::withMessages(['destination_id' => 'Pick the main warehouse and the active department.']);
         }
 
         $warehouse = InventoryWarehouse::firstOrCreate(['code' => $source->code.'-DEPT-'.$department->id], [
@@ -48,7 +48,7 @@ class Warehouses
             'project_numbering_id' => $source->project_numbering_id, 'department_id' => $department->id,
         ]);
         if (! $warehouse->is_active) {
-            throw ValidationException::withMessages(['destination_id' => 'Gudang departemen tidak aktif.']);
+            throw ValidationException::withMessages(['destination_id' => 'The department warehouse is off.']);
         }
 
         return $warehouse;

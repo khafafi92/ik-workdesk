@@ -26,7 +26,7 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
 
     public function test_asset_number_replaces_register_code_and_edits_preserve_internal_identity_and_history(): void
     {
-        Livewire::test(CreateItDevice::class)->assertSee('Nomor Aset')->assertSee('Office')
+        Livewire::test(CreateItDevice::class)->assertSee('Asset Number')->assertSee('Office')
             ->assertDontSee('Kode register')->assertDontSeeHtml('id="form.work_location_id"')
             ->fillForm(['asset_number' => '00123/APCA/IT/2025', 'name' => 'Laptop aset', 'location_name' => 'Office HO'])
             ->call('create')->assertHasNoFormErrors();
@@ -50,7 +50,7 @@ class ItDeviceIdentityTest extends ItInfrastructureTestCase
         $this->assertSame($before, $inspection->fresh()->getRawOriginal());
         Livewire::test(CreateItDevice::class)->fillForm(['asset_number' => '00456/APCA/IT/2025', 'name' => 'Duplikat'])
             ->call('create')->assertHasFormErrors(['asset_number']);
-        Livewire::test(ListItDevices::class)->assertSee('Nomor Aset')->assertSee('Office')->assertDontSee('Kode register')
+        Livewire::test(ListItDevices::class)->assertSee('Asset Number')->assertSee('Office')->assertDontSee('Kode register')
             ->searchTable('00456/APCA/IT/2025')->assertCanSeeTableRecords([$device]);
         $this->assertSame(1, ItDevice::query()->count());
         $this->assertSame(0, WorkLocation::query()->count());

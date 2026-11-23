@@ -73,9 +73,13 @@ class TravelDocument extends Model
         return $this->approvals()->where('round', $this->approval_round);
     }
 
-    public function statusLabel(): string
+    public function statusLabel(bool $printing = false): string
     {
-        return ['draft' => 'Draft', 'submitted' => 'Menunggu persetujuan', 'returned' => 'Dikembalikan', 'approved' => 'Disetujui'][$this->status] ?? $this->status;
+        if ($printing) {
+            return ['draft' => 'Draft', 'submitted' => 'Menunggu persetujuan', 'returned' => 'Dikembalikan', 'approved' => 'Disetujui'][$this->status] ?? $this->status;
+        }
+
+        return ['draft' => 'Draft', 'submitted' => 'Awaiting approval', 'returned' => 'Returned', 'approved' => 'Approved'][$this->status] ?? $this->status;
     }
 
     public function displayNumber(): string

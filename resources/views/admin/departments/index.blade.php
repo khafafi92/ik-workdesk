@@ -2,7 +2,7 @@
 
 @section('title', 'Departments')
 @section('page-title', 'Departments')
-@section('page-description', 'Master data department untuk contoh CRUD boilerplate.')
+@section('page-description', 'The department data master for sample CRUD boilerplate.')
 
 @section('content')
 @if (session('success'))
@@ -101,7 +101,7 @@
                 @empty
                 <tr>
                     <td colspan="4" class="px-6 py-10 text-center text-sm text-slate-500">
-                        Belum ada data department.
+                        No department data yet.
                     </td>
                 </tr>
                 @endforelse

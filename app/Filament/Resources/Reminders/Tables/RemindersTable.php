@@ -87,11 +87,11 @@ class RemindersTable
             ])
             ->filters([
                 SelectFilter::make('schedule')
-                    ->label('Jadwal reminder aktif')
+                    ->label('Reminder schedule is active')
                     ->options([
-                        'today' => 'Hari Ini',
-                        'upcoming' => 'Akan Datang',
-                        'overdue' => 'Terlambat',
+                        'today' => 'Today',
+                        'upcoming' => 'Will Come',
+                        'overdue' => 'Too late',
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $todayStart = now()->startOfDay();
@@ -114,13 +114,13 @@ class RemindersTable
                     ->color('success')
                     ->visible(fn (Reminder $record): bool => $record->status !== 'done')
                     ->requiresConfirmation()
-                    ->modalHeading('Tandai reminder sebagai Done?')
-                    ->modalDescription('Reminder ini akan diselesaikan dan email pengingat berikutnya tidak akan dikirim.')
+                    ->modalHeading('Mark the reminder as Done?')
+                    ->modalDescription('This reminder will be completed and the next reminder email will not be sent.')
                     ->action(function (Reminder $record): void {
                         $record->markAsDone();
 
                         Notification::make()
-                            ->title('Reminder berhasil ditandai Done')
+                            ->title('Reminder successfully marked Done')
                             ->success()
                             ->send();
                     }),

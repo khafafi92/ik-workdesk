@@ -37,7 +37,7 @@ class ItInspectionService
     {
         $template = ItChecklistTemplate::query()->where('device_type', $device->device_type->value)->where('is_active', true)->latest('version')->with('items')->first();
         if (! $template) {
-            throw ValidationException::withMessages(['deviceId' => 'Template checklist aktif belum tersedia untuk jenis perangkat ini.']);
+            throw ValidationException::withMessages(['deviceId' => 'The active checklist template is not available for this type of device.']);
         }
 
         return $template;
@@ -95,7 +95,7 @@ class ItInspectionService
                     $inspection = $this->queryFor($actor)->lockForUpdate()->findOrFail($id);
                     Gate::forUser($actor)->authorize($finalize ? 'finalize' : 'update', $inspection);
                     if ((int) $inspection->it_device_id !== $deviceId) {
-                        throw ValidationException::withMessages(['it_device_id' => 'Perangkat pada pemeriksaan tidak dapat diganti.']);
+                        throw ValidationException::withMessages(['it_device_id' => 'The device in the check could not be replaced.']);
                     }
                     $template = $inspection->template()->with('items')->firstOrFail();
                 } else {
@@ -141,11 +141,11 @@ class ItInspectionService
                     $rules[$path.'due_at'] = ['nullable', 'date'];
                 }
                 $validated = Validator::make($data, $rules, [
-                    'results.*.condition.not_in' => 'Pilih hasil pemeriksaan sebelum finalisasi.',
-                    'results.*.finding.required' => 'Keterangan temuan wajib diisi untuk Warning/Critical.',
-                    'results.*.action_plan.required' => 'Tindak lanjut wajib diisi untuk Warning/Critical.',
-                    'results.*.assigned_to.required' => 'Penanggung jawab wajib dipilih untuk Warning/Critical.',
-                    'results.*.not_applicable_reason.required' => 'Alasan N/A wajib diisi.',
+                    'results.*.condition.not_in' => 'Select test results before finalization.',
+                    'results.*.finding.required' => 'Qualification descriptions are mandatory for Warning/Critical.',
+                    'results.*.action_plan.required' => 'Follow-up is mandatory for Warning/Critical.',
+                    'results.*.assigned_to.required' => 'The responsible must be selected for Warning/Critical.',
+                    'results.*.not_applicable_reason.required' => 'The reason N/A has to be filled.',
                 ])->validate();
                 $inspection->fill(collect($validated)->only(['checked_at', 'work_location_id', 'location_name', 'location_detail', 'notes'])->all());
                 $new = ! $inspection->exists;
@@ -171,7 +171,7 @@ class ItInspectionService
                     if ($finding) {
                         $assignee = User::query()->findOrFail($row['assigned_to']);
                         if (! $assignee->isActiveForAccess()) {
-                            throw ValidationException::withMessages(['results.'.$item->code.'.assigned_to' => 'Penanggung jawab harus aktif.']);
+                            throw ValidationException::withMessages(['results.'.$item->code.'.assigned_to' => 'The responsibility must be active.']);
                         }
                         $followUp ??= new ItInspectionFollowUp(['it_inspection_id' => $inspection->id, 'it_inspection_result_id' => $result->id, 'created_by' => $actor->id]);
                         Gate::forUser($actor)->authorize($followUp->exists ? 'update' : 'createForResult', $followUp->exists ? $followUp : [ItInspectionFollowUp::class, $result]);

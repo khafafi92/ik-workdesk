@@ -16,9 +16,9 @@ class AtkReports extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedDocumentArrowDown;
 
-    protected static ?string $navigationLabel = 'Laporan & Export';
+    protected static ?string $navigationLabel = 'Reports & Exports';
 
-    protected static ?string $title = 'Laporan ATK';
+    protected static ?string $title = 'Office Supply Reports';
 
     protected static string|UnitEnum|null $navigationGroup = 'ATK';
 
@@ -38,15 +38,15 @@ class AtkReports extends Page
                 ->label('Export Excel')
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->form([
-                    DatePicker::make('from')->label('Dari tanggal'),
-                    DatePicker::make('until')->label('Sampai tanggal')->afterOrEqual('from'),
+                    DatePicker::make('from')->label('From date'),
+                    DatePicker::make('until')->label('Until date')->afterOrEqual('from'),
                 ])
                 ->action(function (array $data) {
                     $from = filled($data['from'] ?? null) ? Carbon::parse($data['from'])->startOfDay() : null;
                     $until = filled($data['until'] ?? null) ? Carbon::parse($data['until'])->endOfDay() : null;
                     $suffix = $from || $until
                         ? '-'.($from?->format('Ymd') ?? 'awal').'-'.($until?->format('Ymd') ?? 'akhir')
-                        : '-semua-data';
+                        : '-all-data';
 
                     return Excel::download(
                         new AtkReportExport($from, $until),

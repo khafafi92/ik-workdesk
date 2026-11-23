@@ -40,18 +40,18 @@ class WorkTaskAssignedNotification extends Notification implements ShouldQueue
         );
 
         return FilamentNotification::make()
-            ->title("Work Log Baru: {$task->task_no}")
+            ->title("New Log Work: {$task->task_no}")
             ->body(
-                ($task->title ?: 'Work Log baru')
+                ($task->title ?: 'New Log Work')
                 .($task->ticket
-                    ? " · Induk {$task->ticket->ticket_no}"
+                    ? " · Parent {$task->ticket->ticket_no}"
                     : '')
             )
             ->icon('heroicon-o-clipboard-document-check')
             ->info()
             ->actions([
                 Action::make('open')
-                    ->label('Buka Work Log')
+                    ->label('Open Work Log')
                     ->button()
                     ->url($url)
                     ->markAsRead(),
@@ -76,25 +76,25 @@ class WorkTaskAssignedNotification extends Notification implements ShouldQueue
 
         $due = $task->due_at
             ? $task->due_at->format('d M Y H:i')
-            : 'Tidak ditentukan';
+            : 'Not specified';
 
         return (new MailMessage)
             ->from($fromAddress, $fromName)
-            ->subject("[IK WorkDesk] Work Log Baru: {$task->task_no}")
+            ->subject("[IK WorkDesk] New Log Work: {$task->task_no}")
             ->greeting("Halo, {$notifiable->name}!")
-            ->line('Ada **work log baru** yang di-assign ke departemen Anda.')
+            ->line('There\'s a new **work log* that\'s assigned to your department.')
             ->line('---')
             ->line("**No. Task    :** {$task->task_no}")
-            ->line("**Judul       :** {$task->title}")
-            ->line("**Prioritas   :** {$priority}")
+            ->line("**Title:* {$task->title}")
+            ->line("**Priority:** {$priority}")
             ->line("**Deadline    :** {$due}")
             ->when(
                 $ticket,
                 fn (MailMessage $mail) => $mail
-                    ->line("**Dari Ticket :** {$ticket->ticket_no} — {$ticket->subject}")
+                    ->line("**From Ticket:* {$ticket->ticket_no} — {$ticket->subject}")
             )
-            ->action('Lihat Work Log', $viewUrl)
-            ->line('Segera proses work log ini sesuai prioritas.')
+            ->action('View Work Log', $viewUrl)
+            ->line('Immediately process this work log to the priority.')
             ->salutation('IK WorkDesk System');
     }
 }

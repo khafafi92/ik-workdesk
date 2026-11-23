@@ -67,8 +67,8 @@ class WorkTasksTable
                     ->searchable(),
 
                 TextColumn::make('employee.name')
-                    ->label('PIC / Pelaksana')
-                    ->placeholder('Belum ditentukan')
+                    ->label('PIC / Execution')
+                    ->placeholder('Undetermined')
                     ->searchable(),
 
                 TextColumn::make('priority')
@@ -97,10 +97,10 @@ class WorkTasksTable
                 TextColumn::make('approval_status')
                     ->label('CBO Approval')
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
-                        'pending' => 'Menunggu CBO',
+                        'pending' => 'Waiting for CBO',
                         'approved' => 'Approved',
                         'rejected' => 'Rejected',
-                        default => 'Tidak diperlukan',
+                        default => 'Not required',
                     })
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
@@ -148,7 +148,7 @@ class WorkTasksTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading('Approve task?')
-                    ->modalDescription('Setelah di-approve, task dapat dikerjakan oleh department tujuan.')
+                    ->modalDescription('After it\'s done, the task can be done by the purpose department.')
                     ->visible(
                         fn ($record): bool => $record->canBeApprovedBy(auth()->user())
                     )
@@ -156,8 +156,8 @@ class WorkTasksTable
                         $record->approveLegalTask(auth()->user());
 
                         Notification::make()
-                            ->title('Task berhasil di-approve')
-                            ->body('Task sekarang dapat dikerjakan oleh department tujuan.')
+                            ->title('Task successfully proofed')
+                            ->body('Task can now be done by the purpose department.')
                             ->success()
                             ->send();
                     }),
@@ -168,10 +168,10 @@ class WorkTasksTable
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalHeading('Reject task?')
-                    ->modalDescription('Alasan penolakan wajib diisi dan akan terlihat oleh requester serta department tujuan.')
+                    ->modalDescription('The reason for mandatory rejection will be filled and will be seen by the register as well as the purpose department.')
                     ->schema([
                         Textarea::make('rejection_reason')
-                            ->label('Alasan Penolakan')
+                            ->label('Reason for Rejection')
                             ->required()
                             ->rows(4)
                             ->maxLength(2000),
@@ -186,8 +186,8 @@ class WorkTasksTable
                         );
 
                         Notification::make()
-                            ->title('Task telah ditolak')
-                            ->body('Keputusan dan alasan penolakan sudah dicatat.')
+                            ->title('Task has been rejected')
+                            ->body('Decisions and grounds for rejection are noted.')
                             ->danger()
                             ->send();
                     }),
@@ -207,7 +207,7 @@ class WorkTasksTable
                         abort_unless(
                             WorkTaskResource::canDelete($record),
                             403,
-                            'Work log ini tidak dapat dihapus.'
+                            'This log work could not be deleted.'
                         );
                     }),
             ])
@@ -221,7 +221,7 @@ class WorkTasksTable
                             abort_unless(
                                 WorkTaskResource::canDeleteAny(),
                                 403,
-                                'Anda tidak memiliki izin menghapus work log.'
+                                'You do not have permission to delete the work log.'
                             );
                         }),
                 ]),

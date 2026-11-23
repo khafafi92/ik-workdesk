@@ -47,7 +47,7 @@ class KpmogProjectLetterService
         $department = Department::query()->where('is_active', true)->find($departmentId);
 
         if ($department === null) {
-            throw ValidationException::withMessages(['department_id' => 'Pilih departemen yang aktif.']);
+            throw ValidationException::withMessages(['department_id' => 'Pick an active department.']);
         }
 
         $letter = OutgoingLetter::create([
@@ -79,7 +79,7 @@ class KpmogProjectLetterService
         $template = $letter->numberingTemplate;
 
         if ($template === null) {
-            throw ValidationException::withMessages(['document_number' => 'Template nomor surat tidak ditemukan.']);
+            throw ValidationException::withMessages(['document_number' => 'The mail number template was not found.']);
         }
 
         $letter->update([
@@ -104,16 +104,16 @@ class KpmogProjectLetterService
         $company = PermitCompany::query()->where('code', 'KPMOG')->first();
 
         if ($company === null) {
-            throw ValidationException::withMessages(['profile' => 'Entitas KPMOG belum tersedia pada master data.']);
+            throw ValidationException::withMessages(['profile' => 'KPMOG entity is not available on the data master.']);
         }
 
         $profile = LetterProfile::query()->firstOrCreate(
             ['code' => 'KPMOG-PROJECT-BD'],
             [
-                'name' => 'KPMOG Project dan BD',
+                'name' => 'KPMOG Project and BD',
                 'permit_company_id' => $company->id,
                 'form_variant' => 'project',
-                'description' => 'Register surat KPMOG Team Project dan Business Development.',
+                'description' => 'KPMOG Team Project and Business Development mail register.',
                 'is_active' => true,
             ],
         );

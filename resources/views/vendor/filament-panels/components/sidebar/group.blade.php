@@ -13,6 +13,7 @@
 @else
     @php
         $groupId = 'ik-nav-' . \Illuminate\Support\Str::slug($label) . '-' . substr(md5($label), 0, 8);
+        $displayLabel = \App\Services\ModuleAccessService::displayLabel($label);
         $groupIcon = $icon ?? match ($label) {
             'Master Data' => 'heroicon-o-squares-2x2',
             'Attendance Report' => 'heroicon-o-clock',
@@ -76,12 +77,12 @@
             class="ik-sidebar-group-trigger"
             aria-controls="{{ $groupId }}"
             x-bind:aria-expanded="open.toString()"
-            x-bind:aria-label="$store.sidebar.isOpen ? null : @js($label)"
-            x-bind:title="$store.sidebar.isOpen ? null : @js($label)"
+            x-bind:aria-label="$store.sidebar.isOpen ? null : @js($displayLabel)"
+            x-bind:title="$store.sidebar.isOpen ? null : @js($displayLabel)"
             x-on:click="cancelClose(); open ? (pinned ? open = false : pinned = true) : show()"
         >
             <x-filament::icon :icon="$groupIcon" class="ik-sidebar-group-icon" />
-            <span class="fi-sidebar-group-label" x-show="$store.sidebar.isOpen">{{ $label }}</span>
+            <span class="fi-sidebar-group-label" x-show="$store.sidebar.isOpen">{{ $displayLabel }}</span>
             <x-filament::icon icon="heroicon-o-chevron-right" class="ik-sidebar-group-chevron" x-show="$store.sidebar.isOpen" />
         </button>
 
@@ -97,7 +98,7 @@
                 x-on:mouseleave="if (window.matchMedia('(min-width: 1024px) and (hover: hover) and (pointer: fine)').matches) closeSoon()"
                 x-on:click.outside="if (! $refs.trigger.contains($event.target)) open = false"
                 class="ik-sidebar-flyout"
-                aria-label="{{ $label }}"
+                aria-label="{{ $displayLabel }}"
             >
                 <ul class="ik-sidebar-flyout-list">
                     @foreach ($items as $item)

@@ -2,7 +2,7 @@
 
 @section('title', 'Create Department')
 @section('page-title', 'Create Department')
-@section('page-description', 'Tambah data department baru.')
+@section('page-description', 'Add new department data.')
 
 @section('content')
 <x-ui.card class="max-w-2xl">

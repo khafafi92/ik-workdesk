@@ -37,39 +37,39 @@ class KpmogProjectLetterResource extends Resource
 
     protected static ?string $navigationLabel = 'KPMOG Project / BD';
 
-    protected static ?string $modelLabel = 'Surat KPMOG Project / BD';
+    protected static ?string $modelLabel = 'KPMOG Project / BD Letter';
 
-    protected static ?string $pluralModelLabel = 'Surat KPMOG Project / BD';
+    protected static ?string $pluralModelLabel = 'KPMOG Project / BD Letters';
 
     protected static ?int $navigationSort = 3;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Nomor surat KPMOG')
-                ->description('Nomor urut dan departemen sudah dipilih saat draft dibuat. Tanggal surat dapat diperbarui sebelum diterbitkan.')
+            Section::make('KPMOG mail number')
+                ->description('Sort numbers and departments were selected when drafts were created. Mail dates could be updated before they were published.')
                 ->columns(3)
                 ->schema([
                     Placeholder::make('document_number')
-                        ->label('Nomor surat')
+                        ->label('Mail number')
                         ->content(fn (?OutgoingLetter $record): string => $record?->document_number ?? '-'),
                     Placeholder::make('department_label')
-                        ->label('Departemen')
+                        ->label('Department')
                         ->content(fn (?OutgoingLetter $record): string => $record?->department?->code ?? '-'),
                     DatePicker::make('document_date')
-                        ->label('Tanggal surat')
+                        ->label('Mail date')
                         ->required(),
                 ]),
-            Section::make('Isi surat')
-                ->description('Lengkapi data sesuai register surat Team Project atau BD, lalu simpan draft.')
+            Section::make('Mail content')
+                ->description('Complete data according to Team Project or BD mail registers, then save the draft.')
                 ->columns(2)
                 ->schema([
                     TextInput::make('pin')->label('PIN')->maxLength(255),
                     TextInput::make('pic_name')->label('PIC')->maxLength(255),
-                    TextInput::make('recipient')->label('Tujuan surat')->maxLength(255)->columnSpanFull(),
+                    TextInput::make('recipient')->label('Mail destination')->maxLength(255)->columnSpanFull(),
                     TextInput::make('subject')
-                        ->label('Perihal surat')
-                        ->helperText('Contoh: Permohonan Pembayaran Termin Pertama.')
+                        ->label('Subject')
+                        ->helperText('Example: Request for first installment payment.')
                         ->required()
                         ->maxLength(255)
                         ->columnSpanFull(),
@@ -81,15 +81,15 @@ class KpmogProjectLetterResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('document_number')->label('Nomor surat')->searchable()->sortable()->wrap(),
+                TextColumn::make('document_number')->label('Mail number')->searchable()->sortable()->wrap(),
                 TextColumn::make('department.code')->label('Dept')->sortable(),
-                TextColumn::make('document_date')->label('Tanggal')->date('d M Y')->sortable(),
+                TextColumn::make('document_date')->label('Date')->date('d M Y')->sortable(),
                 TextColumn::make('pin')->label('PIN')->placeholder('-')->searchable(),
                 TextColumn::make('pic_name')->label('PIC')->placeholder('-')->searchable(),
-                TextColumn::make('recipient')->label('Tujuan surat')->placeholder('-')->searchable()->wrap(),
-                TextColumn::make('subject')->label('Perihal surat')->placeholder('Perlu dilengkapi')->searchable()->wrap(),
+                TextColumn::make('recipient')->label('Mail destination')->placeholder('-')->searchable()->wrap(),
+                TextColumn::make('subject')->label('Subject')->placeholder('Not entered')->searchable()->wrap(),
                 TextColumn::make('status')->label('Status')->badge()
-                    ->formatStateUsing(fn (string $state): string => $state === 'issued' ? 'Terbit' : ($state === 'cancelled' ? 'Dibatalkan' : 'Draft'))
+                    ->formatStateUsing(fn (string $state): string => $state === 'issued' ? 'Issue' : ($state === 'cancelled' ? 'Cancelled' : 'Draft'))
                     ->color(fn (string $state): string => match ($state) {
                         'issued' => 'success',
                         'cancelled' => 'danger',
@@ -99,12 +99,12 @@ class KpmogProjectLetterResource extends Resource
             ->filters([
                 SelectFilter::make('status')->label('Status')->options([
                     'draft' => 'Draft',
-                    'issued' => 'Terbit',
-                    'cancelled' => 'Dibatalkan',
+                    'issued' => 'Issue',
+                    'cancelled' => 'Cancelled',
                 ]),
             ])
-            ->emptyStateHeading('Belum ada surat KPMOG Project / BD')
-            ->emptyStateDescription('Gunakan nomor berikutnya untuk membuat draft surat pertama.')
+            ->emptyStateHeading('No KPMOG Project / BD mail yet')
+            ->emptyStateDescription('Use the next number to create the first mail draft.')
             ->defaultSort('created_at', 'desc')
             ->headerActions([
                 Action::make('export_excel')
@@ -119,8 +119,8 @@ class KpmogProjectLetterResource extends Resource
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('primary')
                     ->modalHeading('Import register KPMOG Project / BD')
-                    ->modalDescription('Gunakan kolom dari master Excel. Nomor surat yang sudah ada tidak akan ditimpa dan akan dilaporkan setelah impor.')
-                    ->modalSubmitActionLabel('Import dan periksa data')
+                    ->modalDescription('Use columns from the Excel master. The existing mail number will not be overwritten and will be reported after import.')
+                    ->modalSubmitActionLabel('Import and check data')
                     ->form([
                         FileUpload::make('file')
                             ->label('File Excel')
@@ -141,32 +141,32 @@ class KpmogProjectLetterResource extends Resource
                             $details = collect($result['messages'])->take(5)->implode(' ');
 
                             Notification::make()
-                                ->title('Import register selesai')
-                                ->body("Masuk: {$result['created']}; sudah ada: {$result['skippedExisting']}; duplikat dalam file: {$result['skippedDuplicate']}; tidak valid: {$result['skippedInvalid']}. {$details}")
+                                ->title('Import register complete')
+                                ->body("Login: {$result['created']}; already exists: {$result['skippedExisting']}; duplicate in file: {$result['skippedDuplicate']}; invalid: {$result['skippedInvalid']}. {$details}")
                                 ->success()
                                 ->send();
                         } catch (\Throwable $e) {
                             Notification::make()
-                                ->title('Import register gagal')
+                                ->title('Import register failed')
                                 ->body($e->getMessage())
                                 ->danger()
                                 ->send();
                         }
                     }),
                 Action::make('use_next_number')
-                    ->label(fn (): string => 'Gunakan nomor '.app(KpmogProjectLetterService::class)->nextNumber())
+                    ->label(fn (): string => 'Use number '.app(KpmogProjectLetterService::class)->nextNumber())
                     ->icon(Heroicon::OutlinedDocumentPlus)
                     ->color('primary')
                     ->form([
-                        DatePicker::make('document_date')->label('Tanggal surat')->default(today())->required(),
+                        DatePicker::make('document_date')->label('Mail date')->default(today())->required(),
                         Select::make('department_id')
-                            ->label('Departemen')
+                            ->label('Department')
                             ->options(fn (): array => app(KpmogProjectLetterService::class)->departmentOptions())
                             ->required(),
                     ])
-                    ->modalHeading(fn (): string => 'Gunakan nomor '.app(KpmogProjectLetterService::class)->nextNumber())
-                    ->modalDescription('Pilih tanggal dan departemen. Sistem mencadangkan nomor urut serta membentuk nomor surat KPMOG.')
-                    ->modalSubmitActionLabel('Gunakan nomor dan buat draft')
+                    ->modalHeading(fn (): string => 'Use number '.app(KpmogProjectLetterService::class)->nextNumber())
+                    ->modalDescription('Select date and department. The system assigns sequence numbers and forms KPMOG mail numbers.')
+                    ->modalSubmitActionLabel('Use number and draft')
                     ->visible(fn (): bool => static::canCreate())
                     ->action(function (array $data): void {
                         $letter = app(KpmogProjectLetterService::class)->createDraft(
@@ -176,36 +176,36 @@ class KpmogProjectLetterResource extends Resource
                         );
 
                         Notification::make()
-                            ->title('Draft '.$letter->document_number.' sudah dibuat.')
-                            ->body('Lengkapi PIN, PIC, tujuan, dan perihal surat sebelum menerbitkannya.')
+                            ->title('Draft '.$letter->document_number.' it\'s been made.')
+                            ->body('Complete PIN, PIC, destinations, and letter matters before publishing them.')
                             ->success()
                             ->send();
                     }),
             ])
             ->recordActions([
                 Action::make('issue')
-                    ->label('Terbitkan surat')
+                    ->label('Publish mail')
                     ->icon(Heroicon::OutlinedPaperAirplane)
                     ->color('success')
                     ->requiresConfirmation()
-                    ->modalDescription('Pastikan data surat benar. Nomor surat akan tetap tercatat sebagai nomor terbit.')
+                    ->modalDescription('Make sure the mail data is correct. The mail number will remain listed as the print number.')
                     ->visible(fn (OutgoingLetter $record): bool => static::canIssue($record))
                     ->action(function (OutgoingLetter $record): void {
                         app(DocumentNumberService::class)->issue($record, auth()->user());
-                        Notification::make()->title('Surat '.$record->document_number.' berhasil diterbitkan.')->success()->send();
+                        Notification::make()->title('Correspondence '.$record->document_number.' successfully published.')->success()->send();
                     }),
                 Action::make('cancel')
-                    ->label('Batalkan draft')
+                    ->label('Cancel draft')
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->modalDescription('Nomor surat tetap tercatat sebagai dibatalkan dan tidak akan dipakai kembali.')
+                    ->modalDescription('The mail number remains recorded as canceled and will not be reused.')
                     ->visible(fn (OutgoingLetter $record): bool => $record->status === 'draft' && static::canEdit($record))
                     ->action(function (OutgoingLetter $record): void {
                         $record->update(['status' => 'cancelled']);
-                        Notification::make()->title('Draft '.$record->document_number.' dibatalkan.')->success()->send();
+                        Notification::make()->title('Draft '.$record->document_number.' cancelled.')->success()->send();
                     }),
-                EditAction::make()->label('Lengkapi draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
+                EditAction::make()->label('Complete draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
             ]);
     }
 

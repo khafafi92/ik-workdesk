@@ -20,7 +20,7 @@ class LocationReportsTable
         return $table
             ->columns([
                 TextColumn::make('period_name')
-                    ->label('Periode')
+                    ->label('Period')
                     ->searchable()
                     ->sortable(),
 
@@ -39,7 +39,7 @@ class LocationReportsTable
                     }),
 
                 TextColumn::make('processed_at')
-                    ->label('Diproses')
+                    ->label('In Process')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
 
@@ -51,13 +51,13 @@ class LocationReportsTable
             ->defaultSort('created_at', 'desc')
             ->recordActions([
                 Action::make('view_results')
-                    ->label('Lihat Hasil')
+                    ->label('View Results')
                     ->icon('heroicon-o-table-cells')
                     ->color('info')
                     ->url(fn ($record) => AttendanceImportResource::getUrl('results', ['record' => $record])),
 
                 Action::make('process')
-                    ->label('Proses Lokasi')
+                    ->label('Location Process')
                     ->icon('heroicon-o-play')
                     ->color('success')
                     ->requiresConfirmation()
@@ -65,7 +65,7 @@ class LocationReportsTable
                         app(AttendanceReportProcessor::class)->process($record);
 
                         Notification::make()
-                            ->title('Laporan lokasi berhasil diproses')
+                            ->title('Location report successfully processed')
                             ->success()
                             ->send();
                     }),

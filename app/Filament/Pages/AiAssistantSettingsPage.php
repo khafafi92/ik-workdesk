@@ -55,7 +55,7 @@ class AiAssistantSettingsPage extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Master Tanya Aku';
+        return 'Ask Me Settings';
     }
 
     public static function getNavigationSort(): ?int
@@ -65,12 +65,12 @@ class AiAssistantSettingsPage extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return 'Master Tanya Aku';
+        return 'Ask Me Settings';
     }
 
     public function getHeading(): string|Htmlable
     {
-        return 'Master Tanya Aku';
+        return 'Ask Me Settings';
     }
 
     public function mount(): void
@@ -120,7 +120,7 @@ class AiAssistantSettingsPage extends Page
 
         if ($validated['isEnabled'] && ! $hasApiKey) {
             throw ValidationException::withMessages([
-                'apiKey' => 'Masukkan API key sebelum mengaktifkan Tanya Aku.',
+                'apiKey' => 'Enter an API key before enabling Ask Me.',
             ]);
         }
 
@@ -150,7 +150,7 @@ class AiAssistantSettingsPage extends Page
         $this->apiKeyConfigured = $settings->hasApiKey();
 
         Notification::make()
-            ->title('Pengaturan Tanya Aku tersimpan')
+            ->title('Ask Me settings saved')
             ->success()
             ->send();
     }
@@ -164,7 +164,7 @@ class AiAssistantSettingsPage extends Page
 
         return [
             'providers' => AiProvider::options(),
-            'providerLabel' => AiProvider::tryFrom($this->provider)?->label() ?? 'penyedia AI',
+            'providerLabel' => AiProvider::tryFrom($this->provider)?->label() ?? 'AI provider',
             'usedTokens' => $usedTokens,
             'limit' => $limit,
             'remainingTokens' => $remainingTokens,

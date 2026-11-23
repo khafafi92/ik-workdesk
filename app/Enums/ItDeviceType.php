@@ -38,8 +38,8 @@ enum ItDeviceType: string
     public function label(): string
     {
         return match ($this) {
-            self::Server => 'Server Fisik',
-            self::ServerRoom => 'Ruang Server',
+            self::Server => 'Physical Server',
+            self::ServerRoom => 'Server Room',
             self::Storage => 'Storage / NAS',
             self::Ups => 'UPS',
             self::AirConditioner => 'AC',

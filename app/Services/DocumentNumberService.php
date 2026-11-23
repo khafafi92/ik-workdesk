@@ -36,7 +36,7 @@ class DocumentNumberService
         $template ??= $this->resolveFor($letter);
 
         if (! $template) {
-            return 'Belum ada template nomor yang sesuai.';
+            return 'No matching template numbers yet.';
         }
 
         return $this->format($template, $letter, $runningNumber);
@@ -48,12 +48,12 @@ class DocumentNumberService
             $lockedLetter = OutgoingLetter::query()->lockForUpdate()->findOrFail($letter->getKey());
 
             if ($lockedLetter->status !== 'draft') {
-                throw ValidationException::withMessages(['status' => 'Hanya surat draft yang dapat diterbitkan.']);
+                throw ValidationException::withMessages(['status' => 'Only draft messages can be published.']);
             }
 
             if ($lockedLetter->is_legacy_number) {
                 if (blank($lockedLetter->document_number)) {
-                    throw ValidationException::withMessages(['document_number' => 'Nomor surat existing wajib diisi.']);
+                    throw ValidationException::withMessages(['document_number' => 'Existing letter numbers are mandatory to be filled.']);
                 }
 
                 $lockedLetter->update([
@@ -87,7 +87,7 @@ class DocumentNumberService
             $lockedLetter = OutgoingLetter::query()->lockForUpdate()->findOrFail($letter->getKey());
 
             if ($lockedLetter->status !== 'draft') {
-                throw ValidationException::withMessages(['status' => 'Hanya surat draft yang dapat menggunakan nomor.']);
+                throw ValidationException::withMessages(['status' => 'Only draft mail can use numbers.']);
             }
 
             if (filled($lockedLetter->document_number)) {
@@ -95,7 +95,7 @@ class DocumentNumberService
             }
 
             if ($lockedLetter->is_legacy_number) {
-                throw ValidationException::withMessages(['document_number' => 'Nomor existing harus diisi secara manual.']);
+                throw ValidationException::withMessages(['document_number' => 'Existing number must be loaded manually.']);
             }
 
             $this->reserveLocked($lockedLetter, $numberFormatter);
@@ -128,18 +128,18 @@ class DocumentNumberService
                 $digits = isset($matches[2]) ? (int) $matches[2] : $template->running_digits;
 
                 if ($digits < 1 || $digits > 10) {
-                    throw ValidationException::withMessages(['template' => 'Panjang token running harus antara 1 sampai 10 digit.']);
+                    throw ValidationException::withMessages(['template' => 'Token length must be between 1 to 10 digits.']);
                 }
 
                 return str_pad((string) $runningNumber, $digits, '0', STR_PAD_LEFT);
             }
 
             if (! array_key_exists($token, $values)) {
-                throw ValidationException::withMessages(['template' => "Token {{$token}} tidak didukung."]);
+                throw ValidationException::withMessages(['template' => "Token {{$token}} is not supported."]);
             }
 
             if (blank($values[$token])) {
-                throw ValidationException::withMessages(['template' => "Data untuk token {{$token}} belum tersedia."]);
+                throw ValidationException::withMessages(['template' => "Data for token {{$token}} is unavailable."]);
             }
 
             return (string) $values[$token];
@@ -153,7 +153,7 @@ class DocumentNumberService
             'monthly' => [$date->year, $date->month],
             'yearly' => [$date->year, null],
             'never' => [null, null],
-            default => throw ValidationException::withMessages(['reset_period' => 'Periode reset template tidak valid.']),
+            default => throw ValidationException::withMessages(['reset_period' => 'Invalid template reset period.']),
         };
         $scopeKey = implode('|', [
             $template->id,
@@ -195,7 +195,7 @@ class DocumentNumberService
         $template = $this->resolveFor($letter);
 
         if (! $template) {
-            throw ValidationException::withMessages(['document_numbering_template_id' => 'Template nomor surat tidak ditemukan untuk kombinasi data ini.']);
+            throw ValidationException::withMessages(['document_numbering_template_id' => 'The message number template was not found for this data combination.']);
         }
 
         $runningNumber = $this->nextRunningNumber($template, $letter);
@@ -221,7 +221,7 @@ class DocumentNumberService
 
         foreach ($matches[1] as $token) {
             if (! preg_match('/^(running(?::\d+)?|company_code|department_code|document_code|roman_month|month|year|year_short|location_code|project_code)$/', $token)) {
-                throw ValidationException::withMessages(['template' => "Token {{$token}} tidak didukung."]);
+                throw ValidationException::withMessages(['template' => "Token {{$token}} is not supported."]);
             }
         }
     }

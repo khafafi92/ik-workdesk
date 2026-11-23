@@ -1,7 +1,7 @@
 <div>
     <label for="travel-rule-{{ $role }}">{{ $roleLabel }}</label>
     <select id="travel-rule-{{ $role }}" wire:model="rule.{{ $role }}_id" aria-describedby="travel-rule-{{ $role }}-help" @if($role !== 'supervisor') required @endif>
-        <option value="">{{ $role === 'supervisor' ? 'Otomatis dari Master Employee' : 'Pilih '.$roleLabel }}</option>
+        <option value="">{{ $role === 'supervisor' ? 'Use the employee’s supervisor' : 'Select '.$roleLabel }}</option>
         @foreach($signerOptions[$role] as $id => $option)<option value="{{ $id }}" @disabled($option['disabled'])>{{ $option['label'] }}</option>@endforeach
     </select>
     <small id="travel-rule-{{ $role }}-help">{{ $help }}</small>

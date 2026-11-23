@@ -48,14 +48,14 @@
                             wire:model="apiKey"
                             autocomplete="new-password"
                             maxlength="500"
-                            placeholder="{{ $apiKeyConfigured ? 'Tersimpan. Isi hanya untuk mengganti key.' : 'Masukkan API key' }}"
+                            placeholder="{{ $apiKeyConfigured ? 'Fill it up just to change key.' : 'Insert API key' }}"
                         >
                         @error('apiKey')
                             <p class="ik-ai-error" role="alert">{{ $message }}</p>
                         @enderror
                         <p class="ik-ai-help">
-                            Status key: {{ $apiKeyConfigured ? 'Sudah tersimpan' : 'Belum diatur' }}.
-                            WorkDesk menyimpan key dalam bentuk terenkripsi dan tidak menampilkannya kembali.
+                            Status key: {{ $apiKeyConfigured ? 'Saved' : 'Not set' }}.
+                            WorkDesk keeps keys encrypted and does not re-show them.
                         </p>
                     </div>
 
@@ -75,7 +75,7 @@
                             <p class="ik-ai-error" role="alert">{{ $message }}</p>
                         @enderror
                         <p class="ik-ai-help">
-                            Batas ini berlaku untuk {{ $providerLabel }} di WorkDesk. Nilainya bukan saldo atau kuota resmi penyedia.
+                            This limit applies to {{ $providerLabel }} it's not a balance or an official quota provider.
                         </p>
                     </div>
 
@@ -117,7 +117,7 @@
                     <div
                         class="ik-ai-progress-track"
                         role="progressbar"
-                        aria-label="Sisa batas token internal"
+                        aria-label="The remaining internal token limit"
                         aria-valuemin="0"
                         aria-valuemax="100"
                         aria-valuenow="{{ $remainingPercent }}"
@@ -125,12 +125,12 @@
                         <span style="width: {{ $remainingPercent }}%"></span>
                     </div>
                     <p class="ik-ai-help">
-                        Pemakaian tercatat dari token input dan jawaban yang dilaporkan {{ $providerLabel }}. WorkDesk tidak membaca saldo akun penyedia.
+                        Usage recorded from input tokens and reported responses {{ $providerLabel }}WorkDesk doesn't read the provider account balance.
                     </p>
                 </div>
             @else
                 <p class="ik-ai-empty" role="status">
-                    Batas token belum diatur. Isi batas bulanan di atas untuk mulai memantau pemakaian.
+                    The token limit is not set. Set the month limit above to start monitoring the use.
                 </p>
             @endif
         </section>

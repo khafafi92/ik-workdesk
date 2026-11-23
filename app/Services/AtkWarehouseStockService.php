@@ -52,19 +52,19 @@ class AtkWarehouseStockService
             $requestItem = AtkRequestItem::query()->with('request')->lockForUpdate()->findOrFail($requestItem->id);
             $item = AtkItem::query()->lockForUpdate()->findOrFail($requestItem->atk_item_id);
             if (in_array($request->status, ['cancelled', 'completed', 'draft'], true) || $requestItem->status === 'cancelled') {
-                throw ValidationException::withMessages(['qty' => 'Barang hanya dapat diserahkan untuk permintaan aktif.']);
+                throw ValidationException::withMessages(['qty' => 'Things can only be submitted for active requests.']);
             }
             if (! is_finite($quantity) || $quantity <= 0 || $quantity > $requestItem->outstandingRequested()) {
-                throw ValidationException::withMessages(['qty' => 'Jumlah issue harus lebih dari nol dan tidak boleh melebihi sisa permintaan.']);
+                throw ValidationException::withMessages(['qty' => 'The number of issues must be more than zero and must not exceed the remaining requests.']);
             }
 
             $stock = app(InventoryStock::class);
             $warehouse = $stock->atkWarehouse($request);
             if ($stock->availableAtk($item, $warehouse->id) < $quantity) {
                 if ($stock->availableAtk($item, app(Warehouses::class)->legacyAtk()->id) > 0) {
-                    throw ValidationException::withMessages(['qty' => 'Petakan saldo ATK lama ke KPMOG/APCA di Inventori sebelum menyerahkan barang.']);
+                    throw ValidationException::withMessages(['qty' => 'Map old office supplies balances to KPMOG/APCA in inventory before handing over goods.']);
                 }
-                throw ValidationException::withMessages(['qty' => 'Stok gudang tidak mencukupi untuk issue ini.']);
+                throw ValidationException::withMessages(['qty' => 'There\'s not enough stock for this issue.']);
             }
 
             $before = (float) $item->current_stock;
@@ -115,23 +115,23 @@ class AtkWarehouseStockService
             $quantity = round($quantity, 2);
 
             if (! is_finite($quantity) || $quantity == 0 || ($type === 'incoming' && $quantity < 0)) {
-                throw ValidationException::withMessages(['qty' => 'Jumlah stok harus valid.']);
+                throw ValidationException::withMessages(['qty' => 'Stock count must be valid.']);
             }
 
             $before = (float) $item->current_stock;
             $after = $before + $quantity;
 
             if ($after < 0) {
-                throw ValidationException::withMessages(['qty' => 'Penyesuaian tidak boleh membuat stok gudang negatif.']);
+                throw ValidationException::withMessages(['qty' => 'Adjustment must not create a negative supply warehouse.']);
             }
 
             $stock = app(InventoryStock::class);
             if ($warehouse && ! $warehouse->legacy_atk) {
                 if (! $warehouse->is_active || ($warehouse->kind === 'PROJECT' && ! $warehouse->project?->is_active) || ! in_array($warehouse->company, ['KPMOG', 'APCA'], true)) {
-                    throw ValidationException::withMessages(['warehouse' => 'Pilih gudang entitas yang aktif.']);
+                    throw ValidationException::withMessages(['warehouse' => 'Select an active entity warehouse.']);
                 }
                 $balance = $stock->balance($warehouse, $item->inventoryItem, null);
-                $stock->move($balance, (int) round($quantity * 1000), $type, (string) Str::uuid(), $actor, $description ?? 'Mutasi stok ATK.');
+                $stock->move($balance, (int) round($quantity * 1000), $type, (string) Str::uuid(), $actor, $description ?? 'Office supplies stock mutation.');
             } else {
                 $item->update(['current_stock' => $after]);
             }

@@ -238,7 +238,7 @@ class SharedInventoryTest extends TestCase
         $stock->transact($departmentOfficer, 'outgoing', $issue);
         $this->assertSame(1000, $destination->fresh()->quantity_milli);
         Livewire::actingAs($departmentOfficer)->test(Inventory::class)->call('switchDataset', 'balances')
-            ->assertSee('Catat distribusi')->call('openStock', $destination->id)->assertSee('Distribusi / stok keluar');
+            ->assertSee('Record distribution')->call('openStock', $destination->id)->assertSee('Distribusi / stok keluar');
         Livewire::actingAs($departmentOfficer)->test(Inventory::class)->call('switchDataset', 'receipts')->assertForbidden();
     }
 
@@ -383,13 +383,13 @@ class SharedInventoryTest extends TestCase
         $item = InventoryItem::where('code', 'LIVEWIRE-QA')->sole();
         $request = $this->request($item);
         $page = Livewire::test(Inventory::class)->call('switchDataset', 'requests')->call('openReceipt', $request->id)
-            ->assertSee('Nomor surat jalan / bukti penerimaan')->set('receiptForm.reference', 'SJ-LIVEWIRE-QA')
+            ->assertSee('Street mail number/receivement evidence')->set('receiptForm.reference', 'SJ-LIVEWIRE-QA')
             ->set('receiptLines.0.quantity', '2')->call('receive')->assertHasNoErrors();
         $this->assertSame(2000, InventoryBalance::sole()->quantity_milli);
         foreach (['catalogue', 'warehouses', 'balances', 'movements', 'assets', 'stock', 'requests', 'receipts'] as $dataset) {
-            $page->call('switchDataset', $dataset)->assertHasNoErrors()->assertDontSee('Inventori belum dapat dimuat.');
+            $page->call('switchDataset', $dataset)->assertHasNoErrors()->assertDontSee('Inventory has not been loaded. Try reloading data.');
         }
-        $page->call('switchDataset', 'balances')->call('openStock', InventoryBalance::sole()->id)->assertSee('Referensi dan alasan mutasi');
+        $page->call('switchDataset', 'balances')->call('openStock', InventoryBalance::sole()->id)->assertSee('References and reasons for mutations');
     }
 
     public function test_receipt_can_create_and_select_new_master_without_adding_stock_until_receipt(): void

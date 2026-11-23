@@ -19,8 +19,8 @@ class ItDeviceTransfer extends Model
 
     protected static function booted(): void
     {
-        static::updating(fn () => throw ValidationException::withMessages(['transfer' => 'Riwayat perpindahan tidak dapat diubah.']));
-        static::deleting(fn () => throw ValidationException::withMessages(['transfer' => 'Riwayat perpindahan tidak dapat dihapus.']));
+        static::updating(fn () => throw ValidationException::withMessages(['transfer' => 'The transfer history could not be changed.']));
+        static::deleting(fn () => throw ValidationException::withMessages(['transfer' => 'The transfer history could not be deleted.']));
     }
 
     public function device(): BelongsTo

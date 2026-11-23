@@ -24,28 +24,28 @@ class ItDailyMonitoringService
     public static function validationMessages(string $prefix = ''): array
     {
         return [
-            'required' => ':attribute wajib diisi.',
-            'required_unless' => ':attribute wajib diisi setelah hasil pemeriksaan dipilih.',
-            'numeric' => ':attribute harus berupa angka.',
-            'integer' => ':attribute harus berupa bilangan bulat.',
-            'boolean' => 'Pilihan :attribute tidak valid.',
-            'string' => ':attribute harus berupa teks.',
-            'array' => 'Daftar :attribute tidak valid.',
-            'in' => 'Pilih :attribute yang tersedia.',
-            'enum' => 'Pilih jenis monitoring yang tersedia.',
-            'exists' => ':attribute tidak ditemukan.',
-            'min' => ['numeric' => ':attribute minimal :min.', 'array' => 'Tambahkan setidaknya satu pemeriksaan.'],
-            'max' => ['numeric' => ':attribute maksimal :max.', 'string' => ':attribute maksimal :max karakter.', 'array' => 'Maksimal :max pemeriksaan dalam satu catatan.'],
-            'between' => ':attribute harus antara :min dan :max.',
-            'date' => ':attribute harus berupa tanggal dan waktu yang valid.',
-            'date_format' => 'Format :attribute tidak sesuai.',
-            $prefix.'checked_at.before_or_equal' => 'Waktu pengecekan tidak boleh melebihi waktu sekarang.',
-            $prefix.'backup_date.before_or_equal' => 'Tanggal backup tidak boleh melewati waktu pengecekan.',
-            $prefix.'checks.*.started_at.after_or_equal' => 'Waktu mulai backup tidak boleh sebelum tanggal backup.',
-            $prefix.'checks.*.started_at.before_or_equal' => 'Waktu mulai backup tidak boleh melewati waktu pengecekan.',
-            $prefix.'checks.*.completed_at.after_or_equal' => 'Waktu selesai backup tidak boleh sebelum waktu mulai.',
-            $prefix.'checks.*.completed_at.before_or_equal' => 'Waktu selesai backup tidak boleh melewati waktu pengecekan.',
-            $prefix.'checks.*.name.distinct' => 'Nama link, job backup, atau VM tidak boleh berulang dalam satu catatan.',
+            'required' => ':attribute is mandatory.',
+            'required_unless' => ':attribute must be filled after the test results are selected.',
+            'numeric' => ':attribute must be a number.',
+            'integer' => ':attribute must be an integer.',
+            'boolean' => 'Invalid :attribute option.',
+            'string' => ':attribute must be text.',
+            'array' => 'Invalid :attribute list.',
+            'in' => 'Select available :attribute.',
+            'enum' => 'Select available monitoring type.',
+            'exists' => ':attribute not found.',
+            'min' => ['numeric' => ':attribute minimal :min.', 'array' => 'Add at least one check.'],
+            'max' => ['numeric' => ':attribute may be at most :max.', 'string' => ':attribute may contain up to :max characters.', 'array' => 'Maximum :max check in one note.'],
+            'between' => ':attribute must be between :min and :max.',
+            'date' => ':attribute must be a valid date and time.',
+            'date_format' => 'Format :attribute mismatch.',
+            $prefix.'checked_at.before_or_equal' => 'Check time shouldn\'t exceed current time.',
+            $prefix.'backup_date.before_or_equal' => 'Backup date must not pass check time.',
+            $prefix.'checks.*.started_at.after_or_equal' => 'Backup start time must not be before backup date.',
+            $prefix.'checks.*.started_at.before_or_equal' => 'Backup start time must not pass check time.',
+            $prefix.'checks.*.completed_at.after_or_equal' => 'Backup time completed may not be before start time.',
+            $prefix.'checks.*.completed_at.before_or_equal' => 'Backup time completed must not pass check time.',
+            $prefix.'checks.*.name.distinct' => 'Link name, backup job, or VM must not repeat in one note.',
         ];
     }
 
@@ -62,10 +62,10 @@ class ItDailyMonitoringService
             $validated = $version === 2 ? $this->validateCurrent($data) : $this->validate($data);
             abort_unless($actor->canAccessDepartment((int) $validated['managing_department_id']), 403);
             if ($id && ((int) ($data['revision'] ?? 0) !== $record->revision)) {
-                throw ValidationException::withMessages(['data.source_name' => 'Catatan sudah diperbarui. Muat ulang halaman sebelum menyimpan.']);
+                throw ValidationException::withMessages(['data.source_name' => 'Note updated. Reload the page before saving.']);
             }
             if ($id && ((int) $validated['managing_department_id'] !== (int) $record->managing_department_id || $validated['monitoring_type'] !== $record->monitoring_type->value)) {
-                throw ValidationException::withMessages(['data.monitoring_type' => 'Jenis monitoring dan department catatan tersimpan tidak dapat diganti.']);
+                throw ValidationException::withMessages(['data.monitoring_type' => 'Monitoring type and stored record departments cannot be replaced.']);
             }
             $record->fill(collect($validated)->except('finalize')->all());
             if (! $id) {
@@ -131,16 +131,16 @@ class ItDailyMonitoringService
         }
         $validator = Validator::make($data, $rules, [
             ...static::validationMessages(),
-            'required_if' => ':attribute wajib diisi untuk hasil yang dipilih.',
-            'checks.*.checked_at.before_or_equal' => 'Tanggal dan jam pemeriksaan tidak boleh melebihi waktu sekarang.',
-            'checks.*.name.distinct' => 'Nama File Station atau VM tidak boleh berulang dalam satu catatan.',
+            'required_if' => ':attribute must be filled for selected results.',
+            'checks.*.checked_at.before_or_equal' => 'The date and hour of inspection must not exceed current time.',
+            'checks.*.name.distinct' => 'File Station or VM names may not be repeated in one note.',
         ], [
-            'managing_department_id' => 'Department IT', 'monitoring_type' => 'Jenis monitoring',
-            'source_name' => 'Nama sistem / perangkat', 'location' => 'Lokasi', 'checked_at' => 'Waktu pengecekan',
-            'notes' => 'Catatan pemeriksaan', 'checks' => 'Pemeriksaan',
-            'checks.*.name' => $type === ItMonitoringType::Synology ? 'Nama File Station' : 'Nama pemeriksaan / VM',
-            'checks.*.status' => 'Status', 'checks.*.notes' => 'Keterangan', 'checks.*.checked_at' => 'Tanggal dan jam',
-            'checks.*.temperature_c' => 'Suhu', 'checks.*.quarantine_ips' => 'IP quarantine', 'checks.*.update_version' => 'Keterangan versi update',
+            'managing_department_id' => 'Department IT', 'monitoring_type' => 'Monitoring type',
+            'source_name' => 'System / device name', 'location' => 'Location', 'checked_at' => 'Check time',
+            'notes' => 'Inspection notes', 'checks' => 'Inspection',
+            'checks.*.name' => $type === ItMonitoringType::Synology ? 'File Station Name' : 'Check name / VM',
+            'checks.*.status' => 'Status', 'checks.*.notes' => 'Description', 'checks.*.checked_at' => 'Date and hour',
+            'checks.*.temperature_c' => 'Temperature', 'checks.*.quarantine_ips' => 'IP quarantine', 'checks.*.update_version' => 'Update version description',
         ]);
         $validator->after(function ($validator) use ($data, $type): void {
             if (! $type || ! is_array($data['checks'] ?? null)) {
@@ -152,16 +152,16 @@ class ItDailyMonitoringService
                 }
                 if (($data['finalize'] ?? false) && ($check['status'] ?? 'unchecked') === 'unchecked') {
                     $field = $type === ItMonitoringType::ServerRoom ? 'temperature_c' : 'status';
-                    $validator->errors()->add('checks.'.$key.'.'.$field, 'Isi hasil pemeriksaan sebelum finalisasi.');
+                    $validator->errors()->add('checks.'.$key.'.'.$field, 'Fill in the results before finalization.');
                 }
                 if (($check['status'] ?? null) === 'issue' && blank($check['notes'] ?? null)) {
-                    $validator->errors()->add('checks.'.$key.'.notes', 'Jelaskan gangguan pada kolom keterangan.');
+                    $validator->errors()->add('checks.'.$key.'.notes', 'Describe the interference in the description column.');
                 }
                 if ($type === ItMonitoringType::Firewall && is_string($check['quarantine_ips'] ?? null)) {
                     $ips = preg_split('/[\s,;]+/', trim($check['quarantine_ips']), flags: PREG_SPLIT_NO_EMPTY);
                     foreach ($ips as $ip) {
                         if (filter_var($ip, FILTER_VALIDATE_IP) === false) {
-                            $validator->errors()->add('checks.'.$key.'.quarantine_ips', 'Isi alamat IP yang valid, satu per baris.');
+                            $validator->errors()->add('checks.'.$key.'.quarantine_ips', 'Enter a valid IP address, one per row.');
                             break;
                         }
                     }
@@ -242,18 +242,18 @@ class ItDailyMonitoringService
             $rules['checks.*.'.$field] = $definition;
         }
         $validator = Validator::make($data, $rules, static::validationMessages(), [
-            'managing_department_id' => 'Department IT', 'monitoring_type' => 'Jenis monitoring',
-            'source_name' => 'Nama sistem / perangkat', 'location' => 'Lokasi', 'checked_at' => 'Waktu pengecekan',
-            'backup_date' => 'Tanggal backup', 'notes' => 'Catatan pemeriksaan', 'checks' => 'Pemeriksaan',
+            'managing_department_id' => 'Department IT', 'monitoring_type' => 'Monitoring type',
+            'source_name' => 'System / device name', 'location' => 'Location', 'checked_at' => 'Check time',
+            'backup_date' => 'Backup date', 'notes' => 'Inspection notes', 'checks' => 'Inspection',
             'checks.*.name' => match ($type) {
-                ItMonitoringType::Firewall => 'Nama ISP / link', ItMonitoringType::Synology => 'Nama job backup', default => 'Nama VM',
+                ItMonitoringType::Firewall => 'ISP / link name', ItMonitoringType::Synology => 'Backup job name', default => 'VM Name',
             },
-            'checks.*.status' => 'Hasil pemeriksaan', 'checks.*.notes' => 'Masalah / tindak lanjut',
-            'checks.*.test_target' => 'Target uji koneksi', 'checks.*.latency_ms' => 'Latency (ms)', 'checks.*.packet_loss_percent' => 'Packet loss (%)',
-            'checks.*.data_present' => 'Verifikasi data backup', 'checks.*.started_at' => 'Waktu mulai backup', 'checks.*.completed_at' => 'Waktu selesai backup',
-            'checks.*.data_path' => 'Folder / restore point yang diperiksa', 'checks.*.data_size' => 'Ukuran data backup',
-            'checks.*.expected_power_state' => 'Status daya yang diharapkan', 'checks.*.health' => 'Kondisi VM / alarm',
-            'checks.*.cpu_percent' => 'Penggunaan CPU (%)', 'checks.*.ram_percent' => 'Penggunaan RAM (%)', 'checks.*.disk_free_percent' => 'Ruang disk tersisa (%)',
+            'checks.*.status' => 'Check results', 'checks.*.notes' => 'Problem / followup',
+            'checks.*.test_target' => 'Target connection test', 'checks.*.latency_ms' => 'Latency (ms)', 'checks.*.packet_loss_percent' => 'Packet loss (%)',
+            'checks.*.data_present' => 'Verify backup data', 'checks.*.started_at' => 'Backup start time', 'checks.*.completed_at' => 'Backup completion time',
+            'checks.*.data_path' => 'Checked folder / restore point', 'checks.*.data_size' => 'Backup data size',
+            'checks.*.expected_power_state' => 'Expected power status', 'checks.*.health' => 'VM/Alarm condition',
+            'checks.*.cpu_percent' => 'CPU usage (%)', 'checks.*.ram_percent' => 'Use RAM (%)', 'checks.*.disk_free_percent' => 'Disk space remaining (%)',
         ]);
         $validator->after(function ($validator) use ($data, $type): void {
             if (! $type || ! is_array($data['checks'] ?? null)) {
@@ -264,19 +264,19 @@ class ItDailyMonitoringService
                     continue;
                 }
                 if (($data['finalize'] ?? false) && ($check['status'] ?? null) === 'unchecked') {
-                    $validator->errors()->add('checks.'.$key.'.status', 'Periksa seluruh baris sebelum finalisasi.');
+                    $validator->errors()->add('checks.'.$key.'.status', 'Check all lines before finalization.');
                 }
                 if ($type->needsAttention($check) && blank($check['notes'] ?? null)) {
-                    $validator->errors()->add('checks.'.$key.'.notes', 'Jelaskan masalah atau tindak lanjut pada baris ini.');
+                    $validator->errors()->add('checks.'.$key.'.notes', 'Explain the problem or follow through on this line.');
                 }
                 if ($type === ItMonitoringType::Synology) {
                     foreach (['started_at', 'completed_at'] as $field) {
                         if (($check['status'] ?? null) === 'success' && blank($check[$field] ?? null)) {
-                            $validator->errors()->add('checks.'.$key.'.'.$field, 'Waktu mulai dan selesai wajib dicatat untuk backup berhasil.');
+                            $validator->errors()->add('checks.'.$key.'.'.$field, 'Start and finish time is mandatory to be recorded for backup success.');
                         }
                     }
                     if (($check['data_present'] ?? null) === 'yes' && blank($check['data_path'] ?? null)) {
-                        $validator->errors()->add('checks.'.$key.'.data_path', 'Catat folder atau restore point yang diperiksa.');
+                        $validator->errors()->add('checks.'.$key.'.data_path', 'Note the folder or restore the checked point.');
                     }
                 }
             }

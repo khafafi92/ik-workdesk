@@ -36,19 +36,19 @@ class ViewWorkTask extends ViewRecord
     {
         return [
             Action::make('approveLegalTask')
-                ->label('Approve untuk Legal')
+                ->label('Approve for Legal')
                 ->icon('heroicon-o-shield-check')
                 ->color('success')
                 ->requiresConfirmation()
                 ->modalHeading('Approve task?')
-                ->modalDescription('Setelah di-approve, task dapat dikerjakan oleh department tujuan.')
+                ->modalDescription('After it\'s done, the task can be done by the purpose department.')
                 ->visible(fn (): bool => $this->record->canBeApprovedBy(auth()->user()))
                 ->action(function (): void {
                     $this->record->approveLegalTask(auth()->user());
 
                     Notification::make()
-                        ->title('Task berhasil di-approve')
-                        ->body('Task sekarang dapat dikerjakan oleh department tujuan.')
+                        ->title('Task successfully proofed')
+                        ->body('Task can now be done by the purpose department.')
                         ->success()
                         ->send();
 
@@ -56,15 +56,15 @@ class ViewWorkTask extends ViewRecord
                 }),
 
             Action::make('rejectLegalTask')
-                ->label('Reject untuk Legal')
+                ->label('Reject to Legal')
                 ->icon('heroicon-o-x-circle')
                 ->color('danger')
                 ->requiresConfirmation()
                 ->modalHeading('Reject task?')
-                ->modalDescription('Task tidak dapat dikerjakan. Alasan penolakan akan terlihat oleh requester dan department tujuan.')
+                ->modalDescription('Task is unworkable. The reason for rejection will be seen by the register and department of destinations.')
                 ->schema([
                     Textarea::make('rejection_reason')
-                        ->label('Alasan Penolakan')
+                        ->label('Reason for Rejection')
                         ->required()
                         ->rows(4)
                         ->maxLength(2000),
@@ -77,8 +77,8 @@ class ViewWorkTask extends ViewRecord
                     );
 
                     Notification::make()
-                        ->title('Task telah ditolak')
-                        ->body('Keputusan dan alasan penolakan sudah dicatat.')
+                        ->title('Task has been rejected')
+                        ->body('Decisions and grounds for rejection are noted.')
                         ->danger()
                         ->send();
 
@@ -98,13 +98,13 @@ class ViewWorkTask extends ViewRecord
                 ->visible(fn (): bool => filled($this->record->ticket_id)),
 
             Action::make('claimTask')
-                ->label('Ambil Task')
+                ->label('Get the Task')
                 ->icon('heroicon-o-hand-raised')
                 ->color('primary')
                 ->requiresConfirmation()
-                ->modalHeading('Ambil Work Log ini?')
+                ->modalHeading('Take this Work Log?')
                 ->modalDescription(
-                    'Anda akan ditetapkan sebagai PIC dan dapat memperbarui status, progress, waktu mulai, serta notes.'
+                    'You will be assigned as PIC and can update status, progress, start time, and notes.'
                 )
                 ->visible(
                     fn (): bool => $this->record->canBeClaimedBy(auth()->user())
@@ -113,7 +113,7 @@ class ViewWorkTask extends ViewRecord
                     abort_unless(
                         $this->record->fresh()->canBeClaimedBy(auth()->user()),
                         403,
-                        'Work Log sudah memiliki PIC atau tidak dapat Anda ambil.'
+                        'Log Work already has PIC or can\'t you take.'
                     );
 
                     $this->record->update([
@@ -121,8 +121,8 @@ class ViewWorkTask extends ViewRecord
                     ]);
 
                     Notification::make()
-                        ->title('Task berhasil diambil')
-                        ->body('Anda sekarang menjadi PIC Work Log ini.')
+                        ->title('Task successfully retrieved')
+                        ->body('You are now the PIC Work Log of this.')
                         ->success()
                         ->send();
 
@@ -139,9 +139,9 @@ class ViewWorkTask extends ViewRecord
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->requiresConfirmation()
-                ->modalHeading('Selesaikan Work Log')
+                ->modalHeading('Finish Log Work')
                 ->modalDescription(
-                    'Work Log akan ditandai selesai dan status Service Desk akan diperbarui. Pastikan PIC / pelaksana sudah ditentukan. Untuk pekerjaan collaborative, konfirmasi Done oleh requester akan menyelesaikan seluruh Work Log terkait.'
+                    'Log work will be marked complete and Service Desk status will be updated. Make sure PIC/examination is specified. For the collaboratetive job, confirm Done by the register will complete all related Log work.'
                 )
                 ->visible(
                     fn (): bool => $this->record->status !== 'done'
@@ -151,13 +151,13 @@ class ViewWorkTask extends ViewRecord
                     abort_unless(
                         $this->record->canBeCompletedBy(auth()->user()),
                         403,
-                        'Untuk pekerjaan collaborative, hanya requester sebagai lead atau System Administrator yang dapat menyelesaikan Work Log.'
+                        'For a collaboratetive job, only a requester as a lead or System Administrator who can complete the Log Work.'
                     );
 
                     if (blank($this->record->employee_id)) {
                         Notification::make()
-                            ->title('PIC / pelaksana belum ditentukan')
-                            ->body('Minta pengelola department tujuan menetapkan PIC sebelum Work Log diselesaikan.')
+                            ->title('PIC/execution not specified')
+                            ->body('Have the department manager set the PIC before Work Log is completed.')
                             ->warning()
                             ->send();
 
@@ -167,8 +167,8 @@ class ViewWorkTask extends ViewRecord
                     $this->record->update(['status' => 'done']);
 
                     Notification::make()
-                        ->title('Work Log selesai')
-                        ->body('Status Service Desk telah diperbarui.')
+                        ->title('Log Work complete')
+                        ->body('Service Desk status has been updated.')
                         ->success()
                         ->send();
 
@@ -193,7 +193,7 @@ class ViewWorkTask extends ViewRecord
                     abort_unless(
                         WorkTaskResource::canDelete($this->record),
                         403,
-                        'Work log ini tidak dapat dihapus.'
+                        'This log work could not be deleted.'
                     );
                 }),
         ];

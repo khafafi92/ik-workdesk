@@ -29,7 +29,7 @@ class TicketCategory extends Model
     {
         static::saving(function (self $category): void {
             if ($category->requires_manpower && ! Department::query()->find($category->handler_department_id)?->isHumanResources()) {
-                throw ValidationException::withMessages(['requires_manpower' => 'Form kebutuhan manpower hanya tersedia untuk kategori departemen HR.']);
+                throw ValidationException::withMessages(['requires_manpower' => 'Manpower needs form only available for the HR department category.']);
             }
         });
     }

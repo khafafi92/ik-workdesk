@@ -19,8 +19,8 @@ class ItInspectionEvent extends Model
 
     protected static function booted(): void
     {
-        static::updating(fn () => throw ValidationException::withMessages(['event' => 'Log pemeriksaan tidak dapat diubah.']));
-        static::deleting(fn () => throw ValidationException::withMessages(['event' => 'Log pemeriksaan tidak dapat dihapus.']));
+        static::updating(fn () => throw ValidationException::withMessages(['event' => 'The check log could not be changed.']));
+        static::deleting(fn () => throw ValidationException::withMessages(['event' => 'The check log could not be deleted.']));
     }
 
     public function inspection(): BelongsTo

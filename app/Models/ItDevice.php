@@ -49,20 +49,20 @@ class ItDevice extends Model
         static::saved(fn (self $device) => app(InventoryCatalogue::class)->linkDevice($device));
         static::saving(function (self $device): void {
             if ($device->inventory_item_id && ! InventoryItem::whereKey($device->inventory_item_id)->where('kind', 'device')->exists()) {
-                throw ValidationException::withMessages(['inventory_item_id' => 'Pilih Master Barang jenis Perangkat/aset.']);
+                throw ValidationException::withMessages(['inventory_item_id' => 'Select Master of Device/asset type.']);
             }
             if (! $device->device_type || blank($device->code) || blank($device->name) || ! $device->managing_department_id) {
-                throw ValidationException::withMessages(['device_type' => 'Jenis, kode, nama, dan department pengelola wajib diisi.']);
+                throw ValidationException::withMessages(['device_type' => 'Types, codes, names, and department managers are mandatory.']);
             }
 
             $device->category ??= $device->device_type->category();
             $device->object_kind ??= $device->device_type->kind();
             if ($device->category !== $device->device_type->category() || $device->object_kind !== $device->device_type->kind()) {
-                throw ValidationException::withMessages(['device_type' => 'Kategori dan bentuk objek tidak cocok dengan jenis perangkat.']);
+                throw ValidationException::withMessages(['device_type' => 'Category and object shapes do not match device types.']);
             }
 
             if ($device->floor !== null && $device->device_type !== ItDeviceType::Switch) {
-                throw ValidationException::withMessages(['floor' => 'LT hanya berlaku untuk perangkat Switch.']);
+                throw ValidationException::withMessages(['floor' => 'LT only applies to Switch devices.']);
             }
 
             foreach (['asset_number', 'serial_number'] as $field) {
@@ -74,7 +74,7 @@ class ItDevice extends Model
 
             if ($device->object_kind === ItObjectKind::Room) {
                 if ($device->asset_number || $device->serial_number || $device->lifecycle_status || $device->assigned_employee_id || filled($device->assigned_user_name) || $device->disposed_at || filled($device->disposal_reason)) {
-                    throw ValidationException::withMessages(['work_location_id' => 'Ruang tidak memiliki identitas, pemakai, atau siklus hidup aset.']);
+                    throw ValidationException::withMessages(['work_location_id' => 'Space has no identity, no user, or live cycle of assets.']);
                 }
             } else {
                 $device->lifecycle_status ??= ItAssetLifecycle::Unused;
@@ -82,21 +82,21 @@ class ItDevice extends Model
 
             if ($device->lifecycle_status === ItAssetLifecycle::Disposed) {
                 if ($device->is_active || ! $device->disposed_at || $device->disposed_at->isFuture() || blank($device->disposal_reason)) {
-                    throw ValidationException::withMessages(['lifecycle_status' => 'Aset dihapuskan harus nonaktif, dengan tanggal dan alasan penghapusan.']);
+                    throw ValidationException::withMessages(['lifecycle_status' => 'Asset removed must be disabled, with date and reason for removal.']);
                 }
             } elseif ($device->disposed_at || filled($device->disposal_reason)) {
-                throw ValidationException::withMessages(['disposed_at' => 'Informasi penghapusan hanya berlaku untuk aset Dihapuskan.']);
+                throw ValidationException::withMessages(['disposed_at' => 'Deletion information only applies to deleted assets.']);
             }
 
             if ($device->exists && $device->isDirty(['device_type', 'category', 'object_kind']) && ! in_array($device->device_type, $device->editableDeviceTypes(), true)) {
-                throw ValidationException::withMessages(['device_type' => 'Jenis objek yang sudah memiliki detail atau pemeriksaan tidak dapat diubah.']);
+                throw ValidationException::withMessages(['device_type' => 'The type of object that already has details or checks cannot be changed.']);
             }
 
             $seen = $device->exists ? [(int) $device->id] : [];
             $parentId = $device->parent_device_id;
             while ($parentId !== null) {
                 if (in_array((int) $parentId, $seen, true)) {
-                    throw ValidationException::withMessages(['parent_device_id' => 'Relasi induk perangkat tidak boleh membentuk siklus.']);
+                    throw ValidationException::withMessages(['parent_device_id' => 'The parent link of the device must not form a cycle.']);
                 }
                 $seen[] = (int) $parentId;
                 $parentId = self::withTrashed()->findOrFail($parentId)->parent_device_id;
@@ -105,7 +105,7 @@ class ItDevice extends Model
 
         static::deleting(function (self $device): void {
             if ($device->isForceDeleting()) {
-                throw ValidationException::withMessages(['device' => 'Penghapusan permanen tidak tersedia agar riwayat pemeriksaan tetap tersimpan.']);
+                throw ValidationException::withMessages(['device' => 'Permanent deletion is not available to keep the check history saved.']);
             }
         });
     }
@@ -237,9 +237,9 @@ class ItDevice extends Model
         }
 
         return match (true) {
-            ($snapshot['object_kind'] ?? null) === 'room' => 'Tidak berlaku',
-            ($snapshot['lifecycle_status'] ?? null) === 'unused' => 'Stok (belum dialokasikan)',
-            default => 'Belum ditetapkan',
+            ($snapshot['object_kind'] ?? null) === 'room' => 'Not valid',
+            ($snapshot['lifecycle_status'] ?? null) === 'unused' => 'Stock (unallocated)',
+            default => 'Unassigned',
         };
     }
 }

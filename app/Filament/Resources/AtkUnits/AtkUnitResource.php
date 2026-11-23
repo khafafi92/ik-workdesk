@@ -23,28 +23,28 @@ class AtkUnitResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedScale;
 
-    protected static ?string $navigationLabel = 'Satuan Barang';
+    protected static ?string $navigationLabel = 'Units of Measure';
 
-    protected static ?string $modelLabel = 'Satuan ATK';
+    protected static ?string $modelLabel = 'Office supplies Unit';
 
-    protected static ?string $pluralModelLabel = 'Satuan ATK';
+    protected static ?string $pluralModelLabel = 'Office supplies Unit';
 
     protected static ?int $navigationSort = 7;
 
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('name')->label('Nama satuan')->required()->maxLength(50)->unique(ignoreRecord: true),
-            Toggle::make('is_active')->label('Aktif')->default(true),
+            TextInput::make('name')->label('Unit name')->required()->maxLength(50)->unique(ignoreRecord: true),
+            Toggle::make('is_active')->label('Active')->default(true),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Satuan')->searchable()->sortable(),
-            TextColumn::make('items_count')->label('Barang')->counts('items')->alignCenter(),
-            IconColumn::make('is_active')->label('Aktif')->boolean(),
+            TextColumn::make('name')->label('Unit')->searchable()->sortable(),
+            TextColumn::make('items_count')->label('Item')->counts('items')->alignCenter(),
+            IconColumn::make('is_active')->label('Active')->boolean(),
         ])->defaultSort('name')->recordActions([EditAction::make()]);
     }
 
