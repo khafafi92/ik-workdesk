@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\AtkRequests\AtkRequestResource;
 use App\Filament\Resources\LtroDailyReports\LtroDailyReportResource;
 use App\Filament\Resources\Reminders\ReminderResource;
 use App\Filament\Resources\Tickets\TicketResource;
@@ -13,8 +14,19 @@ use App\Models\LtroAvailabilityRecord;
 use App\Models\LtroDailyReport;
 use App\Models\LtroMttrRecord;
 use App\Models\Reminder;
+use App\Models\Scm\Procurement;
 use App\Models\Ticket;
+use App\Models\TravelDocument;
+use App\Models\User;
 use App\Models\WorkTask;
+use App\Services\Scm\Access as ScmAccess;
+use App\Services\Scm\Approvals;
+use App\Services\Scm\CbeApprovals;
+use App\Services\Scm\Workflow;
+use App\Services\Travel\TravelAccess;
+use App\Services\Travel\TravelApprovalPolicies;
+use App\Services\Travel\TravelPresentation;
+use App\Services\Travel\TravelWorkflow;
 use BackedEnum;
 use Carbon\CarbonInterface;
 use Filament\Actions\Action;
@@ -23,9 +35,15 @@ use Filament\Notifications\Notification;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
+use Livewire\WithPagination;
 
 class Dashboard extends BaseDashboard
 {
+    use WithPagination;
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-home';
 
     protected static ?string $navigationLabel = 'Dashboard';
@@ -33,6 +51,19 @@ class Dashboard extends BaseDashboard
     protected static ?string $title = 'IK WorkDesk Dashboard';
 
     protected string $view = 'filament.pages.dashboard';
+
+    #[Url(as: 'pr-sr-jenis', except: '')]
+    public string $scmNeedType = '';
+
+    #[Url(as: 'pr-sr-perusahaan', except: '')]
+    public string $scmCompany = '';
+
+    public function updated(string $property): void
+    {
+        if (in_array($property, ['scmNeedType', 'scmCompany'], true)) {
+            $this->resetPage('pr-sr-page');
+        }
+    }
 
     public function getHeading(): string|Htmlable|null
     {
@@ -220,6 +251,13 @@ class Dashboard extends BaseDashboard
             'workStats' => $workStats,
             'reminderStats' => $reminderStats,
             'visibleSections' => $visibleSections,
+            'scmTracking' => in_array('scm', $visibleSections, true)
+                ? $this->getScmTracking(auth()->user())
+                : null,
+            'requestSummaries' => array_filter([
+                'spd' => in_array('spd', $visibleSections, true) ? $this->getSpdSummary(auth()->user()) : null,
+                'atk-requests' => in_array('atk_requests', $visibleSections, true) ? $this->getAtkRequestSummary(auth()->user()) : null,
+            ]),
             'moduleSummaries' => array_values(array_filter(
                 $this->getModuleSummaries($todayStart, $todayEnd, $monthStart, $monthEnd),
                 fn (array $summary): bool => in_array($summary['key'], $visibleSections, true),
@@ -277,6 +315,18 @@ class Dashboard extends BaseDashboard
             $options['attendance'] = 'Attendance Report';
         }
 
+        if (ScmAccess::has($user, 'scm.request') || ScmAccess::manages($user)) {
+            $options['scm'] = 'PR/SR';
+        }
+
+        if (TravelSpd::canAccess() && Schema::hasTable('travel_documents')) {
+            $options['spd'] = 'SPD';
+        }
+
+        if (AtkRequestResource::canViewAny()) {
+            $options['atk_requests'] = 'Permintaan ATK';
+        }
+
         return [
             ...$options,
             'reminders' => 'Reminder',
@@ -311,6 +361,153 @@ class Dashboard extends BaseDashboard
                 array_keys($this->getDashboardSectionOptions()),
             )),
         ])->save();
+    }
+
+    private function getScmTracking(User $user): array
+    {
+        $modules = [];
+        foreach (['PROJECT' => ScmProcurement::class, 'HO' => PurchasingOfficer::class] as $needType => $page) {
+            if (ScmAccess::canProcessNeedType($user, $needType)) {
+                $modules[$page::getNavigationLabel()] = $page::getUrl();
+            }
+        }
+
+        $requests = ScmAccess::scope(Procurement::query(), $user)
+            ->whereIn('kind', ['PR', 'SR'])
+            ->where(fn (Builder $query) => $query->where('status', '!=', 'draft')->orWhere('approval_round', '>', 0))
+            ->when($this->scmNeedType !== '', fn (Builder $query) => $query->where('need_type', $this->scmNeedType))
+            ->when($this->scmCompany !== '', fn (Builder $query) => $query->where('company', $this->scmCompany))
+            ->with([
+                'department:id,name',
+                'projectNumbering:id,code,name',
+                'approvals' => fn ($query) => $query->where('status', 'pending'),
+                'approvals.user.employee.department:id,name',
+                'cbe:id,request_id,status',
+                'cbe.approvals' => fn ($query) => $query->where('status', 'pending'),
+                'cbe.approvals.user.employee.department:id,name',
+            ])
+            ->latest('updated_at')
+            ->orderByDesc('id')
+            ->simplePaginate(5, pageName: 'pr-sr-page')
+            ->through(fn (Procurement $request) => $this->getScmTrackingRow($user, $request));
+
+        return [
+            'modules' => $modules,
+            'requests' => $requests,
+            'companies' => array_keys(config('scm.companies')),
+            'filtered' => $this->scmNeedType !== '' || $this->scmCompany !== '',
+        ];
+    }
+
+    private function getSpdSummary(User $user): array
+    {
+        $documents = TravelAccess::query($user, 'spd')
+            ->with(['approvals' => fn ($query) => $query->where('status', 'pending')])
+            ->withCount(['events as returned_events_count' => fn ($query) => $query->where('action', 'returned')])
+            ->latest('updated_at')->orderByDesc('id')->limit(3)->get();
+
+        return [
+            'title' => 'SPD',
+            'url' => TravelSpd::getUrl(),
+            'link' => 'Lihat daftar SPD',
+            'empty' => 'Belum ada SPD yang dapat Anda lihat.',
+            'rows' => $documents->map(function (TravelDocument $document): array {
+                $next = $document->status === 'submitted'
+                    ? $document->approvals->firstWhere('round', $document->approval_round)
+                    : null;
+                $reviewer = $next?->role === 'finance'
+                    ? TravelApprovalPolicies::reviewerLabel(TravelWorkflow::travelType($document->project_numbering_id))
+                    : (TravelWorkflow::ROLES[$next?->role] ?? null);
+                $dates = collect([
+                    TravelPresentation::date($document->data['depart_at'] ?? null),
+                    TravelPresentation::date($document->data['return_at'] ?? null),
+                ])->filter()->unique()->implode(' s.d. ');
+                $destinations = collect($document->data['routes'] ?? [])->pluck('to')->filter()->unique()->implode(', ');
+
+                return [
+                    'number' => $document->displayNumber(),
+                    'url' => TravelSpd::getUrl(['dokumen' => $document->id]),
+                    'detail' => $destinations === '' ? 'Tujuan belum diisi' : Str::limit($destinations, 120),
+                    'date' => $dates ?: 'Tanggal perjalanan belum diisi',
+                    'status' => match (true) {
+                        $document->status === 'returned' => 'Dikembalikan untuk revisi',
+                        $reviewer !== null => 'Menunggu persetujuan '.$reviewer,
+                        default => $document->statusLabel(),
+                    },
+                ];
+            }),
+        ];
+    }
+
+    private function getAtkRequestSummary(User $user): array
+    {
+        $requests = AtkRequest::query()->where('requester_id', $user->id)
+            ->withExists(['items as awaiting_receipt' => fn ($query) => $query->whereColumn('qty_issued', '>', 'qty_received')])
+            ->latest('updated_at')->orderByDesc('id')->limit(3)->get();
+
+        return [
+            'title' => 'Permintaan ATK',
+            'url' => AtkRequestResource::getUrl('index'),
+            'link' => 'Lihat daftar ATK',
+            'empty' => 'Anda belum memiliki permintaan ATK.',
+            'rows' => $requests->map(fn (AtkRequest $request): array => [
+                'number' => $request->request_number,
+                'url' => null,
+                'detail' => Str::limit($request->purpose ?? '', 120),
+                'date' => $request->request_date?->format('d/m/Y'),
+                'status' => $request->status === 'submitted' ? 'Menunggu diproses' : AtkRequestResource::statusLabel($request->status),
+                'action' => $request->awaiting_receipt && ! in_array($request->status, ['completed', 'cancelled'], true)
+                    ? 'Konfirmasi barang yang sudah diterima di daftar ATK.'
+                    : null,
+            ]),
+        ];
+    }
+
+    private function getScmTrackingRow(User $user, Procurement $request): array
+    {
+        $processingPage = $request->need_type === 'HO' ? PurchasingOfficer::class : ScmProcurement::class;
+        $processor = $processingPage::getNavigationLabel();
+        $status = $request->status;
+        $approval = $request->approvals->firstWhere('round', $request->approval_round);
+        $cbeApproval = $status === 'selected' && $request->cbe?->status === 'final'
+            ? $request->cbe->approvals->first()
+            : null;
+
+        [$position, $stage] = match (true) {
+            $status === 'draft' => [$request->department?->name ?? 'Pemohon', 'Dikembalikan untuk revisi'],
+            $status === 'approval' => [
+                $approval?->user?->employee?->department?->name ?? 'Departemen belum tercatat',
+                match ($approval?->role) {
+                    'supervised' => 'Menunggu persetujuan SPV',
+                    'acknowledged', 'crosschecked', 'approved' => 'Menunggu tanda tangan ('.Approvals::ROLE_LABELS[$approval->role].')',
+                    default => Workflow::STATUSES['approval'],
+                },
+            ],
+            $status === 'submitted' => [$processor, 'Menunggu penerimaan'],
+            $status === 'sourcing' => [$processor, 'Diterima '.$processor],
+            $cbeApproval !== null => [
+                $cbeApproval->user?->employee?->department?->name ?? 'Departemen belum tercatat',
+                'Menunggu persetujuan CBE ('.rtrim(CbeApprovals::LABELS[$cbeApproval->role] ?? $cbeApproval->role, ':').')',
+            ],
+            $status === 'completed' => ['Tidak ada proses aktif', Workflow::STATUSES['completed']],
+            default => [$processor, Workflow::STATUSES[$status] ?? 'Status belum tercatat'],
+        };
+
+        $page = ! in_array($status, ['draft', 'approval'], true) && ScmAccess::manages($user, $request)
+            ? $processingPage
+            : ($request->kind === 'PR' ? PurchaseRequests::class : ServiceRequests::class);
+
+        return [
+            'id' => $request->id,
+            'number' => $request->number,
+            'title' => $request->title,
+            'needType' => $request->need_type === 'PROJECT' ? 'Project' : $request->need_type,
+            'company' => $request->company,
+            'project' => $request->need_type === 'PROJECT' ? $request->projectNumbering : null,
+            'position' => $position,
+            'stage' => $stage,
+            'url' => $page::getUrl(['permintaan' => $request->id]),
+        ];
     }
 
     private function getReminderCounts(

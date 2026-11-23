@@ -374,6 +374,18 @@ class AtkManagementTest extends TestCase
                 'Stok tersedia:', '<dd>0</dd>',
                 'Kekurangan:', '<dd>0</dd>',
             ], false);
+
+        $anotherRequest = $this->request($ga, $department);
+        $this->get('/panel')->assertOk()
+            ->assertSeeInOrder([
+                'Lihat daftar ATK', $request->request_number, 'Sebagian dipenuhi', 'Konfirmasi barang yang sudah diterima di daftar ATK.',
+            ])
+            ->assertDontSeeText($anotherRequest->request_number);
+
+        app(AtkDepartmentStockService::class)->receive($requestItem->fresh(), $requester);
+        $this->get('/panel')->assertOk()
+            ->assertSeeInOrder([$request->request_number, 'Selesai'])
+            ->assertDontSeeText('Konfirmasi barang yang sudah diterima di daftar ATK.');
     }
 
     public function test_partial_issue_receive_and_usage_keep_each_stock_ledger_correct(): void

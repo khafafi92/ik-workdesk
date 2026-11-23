@@ -557,7 +557,7 @@ class AtkRequestResource extends Resource
         return 'Menunggu GA Proses';
     }
 
-    private static function statusLabel(string $status): string
+    public static function statusLabel(string $status): string
     {
         return match ($status) {
             'submitted' => 'Baru',

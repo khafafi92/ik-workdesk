@@ -100,6 +100,34 @@ class TravelDocumentsTest extends TestCase
         return $user->fresh();
     }
 
+    public function test_dashboard_spd_shows_its_current_approval_and_respects_document_access(): void
+    {
+        $workflow = app(TravelWorkflow::class);
+        $document = $this->draft();
+        $document = $workflow->submit($this->requester, $document->id, $document->version);
+        $document = $workflow->decide($this->hr, $document->id, $document->version, true);
+
+        $detailPath = '/panel/perjalanan-dinas/spd?dokumen='.$document->id;
+        $this->get('/panel')->assertOk()->assertSeeInOrder([
+            $document->number, 'Lokasi Pengujian', '16/11/2026 s.d. 18/11/2026', 'Menunggu persetujuan Manager Project',
+        ])->assertSee($detailPath, false);
+        $this->get($detailPath)->assertOk();
+
+        $this->actingAs($this->outsider)->get('/panel')->assertOk()
+            ->assertSeeText('Belum ada SPD yang dapat Anda lihat.')
+            ->assertDontSeeText($document->number);
+
+        $document = $workflow->decide($this->finance, $document->id, $document->version, false, 'Perbarui rincian kegiatan.');
+        $this->actingAs($this->requester)->get('/panel')->assertOk()
+            ->assertSeeText($document->displayNumber())
+            ->assertSeeText('Dikembalikan untuk revisi');
+
+        $workflow->submit($this->requester, $document->id, $document->version);
+        $this->get('/panel')->assertOk()
+            ->assertSeeText('Menunggu persetujuan HRGA / HR Manager')
+            ->assertDontSeeText('Menunggu persetujuan Atasan Langsung');
+    }
+
     public function test_signatures_notifications_and_revision_follow_the_approval_sequence(): void
     {
         $workflow = app(TravelWorkflow::class);

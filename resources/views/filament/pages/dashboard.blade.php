@@ -105,6 +105,86 @@
             </section>
         @endif
 
+        @if ($scmTracking = $data['scmTracking'])
+            <section class="ik-panel ik-scm-tracking" id="dashboard-pr-sr" aria-labelledby="dashboard-pr-sr-heading">
+                <div class="ik-panel-header">
+                    <h2 id="dashboard-pr-sr-heading">PR/SR</h2>
+                    @if ($scmTracking['modules'] !== [])
+                        <nav aria-label="Modul pengadaan">
+                            @foreach ($scmTracking['modules'] as $label => $url)
+                                <a href="{{ $url }}">{{ $label }}</a>
+                            @endforeach
+                        </nav>
+                    @endif
+                </div>
+
+                <div class="ik-scm-tracking-filters">
+                    <div>
+                        <label for="dashboard-pr-sr-need">Jenis kebutuhan</label>
+                        <x-filament::input.wrapper>
+                            <x-filament::input.select id="dashboard-pr-sr-need" wire:model.live="scmNeedType">
+                                <option value="">Semua jenis</option>
+                                <option value="HO">HO</option>
+                                <option value="PROJECT">Project</option>
+                            </x-filament::input.select>
+                        </x-filament::input.wrapper>
+                    </div>
+                    <div>
+                        <label for="dashboard-pr-sr-company">Perusahaan</label>
+                        <x-filament::input.wrapper>
+                            <x-filament::input.select id="dashboard-pr-sr-company" wire:model.live="scmCompany">
+                                <option value="">Semua perusahaan</option>
+                                @foreach ($scmTracking['companies'] as $company)
+                                    <option value="{{ $company }}">{{ $company }}</option>
+                                @endforeach
+                            </x-filament::input.select>
+                        </x-filament::input.wrapper>
+                    </div>
+                </div>
+
+                <p class="ik-scm-tracking-message" role="status" wire:loading.delay wire:target="scmNeedType,scmCompany,nextPage,previousPage">Memuat pengajuan PR/SR…</p>
+
+                @if ($scmTracking['requests']->isEmpty())
+                    <p class="ik-scm-tracking-message" role="status">
+                        {{ $scmTracking['filtered'] ? 'Tidak ada pengajuan PR/SR yang cocok dengan filter ini.' : 'Belum ada pengajuan PR/SR yang dapat Anda lihat.' }}
+                    </p>
+                @else
+                    <ul role="list" class="ik-scm-tracking-list">
+                        @foreach ($scmTracking['requests'] as $request)
+                            <li class="ik-scm-tracking-row" wire:key="dashboard-pr-sr-{{ $request['id'] }}">
+                                <div>
+                                    <p class="ik-scm-tracking-context">{{ $request['needType'] }} &middot; {{ $request['company'] }}</p>
+                                    <a href="{{ $request['url'] }}" class="ik-record-link">{{ $request['number'] }}</a>
+                                    <p>{{ $request['title'] }}</p>
+                                    @if ($request['project'])
+                                        <p class="ik-scm-tracking-context">{{ $request['project']->code }} &middot; {{ $request['project']->name }}</p>
+                                    @endif
+                                </div>
+                                <dl>
+                                    <div><dt>Posisi saat ini</dt><dd>{{ $request['position'] }}</dd></div>
+                                    <div><dt>Tahap proses</dt><dd>{{ $request['stage'] }}</dd></div>
+                                </dl>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                @if ($scmTracking['requests']->hasPages())
+                    <div class="ik-scm-tracking-pagination">
+                        <x-filament::pagination :paginator="$scmTracking['requests']" />
+                    </div>
+                @endif
+            </section>
+        @endif
+
+        @if ($data['requestSummaries'] !== [])
+            <div @class(['ik-panel-grid ik-panel-grid--minimal' => count($data['requestSummaries']) > 1])>
+                @foreach ($data['requestSummaries'] as $key => $summary)
+                    @include('filament.pages.partials.dashboard-request-summary', ['headingId' => 'dashboard-'.$key.'-heading', 'summary' => $summary])
+                @endforeach
+            </div>
+        @endif
+
         @if (in_array('reminders', $data['visibleSections'], true))
             <section class="ik-smart-panel ik-reminder-hub">
             <div class="ik-smart-header">
