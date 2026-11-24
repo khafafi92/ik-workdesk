@@ -69,10 +69,10 @@ class FindingsRelationManager extends RelationManager
                 Select::make('risk_level')
                     ->label('Risk Level')
                     ->options([
-                        'low' => 'Low',
-                        'medium' => 'Medium',
-                        'high' => 'High',
-                        'critical' => 'Critical',
+                        'low' => __('Low'),
+                        'medium' => __('Medium'),
+                        'high' => __('High'),
+                        'critical' => __('Critical'),
                     ])
                     ->default('medium')
                     ->required(),
@@ -80,9 +80,9 @@ class FindingsRelationManager extends RelationManager
                 Select::make('status')
                     ->label('Finding Status')
                     ->options([
-                        'open' => 'Open',
+                        'open' => __('Open'),
                         'responded' => 'Responded',
-                        'resolved' => 'Resolved',
+                        'resolved' => __('Resolved'),
                     ])
                     ->default('open')
                     ->required(),
@@ -180,7 +180,7 @@ class FindingsRelationManager extends RelationManager
 
                 TextEntry::make('requester_response')
                     ->label('Requester Response / Clarification')
-                    ->placeholder('No response yet from the register.')
+                    ->placeholder(__('No response yet from the register.'))
                     ->visible(
                         fn (?WorkTaskFinding $record): bool => filled($record?->requester_response)
                     )
@@ -188,7 +188,7 @@ class FindingsRelationManager extends RelationManager
 
                 TextEntry::make('response_attachments')
                     ->label('Requester Response Attachments')
-                    ->placeholder('No response attachment.')
+                    ->placeholder(__('No response attachment.'))
                     ->listWithLineBreaks()
                     ->bulleted()
                     ->formatStateUsing(function (
@@ -263,7 +263,7 @@ class FindingsRelationManager extends RelationManager
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('finding_no')
-                    ->label('Finding No')
+                    ->label(__('Finding No'))
                     ->searchable()
                     ->sortable(),
 
@@ -284,7 +284,7 @@ class FindingsRelationManager extends RelationManager
                     }),
 
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'open' => 'danger',
@@ -296,10 +296,10 @@ class FindingsRelationManager extends RelationManager
                 TextColumn::make('requester_response')
                     ->label('Requester Response')
                     ->limit(40)
-                    ->placeholder('No response yet'),
+                    ->placeholder(__('No response yet')),
 
                 TextColumn::make('created_at')
-                    ->label('Created At')
+                    ->label(__('Created At'))
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
@@ -314,7 +314,7 @@ class FindingsRelationManager extends RelationManager
                         abort_unless(
                             $this->currentUserCanManageFindings(),
                             403,
-                            'You are not a department reviewer for this Work Log.'
+                            __('You are not a department reviewer for this Work Log.')
                         );
                     })
                     ->mutateDataUsing(function (array $data): array {
@@ -335,7 +335,7 @@ class FindingsRelationManager extends RelationManager
                         abort_unless(
                             $this->currentUserCanManageFindings(),
                             403,
-                            'You are not a department reviewer for this Work Log.'
+                            __('You are not a department reviewer for this Work Log.')
                         );
                     }),
 
@@ -347,7 +347,7 @@ class FindingsRelationManager extends RelationManager
                         abort_unless(
                             $this->currentUserCanManageFindings(),
                             403,
-                            'You are not a department reviewer for this Work Log.'
+                            __('You are not a department reviewer for this Work Log.')
                         );
                     }),
             ])

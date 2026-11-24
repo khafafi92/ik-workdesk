@@ -2,11 +2,11 @@
 
 namespace App\Filament\Support;
 
-use Filament\Pages\Page;
+use App\Filament\LocalizedPage;
 use Livewire\Attributes\Url;
 use UnitEnum;
 
-abstract class ItInfrastructurePage extends Page
+abstract class ItInfrastructurePage extends LocalizedPage
 {
     protected static string|UnitEnum|null $navigationGroup = 'Infrastruktur IT';
 

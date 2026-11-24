@@ -15,21 +15,21 @@ class CreateLetterProfile extends CreateRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Create Mail Profile';
+        return __('Create Mail Profile');
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Once the profile is created, connect the profile to the appropriate type of mail and template number.';
+        return __('Once the profile is created, connect the profile to the appropriate type of mail and template number.');
     }
 
     protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()->label('Save profile');
+        return parent::getCreateFormAction()->label(__('Save profile'));
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Cancel');
+        return parent::getCancelFormAction()->label(__('Cancel'));
     }
 }

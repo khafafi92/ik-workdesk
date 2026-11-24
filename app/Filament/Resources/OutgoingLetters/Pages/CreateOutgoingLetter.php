@@ -47,11 +47,11 @@ class CreateOutgoingLetter extends CreateRecord
 
     public function getSubheading(): ?string
     {
-        return 'File mail in order, save as a draft, and then publish after data and preview numbers are checked.';
+        return __('File mail in order, save as a draft, and then publish after data and preview numbers are checked.');
     }
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Draft mail saved. Check back before publishing it.';
+        return __('Draft mail saved. Check back before publishing it.');
     }
 }

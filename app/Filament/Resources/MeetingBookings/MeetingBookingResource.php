@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MeetingBookings;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\MeetingBookings\Pages\CreateMeetingBooking;
 use App\Filament\Resources\MeetingBookings\Pages\EditMeetingBooking;
 use App\Filament\Resources\MeetingBookings\Pages\ListMeetingBookings;
@@ -9,7 +10,6 @@ use App\Filament\Resources\MeetingBookings\Schemas\MeetingBookingForm;
 use App\Filament\Resources\MeetingBookings\Tables\MeetingBookingsTable;
 use App\Models\MeetingBooking;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;

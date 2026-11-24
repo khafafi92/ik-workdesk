@@ -22,12 +22,12 @@
                     @auth
                     <a href="{{ url('/dashboard') }}"
                         class="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-semibold hover:bg-slate-700">
-                        Dashboard
+                        {{ __('Dashboard') }}
                     </a>
                     @else
                     <a href="{{ route('login') }}"
                         class="px-4 py-2 rounded-lg border border-slate-300 text-sm font-semibold hover:bg-slate-50">
-                        Login
+                        {{ __('Login') }}
                     </a>
 
                     {{-- <a href="{{ route('register') }}"
@@ -49,24 +49,24 @@
                         </span>
 
                         <h2 class="mt-6 text-4xl lg:text-5xl font-bold tracking-tight text-slate-950">
-                            Starter project is ready for internal applications.
+                            {{ __('Starter project is ready for internal applications.') }}
                         </h2>
 
                         <p class="mt-5 text-lg text-slate-600 leading-8">
-                            This boilerplate is prepared as the initial foundation for creating applications like
-                            dashboard, attendance, inventory, reporting, project control, and other internal systems.
+                            {{ __('This boilerplate is prepared as the initial foundation for creating applications like') }}
+                            {{ __('dashboard, attendance, inventory, reporting, project control, and other internal systems.') }}
                         </p>
 
                         <div class="mt-8 flex flex-wrap gap-3">
                             @auth
                             <a href="{{ url('/dashboard') }}"
                                 class="px-5 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-700">
-                                Enter Dashboard
+                                {{ __('Enter Dashboard') }}
                             </a>
                             @else
                             <a href="{{ route('login') }}"
                                 class="px-5 py-3 rounded-xl bg-slate-900 text-white font-semibold hover:bg-slate-700">
-                                Login
+                                {{ __('Login') }}
                             </a>
 
                             {{-- <a href="{{ route('register') }}"

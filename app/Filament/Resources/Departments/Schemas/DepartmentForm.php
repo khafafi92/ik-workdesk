@@ -22,8 +22,8 @@ class DepartmentForm
                 Toggle::make('is_active')
                     ->required(),
                 Toggle::make('requires_cbo_approval')
-                    ->label('CBO Approval Resentment')
-                    ->helperText('The task addressed to this department is waiting for the CBO approval before it can be done.'),
+                    ->label(__('CBO Approval Resentment'))
+                    ->helperText(__('The task addressed to this department is waiting for the CBO approval before it can be done.')),
             ]);
     }
 }

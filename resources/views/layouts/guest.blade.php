@@ -24,7 +24,7 @@
         <img src="{{ asset('img/brands/internal9-header.png') }}" alt="Internal9">
     </div>
 
-    <nav class="wd-login-websites" aria-label="Company websites">
+    <nav class="wd-login-websites" aria-label="{{ __('Company websites') }}">
         <a href="https://www.kpmog.com" target="_blank" rel="noopener noreferrer">
             KPMOG
             <svg viewBox="0 0 24 24" aria-hidden="true">

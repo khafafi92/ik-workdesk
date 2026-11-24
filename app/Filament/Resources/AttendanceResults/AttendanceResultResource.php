@@ -72,7 +72,7 @@ class AttendanceResultResource extends Resource
 
     public static function getPluralModelLabel(): string
     {
-        return 'Attendance Results';
+        return __('Attendance Results');
     }
 
     public static function getNavigationGroup(): ?string

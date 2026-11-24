@@ -21,7 +21,7 @@ class WorkHourImportForm
 
                 TextInput::make('period_name')
                     ->label('Period Name')
-                    ->placeholder('Example: May 21 - June 20, 2026')
+                    ->placeholder(__('Example: May 21 - June 20, 2026'))
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
@@ -30,7 +30,7 @@ class WorkHourImportForm
                     ->default(null),
 
                 FileUpload::make('work_hour_file_path')
-                    ->label('Total Workhours File')
+                    ->label(__('Total Workhours File'))
                     ->disk('local')
                     ->directory('attendance-imports')
                     ->acceptedFileTypes([
@@ -44,18 +44,18 @@ class WorkHourImportForm
                     ->columnSpanFull(),
 
                 Select::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->options([
-                        'draft' => 'Draft',
+                        'draft' => __('Draft'),
                         'uploaded' => 'Uploaded',
                         'processed' => 'Processed',
-                        'failed' => 'Failed',
+                        'failed' => __('Failed'),
                     ])
                     ->default('uploaded')
                     ->required(),
 
                 Textarea::make('notes')
-                    ->label('Notes')
+                    ->label(__('Notes'))
                     ->rows(3)
                     ->columnSpanFull(),
             ]);

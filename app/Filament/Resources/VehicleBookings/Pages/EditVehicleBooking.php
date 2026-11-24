@@ -48,7 +48,7 @@ class EditVehicleBooking extends EditRecord
     {
         return [
             Action::make('complete')
-                ->label('Set Done')
+                ->label(__('Set Done'))
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(

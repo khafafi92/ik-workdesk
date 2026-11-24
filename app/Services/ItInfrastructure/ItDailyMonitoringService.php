@@ -24,28 +24,28 @@ class ItDailyMonitoringService
     public static function validationMessages(string $prefix = ''): array
     {
         return [
-            'required' => ':attribute is mandatory.',
-            'required_unless' => ':attribute must be filled after the test results are selected.',
-            'numeric' => ':attribute must be a number.',
-            'integer' => ':attribute must be an integer.',
-            'boolean' => 'Invalid :attribute option.',
-            'string' => ':attribute must be text.',
-            'array' => 'Invalid :attribute list.',
-            'in' => 'Select available :attribute.',
-            'enum' => 'Select available monitoring type.',
-            'exists' => ':attribute not found.',
-            'min' => ['numeric' => ':attribute minimal :min.', 'array' => 'Add at least one check.'],
-            'max' => ['numeric' => ':attribute may be at most :max.', 'string' => ':attribute may contain up to :max characters.', 'array' => 'Maximum :max check in one note.'],
-            'between' => ':attribute must be between :min and :max.',
-            'date' => ':attribute must be a valid date and time.',
-            'date_format' => 'Format :attribute mismatch.',
-            $prefix.'checked_at.before_or_equal' => 'Check time shouldn\'t exceed current time.',
-            $prefix.'backup_date.before_or_equal' => 'Backup date must not pass check time.',
-            $prefix.'checks.*.started_at.after_or_equal' => 'Backup start time must not be before backup date.',
-            $prefix.'checks.*.started_at.before_or_equal' => 'Backup start time must not pass check time.',
-            $prefix.'checks.*.completed_at.after_or_equal' => 'Backup time completed may not be before start time.',
-            $prefix.'checks.*.completed_at.before_or_equal' => 'Backup time completed must not pass check time.',
-            $prefix.'checks.*.name.distinct' => 'Link name, backup job, or VM must not repeat in one note.',
+            'required' => __(':attribute is mandatory.'),
+            'required_unless' => __(':attribute must be filled after the test results are selected.'),
+            'numeric' => __(':attribute must be a number.'),
+            'integer' => __(':attribute must be an integer.'),
+            'boolean' => __('Invalid :attribute option.'),
+            'string' => __(':attribute must be text.'),
+            'array' => __('Invalid :attribute list.'),
+            'in' => __('Select available :attribute.'),
+            'enum' => __('Select available monitoring type.'),
+            'exists' => __(':attribute not found.'),
+            'min' => ['numeric' => __(':attribute minimal :min.'), 'array' => __('Add at least one check.')],
+            'max' => ['numeric' => __(':attribute may be at most :max.'), 'string' => __(':attribute may contain up to :max characters.'), 'array' => __('Maximum :max check in one note.')],
+            'between' => __(':attribute must be between :min and :max.'),
+            'date' => __(':attribute must be a valid date and time.'),
+            'date_format' => __('Format :attribute mismatch.'),
+            $prefix.'checked_at.before_or_equal' => __('Check time shouldn\'t exceed current time.'),
+            $prefix.'backup_date.before_or_equal' => __('Backup date must not pass check time.'),
+            $prefix.'checks.*.started_at.after_or_equal' => __('Backup start time must not be before backup date.'),
+            $prefix.'checks.*.started_at.before_or_equal' => __('Backup start time must not pass check time.'),
+            $prefix.'checks.*.completed_at.after_or_equal' => __('Backup time completed may not be before start time.'),
+            $prefix.'checks.*.completed_at.before_or_equal' => __('Backup time completed must not pass check time.'),
+            $prefix.'checks.*.name.distinct' => __('Link name, backup job, or VM must not repeat in one note.'),
         ];
     }
 
@@ -62,10 +62,10 @@ class ItDailyMonitoringService
             $validated = $version === 2 ? $this->validateCurrent($data) : $this->validate($data);
             abort_unless($actor->canAccessDepartment((int) $validated['managing_department_id']), 403);
             if ($id && ((int) ($data['revision'] ?? 0) !== $record->revision)) {
-                throw ValidationException::withMessages(['data.source_name' => 'Note updated. Reload the page before saving.']);
+                throw ValidationException::withMessages(['data.source_name' => __('Note updated. Reload the page before saving.')]);
             }
             if ($id && ((int) $validated['managing_department_id'] !== (int) $record->managing_department_id || $validated['monitoring_type'] !== $record->monitoring_type->value)) {
-                throw ValidationException::withMessages(['data.monitoring_type' => 'Monitoring type and stored record departments cannot be replaced.']);
+                throw ValidationException::withMessages(['data.monitoring_type' => __('Monitoring type and stored record departments cannot be replaced.')]);
             }
             $record->fill(collect($validated)->except('finalize')->all());
             if (! $id) {

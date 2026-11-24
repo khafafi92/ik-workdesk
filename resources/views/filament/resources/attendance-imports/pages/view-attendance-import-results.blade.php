@@ -14,16 +14,16 @@
                 <div>
                     <div class="att-section-title">Download Report</div>
                     <div class="att-section-desc">
-                        Download the results of Activity Check and Work Hour Summary in 1 file Excel.
+                        {{ __('Download the results of Activity Check and Work Hour Summary in 1 file Excel.') }}
                     </div>
                 </div>
 
                 @if ($import->status === 'processed')
                     <a href="{{ route('attendance-imports.download', $import) }}" class="att-download-btn">
-                        Download Excel
+                        {{ __('Download Excel') }}
                     </a>
                 @else
-                    <span class="att-badge att-badge-warning">Reports are not yet processed</span>
+                    <span class="att-badge att-badge-warning">{{ __('Reports are not yet processed') }}</span>
                 @endif
             </div>
         </div>
@@ -35,18 +35,18 @@
             </div>
 
             <div class="att-stat-card">
-                <div class="att-stat-label">Matching Location</div>
+                <div class="att-stat-label">{{ __('Matching Location') }}</div>
                 <div class="att-stat-value att-stat-success">{{ number_format($stats['location_ok']) }}</div>
             </div>
 
             <div class="att-stat-card">
-                <div class="att-stat-label">Does Not Match</div>
+                <div class="att-stat-label">{{ __('Does Not Match') }}</div>
                 <div class="att-stat-value att-stat-danger">{{ number_format($stats['location_not_ok']) }}</div>
             </div>
 
             @if ($stats['location_unconfigured'] > 0)
                 <div class="att-stat-card">
-                    <div class="att-stat-label">Location Not Configured</div>
+                    <div class="att-stat-label">{{ __('Location Not Configured') }}</div>
                     <div class="att-stat-value att-stat-warning">
                         {{ number_format($stats['location_unconfigured']) }}
                     </div>
@@ -54,7 +54,7 @@
             @endif
 
             <div class="att-stat-card">
-                <div class="att-stat-label">Clocked Out at or After 19:00</div>
+                <div class="att-stat-label">{{ __('Clocked Out at or After 19:00') }}</div>
                 <div class="att-stat-value att-stat-warning">{{ number_format($stats['checkout_late']) }}</div>
             </div>
 
@@ -67,15 +67,15 @@
         <div class="att-filter-card">
             <div class="att-filter-grid">
                 <div>
-                    <label class="att-label">Search</label>
+                    <label class="att-label">{{ __('Search') }}</label>
 
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <input type="text" wire:model="search" wire:keydown.enter="applyFilters"
-                            placeholder="Search employee, location, address..." class="att-input">
+                            placeholder="{{ __('Search employee, location, address...') }}" class="att-input">
 
                         <button type="button" wire:click="applyFilters" wire:loading.attr="disabled"
                             class="att-download-btn">
-                            Search
+                            {{ __('Search') }}
                         </button>
 
                         <button type="button" wire:click="clearFilters" wire:loading.attr="disabled"
@@ -86,22 +86,22 @@
                 </div>
 
                 <div>
-                    <label class="att-label">Location Check</label>
+                    <label class="att-label">{{ __('Location Check') }}</label>
                     <select wire:model.live="locationCheck" class="att-select">
-                        <option value="">All</option>
-                        <option value="Sesuai">Matches</option>
-                        <option value="Tidak Sesuai">Does Not Match</option>
-                        <option value="Lokasi Belum Dikonfigurasi">Location Not Configured</option>
+                        <option value="">{{ __('All') }}</option>
+                        <option value="Sesuai">{{ __('Matches') }}</option>
+                        <option value="Tidak Sesuai">{{ __('Does Not Match') }}</option>
+                        <option value="Lokasi Belum Dikonfigurasi">{{ __('Location Not Configured') }}</option>
                     </select>
                 </div>
 
                 <div>
-                    <label class="att-label">Clock-out Check</label>
+                    <label class="att-label">{{ __('Clock-out Check') }}</label>
                     <select wire:model.live="checkoutCheck" class="att-select">
-                        <option value="">All</option>
-                        <option value="Pulang Sebelum 19:00">Clocked Out Before 19:00</option>
-                        <option value="Pulang 19:00 UP">Clocked Out at or After 19:00</option>
-                        <option value="Clock Out Tidak Ada">No Clock Out</option>
+                        <option value="">{{ __('All') }}</option>
+                        <option value="Pulang Sebelum 19:00">{{ __('Clocked Out Before 19:00') }}</option>
+                        <option value="Pulang 19:00 UP">{{ __('Clocked Out at or After 19:00') }}</option>
+                        <option value="Clock Out Tidak Ada">{{ __('No Clock Out') }}</option>
                     </select>
                 </div>
             </div>
@@ -120,23 +120,23 @@
                 <table class="att-table">
                     <thead>
                         <tr>
-                            <th>Date</th>
+                            <th>{{ __('Date') }}</th>
                             <th>Check Time</th>
-                            <th>Type</th>
-                            <th>Employee ID</th>
-                            <th>Full Name</th>
+                            <th>{{ __('Type') }}</th>
+                            <th>{{ __('Employee ID') }}</th>
+                            <th>{{ __('Full Name') }}</th>
                             <th>Job Position</th>
                             <th>Shift Name</th>
                             <th>Location Setting Name</th>
                             <th>Location GPS Name</th>
                             <th>Location Address</th>
                             <th>Location Coordinate</th>
-                            <th>Description</th>
+                            <th>{{ __('Description') }}</th>
                             <th>Mobile Flag</th>
-                            <th>Status</th>
-                            <th class="att-check-head">check location</th>
-                            <th class="att-check-head">time check</th>
-                            <th class="att-check-head">Clock-out Check</th>
+                            <th>{{ __('Status') }}</th>
+                            <th class="att-check-head">{{ __('check location') }}</th>
+                            <th class="att-check-head">{{ __('time check') }}</th>
+                            <th class="att-check-head">{{ __('Clock-out Check') }}</th>
                             {{-- <th>Matched Location</th>
                             <th>Distance</th> --}}
                         </tr>
@@ -162,13 +162,13 @@
 
                                 <td class="att-nowrap">
                                     @if ($row->location_check === 'Sesuai')
-                                        <span class="att-badge att-badge-success">Matches</span>
+                                        <span class="att-badge att-badge-success">{{ __('Matches') }}</span>
                                     @elseif ($row->location_check === 'Tidak Ada Activity')
-                                        <span class="att-badge att-badge-gray">No Activity</span>
+                                        <span class="att-badge att-badge-gray">{{ __('No Activity') }}</span>
                                     @elseif ($row->location_check === 'Lokasi Belum Dikonfigurasi')
-                                        <span class="att-badge att-badge-warning">Location Not Configured</span>
+                                        <span class="att-badge att-badge-warning">{{ __('Location Not Configured') }}</span>
                                     @else
-                                        <span class="att-badge att-badge-danger">Does Not Match</span>
+                                        <span class="att-badge att-badge-danger">{{ __('Does Not Match') }}</span>
                                     @endif
                                 </td>
 
@@ -193,7 +193,7 @@
                         @empty
                             <tr>
                                 <td colspan="17" style="text-align: center; padding: 28px;">
-                                    No activity results yet.
+                                    {{ __('No activity results yet.') }}
                                 </td>
                             </tr>
                         @endforelse
@@ -210,7 +210,7 @@
             <div class="att-section-header">
                 <div class="att-section-title">Work Hour Summary</div>
                 <div class="att-section-desc">
-                    Total hours of period work {{ $import->period_name }} from all time.xlsx file.
+                    {{ __('Total hours of period work') }} {{ $import->period_name }} {{ __('from all time.xlsx file.') }}
                 </div>
             </div>
 
@@ -218,10 +218,10 @@
                 <table class="att-table att-summary-table">
                     <thead>
                         <tr>
-                            <th>Employee ID</th>
-                            <th>Full Name</th>
+                            <th>{{ __('Employee ID') }}</th>
+                            <th>{{ __('Full Name') }}</th>
                             <th class="att-check-head">{{ $import->period_name }}</th>
-                            <th>Data Status</th>
+                            <th>{{ __('Data Status') }}</th>
                         </tr>
                     </thead>
 
@@ -233,16 +233,16 @@
                                 <td class="att-nowrap"><strong>{{ $row->work_hours_text }}</strong></td>
                                 <td class="att-nowrap">
                                     @if (data_get($row->raw_data, 'status') === 'Tidak Ada Total Jam Kerja')
-                                        <span class="att-badge att-badge-warning">No Work Hours Recorded</span>
+                                        <span class="att-badge att-badge-warning">{{ __('No Work Hours Recorded') }}</span>
                                     @else
-                                        <span class="att-badge att-badge-success">Available</span>
+                                        <span class="att-badge att-badge-success">{{ __('Available') }}</span>
                                     @endif
                                 </td>
                             </tr>
                         @empty
                             <tr>
                                 <td colspan="4" style="text-align: center; padding: 28px;">
-                                    There's no total summary of working hours.
+                                    {{ __('There\'s no total summary of working hours.') }}
                                 </td>
                             </tr>
                         @endforelse

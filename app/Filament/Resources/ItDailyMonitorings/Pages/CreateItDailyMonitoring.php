@@ -72,25 +72,25 @@ class CreateItDailyMonitoring extends CreateRecord
     public function getSubheading(): ?string
     {
         return $this->repeatedFromSource === null
-            ? 'Fill in the results you checked. Save Draft to continue later; Finalization lock notes.'
-            : 'Checklist copied from '.$this->repeatedFromSource.'. Results are blank for the new inspection.';
+            ? __('Use this form to log a routine service check. Use Infrastructure Inspections to record the condition of an individual device.')
+            : __('Checklist copied from :source. Enter the new results.', ['source' => $this->repeatedFromSource]);
     }
 
     public function getTitle(): string
     {
         return match ($this->data['monitoring_type'] ?? null) {
-            'internet' => 'Cek internet',
-            'firewall' => ($this->data['format_version'] ?? 2) === 1 ? 'Check Internet connection' : 'Cek firewall',
-            'server_room' => 'Check the server room',
-            'synology' => 'Cek backup Synology',
-            'vsphere' => 'Cek VM vSphere',
-            default => 'Add monitoring notes',
+            'internet' => __('Check the internet'),
+            'firewall' => ($this->data['format_version'] ?? 2) === 1 ? __('Check Internet connection') : __('Check the firewall'),
+            'server_room' => __('Check the server room'),
+            'synology' => __('Check Synology backup'),
+            'vsphere' => __('Check vSphere VMs'),
+            default => __('Add monitoring notes'),
         };
     }
 
     public function getBreadcrumb(): string
     {
-        return 'Add note';
+        return __('Add note');
     }
 
     protected function handleRecordCreation(array $data): Model
@@ -105,7 +105,7 @@ class CreateItDailyMonitoring extends CreateRecord
 
     protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()->label('Save Draft')->color('gray');
+        return parent::getCreateFormAction()->label(__('Save Draft'))->color('gray');
     }
 
     protected function getFormActions(): array
@@ -113,7 +113,7 @@ class CreateItDailyMonitoring extends CreateRecord
         return [$this->getCreateFormAction()->submit(null)->action(function (): void {
             $this->data['finalize'] = false;
             $this->create();
-        }), Action::make('finalize')->label('Finalisasi')->action(function (): void {
+        }), Action::make('finalize')->label(__('Finalize monitoring'))->action(function (): void {
             $this->data['finalize'] = true;
             $this->create();
         }), $this->getCancelFormAction()];
@@ -121,12 +121,12 @@ class CreateItDailyMonitoring extends CreateRecord
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Saved monitoring notes';
+        return __('Saved monitoring notes');
     }
 
     protected function getCancelFormAction(): Action
     {
-        return Action::make('cancel')->label('Cancel')->color('gray')->url(ItDailyMonitoringResource::getUrl('index'));
+        return Action::make('cancel')->label(__('Cancel'))->color('gray')->url(ItDailyMonitoringResource::getUrl('index'));
     }
 
     protected function getRedirectUrl(): string

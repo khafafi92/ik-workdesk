@@ -26,19 +26,19 @@ class TicketsTable
             ->searchOnBlur()
             ->columns([
                 TextColumn::make('ticket_no')
-                    ->label('Request No')
+                    ->label(__('Request No'))
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
 
                 TextColumn::make('subject')
-                    ->label('Subject')
+                    ->label(__('Subject'))
                     ->searchable()
                     ->limit(35)
                     ->toggleable(),
 
                 TextColumn::make('employee.name')
-                    ->label('Requester')
+                    ->label(__('Requester'))
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
@@ -56,7 +56,7 @@ class TicketsTable
                     ->toggleable(),
 
                 TextColumn::make('category.name')
-                    ->label('Category')
+                    ->label(__('Category'))
                     ->searchable()
                     ->sortable()
                     ->toggleable(),
@@ -70,12 +70,12 @@ class TicketsTable
                 TextColumn::make('permitKbli.code')
                     ->label('KBLI')
                     ->placeholder(fn ($record): string => $record->permit_kbli_unavailable
-                        ? 'Unlisted'
+                        ? __('Unlisted')
                         : '-')
                     ->toggleable(),
 
                 TextColumn::make('priority')
-                    ->label('Priority')
+                    ->label(__('Priority'))
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'low' => 'gray',
@@ -87,7 +87,7 @@ class TicketsTable
                     ->toggleable(),
 
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'open' => 'danger',
@@ -111,7 +111,7 @@ class TicketsTable
 
                 TextColumn::make('workTasks.employee.name')
                     ->label('Assigned To')
-                    ->placeholder('Undetermined')
+                    ->placeholder(__('Undetermined'))
                     ->separator(', ')
                     ->searchable()
                     ->toggleable(),
@@ -123,7 +123,7 @@ class TicketsTable
                     ->toggleable(),
 
                 TextColumn::make('due_at')
-                    ->label('Due At')
+                    ->label(__('Due At'))
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(),
@@ -151,7 +151,7 @@ class TicketsTable
                         abort_unless(
                             TicketResource::canDelete($record),
                             403,
-                            'This request service could not be deleted.'
+                            __('This request service could not be deleted.')
                         );
                     }),
             ])
@@ -165,7 +165,7 @@ class TicketsTable
                             abort_unless(
                                 TicketResource::canDeleteAny(),
                                 403,
-                                'You do not have permission to delete request service.'
+                                __('You do not have permission to delete request service.')
                             );
                         }),
                 ]),

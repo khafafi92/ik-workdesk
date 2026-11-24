@@ -15,7 +15,7 @@ class VehiclesTable
         return $table
             ->columns([
                 TextColumn::make('name')
-                    ->label('Vehicle')
+                    ->label(__('Vehicle'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('plate_number')
@@ -26,20 +26,20 @@ class VehiclesTable
                     ->label('Brand / Model')
                     ->placeholder('-'),
                 TextColumn::make('capacity')
-                    ->label('Capacity')
+                    ->label(__('Capacity'))
                     ->suffix(' people'),
                 TextColumn::make('available_from')
-                    ->label('Available')
+                    ->label(__('Available'))
                     ->formatStateUsing(
                         fn ($record): string => substr($record->available_from, 0, 5)
                             .'–'
                             .substr($record->available_until, 0, 5)
                     ),
                 IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->boolean(),
                 TextColumn::make('bookings_count')
-                    ->label('Bookings')
+                    ->label(__('Bookings'))
                     ->counts('bookings'),
             ])
             ->defaultSort('name')

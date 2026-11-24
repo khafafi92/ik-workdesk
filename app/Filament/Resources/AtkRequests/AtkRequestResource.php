@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AtkRequests;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Pages\PurchaseRequests;
 use App\Filament\Resources\AtkRequests\Pages\CreateAtkRequest;
 use App\Filament\Resources\AtkRequests\Pages\ListAtkRequests;
@@ -26,7 +27,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -59,33 +59,33 @@ class AtkRequestResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Request information')
+            Section::make(__('Request information'))
                 ->extraAttributes(['class' => 'atk-request-context'])
-                ->description('The contents and entity that will be used for goods. The request goes directly to the GA follow-up list.')
+                ->description(__('The contents and entity that will be used for goods. The request goes directly to the GA follow-up list.'))
                 ->columnSpanFull()
                 ->columns(12)
                 ->schema([
                     TextInput::make('request_number')
-                        ->label('Request number')
+                        ->label(__('Request number'))
                         ->disabled()
                         ->dehydrated(false)
-                        ->placeholder('Created when request is sent')
+                        ->placeholder(__('Created when request is sent'))
                         ->columnSpan(2),
                     TextInput::make('request_date')
-                        ->label('Request date')
+                        ->label(__('Request date'))
                         ->default(now()->toDateString())
                         ->disabled()
                         ->dehydrated(false)
                         ->columnSpan(2),
                     TextInput::make('purpose')
-                        ->label('Requirement')
-                        ->helperText('Explain to me what it\'s going to be used for.')
+                        ->label(__('Requirement'))
+                        ->helperText(__('Explain to me what it\'s going to be used for.'))
                         ->required()
                         ->maxLength(1000)
                         ->columnSpan(5),
                     Select::make('permit_company_id')
-                        ->label('Requesting entity')
-                        ->helperText('Select the entity that will use goods.')
+                        ->label(__('Requesting entity'))
+                        ->helperText(__('Select the entity that will use goods.'))
                         ->relationship(
                             'company',
                             'name',
@@ -111,11 +111,11 @@ class AtkRequestResource extends Resource
                         ->preload()
                         ->required()
                         ->visible(fn (): bool => static::canChooseRequesterDepartment())
-                        ->helperText('Your account has not been connected to the emeloyee. Select the department as long as this request is available.')
+                        ->helperText(__('Your account has not been connected to the emeloyee. Select the department as long as this request is available.'))
                         ->columnSpanFull(),
                     Select::make('need_type')
-                        ->label('The kind of needs')
-                        ->options(['HO' => 'Head Office', 'PROJECT' => 'Project'])
+                        ->label(__('The kind of needs'))
+                        ->options(['HO' => 'Head Office', 'PROJECT' => __('Project')])
                         ->default('HO')
                         ->live()
                         ->required()
@@ -131,18 +131,18 @@ class AtkRequestResource extends Resource
                         ->columnSpan(9),
                     Placeholder::make('employee_department_notice')
                         ->label('Departemen peminta')
-                        ->content('Account is not connected to emploee and cannot select department. Connect accounts through User Management before making office supplies requests.')
+                        ->content(__('Account is not connected to emploee and cannot select department. Connect accounts through User Management before making office supplies requests.'))
                         ->visible(fn (): bool => static::hasMissingEmployeeDepartment())
                         ->columnSpanFull(),
                 ]),
-            Section::make('Requested items')
+            Section::make(__('Requested items'))
                 ->extraAttributes(['class' => 'atk-request-items'])
-                ->description('Choose the items and quantities you need. GA can issue items in batches. Track progress in the request list.')
+                ->description(__('Choose the items and quantities you need. GA can issue items in batches. Track progress in the request list.'))
                 ->columnSpanFull()
                 ->schema([
                     Repeater::make('items')
                         ->relationship()
-                        ->addActionLabel('Add item')
+                        ->addActionLabel(__('Add item'))
                         ->minItems(1)
                         ->defaultItems(1)
                         ->compact()
@@ -154,7 +154,7 @@ class AtkRequestResource extends Resource
                         ])
                         ->schema([
                             Select::make('atk_item_id')
-                                ->label('Office Supply Items')
+                                ->label(__('Office Supply Items'))
                                 ->relationship(
                                     'item',
                                     'name',
@@ -181,18 +181,18 @@ class AtkRequestResource extends Resource
                                 })
                                 ->required(),
                             TextInput::make('qty_requested')
-                                ->label('Quantity')
+                                ->label(__('Quantity'))
                                 ->numeric()
                                 ->minValue(0.01)
                                 ->step(0.01)
                                 ->required(),
                             TextInput::make('unit')
-                                ->label('The item unit')
+                                ->label(__('The item unit'))
                                 ->default('pcs')
                                 ->required()
                                 ->maxLength(30),
                             TextInput::make('requester_note')
-                                ->label('Note to GA')
+                                ->label(__('Note to GA'))
                                 ->maxLength(500),
                         ]),
                 ]),
@@ -204,11 +204,11 @@ class AtkRequestResource extends Resource
         return $table
             ->columns([
                 TextColumn::make('request_number')
-                    ->label('Number')
+                    ->label(__('Number'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('request_date')
-                    ->label('Date')
+                    ->label(__('Date'))
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('requester.name')
@@ -216,45 +216,45 @@ class AtkRequestResource extends Resource
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('department.name')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->searchable()
                     ->toggleable(),
                 TextColumn::make('company.code')
-                    ->label('Entity')
+                    ->label(__('Entity'))
                     ->badge()
                     ->color('info')
                     ->toggleable(),
                 TextColumn::make('items_count')
-                    ->label('Item')
+                    ->label(__('Item'))
                     ->counts('items')
                     ->alignCenter(),
                 TextColumn::make('need_type')
-                    ->label('Needs')
+                    ->label(__('Needs'))
                     ->formatStateUsing(fn (string $state): string => $state === 'PROJECT' ? 'Project' : 'HO'),
                 TextColumn::make('procurement.number')
-                    ->label('Mounted homework')
-                    ->placeholder('Unmade')
+                    ->label(__('Mounted homework'))
+                    ->placeholder(__('Unmade'))
                     ->url(fn (AtkRequest $record): ?string => $record->procurement && Access::authors(Auth::user(), $record->procurement)
                         ? PurchaseRequests::getUrl(['permintaan' => $record->procurement->id]) : null),
                 TextColumn::make('requested_items')
-                    ->label('Things requested')
+                    ->label(__('Things requested'))
                     ->extraCellAttributes(['style' => 'min-width: 14rem'])
                     ->state(fn (AtkRequest $record): array => static::requestedItemsList($record))
                     ->listWithLineBreaks()
                     ->wrap()
                     ->tooltip(fn (AtkRequest $record): string => static::requestedItemsSummary($record)),
                 ViewColumn::make('item_progress')
-                    ->label('Progress')
+                    ->label(__('Progress'))
                     ->extraCellAttributes(['style' => 'min-width: 26rem'])
                     ->view('filament.tables.columns.atk-request-progress')
-                    ->tooltip('Requested is a total requirement, given the number of warehouses as per the entity and demand, received is the confirmed number of the requesters.'),
+                    ->tooltip(__('Requested is a total requirement, given the number of warehouses as per the entity and demand, received is the confirmed number of the requesters.')),
                 TextColumn::make('next_step')
-                    ->label('Next step')
+                    ->label(__('Next step'))
                     ->extraCellAttributes(['style' => 'min-width: 18rem'])
                     ->state(fn (AtkRequest $record): string => static::nextStep($record))
                     ->wrap(),
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->badge()
                     ->formatStateUsing(fn (string $state): string => static::statusLabel($state))
                     ->color(fn (string $state): string => match ($state) {
@@ -264,19 +264,19 @@ class AtkRequestResource extends Resource
                         default => 'info',
                     }),
                 TextColumn::make('purpose')
-                    ->label('Requirement')
+                    ->label(__('Requirement'))
                     ->limit(45)
                     ->tooltip(fn (AtkRequest $record): string => $record->purpose),
             ])
             ->filters([
-                SelectFilter::make('status')->label('Status')->options(static::statusOptions()),
+                SelectFilter::make('status')->label(__('Status'))->options(static::statusOptions()),
                 SelectFilter::make('department_id')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->relationship('department', 'name')
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('permit_company_id')
-                    ->label('Entity')
+                    ->label(__('Entity'))
                     ->relationship('company', 'name')
                     ->searchable()
                     ->preload(),
@@ -288,7 +288,7 @@ class AtkRequestResource extends Resource
             ])
             ->recordActions([
                 Action::make('issue')
-                    ->label('Hand it over from the request warehouse')
+                    ->label(__('Hand it over from the request warehouse'))
                     ->extraAttributes(['style' => 'min-height: 44px'])
                     ->icon(Heroicon::OutlinedArrowRightCircle)
                     ->color('primary')
@@ -298,8 +298,8 @@ class AtkRequestResource extends Resource
                     ->form([
                         ...static::itemActionForm('Things to hand over'),
                         TextInput::make('quantity')
-                            ->label('Number handed')
-                            ->helperText('Enter the total amount that was actually handed over at this stage.')
+                            ->label(__('Number handed'))
+                            ->helperText(__('Enter the total amount that was actually handed over at this stage.'))
                             ->numeric()
                             ->minValue(0.01)
                             ->step(0.01)
@@ -315,7 +315,7 @@ class AtkRequestResource extends Resource
                         static::success('Hand-offs are accounted for.');
                     }),
                 Action::make('create_pr')
-                    ->label('Ask for less homework')
+                    ->label(__('Ask for less homework'))
                     ->extraAttributes(['style' => 'min-height: 44px'])
                     ->visible(fn (AtkRequest $record): bool => AtkProcurementService::canCreate(Auth::user())
                         && in_array($record->status, ['submitted', 'processing', 'partially_fulfilled'], true)
@@ -323,22 +323,22 @@ class AtkRequestResource extends Resource
                         && $record->items->contains(fn (AtkRequestItem $item): bool => $item->status !== 'cancelled'
                             && $item->outstandingRequested() > static::availableStock($record, $item)))
                     ->requiresConfirmation()
-                    ->modalHeading('Create a PR draft for stock shortages')
-                    ->modalDescription('Only an unfilled amount of available stock goes in. Draft is created on your behalf and follows the department\'s access and regular PR agreements. Stocks do not change until the item is delivered. Check and sign the draft before signing the agreement.')
-                    ->modalSubmitActionLabel('Create a PR draft')
+                    ->modalHeading(__('Create a PR draft for stock shortages'))
+                    ->modalDescription(__('Only an unfilled amount of available stock goes in. Draft is created on your behalf and follows the department\'s access and regular PR agreements. Stocks do not change until the item is delivered. Check and sign the draft before signing the agreement.'))
+                    ->modalSubmitActionLabel(__('Create a PR draft'))
                     ->action(function (AtkRequest $record): void {
                         $draft = app(AtkProcurementService::class)->createDraft($record, Auth::user());
                         static::success('Draft PR '.$draft->number.' is available on the PR menu.');
                     }),
                 Action::make('confirm_received')
-                    ->label('Confirm item received')
+                    ->label(__('Confirm item received'))
                     ->icon(Heroicon::OutlinedHandThumbUp)
                     ->color('success')
                     ->visible(fn (AtkRequest $record): bool => static::canConfirmReceipt($record))
                     ->form([
                         Select::make('request_item_id')
-                            ->label('Received items')
-                            ->helperText('Select the items you have received. The system records all the amount that has been submitted and has not been confirmed.')
+                            ->label(__('Received items'))
+                            ->helperText(__('Select the items you have received. The system records all the amount that has been submitted and has not been confirmed.'))
                             ->options(fn (AtkRequest $record): array => static::receivableItems($record))
                             ->required(),
                     ])
@@ -424,7 +424,7 @@ class AtkRequestResource extends Resource
                 ->label($label)
                 ->options(fn (AtkRequest $record): array => static::outstandingItems($record))
                 ->required(),
-            Textarea::make('ga_note')->label('GA Notes')->maxLength(500),
+            Textarea::make('ga_note')->label(__('GA Notes'))->maxLength(500),
         ];
     }
 
@@ -560,11 +560,11 @@ class AtkRequestResource extends Resource
     public static function statusLabel(string $status): string
     {
         return match ($status) {
-            'submitted' => 'New',
-            'processing' => 'In Process',
-            'partially_fulfilled' => 'Partially fulfilled',
-            'completed' => 'Completed',
-            'cancelled' => 'Cancelled',
+            'submitted' => __('New'),
+            'processing' => __('In Process'),
+            'partially_fulfilled' => __('Partially fulfilled'),
+            'completed' => __('Completed'),
+            'cancelled' => __('Cancelled'),
             default => str($status)->replace('_', ' ')->title()->toString(),
         };
     }

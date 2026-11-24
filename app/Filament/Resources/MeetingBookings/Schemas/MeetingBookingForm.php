@@ -21,9 +21,9 @@ class MeetingBookingForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Book Meeting Room')
+            Section::make(__('Book Meeting Room'))
                 ->description(
-                    'Select space and time. The system will automatically reject collision schedules.'
+                    __('Select space and time. The system will automatically reject collision schedules.')
                 )
                 ->schema([
                     TextInput::make('title')
@@ -73,7 +73,7 @@ class MeetingBookingForm
                         ->required(),
 
                     TimePicker::make('start_time')
-                        ->label('Start Time')
+                        ->label(__('Start Time'))
                         ->native(false)
                         ->displayFormat('H:i')
                         ->seconds(false)
@@ -99,7 +99,7 @@ class MeetingBookingForm
                         ->required(),
 
                     Select::make('duration_hours')
-                        ->label('Duration')
+                        ->label(__('Duration'))
                         ->options([
                             '0.5' => '30 minutes',
                             '1' => '1 hour',
@@ -203,7 +203,7 @@ class MeetingBookingForm
 
                     Textarea::make('external_guests')
                         ->label('External Guests')
-                        ->placeholder('External guest name, separate by comma.')
+                        ->placeholder(__('External guest name, separate by comma.'))
                         ->rows(2)
                         ->columnSpanFull(),
 
@@ -222,7 +222,7 @@ class MeetingBookingForm
                             fn (): string => auth()->user()?->name ?? '-'
                         ),
                     Placeholder::make('department_name')
-                        ->label('Department')
+                        ->label(__('Department'))
                         ->content(
                             fn (): string => auth()->user()?->employee?->department?->name
                                 ?? '-'

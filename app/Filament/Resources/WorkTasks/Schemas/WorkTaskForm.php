@@ -35,7 +35,7 @@ class WorkTaskForm
                 */
                 Section::make('Source Service Desk')
                     ->description(
-                        'The original request information. Attachment can only be managed from the Service Desk menu.'
+                        __('The original request information. Attachment can only be managed from the Service Desk menu.')
                     )
                     ->visible(
                         fn (?WorkTask $record): bool => filled($record?->ticket_id)
@@ -43,11 +43,11 @@ class WorkTaskForm
                     ->columns(2)
                     ->schema([
                         TextEntry::make('ticket.ticket_no')
-                            ->label('Request No')
+                            ->label(__('Request No'))
                             ->placeholder('-'),
 
                         TextEntry::make('ticket.employee.name')
-                            ->label('Requester')
+                            ->label(__('Requester'))
                             ->placeholder('-'),
 
                         TextEntry::make('ticket.requesterDepartment.name')
@@ -59,7 +59,7 @@ class WorkTaskForm
                             ->placeholder('-'),
 
                         TextEntry::make('ticket.category.name')
-                            ->label('Request Category')
+                            ->label(__('Request Category'))
                             ->placeholder('-'),
 
                         TextEntry::make('ticket.priority')
@@ -75,14 +75,14 @@ class WorkTaskForm
                         TextEntry::make('ticket.description')
                             ->label(
                                 fn (WorkTask $record): string => $record->requiresLegalApproval()
-                                    ? 'Project / Activity Name'
+                                    ? __('Project / Activity Name')
                                     : 'Request Description'
                             )
                             ->placeholder('No description')
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.legal_background')
-                            ->label('Background')
+                            ->label(__('Background'))
                             ->placeholder('-')
                             ->visible(
                                 fn (WorkTask $record): bool => $record->requiresLegalApproval()
@@ -90,7 +90,7 @@ class WorkTaskForm
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.legal_objective')
-                            ->label('Purpose of Request')
+                            ->label(__('Purpose of Request'))
                             ->placeholder('-')
                             ->visible(
                                 fn (WorkTask $record): bool => $record->requiresLegalApproval()
@@ -98,7 +98,7 @@ class WorkTaskForm
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.legal_desired_scheme')
-                            ->label('Preferred arrangement')
+                            ->label(__('Preferred arrangement'))
                             ->placeholder('-')
                             ->visible(
                                 fn (WorkTask $record): bool => $record->requiresLegalApproval()
@@ -106,7 +106,7 @@ class WorkTaskForm
                             ->columnSpanFull(),
 
                         TextEntry::make('ticket.legal_document_types')
-                            ->label('Supporter Documents')
+                            ->label(__('Supporter Documents'))
                             ->placeholder('-')
                             ->listWithLineBreaks()
                             ->bulleted()
@@ -168,7 +168,7 @@ class WorkTaskForm
                     ]),
 
                 Section::make('Permit Request & Result')
-                    ->description('Requested KBLI from Service Desk and results sent by Legal.')
+                    ->description(__('Requested KBLI from Service Desk and results sent by Legal.'))
                     ->visible(fn (?WorkTask $record): bool => $record?->isPermitLegalTask() === true)
                     ->columns(2)
                     ->schema([
@@ -184,7 +184,7 @@ class WorkTaskForm
                             ->label('Requested KBLI No.')
                             ->placeholder(
                                 fn (WorkTask $record): string => $record->ticket?->permit_kbli_unavailable
-                                    ? 'No / not registered'
+                                    ? __('No / not registered')
                                     : '-'
                             ),
 
@@ -192,13 +192,13 @@ class WorkTaskForm
                             ->label('Requested KBLI Name')
                             ->placeholder(
                                 fn (WorkTask $record): string => $record->ticket?->permit_kbli_unavailable
-                                    ? 'Needs to be discussed with Legal'
+                                    ? __('Needs to be discussed with Legal')
                                     : '-'
                             ),
 
                         Textarea::make('permit_result_notes')
                             ->label('Permit Result Notes')
-                            ->helperText('Charged by Legal to explain the results of KBLI processing.')
+                            ->helperText(__('Charged by Legal to explain the results of KBLI processing.'))
                             ->rows(4)
                             ->maxLength(5000)
                             ->disabled(
@@ -209,7 +209,7 @@ class WorkTaskForm
 
                         FileUpload::make('permit_result_attachments')
                             ->label('Permit Result Attachments')
-                            ->helperText('Upload permit/KBLI document to send to the register.')
+                            ->helperText(__('Upload permit/KBLI document to send to the register.'))
                             ->multiple()
                             ->maxFiles(10)
                             ->disk('local')
@@ -323,7 +323,7 @@ class WorkTaskForm
                 */
                 Section::make('Work Execution')
                     ->description(
-                        'Define PIC, status, progress, schedule, and employment records.'
+                        __('Define PIC, status, progress, schedule, and employment records.')
                     )
                     ->columns(2)
                     ->schema([
@@ -331,7 +331,7 @@ class WorkTaskForm
                             ->label('Task No')
                             ->disabled()
                             ->dehydrated(false)
-                            ->placeholder('Auto generation on saved'),
+                            ->placeholder(__('Auto generation on saved')),
 
                         Select::make('ticket_id')
                             ->label('Related Service Desk')
@@ -351,7 +351,7 @@ class WorkTaskForm
                             ->searchable(),
 
                         Select::make('department_id')
-                            ->label('Department')
+                            ->label(__('Department'))
                             ->relationship(
                                 name: 'department',
                                 titleAttribute: 'name',
@@ -382,7 +382,7 @@ class WorkTaskForm
                             ->required(),
 
                         Select::make('employee_id')
-                            ->label('PIC / Execution')
+                            ->label(__('PIC / Execution'))
                             ->options(function (Get $get): array {
                                 $departmentId = $get('department_id');
 
@@ -405,7 +405,7 @@ class WorkTaskForm
                                         && ! $record->canAssignPicBy(auth()->user()))
                             )
                             ->helperText(
-                                'In other departments, PIC is assigned manager or Supervisor.'
+                                __('In other departments, PIC is assigned manager or Supervisor.')
                             )
                             ->nullable(),
 
@@ -424,7 +424,7 @@ class WorkTaskForm
                                 fn (?WorkTask $record): bool => $record !== null
                                     && ! $record->canBeManagedBy(auth()->user())
                             )
-                            ->helperText('Optional. Activity from this task will be automatically connected to the project.'),
+                            ->helperText(__('Optional. Activity from this task will be automatically connected to the project.')),
 
                         TextInput::make('title')
                             ->label('Task Title')
@@ -446,29 +446,29 @@ class WorkTaskForm
                             ->columnSpanFull(),
 
                         Select::make('priority')
-                            ->label('Priority')
+                            ->label(__('Priority'))
                             ->options([
-                                'low' => 'Low',
-                                'medium' => 'Medium',
-                                'high' => 'High',
-                                'urgent' => 'Urgent',
+                                'low' => __('Low'),
+                                'medium' => __('Medium'),
+                                'high' => __('High'),
+                                'urgent' => __('Urgent'),
                             ])
                             ->default('medium')
                             ->disabled(
                                 fn (?WorkTask $record): bool => $record !== null
                                     && ! $record->canUpdateExecutionBy(auth()->user())
                             )
-                            ->helperText('The initial value of the register can be adjusted by the recipient department. Every change is recorded in Activity History.')
+                            ->helperText(__('The initial value of the register can be adjusted by the recipient department. Every change is recorded in Activity History.'))
                             ->required(),
 
                         Select::make('status')
-                            ->label('Status')
+                            ->label(__('Status'))
                             ->options([
                                 'planned' => 'Planned',
-                                'in_progress' => 'In Progress',
-                                'done' => 'Done',
+                                'in_progress' => __('In Progress'),
+                                'done' => __('Done'),
                                 'hold' => 'Hold',
-                                'cancel' => 'Cancel',
+                                'cancel' => __('Cancel'),
                             ])
                             ->live()
                             ->disableOptionWhen(
@@ -492,7 +492,7 @@ class WorkTaskForm
                             ->required(),
 
                         Textarea::make('status_reason')
-                            ->label('Hold / Cancel Reasons')
+                            ->label(__('Hold / Cancel Reasons'))
                             ->rows(3)
                             ->visible(
                                 fn (Get $get): bool => in_array(
@@ -526,12 +526,12 @@ class WorkTaskForm
                             ->label('Start At'),
 
                         DateTimePicker::make('due_at')
-                            ->label('Due At')
+                            ->label(__('Due At'))
                             ->disabled(
                                 fn (?WorkTask $record): bool => $record !== null
                                     && ! $record->canUpdateExecutionBy(auth()->user())
                             )
-                            ->helperText('The original target of the register can be re-approved by the recipient department. Every change is recorded.'),
+                            ->helperText(__('The original target of the register can be re-approved by the recipient department. Every change is recorded.')),
 
                         DateTimePicker::make('completed_at')
                             ->label('Completed At')
@@ -564,13 +564,13 @@ class WorkTaskForm
                             ->visible(fn (?WorkTask $record): bool => $record?->isLegalApprovalRejected() === true),
 
                         TextEntry::make('rejection_reason')
-                            ->label('CBO Reasons for Rejection')
+                            ->label(__('CBO Reasons for Rejection'))
                             ->placeholder('-')
                             ->visible(fn (?WorkTask $record): bool => $record?->isLegalApprovalRejected() === true)
                             ->columnSpanFull(),
 
                         Textarea::make('notes')
-                            ->label('Notes')
+                            ->label(__('Notes'))
                             ->rows(4)
                             ->columnSpanFull(),
                     ]),

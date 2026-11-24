@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\ActivityCategories;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\ActivityCategories\Pages\CreateActivityCategory;
 use App\Filament\Resources\ActivityCategories\Pages\EditActivityCategory;
 use App\Filament\Resources\ActivityCategories\Pages\ListActivityCategories;
@@ -10,7 +11,6 @@ use App\Filament\Resources\ActivityCategories\Tables\ActivityCategoriesTable;
 use App\Filament\Resources\Concerns\AdminOnlyResource;
 use App\Models\ActivityCategory;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;

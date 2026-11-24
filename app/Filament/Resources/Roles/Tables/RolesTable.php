@@ -27,23 +27,23 @@ class RolesTable
                     ->searchable(),
 
                 TextColumn::make('permissions_count')
-                    ->label('Permissions')
+                    ->label(__('Permissions'))
                     ->counts('permissions')
                     ->badge()
                     ->sortable(),
 
                 TextColumn::make('users_count')
-                    ->label('Users')
+                    ->label(__('Users'))
                     ->counts('users')
                     ->badge()
                     ->sortable(),
 
                 IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->boolean(),
 
                 TextColumn::make('updated_at')
-                    ->label('Updated At')
+                    ->label(__('Updated At'))
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
@@ -61,7 +61,7 @@ class RolesTable
                         abort_unless(
                             RoleResource::canDelete($record),
                             403,
-                            'This role cannot be removed.'
+                            __('This role cannot be removed.')
                         );
                     }),
             ])

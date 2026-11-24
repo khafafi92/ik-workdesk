@@ -76,7 +76,7 @@ class EditTicket extends EditRecord
     protected function getSavedNotificationTitle(): ?string
     {
         return $this->isLegalResubmission
-            ? 'Legal request repaired and re-enlisted'
+            ? __('Legal request repaired and re-enlisted')
             : parent::getSavedNotificationTitle();
     }
 
@@ -91,7 +91,7 @@ class EditTicket extends EditRecord
                     abort_unless(
                         TicketResource::canDelete($this->record),
                         403,
-                        'This request service could not be deleted.'
+                        __('This request service could not be deleted.')
                     );
                 }),
         ];

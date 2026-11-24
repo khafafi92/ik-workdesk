@@ -33,25 +33,25 @@ class EmployeeForm
                     ->preload(),
 
                 Select::make('department_id')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->relationship('department', 'name')
                     ->searchable()
                     ->preload(),
 
                 Select::make('permitCompanies')
-                    ->label('Companies')
+                    ->label(__('Companies'))
                     ->relationship('permitCompanies', 'name')
                     ->multiple()
                     ->searchable()
                     ->preload()
-                    ->helperText('The Global Room chat shows only the selected company. Without company options, employees cannot open rooms.'),
+                    ->helperText(__('The Global Room chat shows only the selected company. Without company options, employees cannot open rooms.')),
 
                 TextInput::make('employee_no')
                     ->label('Employee No')
                     ->maxLength(255),
 
                 TextInput::make('name')
-                    ->label('Name')
+                    ->label(__('Name'))
                     ->required()
                     ->maxLength(255),
 
@@ -61,22 +61,22 @@ class EmployeeForm
                     ->maxLength(255),
 
                 TextInput::make('phone')
-                    ->label('Phone')
+                    ->label(__('Phone'))
                     ->maxLength(255),
 
                 TextInput::make('position')
-                    ->label('Position')
+                    ->label(__('Position'))
                     ->maxLength(255),
 
                 Select::make('position_level')
-                    ->label('Job Level')
+                    ->label(__('Job Level'))
                     ->extraAttributes(['class' => 'employee-hierarchy-field'])
                     ->options(EmployeeHierarchy::levels())
                     ->native(false)
-                    ->helperText('Organizational extensions, access and menu clearance set through User Management.'),
+                    ->helperText(__('Organizational extensions, access and menu clearance set through User Management.')),
 
                 Select::make('supervisor_employee_id')
-                    ->label('Direct Top')
+                    ->label(__('Direct Top'))
                     ->extraAttributes(['class' => 'employee-hierarchy-field'])
                     ->options(fn (?Employee $record): array => Employee::query()
                         ->where(fn (Builder $query): Builder => $query->where('is_active', true)
@@ -98,10 +98,10 @@ class EmployeeForm
                             $fail(collect($exception->errors())->flatten()->first());
                         }
                     })
-                    ->helperText('Pick an employee to be his direct superior.'),
+                    ->helperText(__('Pick an employee to be his direct superior.')),
 
                 Toggle::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->default(true),
             ]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DocumentNumberingTemplates;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\DocumentNumberingTemplates\Pages\CreateDocumentNumberingTemplate;
 use App\Filament\Resources\DocumentNumberingTemplates\Pages\EditDocumentNumberingTemplate;
 use App\Filament\Resources\DocumentNumberingTemplates\Pages\ListDocumentNumberingTemplates;
@@ -14,7 +15,6 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
@@ -47,22 +47,22 @@ class DocumentNumberingTemplateResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Template scope')->columns(3)->schema([
-                Select::make('letter_profile_id')->label('Mail profile')->relationship('profile', 'name')->searchable()->preload()->live()
-                    ->helperText('Select a profile to use only for such mail groups. Empty only for common templates.'),
-                Select::make('permit_company_id')->label('Company')->relationship('company', 'name')->searchable()->preload()->required()->live(),
-                Select::make('department_id')->label('Department')->relationship('department', 'name')->searchable()->preload()->live(),
-                Select::make('document_type_id')->label('Mail type')->relationship('documentType', 'name')->searchable()->preload()->live(),
+            Section::make(__('Template scope'))->columns(3)->schema([
+                Select::make('letter_profile_id')->label(__('Mail profile'))->relationship('profile', 'name')->searchable()->preload()->live()
+                    ->helperText(__('Select a profile to use only for such mail groups. Empty only for common templates.')),
+                Select::make('permit_company_id')->label(__('Company'))->relationship('company', 'name')->searchable()->preload()->required()->live(),
+                Select::make('department_id')->label(__('Department'))->relationship('department', 'name')->searchable()->preload()->live(),
+                Select::make('document_type_id')->label(__('Mail type'))->relationship('documentType', 'name')->searchable()->preload()->live(),
             ]),
-            Section::make('Format number')->columns(2)->schema([
-                TextInput::make('name')->label('Template name')->required()->maxLength(255),
+            Section::make(__('Format number'))->columns(2)->schema([
+                TextInput::make('name')->label(__('Template name'))->required()->maxLength(255),
                 TextInput::make('template')->label('Template')->required()->maxLength(500)->live()
                     ->helperText('Token: {running}, {running:3}, {company_code}, {department_code}, {document_code}, {roman_month}, {month}, {year}, {year_short}, {location_code}, {project_code}.'),
-                TextInput::make('running_digits')->label('Number of digits running')->numeric()->default(3)->minValue(1)->maxValue(10)->required(),
-                Select::make('reset_period')->label('Reset number')->options(['yearly' => 'Every year', 'monthly' => 'Every month', 'never' => 'Never'])->default('yearly')->required(),
-                TextInput::make('priority')->label('Priority')->numeric()->default(0)->minValue(0)->required(),
-                Toggle::make('is_active')->label('Active')->default(true),
-                Placeholder::make('preview')->label('Preview number')->content(fn (Get $get): string => static::preview($get))->columnSpanFull(),
+                TextInput::make('running_digits')->label(__('Number of digits running'))->numeric()->default(3)->minValue(1)->maxValue(10)->required(),
+                Select::make('reset_period')->label(__('Reset number'))->options(['yearly' => __('Every year'), 'monthly' => __('Every month'), 'never' => __('Never')])->default('yearly')->required(),
+                TextInput::make('priority')->label(__('Priority'))->numeric()->default(0)->minValue(0)->required(),
+                Toggle::make('is_active')->label(__('Active'))->default(true),
+                Placeholder::make('preview')->label(__('Preview number'))->content(fn (Get $get): string => static::preview($get))->columnSpanFull(),
             ]),
         ]);
     }
@@ -70,20 +70,20 @@ class DocumentNumberingTemplateResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Name')->searchable()->sortable(),
-            TextColumn::make('profile.name')->label('Profiles')->placeholder('General')->toggleable(),
-            TextColumn::make('company.code')->label('Company')->sortable(),
-            TextColumn::make('department.code')->label('Department')->placeholder('All'),
-            TextColumn::make('documentType.code')->label('Type')->placeholder('All'),
+            TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
+            TextColumn::make('profile.name')->label(__('Profiles'))->placeholder(__('General'))->toggleable(),
+            TextColumn::make('company.code')->label(__('Company'))->sortable(),
+            TextColumn::make('department.code')->label(__('Department'))->placeholder(__('All')),
+            TextColumn::make('documentType.code')->label(__('Type'))->placeholder(__('All')),
             TextColumn::make('template')->label('Format')->wrap(),
             TextColumn::make('reset_period')->label('Reset')->formatStateUsing(fn (string $state) => ['yearly' => 'Annual', 'monthly' => 'Monthly', 'never' => 'Never'][$state]),
-            TextColumn::make('priority')->label('Priority')->sortable(),
-            IconColumn::make('is_active')->label('Active')->boolean(),
+            TextColumn::make('priority')->label(__('Priority'))->sortable(),
+            IconColumn::make('is_active')->label(__('Active'))->boolean(),
         ])->filters([
-            SelectFilter::make('letter_profile_id')->label('Mail profile')->relationship('profile', 'name'),
-            SelectFilter::make('permit_company_id')->label('Company')->relationship('company', 'name'),
-            SelectFilter::make('department_id')->label('Department')->relationship('department', 'name'),
-            SelectFilter::make('document_type_id')->label('Mail type')->relationship('documentType', 'name'),
+            SelectFilter::make('letter_profile_id')->label(__('Mail profile'))->relationship('profile', 'name'),
+            SelectFilter::make('permit_company_id')->label(__('Company'))->relationship('company', 'name'),
+            SelectFilter::make('department_id')->label(__('Department'))->relationship('department', 'name'),
+            SelectFilter::make('document_type_id')->label(__('Mail type'))->relationship('documentType', 'name'),
         ])->defaultSort('priority', 'desc')->recordActions([EditAction::make()]);
     }
 

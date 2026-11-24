@@ -61,18 +61,18 @@ class WorkloadReportResource extends ReportResource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Employee')->searchable()->sortable(),
-            TextColumn::make('department.name')->label('Department')->sortable(),
+            TextColumn::make('name')->label(__('Employee'))->searchable()->sortable(),
+            TextColumn::make('department.name')->label(__('Department'))->sortable(),
             TextColumn::make('assigned_tickets')->label('Assigned Tickets')->numeric(),
-            TextColumn::make('open_tickets')->label('Open')->numeric(),
-            TextColumn::make('in_progress_count')->label('In Progress')->numeric(),
-            TextColumn::make('pending_count')->label('Pending')->numeric(),
-            TextColumn::make('resolved_count')->label('Resolved')->numeric(),
-            TextColumn::make('closed_count')->label('Closed')->numeric(),
+            TextColumn::make('open_tickets')->label(__('Open'))->numeric(),
+            TextColumn::make('in_progress_count')->label(__('In Progress'))->numeric(),
+            TextColumn::make('pending_count')->label(__('Pending'))->numeric(),
+            TextColumn::make('resolved_count')->label(__('Resolved'))->numeric(),
+            TextColumn::make('closed_count')->label(__('Closed'))->numeric(),
             TextColumn::make('total_work_logs')->label('Total Work Logs')->numeric(),
             TextColumn::make('work_duration_minutes')->label('Total Work Duration')->formatStateUsing(fn ($value) => intdiv((int) $value, 60).' h '.((int) $value % 60).' m'),
         ])->filters([
-            SelectFilter::make('department_id')->label('Department')->relationship('department', 'name')->searchable()->preload(),
+            SelectFilter::make('department_id')->label(__('Department'))->relationship('department', 'name')->searchable()->preload(),
         ])->defaultSort('name');
     }
 

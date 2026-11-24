@@ -14,6 +14,6 @@
             </dl>
         </div>
     @empty
-        <p class="ik-atk-progress-empty">There's nothing in this request yet.</p>
+        <p class="ik-atk-progress-empty">{{ __('There\'s nothing in this request yet.') }}</p>
     @endforelse
 </div>

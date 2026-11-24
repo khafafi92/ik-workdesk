@@ -15,18 +15,18 @@ class ViewReminder extends ViewRecord
     {
         return [
             Action::make('markAsDone')
-                ->label('Done')
+                ->label(__('Done'))
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(fn (): bool => $this->record->status !== 'done')
                 ->requiresConfirmation()
-                ->modalHeading('Mark the reminder as Done?')
-                ->modalDescription('This reminder will be completed and the next reminder email will not be sent.')
+                ->modalHeading(__('Mark the reminder as Done?'))
+                ->modalDescription(__('This reminder will be completed and the next reminder email will not be sent.'))
                 ->action(function (): void {
                     $this->record->markAsDone();
 
                     Notification::make()
-                        ->title('Reminder successfully marked Done')
+                        ->title(__('Reminder successfully marked Done'))
                         ->success()
                         ->send();
                 }),

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DailyActivities;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\DailyActivities\Pages\CreateDailyActivity;
 use App\Filament\Resources\DailyActivities\Pages\EditDailyActivity;
 use App\Filament\Resources\DailyActivities\Pages\ListDailyActivities;
@@ -10,7 +11,6 @@ use App\Filament\Resources\DailyActivities\Tables\DailyActivitiesTable;
 use App\Filament\Resources\WorkTasks\WorkTaskResource;
 use App\Models\DailyActivity;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;

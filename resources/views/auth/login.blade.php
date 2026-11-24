@@ -1,9 +1,9 @@
 <x-guest-layout>
     <section class="wd-login-card" aria-labelledby="login-title">
         <div class="wd-login-card-heading">
-            <span class="wd-login-card-kicker">Welcome back</span>
-            <h2 id="login-title">Sign in to IK WorkDesk</h2>
-            <p>Use your company account.</p>
+            <span class="wd-login-card-kicker">{{ __('Welcome back') }}</span>
+            <h2 id="login-title">{{ __('Sign in to IK WorkDesk') }}</h2>
+            <p>{{ __('Use your company account.') }}</p>
         </div>
 
         <x-auth-session-status
@@ -36,9 +36,9 @@
 
             <div x-data="{ showPassword: false }">
                 <div class="wd-login-label-row">
-                    <label for="password">Password</label>
+                    <label for="password">{{ __('Password') }}</label>
                     @if (Route::has('password.request'))
-                        <a href="{{ route('password.request') }}">Forgot your password?</a>
+                        <a href="{{ route('password.request') }}">{{ __('Forgot your password?') }}</a>
                     @endif
                 </div>
 
@@ -53,13 +53,13 @@
                         name="password"
                         required
                         autocomplete="current-password"
-                        placeholder="Enter password"
+                        placeholder="{{ __('Enter password') }}"
                     >
                     <button
                         type="button"
                         class="wd-login-password-toggle"
                         x-on:click="showPassword = !showPassword"
-                        x-bind:aria-label="showPassword ? 'Hide password' : 'Show password'"
+                        x-bind:aria-label="showPassword ? @js(__('Hide password')) : @js(__('Show password'))"
                         x-bind:aria-pressed="showPassword"
                     >
                         <svg x-show="!showPassword" viewBox="0 0 24 24" aria-hidden="true">
@@ -75,7 +75,7 @@
             </div>
 
             <button type="submit" class="wd-login-submit">
-                <span>Sign in</span>
+                <span>{{ __('Sign in') }}</span>
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" />
                 </svg>

@@ -16,7 +16,7 @@ class VehicleForm
         return $schema->components([
             Section::make('Vehicle Information')
                 ->description(
-                    'Names, police numbers, and vehicle information can be changed at any time.'
+                    __('Names, police numbers, and vehicle information can be changed at any time.')
                 )
                 ->schema([
                     TextInput::make('name')
@@ -56,11 +56,11 @@ class VehicleForm
                         ->after('available_from')
                         ->required(),
                     Textarea::make('notes')
-                        ->label('Notes')
+                        ->label(__('Notes'))
                         ->rows(3)
                         ->columnSpanFull(),
                     Toggle::make('is_active')
-                        ->label('Active')
+                        ->label(__('Active'))
                         ->default(true)
                         ->required(),
                 ])

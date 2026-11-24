@@ -71,17 +71,17 @@ class GlobalChatRoom extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Chat Room Global';
+        return __('Chat Room Global');
     }
 
     public function getTitle(): string|Htmlable
     {
-        return 'Chat Room Global';
+        return __('Chat Room Global');
     }
 
     public function getHeading(): string|Htmlable
     {
-        return 'Chat Room Global';
+        return __('Chat Room Global');
     }
 
     public function selectCompany(int $companyId): void
@@ -154,7 +154,7 @@ class GlobalChatRoom extends Page
                     $path = $file->store('global-chat/'.$company->getKey(), 'local');
 
                     if ($path === false) {
-                        throw new \RuntimeException('The attachment could not be saved.');
+                        throw new \RuntimeException(__('The attachment could not be saved.'));
                     }
 
                     $storedPaths[] = $path;
@@ -197,7 +197,7 @@ class GlobalChatRoom extends Page
         );
 
         Notification::make()
-            ->title('Message sent')
+            ->title(__('Message sent'))
             ->success()
             ->send();
     }

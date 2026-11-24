@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\MeetingRooms;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\MeetingRooms\Pages\CreateMeetingRoom;
 use App\Filament\Resources\MeetingRooms\Pages\EditMeetingRoom;
 use App\Filament\Resources\MeetingRooms\Pages\ListMeetingRooms;
@@ -9,7 +10,6 @@ use App\Filament\Resources\MeetingRooms\Schemas\MeetingRoomForm;
 use App\Filament\Resources\MeetingRooms\Tables\MeetingRoomsTable;
 use App\Models\MeetingRoom;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;

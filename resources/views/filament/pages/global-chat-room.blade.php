@@ -5,11 +5,11 @@
         data-company-id="{{ $company?->id }}"
         data-last-message-id="{{ $messages->last()?->id }}"
         @if (! $realtimeConnected) wire:poll.15s="refreshMessages" @endif
-        aria-label="Chat Room Global"
+        aria-label="{{ __('Chat Room Global') }}"
     >
         <header class="ik-global-chat-heading">
             <div>
-                <h2>Chat Room Global</h2>
+                <h2>{{ __('Chat Room Global') }}</h2>
                 <p>Pilih company untuk membuka grup dan percakapannya.</p>
             </div>
             <p
@@ -18,7 +18,7 @@
                 aria-live="polite"
             >
                 @if ($realtimeConnected)
-                    Connected
+                    {{ __('Connected') }}
                 @elseif ($realtimeConfigured)
                     Connecting. Messages refresh automatically in the meantime.
                 @else
@@ -33,11 +33,11 @@
             wire:loading
             wire:target="refreshMessages,loadOlderMessages,addMessage"
         >
-            Loading chats...
+            {{ __('Loading chats...') }}
         </p>
 
         @if ($companies->isNotEmpty())
-            <nav class="ik-global-chat-companies" aria-label="Choose company">
+            <nav class="ik-global-chat-companies" aria-label="{{ __('Choose company') }}">
                 @foreach ($companies as $chatCompany)
                     <button
                         type="button"
@@ -64,7 +64,7 @@
                 <div
                     class="ik-global-chat-messages"
                     role="log"
-                    aria-label="Message history {{ $company->name }}"
+                    aria-label="{{ __('Message history') }} {{ $company->name }}"
                     aria-live="polite"
                     aria-relevant="additions"
                     tabindex="0"
@@ -77,7 +77,7 @@
                             wire:loading.attr="disabled"
                             wire:target="loadOlderMessages"
                         >
-                            Load previous message
+                            {{ __('Load previous message') }}
                         </button>
                     @endif
 
@@ -87,7 +87,7 @@
                             wire:key="global-chat-message-{{ $chatMessage->id }}"
                         >
                             <div class="ik-global-chat-message-meta">
-                                <strong>{{ $chatMessage->user?->name ?? 'User not available' }}</strong>
+                                <strong>{{ $chatMessage->user?->name ?? __('User not available') }}</strong>
                                 <time datetime="{{ $chatMessage->created_at->toIso8601String() }}">
                                     {{ $chatMessage->created_at->format('d M Y, H:i') }}
                                 </time>
@@ -98,7 +98,7 @@
                             @endif
 
                             @if ($chatMessage->attachments->isNotEmpty())
-                                <ul class="ik-global-chat-attachments" aria-label="Attachment">
+                                <ul class="ik-global-chat-attachments" aria-label="{{ __('Attachment') }}">
                                     @foreach ($chatMessage->attachments as $attachment)
                                         <li wire:key="global-chat-attachment-{{ $attachment->id }}">
                                             <a
@@ -114,7 +114,7 @@
                         </article>
                     @empty
                         <p class="ik-global-chat-empty">
-                            No messages in group yet {{ $company->name }}Start a conversation by sending a message or attachment.
+                            {{ __('No messages in group yet') }} {{ $company->name }}{{ __('Start a conversation by sending a message or attachment.') }}
                         </p>
                     @endforelse
                 </div>
@@ -126,7 +126,7 @@
                         wire:model="message"
                         rows="3"
                         maxlength="5000"
-                        placeholder="Type a message for the group {{ $company->name }}"
+                        placeholder="{{ __('Type a message for the group') }} {{ $company->name }}"
                     ></textarea>
                     @error('message')
                         <p class="ik-global-chat-error" role="alert">{{ $message }}</p>
@@ -140,7 +140,7 @@
 
                     <div class="ik-global-chat-composer-actions">
                         <label class="ik-global-chat-file-label">
-                            Select attachment
+                            {{ __('Select attachment') }}
                             <input
                                 id="global-chat-attachments"
                                 class="ik-global-chat-file-input"
@@ -162,23 +162,23 @@
                     </div>
 
                     <p class="ik-global-chat-help">
-                        Maximum 10 files, 10 MB per file. Format: PDF, Word, Excel, JPG or PNG.
+                        {{ __('Maximum 10 files, 10 MB per file. Format: PDF, Word, Excel, JPG or PNG.') }}
                     </p>
                     <p class="ik-global-chat-uploading" wire:loading wire:target="attachments">
-                        Uploading attachment...
+                        {{ __('Uploading attachment...') }}
                     </p>
 
                     @if (count($attachments) > 0)
-                        <ul class="ik-global-chat-selected-files" aria-label="Selected attachment">
+                        <ul class="ik-global-chat-selected-files" aria-label="{{ __('Selected attachment') }}">
                             @foreach ($attachments as $index => $file)
                                 <li wire:key="global-chat-selected-file-{{ $index }}">
                                     <span>{{ $file->getClientOriginalName() }}</span>
                                     <button
                                         type="button"
                                         wire:click="removeAttachment({{ $index }})"
-                                        aria-label="Delete {{ $file->getClientOriginalName() }}"
+                                        aria-label="{{ __('Delete') }} {{ $file->getClientOriginalName() }}"
                                     >
-                                        Delete
+                                        {{ __('Delete') }}
                                     </button>
                                 </li>
                             @endforeach

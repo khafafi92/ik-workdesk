@@ -64,7 +64,7 @@ class DepartmentActivityReportResource extends ReportResource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Department')->searchable()->sortable(),
+            TextColumn::make('name')->label(__('Department'))->searchable()->sortable(),
             TextColumn::make('total_requests')->label('Total Requests')->numeric(),
             TextColumn::make('assigned_tickets')->label('Assigned Tickets')->numeric(),
             TextColumn::make('completed_tickets')->label('Completed Tickets')->numeric(),

@@ -19,12 +19,12 @@ class CreateAtkRequest extends CreateRecord
 
     public function getSubheading(): ?string
     {
-        return 'Send office supplies needs to GA. After the item is submitted, confirm the reception of the office supplies request list.';
+        return __('Send office supplies needs to GA. After the item is submitted, confirm the reception of the office supplies request list.');
     }
 
     protected function getCreatedNotificationTitle(): ?string
     {
-        return 'Office supplies request sent to GA.';
+        return __('Office supplies request sent to GA.');
     }
 
     protected function afterCreate(): void

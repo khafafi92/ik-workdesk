@@ -205,7 +205,7 @@ class ItInfrastructureReportPage extends ItInfrastructurePage
             throw ValidationException::withMessages(['resolutionNotes.'.$id => $exception->validator?->errors()->first() ?? $exception->getMessage()]);
         }
         $this->resetValidation('resolutionNotes.'.$id);
-        Notification::make()->success()->title($status === 'resolved' ? 'Follow-up completed' : 'Follow-up begins')->send();
+        Notification::make()->success()->title($status === 'resolved' ? __('Follow-up completed') : __('Follow-up begins'))->send();
     }
 
     public function exportSummary()

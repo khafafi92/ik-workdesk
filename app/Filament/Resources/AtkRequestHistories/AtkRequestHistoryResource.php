@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\AtkRequestHistories;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\AtkRequestHistories\Pages\ListAtkRequestHistories;
 use App\Models\AtkRequestHistory;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -35,11 +35,11 @@ class AtkRequestHistoryResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('created_at')->label('Time')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('request.request_number')->label('Request number')->searchable(),
-                TextColumn::make('action')->label('Activity')->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
-                TextColumn::make('performer.name')->label('By')->searchable(),
-                TextColumn::make('note')->label('Notes')->limit(55)->tooltip(fn (AtkRequestHistory $record): ?string => $record->note),
+                TextColumn::make('created_at')->label(__('Time'))->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('request.request_number')->label(__('Request number'))->searchable(),
+                TextColumn::make('action')->label(__('Activity'))->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
+                TextColumn::make('performer.name')->label(__('By'))->searchable(),
+                TextColumn::make('note')->label(__('Notes'))->limit(55)->tooltip(fn (AtkRequestHistory $record): ?string => $record->note),
             ])
             ->defaultSort('created_at', 'desc');
     }

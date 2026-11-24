@@ -12,11 +12,11 @@ class WorkProjectsTable
     public static function configure(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('code')->label('Code')->searchable()->sortable(),
-            TextColumn::make('name')->label('Project')->searchable()->sortable(),
-            TextColumn::make('company_name')->label('Company / Client')->placeholder('-')->searchable(),
-            TextColumn::make('department.name')->label('Division')->placeholder('-')->sortable(),
-            TextColumn::make('manager.name')->label('Project Manager')->placeholder('-')->searchable(),
+            TextColumn::make('code')->label(__('Code'))->searchable()->sortable(),
+            TextColumn::make('name')->label(__('Project'))->searchable()->sortable(),
+            TextColumn::make('company_name')->label(__('Company / Client'))->placeholder('-')->searchable(),
+            TextColumn::make('department.name')->label(__('Division'))->placeholder('-')->sortable(),
+            TextColumn::make('manager.name')->label(__('Project Manager'))->placeholder('-')->searchable(),
             TextColumn::make('status')->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title())
                 ->color(fn (string $state): string => match ($state) {
                     'active' => 'success', 'on_hold' => 'warning', 'completed' => 'info', default => 'gray',
@@ -25,7 +25,7 @@ class WorkProjectsTable
             TextColumn::make('end_date')->date('d M Y')->placeholder('-'),
         ])->filters([
             SelectFilter::make('status')->options([
-                'active' => 'Active', 'on_hold' => 'On Hold', 'completed' => 'Completed', 'cancelled' => 'Cancelled',
+                'active' => __('Active'), 'on_hold' => 'On Hold', 'completed' => __('Completed'), 'cancelled' => __('Cancelled'),
             ]),
         ])->defaultSort('name')->recordActions([EditAction::make()]);
     }

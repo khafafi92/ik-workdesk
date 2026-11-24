@@ -17,7 +17,7 @@
         <div><span>Department Work Logs</span><strong>{{ $summary['total'] }}</strong></div>
         <div><span>Planned</span><strong>{{ $summary['planned'] }}</strong></div>
         <div class="is-warning"><span>In Progress / Hold</span><strong>{{ $summary['in_progress'] + $summary['hold'] }}</strong></div>
-        <div class="is-success"><span>Done</span><strong>{{ $summary['done'] }}</strong></div>
+        <div class="is-success"><span>{{ __('Done') }}</span><strong>{{ $summary['done'] }}</strong></div>
     </div>
 
     @if ($this->canPostMessage($ticket))
@@ -74,15 +74,15 @@
             <div class="ik-collab-post-restriction">
                 <strong>
                     {{ $isWaitingForApproval
-                        ? 'Waiting for CBO approval'
-                        : ($isWaitingForPic ? 'Waiting for PIC assignment' : 'Post to group disabled') }}
+                        ? __('Waiting for CBO approval')
+                        : ($isWaitingForPic ? __('Waiting for PIC assignment') : __('Post to group disabled')) }}
                 </strong>
                 <p>
                     {{ $isWaitingForApproval
-                        ? 'Legal Division can only see this request until the Log Work is appproved by CBO.'
+                        ? __('Legal Division can only see this request until the Log Work is appproved by CBO.')
                         : ($isWaitingForPic
-                            ? 'Post to group will be active once the manager sets you up as this PIC Log Department work.'
-                            : 'Only the assigned PIC Log, System Administrator, or PIC Work Log can send a message.') }}
+                            ? __('Post to group will be active once the manager sets you up as this PIC Log Department work.')
+                            : __('Only the assigned PIC Log, System Administrator, or PIC Work Log can send a message.')) }}
                 </p>
             </div>
             <textarea

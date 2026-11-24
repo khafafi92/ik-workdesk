@@ -23,11 +23,11 @@ class UserForm
             ->components([
                 Section::make('Login Account')
                     ->description(
-                        'Connect login accounts to employee data.'
+                        __('Connect login accounts to employee data.')
                     )
                     ->schema([
                         Select::make('employee_id')
-                            ->label('Employee')
+                            ->label(__('Employee'))
                             ->options(
                                 function (?User $record): array {
                                     return Employee::query()
@@ -88,11 +88,11 @@ class UserForm
                             )
                             ->required(fn (string $operation): bool => $operation === 'create')
                             ->helperText(
-                                'Only employee does not yet have the login account displayed.'
+                                __('Only employee does not yet have the login account displayed.')
                             ),
 
                         TextInput::make('name')
-                            ->label('User Name')
+                            ->label(__('User Name'))
                             ->required()
                             ->maxLength(255),
 
@@ -104,7 +104,7 @@ class UserForm
                             ->maxLength(255),
 
                         TextInput::make('password')
-                            ->label('Password')
+                            ->label(__('Password'))
                             ->password()
                             ->revealable()
                             ->required(
@@ -115,7 +115,7 @@ class UserForm
                             )
                             ->minLength(8)
                             ->helperText(
-                                'When edit, empty if password does not want to be changed.'
+                                __('When edit, empty if password does not want to be changed.')
                             ),
 
                         Toggle::make('is_admin')
@@ -128,19 +128,19 @@ class UserForm
                                 fn (): bool => auth()->user()?->isSystemAdministrator() === true
                             )
                             ->helperText(
-                                'One primary administrator account allowed. Sys Administrator can set this status.'
+                                __('One primary administrator account allowed. Sys Administrator can set this status.')
                             ),
                     ])
                     ->columns(2)
                     ->columnSpanFull(),
 
-                Section::make('Accessible Level')
+                Section::make(__('Accessible Level'))
                     ->description(
-                        'CBO and COO I, II, III use management levels, select approval authority and menus according to their duties.'
+                        __('CBO and COO I, II, III use management levels, select approval authority and menus according to their duties.')
                     )
                     ->schema([
                         Select::make('access_level')
-                            ->label('Main Level')
+                            ->label(__('Main Level'))
                             ->options(function (): array {
                                 return app(UserAccessHierarchyService::class)
                                     ->optionsFor(auth()->user());
@@ -148,14 +148,14 @@ class UserForm
                             ->default(UserAccessHierarchyService::REQUESTER)
                             ->required()
                             ->native(false)
-                            ->helperText('For CBO, select Management and then check Legal Approval. SCM signature set at SCM Settings.')
+                            ->helperText(__('For CBO, select Management and then check Legal Approval. SCM signature set at SCM Settings.'))
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
 
                 Section::make('Department Access')
                     ->description(
-                        'Select additional departments that the user can access.'
+                        __('Select additional departments that the user can access.')
                     )
                     ->schema([
                         CheckboxList::make('accessibleDepartments')
@@ -171,15 +171,15 @@ class UserForm
                             ->bulkToggleable()
                             ->columns(3)
                             ->helperText(
-                                'The department of automatic employee is accessible. Select only additional departments.'
+                                __('The department of automatic employee is accessible. Select only additional departments.')
                             )
                             ->columnSpanFull(),
                     ])
                     ->columnSpanFull(),
 
-                Section::make('Menu Access')
+                Section::make(__('Menu Access'))
                     ->description(
-                        'Select the approval and submenu authority required by this user.'
+                        __('Select the approval and submenu authority required by this user.')
                     )
                     ->schema(
                         collect(app(UserAdditionalAccessService::class)->menuGroups())

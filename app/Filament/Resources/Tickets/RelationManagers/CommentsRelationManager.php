@@ -38,16 +38,16 @@ class CommentsRelationManager extends RelationManager
         return $schema
             ->components([
                 Textarea::make('message')
-                    ->label('Comment / Update')
+                    ->label(__('Comment / Update'))
                     ->placeholder(
-                        'Write down questions, clarifyation, or employment development.'
+                        __('Write down questions, clarifyation, or employment development.')
                     )
                     ->required()
                     ->rows(5)
                     ->columnSpanFull(),
 
                 FileUpload::make('attachments')
-                    ->label('Attachments')
+                    ->label(__('Attachments'))
                     ->multiple()
                     ->disk('local')
                     ->directory('ticket-comments')
@@ -138,18 +138,18 @@ class CommentsRelationManager extends RelationManager
             ->recordTitleAttribute('message')
             ->columns([
                 TextColumn::make('user.name')
-                    ->label('From')
+                    ->label(__('From'))
                     ->badge()
-                    ->placeholder('System'),
+                    ->placeholder(__('System')),
 
                 TextColumn::make('message')
-                    ->label('Comment / Update')
+                    ->label(__('Comment / Update'))
                     ->wrap()
                     ->limit(150)
                     ->searchable(),
 
                 TextColumn::make('attachments')
-                    ->label('Attachments')
+                    ->label(__('Attachments'))
                     ->formatStateUsing(function ($state): string {
                         if (blank($state)) {
                             return 'No files';
@@ -170,7 +170,7 @@ class CommentsRelationManager extends RelationManager
                     ->badge(),
 
                 TextColumn::make('created_at')
-                    ->label('Date & Time')
+                    ->label(__('Date & Time'))
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
@@ -183,7 +183,7 @@ class CommentsRelationManager extends RelationManager
                         abort_unless(
                             auth()->check(),
                             403,
-                            'You don\'t have a comment permit.'
+                            __('You don\'t have a comment permit.')
                         );
                     })
                     ->mutateDataUsing(function (array $data): array {
@@ -198,15 +198,15 @@ class CommentsRelationManager extends RelationManager
                     ->modalHeading('Comment Detail')
                     ->schema([
                         TextEntry::make('user.name')
-                            ->label('From')
-                            ->placeholder('System'),
+                            ->label(__('From'))
+                            ->placeholder(__('System')),
 
                         TextEntry::make('message')
-                            ->label('Comment / Update')
+                            ->label(__('Comment / Update'))
                             ->columnSpanFull(),
 
                         TextEntry::make('attachments')
-                            ->label('Attachments')
+                            ->label(__('Attachments'))
                             ->html()
                             ->formatStateUsing(function (
                                 mixed $state,
@@ -253,12 +253,12 @@ class CommentsRelationManager extends RelationManager
                         // end attach to view modal, display attachments as links
 
                         TextEntry::make('created_at')
-                            ->label('Date & Time')
+                            ->label(__('Date & Time'))
                             ->dateTime('d M Y H:i'),
                     ]),
 
                 EditAction::make()
-                    ->label('Edit')
+                    ->label(__('Edit'))
                     ->visible(
                         fn (TicketComment $record): bool => auth()->user()->isSystemAdministrator() || (int) $record->user_id === (int) auth()->id()
                     ),

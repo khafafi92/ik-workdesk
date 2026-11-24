@@ -47,7 +47,7 @@ class TicketCategoryResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'Request Category';
+        return __('Request Category');
     }
 
     public static function getPluralModelLabel(): string

@@ -12,7 +12,7 @@ class EditAteGeneralLetter extends EditRecord
 
     public function getTitle(): string
     {
-        return 'Complete a General APCA Letter';
+        return __('Complete a General APCA Letter');
     }
 
     protected function afterSave(): void

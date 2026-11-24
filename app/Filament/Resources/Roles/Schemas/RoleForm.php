@@ -38,13 +38,13 @@ class RoleForm
             ->components([
                 Section::make('Role Information')
                     ->description(
-                        'Role is a set of access privileges that can be given to users.'
+                        __('Role is a set of access privileges that can be given to users.')
                     )
                     ->schema([
                         TextInput::make('name')
                             ->label('Role Name')
                             ->placeholder(
-                                'Example: Legal Reviewer'
+                                __('Example: Legal Reviewer')
                             )
                             ->required()
                             ->maxLength(255),
@@ -52,10 +52,10 @@ class RoleForm
                         TextInput::make('code')
                             ->label('Role Code')
                             ->placeholder(
-                                'Example: legal-reviewer'
+                                __('Example: legal-reviewer')
                             )
                             ->helperText(
-                                'Use lowercase and minus sign. Do not change after use.'
+                                __('Use lowercase and minus sign. Do not change after use.')
                             )
                             ->required()
                             ->unique(ignoreRecord: true)
@@ -70,12 +70,12 @@ class RoleForm
                             ),
 
                         Textarea::make('description')
-                            ->label('Description')
+                            ->label(__('Description'))
                             ->rows(3)
                             ->columnSpanFull(),
 
                         Toggle::make('is_active')
-                            ->label('Active')
+                            ->label(__('Active'))
                             ->default(true)
                             ->disabled(
                                 fn (?Role $record): bool => $record?->code
@@ -89,9 +89,9 @@ class RoleForm
                     ->columns(2)
                     ->columnSpanFull(),
 
-                Section::make('Permissions')
+                Section::make(__('Permissions'))
                     ->description(
-                        'Select the main role access. Meeting Room and Vehicle Booking are available automatically so that it does not need to be selected one by one.'
+                        __('Select the main role access. Meeting Room and Vehicle Booking are available automatically so that it does not need to be selected one by one.')
                     )
                     ->schema([
                         CheckboxList::make('permissions')

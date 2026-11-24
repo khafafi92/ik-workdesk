@@ -30,7 +30,7 @@
                 </div>
                 <div>
                     <h1 class="font-bold text-lg leading-tight">Amanah System</h1>
-                    <p class="text-xs text-slate-400">Working, Devoting, and Responsible</p>
+                    <p class="text-xs text-slate-400">{{ __('Working, Devoting, and Responsible') }}</p>
                 </div>
             </div>
 
@@ -39,12 +39,12 @@
                 @auth
                 <a href="{{ url('/dashboard') }}"
                     class="px-4 py-2 rounded-lg bg-white text-slate-900 text-sm font-semibold hover:bg-slate-200 transition">
-                    Dashboard
+                    {{ __('Dashboard') }}
                 </a>
                 @else
                 <a href="{{ route('login') }}"
                     class="px-4 py-2 rounded-lg border border-white/20 text-sm hover:bg-white/10 transition">
-                    Login
+                    {{ __('Login') }}
                 </a>
 
                 @if (Route::has('register'))
@@ -68,36 +68,36 @@
                 <div
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 text-sm text-emerald-300 mb-6">
                     <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                    A reminder to every trust
+                    {{ __('A reminder to every trust') }}
                 </div>
 
                 <h2 class="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
-                    Wherever you work,
-                    <span class="text-emerald-400">remember God.</span>
+                    {{ __('Wherever you work,') }}
+                    <span class="text-emerald-400">{{ __('remember God.') }}</span>
                 </h2>
 
                 <p class="mt-6 text-lg md:text-xl text-slate-300 leading-relaxed max-w-2xl">
-                    You want a job anywhere, if you're Muslim remember God.
-                    Because office is not just about position, but about trust
-                    that needs to be done right.
+                    {{ __('You want a job anywhere, if you\'re Muslim remember God.') }}
+                    {{ __('Because office is not just about position, but about trust') }}
+                    {{ __('that needs to be done right.') }}
                 </p>
 
                 <div class="mt-8 flex flex-wrap gap-4">
                     @auth
                     <a href="{{ url('/dashboard') }}"
                         class="px-6 py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
-                        Enter Dashboard
+                        {{ __('Enter Dashboard') }}
                     </a>
                     @else
                     <a href="{{ route('login') }}"
                         class="px-6 py-3 rounded-xl bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition shadow-lg shadow-emerald-500/20">
-                        Start Working
+                        {{ __('Start Working') }}
                     </a>
                     @endauth
 
                     <a href="#pesan"
                         class="px-6 py-3 rounded-xl border border-white/20 font-semibold hover:bg-white/10 transition">
-                        Read Message
+                        {{ __('Read Message') }}
                     </a>
                 </div>
             </section>
@@ -115,27 +115,27 @@
                     </div>
 
                     <p class="text-xl md:text-2xl leading-relaxed font-semibold text-white">
-                        You won't be asked,
-                        <span class="text-emerald-300">how much has been collected</span>
-                        of rank and rank.
+                        {{ __('You won\'t be asked,') }}
+                        <span class="text-emerald-300">{{ __('how much has been collected') }}</span>
+                        {{ __('of rank and rank.') }}
                     </p>
 
                     <div class="my-8 h-px bg-white/10"></div>
 
                     <p class="text-slate-300 text-lg mb-4">
-                        First question:
+                        {{ __('First question:') }}
                     </p>
 
                     <div class="space-y-4">
                         <div class="p-5 rounded-2xl bg-slate-900/70 border border-emerald-500/20">
                             <p class="text-emerald-300 font-bold text-lg">
-                                How many trusts of God have you accomplished?
+                                {{ __('How many trusts of God have you accomplished?') }}
                             </p>
                         </div>
 
                         <div class="p-5 rounded-2xl bg-slate-900/70 border border-cyan-500/20">
                             <p class="text-cyan-300 font-bold text-lg">
-                                Do you know Allah?
+                                {{ __('Do you know Allah?') }}
                             </p>
                         </div>
                     </div>
@@ -146,7 +146,7 @@
                             ✓
                         </div>
                         <p>
-                            This system not only records work, but reminds us of responsibility.
+                            {{ __('This system not only records work, but reminds us of responsibility.') }}
                         </p>
                     </div>
                 </div>

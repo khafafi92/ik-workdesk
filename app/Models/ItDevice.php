@@ -237,9 +237,9 @@ class ItDevice extends Model
         }
 
         return match (true) {
-            ($snapshot['object_kind'] ?? null) === 'room' => 'Not valid',
-            ($snapshot['lifecycle_status'] ?? null) === 'unused' => 'Stock (unallocated)',
-            default => 'Unassigned',
+            ($snapshot['object_kind'] ?? null) === 'room' => __('Not valid'),
+            ($snapshot['lifecycle_status'] ?? null) === 'unused' => __('Stock (unallocated)'),
+            default => __('Unassigned'),
         };
     }
 }

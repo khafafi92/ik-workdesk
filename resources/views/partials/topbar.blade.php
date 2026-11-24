@@ -2,7 +2,7 @@
     <div>
         <p class="text-sm text-slate-500">Welcome back,</p>
         <p class="text-sm font-semibold text-slate-900">
-            {{ auth()->user()->name ?? 'User' }}
+            {{ auth()->user()->name ?? __('User') }}
         </p>
     </div>
 
@@ -14,7 +14,7 @@
 
         <a href="{{ route('profile.edit') }}"
             class="ik-secondary-button px-4 py-2 rounded-lg border border-slate-300 text-sm font-semibold hover:bg-slate-50">
-            Profile
+            {{ __('Profile') }}
         </a>
 
         <form method="POST" action="{{ route('logout') }}">

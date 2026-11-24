@@ -34,26 +34,26 @@ class SlaTicketAgingReportResource extends ServiceDeskReportResource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('ticket_no')->label('Ticket Number')->searchable(),
-            TextColumn::make('subject')->label('Subject')->searchable()->wrap(),
-            TextColumn::make('employee.name')->label('Requester')->toggleable(),
-            TextColumn::make('requesterDepartment.name')->label('Department')->toggleable(),
+            TextColumn::make('ticket_no')->label(__('Ticket Number'))->searchable(),
+            TextColumn::make('subject')->label(__('Subject'))->searchable()->wrap(),
+            TextColumn::make('employee.name')->label(__('Requester'))->toggleable(),
+            TextColumn::make('requesterDepartment.name')->label(__('Department'))->toggleable(),
             TextColumn::make('workTasks.employee.name')->label('PIC')->listWithLineBreaks()->toggleable(),
-            TextColumn::make('priority')->label('Priority')->badge(),
-            TextColumn::make('status')->label('Status')->badge(),
-            TextColumn::make('created_at')->label('Created At')->dateTime('d M Y H:i')->sortable(),
+            TextColumn::make('priority')->label(__('Priority'))->badge(),
+            TextColumn::make('status')->label(__('Status'))->badge(),
+            TextColumn::make('created_at')->label(__('Created At'))->dateTime('d M Y H:i')->sortable(),
             TextColumn::make('first_response_at')->label('First Response At')->dateTime('d M Y H:i')->toggleable(),
             TextColumn::make('age')->label('Ticket Age')->state(fn (Ticket $ticket) => app(ReportQueryService::class)->ticketAgeInDays($ticket).' days'),
             TextColumn::make('sla')->label('SLA Status')->state(function (Ticket $ticket): string {
                 return str(app(ReportQueryService::class)->sla($ticket)['status'])->replace('_', ' ')->title();
             })->badge(),
         ])->filters([
-            Filter::make('period')->label('Date Range')->schema([
-                DatePicker::make('from')->label('Start Date')->default(now()->startOfMonth()),
-                DatePicker::make('until')->label('End Date')->default(now()->endOfMonth()),
+            Filter::make('period')->label(__('Date Range'))->schema([
+                DatePicker::make('from')->label(__('Start Date'))->default(now()->startOfMonth()),
+                DatePicker::make('until')->label(__('End Date'))->default(now()->endOfMonth()),
             ])->query(fn (Builder $query, array $data) => app(ReportQueryService::class)->range($query, $data['from'] ?? null, $data['until'] ?? null, 'tickets.created_at')),
-            SelectFilter::make('priority')->options(['low' => 'Low', 'medium' => 'Medium', 'high' => 'High', 'urgent' => 'Urgent']),
-            SelectFilter::make('status')->options(['open' => 'Open', 'in_progress' => 'In Progress', 'waiting_user' => 'Pending', 'resolved' => 'Resolved', 'closed' => 'Closed']),
+            SelectFilter::make('priority')->options(['low' => __('Low'), 'medium' => __('Medium'), 'high' => __('High'), 'urgent' => __('Urgent')]),
+            SelectFilter::make('status')->options(['open' => __('Open'), 'in_progress' => __('In Progress'), 'waiting_user' => __('Pending'), 'resolved' => __('Resolved'), 'closed' => __('Closed')]),
             Filter::make('aging')->label('Ticket Aging')->form([Select::make('bucket')->options(['0_1' => '0–1 Day', '2_3' => '2–3 Days', '4_7' => '4–7 Days', 'over_7' => 'More Than 7 Days'])])
                 ->query(function (Builder $query, array $data): Builder {
                     $bucket = $data['bucket'] ?? null;

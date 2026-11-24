@@ -16,7 +16,7 @@ class AttendanceResultForm
         return $schema
             ->components([
                 Select::make('attendance_import_id')
-                    ->label('Period')
+                    ->label(__('Period'))
                     ->relationship('import', 'period_name')
                     ->searchable()
                     ->preload()

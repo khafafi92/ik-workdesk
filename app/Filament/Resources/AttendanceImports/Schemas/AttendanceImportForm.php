@@ -21,19 +21,19 @@ class AttendanceImportForm
                     ->dehydrated(),
 
                 TextInput::make('period_name')
-                    ->label('Period name')
+                    ->label(__('Period name'))
                     ->visibleOn('edit')
-                    ->placeholder('Example: May 21 - June 20, 2026')
-                    ->helperText('The name of the period will be automatically corrected based on the 21st day of the 21st of the 20th on the Total Clock File.')
+                    ->placeholder(__('Example: May 21 - June 20, 2026'))
+                    ->helperText(__('The name of the period will be automatically corrected based on the 21st day of the 21st of the 20th on the Total Clock File.'))
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
 
                 FileUpload::make('attendance_file_path')
-                    ->label('Attendance Location File')
+                    ->label(__('Attendance Location File'))
                     ->placeholder('Drag a file here or <span class="filepond--label-action">browse</span>')
-                    ->validationMessages(['required' => 'Select the location file of the absentee first.'])
-                    ->helperText('Upload Excel Activity Attendance of the Talenta. Place the period data that will be processed on the first sheet.')
+                    ->validationMessages(['required' => __('Select the location file of the absentee first.')])
+                    ->helperText(__('Upload Excel Activity Attendance of the Talenta. Place the period data that will be processed on the first sheet.'))
                     ->required()
                     ->maxSize(10240)
                     ->disk('local')
@@ -53,10 +53,10 @@ class AttendanceImportForm
                     ->columnSpanFull(),
 
                 FileUpload::make('work_hour_file_path')
-                    ->label('Total Workhours File')
+                    ->label(__('Total Workhours File'))
                     ->placeholder('Drag a file here or <span class="filepond--label-action">browse</span>')
-                    ->validationMessages(['required' => 'Select the total file of working hours first.'])
-                    ->helperText('The daily upload of the Excel containing Real Working Hour, dated 21 to 20 months later. Use the same period and the first sheet.')
+                    ->validationMessages(['required' => __('Select the total file of working hours first.')])
+                    ->helperText(__('The daily upload of the Excel containing Real Working Hour, dated 21 to 20 months later. Use the same period and the first sheet.'))
                     ->required()
                     ->maxSize(10240)
                     ->disk('local')
@@ -79,7 +79,7 @@ class AttendanceImportForm
                     ->default('uploaded'),
 
                 Textarea::make('notes')
-                    ->label('Notes')
+                    ->label(__('Notes'))
                     ->visibleOn('edit')
                     ->rows(3)
                     ->columnSpanFull(),

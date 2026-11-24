@@ -1575,3 +1575,27 @@ body.ik-workdesk-dashboard {
         scroll-behavior: auto !important;
     }
 }
+.wd-language-settings {
+    width: 100%;
+    max-width: 28rem;
+}
+
+.wd-language-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+    gap: 0.75rem;
+}
+
+.wd-language-options .fi-btn {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.wd-language-options .fi-btn[aria-pressed="true"] .fi-icon {
+    color: currentColor;
+}
+
+.wd-language-feedback {
+    margin-block-start: 0.75rem;
+    font-size: 0.875rem;
+}

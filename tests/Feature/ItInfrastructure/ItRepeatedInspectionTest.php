@@ -44,7 +44,7 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
         $firstId = $form->get('inspectionId');
         $form->call('saveDraft')->assertHasNoErrors();
         $this->assertSame(1, ItInspection::query()->count());
-        $form->call('finalizeInspection')->assertHasNoErrors()->assertSee('Next inspection');
+        $form->call('finalizeInspection')->assertHasNoErrors()->assertSee('Start a new inspection');
         $first = ItInspection::query()->findOrFail($firstId);
         $before = $first->getRawOriginal();
         $beforeResults = $first->results()->get()->map->getRawOriginal()->all();
@@ -101,7 +101,7 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
         $page = Livewire::test(ItInfrastructureReportPage::class)->assertSee($inspection->referenceNumber())->assertDontSee('Periksa lagi');
         $this->assertArrayHasKey($device->id, $page->instance()->deviceOptions);
         Livewire::test(ItInspectionPage::class, ['inspectionId' => (string) $inspection->id])
-            ->assertSee('Critical')->assertDontSee('Next inspection');
+            ->assertSee('Critical')->assertDontSee('Start a new inspection');
         $this->assertSame([], Livewire::test(ItInspectionPage::class)->instance()->deviceSearchResults($device->name));
         $response = $page->instance()->exportSummary();
         $file = $response->getFile()->getPathname();
@@ -112,7 +112,7 @@ class ItRepeatedInspectionTest extends ItInfrastructureTestCase
             $columns = array_flip($rows[0]);
             $this->assertCount(2, $rows);
             $this->assertSame('Critical', $rows[1][$columns['Condition']]);
-            $this->assertSame('Tidak', $rows[1][$columns['Active for new checks']]);
+            $this->assertSame('No', $rows[1][$columns['Active for new checks']]);
             $workbook->disconnectWorksheets();
         } finally {
             unlink($file);

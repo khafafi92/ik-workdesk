@@ -7,6 +7,7 @@ use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\SignatureProfile;
 use App\Http\Middleware\AuthenticateFilament;
 use App\Http\Middleware\EnsureModuleIsEnabled;
+use App\Http\Middleware\SetWorkdeskLocale;
 use App\Services\Scm\Access;
 use Filament\Actions\Action;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -52,7 +53,7 @@ class AdminPanelProvider extends PanelProvider
             ->databaseNotificationsPolling(null)
             ->userMenuItems([
                 Action::make('signature-profile')
-                    ->label('Profile signature')
+                    ->label(fn (): string => __('Profile signature'))
                     ->url(fn () => SignatureProfile::getUrl())
                     ->visible(fn () => Access::signs(Auth::user())),
             ])
@@ -189,6 +190,7 @@ class AdminPanelProvider extends PanelProvider
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
+                SetWorkdeskLocale::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 PreventRequestForgery::class,

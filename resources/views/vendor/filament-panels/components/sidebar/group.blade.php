@@ -14,6 +14,7 @@
     @php
         $groupId = 'ik-nav-' . \Illuminate\Support\Str::slug($label) . '-' . substr(md5($label), 0, 8);
         $displayLabel = \App\Services\ModuleAccessService::displayLabel($label);
+        $translateLabels = ! in_array($label, ['Permintaan', 'Pengadaan'], true);
         $groupIcon = $icon ?? match ($label) {
             'Master Data' => 'heroicon-o-squares-2x2',
             'Attendance Report' => 'heroicon-o-clock',
@@ -102,7 +103,7 @@
             >
                 <ul class="ik-sidebar-flyout-list">
                     @foreach ($items as $item)
-                        @include('filament.components.sidebar-flyout-item', ['item' => $item, 'nested' => false])
+                        @include('filament.components.sidebar-flyout-item', ['item' => $item, 'nested' => false, 'translateLabels' => $translateLabels])
                     @endforeach
                 </ul>
             </div>

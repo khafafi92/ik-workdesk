@@ -141,15 +141,15 @@ class ItInspectionPage extends ItInfrastructurePage
     public function deviceSelector(Schema $schema): Schema
     {
         return $schema->components([
-            Select::make('deviceId')->id('it-inspection-device')->label('Device Name')
+            Select::make('deviceId')->id('it-inspection-device')->label(__('Device Name'))
                 ->options(function (): array {
                     $options = $this->deviceSearchResults();
 
                     return $this->inspection ? [$this->deviceId => $this->selectedDeviceLabel($this->deviceId)] + $options : $options;
                 })
                 ->searchable()->searchDebounce(300)
-                ->searchPrompt('Type name, asset number, or serial number')
-                ->searchingMessage('Searching for devices...')->noSearchResultsMessage('Device not found.')
+                ->searchPrompt(__('Type name, asset number, or serial number'))
+                ->searchingMessage(__('Searching for devices...'))->noSearchResultsMessage(__('Device not found.'))
                 ->getSearchResultsUsing(fn (string $search): array => $this->deviceSearchResults($search))
                 ->getOptionLabelUsing(fn ($value): ?string => $this->selectedDeviceLabel($value))
                 ->selectablePlaceholder(false)->live()->disabled(! $this->canCreate())
@@ -210,12 +210,12 @@ class ItInspectionPage extends ItInfrastructurePage
     public function form(Schema $schema): Schema
     {
         return $schema->statePath('data')->components([
-            Section::make('Check information')->columns(['md' => 2, 'xl' => 4])->schema([
-                DateTimePicker::make('checked_at')->label('Date and time')->required()->seconds(false)->maxDate(now()),
-                Select::make('location_name')->label('Check location')->options(ItDeviceLocation::options())
+            Section::make(__('Check information'))->columns(['md' => 2, 'xl' => 4])->schema([
+                DateTimePicker::make('checked_at')->label(__('Date and time'))->required()->seconds(false)->maxDate(now()),
+                Select::make('location_name')->label(__('Check location'))->options(ItDeviceLocation::options())
                     ->placeholder(fn () => $this->inspection?->location_snapshot['location']['gps_name'] ?? 'Select checkpoint location'),
-                TextInput::make('location_detail')->label('Detail lokasi / rack')->maxLength(255),
-                TextInput::make('notes')->label('Inspection notes')->placeholder('Notes (optional)')->maxLength(3000),
+                TextInput::make('location_detail')->label(__('Room / rack details'))->maxLength(255),
+                TextInput::make('notes')->label(__('Inspection notes'))->placeholder(__('Notes (optional)'))->maxLength(3000),
             ]),
         ])->disabled($this->isReadOnly());
     }
@@ -263,7 +263,7 @@ class ItInspectionPage extends ItInfrastructurePage
         $this->inspectionId = (string) $record->id;
         unset($this->inspection, $this->template);
         $this->form->fill($this->service()->formData($record));
-        Notification::make()->success()->title($finalize ? 'Check finalized' : 'Draft check saved')->send();
+        Notification::make()->success()->title($finalize ? __('Check finalized') : __('Draft check saved'))->send();
     }
 
     public function summary(): array

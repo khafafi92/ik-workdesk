@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Enums\ItPermission;
+use App\Filament\LocalizedPage as Page;
 use App\Filament\Resources\AtkItems\AtkItemResource;
 use App\Filament\Resources\ItDevices\ItDeviceResource;
 use App\Models\AtkItem;
@@ -23,7 +24,6 @@ use App\Services\Scm\Access;
 use App\Services\Scm\Decimal;
 use App\Services\Scm\Workflow;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
 use Illuminate\Database\QueryException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;

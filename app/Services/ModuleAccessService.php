@@ -64,7 +64,7 @@ class ModuleAccessService
 
     public static function displayLabel(string $label): string
     {
-        return match ($label) {
+        return __(match ($label) {
             'Menu Utama' => 'Main Menu',
             'Surat' => 'Correspondence',
             'ATK' => 'Office Supplies',
@@ -73,7 +73,7 @@ class ModuleAccessService
             'Perjalanan Dinas' => 'Business Travel',
             'Pengaturan Sistem' => 'System Settings',
             default => $label,
-        };
+        });
     }
 
     private function definitionForGroup(string|UnitEnum|null $group): ?array

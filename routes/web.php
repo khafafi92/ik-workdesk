@@ -14,6 +14,7 @@ use App\Http\Controllers\TicketCommentAttachmentDownloadController;
 use App\Http\Controllers\TravelDocumentController;
 use App\Http\Controllers\VendorPortalController;
 use App\Http\Controllers\VendorPublicPortalController;
+use App\Http\Controllers\WorkdeskLocaleController;
 use App\Http\Controllers\WorkTaskPermitResultDownloadController;
 use App\Http\Middleware\RequireLtroAccess;
 use App\Http\Middleware\RequireSuperadmin;
@@ -102,6 +103,8 @@ Route::middleware(['auth', 'verified', RequireSuperadmin::class])
     });
 
 Route::middleware('auth')->group(function () {
+    Route::post('/language', WorkdeskLocaleController::class)->name('workdesk.language');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

@@ -12,11 +12,14 @@ class EditItDailyMonitoring extends EditRecord
 {
     protected static string $resource = ItDailyMonitoringResource::class;
 
-    protected static ?string $title = 'Modify draft monitoring';
+    public function getTitle(): string
+    {
+        return __('Modify draft monitoring');
+    }
 
     public function getBreadcrumb(): string
     {
-        return 'Change draft';
+        return __('Change draft');
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
@@ -26,7 +29,7 @@ class EditItDailyMonitoring extends EditRecord
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Save Draft')->color('gray');
+        return parent::getSaveFormAction()->label(__('Save Draft'))->color('gray');
     }
 
     protected function getFormActions(): array
@@ -34,7 +37,7 @@ class EditItDailyMonitoring extends EditRecord
         return [$this->getSaveFormAction()->submit(null)->action(function (): void {
             $this->data['finalize'] = false;
             $this->save();
-        }), Action::make('finalize')->label('Finalisasi')->action(function (): void {
+        }), Action::make('finalize')->label(__('Finalize monitoring'))->action(function (): void {
             $this->data['finalize'] = true;
             $this->save();
         }), $this->getCancelFormAction()];
@@ -42,7 +45,7 @@ class EditItDailyMonitoring extends EditRecord
 
     protected function getCancelFormAction(): Action
     {
-        return Action::make('cancel')->label('Cancel')->color('gray')->url(ItDailyMonitoringResource::getUrl('index'));
+        return Action::make('cancel')->label(__('Cancel'))->color('gray')->url(ItDailyMonitoringResource::getUrl('index'));
     }
 
     protected function handleRecordUpdate(Model $record, array $data): Model
@@ -57,7 +60,7 @@ class EditItDailyMonitoring extends EditRecord
 
     protected function getSavedNotificationTitle(): ?string
     {
-        return 'Saved monitoring notes';
+        return __('Saved monitoring notes');
     }
 
     protected function getRedirectUrl(): string

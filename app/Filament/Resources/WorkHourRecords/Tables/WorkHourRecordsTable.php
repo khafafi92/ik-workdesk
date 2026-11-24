@@ -12,24 +12,24 @@ class WorkHourRecordsTable
         return $table
             ->columns([
                 TextColumn::make('import.period_name')
-                    ->label('Period')
+                    ->label(__('Period'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('raw_data.employee_id')
-                    ->label('Employee ID'),
+                    ->label(__('Employee ID')),
 
                 TextColumn::make('employee_name')
-                    ->label('Full Name')
+                    ->label(__('Full Name'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('work_hours_text')
-                    ->label('Total Working Hours')
+                    ->label(__('Total Working Hours'))
                     ->sortable(),
 
                 TextColumn::make('work_minutes')
-                    ->label('Total Minutes')
+                    ->label(__('Total Minutes'))
                     ->numeric()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),

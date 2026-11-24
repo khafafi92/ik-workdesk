@@ -11,16 +11,16 @@ class ListAteGeneralLetters extends ListRecords
 
     public function getTitle(): string
     {
-        return 'APCA General Mail Registers';
+        return __('APCA General Mail Registers');
     }
 
     public function getBreadcrumb(): string
     {
-        return 'List';
+        return __('List');
     }
 
     public function getSubheading(): ?string
     {
-        return 'Select mail type. The system creates numbers with appropriate patterns and stores its history in this list.';
+        return __('Select mail type. The system creates numbers with appropriate patterns and stores its history in this list.');
     }
 }

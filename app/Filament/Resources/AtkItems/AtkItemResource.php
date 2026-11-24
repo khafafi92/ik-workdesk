@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\AtkItems;
 
 use App\Exports\AtkItemImportTemplateExport;
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\AtkItems\Pages\CreateAtkItem;
 use App\Filament\Resources\AtkItems\Pages\EditAtkItem;
 use App\Filament\Resources\AtkItems\Pages\ListAtkItems;
@@ -18,7 +19,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
@@ -53,39 +53,39 @@ class AtkItemResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Goods data')
+            Section::make(__('Goods data'))
                 ->columns(2)
                 ->schema([
-                    TextInput::make('code')->label('Goods code')->required()->maxLength(50)->unique(ignoreRecord: true),
-                    TextInput::make('name')->label('The name of the item')->required()->maxLength(255),
-                    TextInput::make('size')->label('Size')->maxLength(100),
+                    TextInput::make('code')->label(__('Goods code'))->required()->maxLength(50)->unique(ignoreRecord: true),
+                    TextInput::make('name')->label(__('The name of the item'))->required()->maxLength(255),
+                    TextInput::make('size')->label(__('Size'))->maxLength(100),
                     Select::make('atk_category_id')
-                        ->label('Category')
+                        ->label(__('Category'))
                         ->relationship('categoryMaster', 'name', fn (Builder $query): Builder => $query->where('is_active', true))
                         ->searchable()
                         ->preload(),
                     Select::make('atk_unit_id')
-                        ->label('Unit')
+                        ->label(__('Unit'))
                         ->relationship('unitMaster', 'name', fn (Builder $query): Builder => $query->where('is_active', true))
                         ->searchable()
                         ->preload()
                         ->required(),
-                    TextInput::make('minimum_stock')->label('Minimum stock')->numeric()->minValue(0)->step(0.01),
-                    Toggle::make('is_active')->label('Active')->default(true),
+                    TextInput::make('minimum_stock')->label(__('Minimum stock'))->numeric()->minValue(0)->step(0.01),
+                    Toggle::make('is_active')->label(__('Active'))->default(true),
                     TextInput::make('current_stock')
-                        ->label('Stock early storage options')
-                        ->helperText('Select an entity warehouse for initial stock. Stocks are changed through incoming transactions or adjustments.')
+                        ->label(__('Stock early storage options'))
+                        ->helperText(__('Select an entity warehouse for initial stock. Stocks are changed through incoming transactions or adjustments.'))
                         ->numeric()
                         ->minValue(0)
                         ->step(0.01)
                         ->default(0)
                         ->disabledOn('edit'),
-                    Select::make('initial_warehouse_id')->label('Start stock storage')->options(static::warehouseOptions(...))
+                    Select::make('initial_warehouse_id')->label(__('Start stock storage'))->options(static::warehouseOptions(...))
                         ->required(fn (Get $get) => (float) $get('current_stock') > 0)
                         ->visibleOn('create')->searchable(),
                     TextInput::make('actual_stock')
-                        ->label('Real physical stock')
-                        ->helperText('This value only records physical calculations. Use adjustments to change system stock.')
+                        ->label(__('Real physical stock'))
+                        ->helperText(__('This value only records physical calculations. Use adjustments to change system stock.'))
                         ->numeric()
                         ->minValue(0)
                         ->step(0.01),
@@ -97,19 +97,19 @@ class AtkItemResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('row_number')->label('No.')->rowIndex(),
+                TextColumn::make('row_number')->label(__('No.'))->rowIndex(),
                 TextColumn::make('name')->label('Item Name')->searchable(['name', 'code'])->sortable(),
-                TextColumn::make('size')->label('Size')->sortable(),
+                TextColumn::make('size')->label(__('Size'))->sortable(),
                 TextColumn::make('current_stock')
-                    ->label('Quantity')
+                    ->label(__('Quantity'))
                     ->numeric(maxDecimalPlaces: 2)
                     ->sortable()
                     ->color(fn (AtkItem $record): string => $record->minimum_stock !== null && $record->current_stock <= $record->minimum_stock ? 'danger' : 'success'),
                 TextColumn::make('actual_stock')->label('Actual')->numeric(maxDecimalPlaces: 2)->sortable(),
-                TextColumn::make('unit')->label('Unit'),
+                TextColumn::make('unit')->label(__('Unit')),
             ])
             ->filters([
-                TernaryFilter::make('is_active')->label('Active'),
+                TernaryFilter::make('is_active')->label(__('Active')),
             ])
             ->defaultSort('name')
             ->headerActions([
@@ -121,13 +121,13 @@ class AtkItemResource extends Resource
                         'template-import-master-atk.xlsx',
                     )),
                 Action::make('import_items')
-                    ->label('Master/Stok Import')
+                    ->label(__('Master/Stok Import'))
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('primary')
-                    ->modalHeading('Master import and office supplies stock')
+                    ->modalHeading(__('Master import and office supplies stock'))
                     ->modalDescription('Select an entity warehouse for one import batch. Quantity updates the stock of selected warehouses; Actual records the results of office supplies physical examinations.')
                     ->form([
-                        Select::make('warehouse_id')->label('Entitled entity warehouse to import')->options(static::warehouseOptions(...))->searchable()->required(),
+                        Select::make('warehouse_id')->label(__('Entitled entity warehouse to import'))->options(static::warehouseOptions(...))->searchable()->required(),
                         FileUpload::make('file')
                             ->label('File Excel')
                             ->disk('local')
@@ -149,13 +149,13 @@ class AtkItemResource extends Resource
                             );
 
                             Notification::make()
-                                ->title('ATT import complete')
+                                ->title(__('ATT import complete'))
                                 ->body("New: {$result['created']}; updated: {$result['updated']}; stock adjusted: {$result['stockAdjusted']}.")
                                 ->success()
                                 ->send();
                         } catch (\Throwable $e) {
                             Notification::make()
-                                ->title('Office supplies import failed')
+                                ->title(__('Office supplies import failed'))
                                 ->body($e->getMessage())
                                 ->danger()
                                 ->send();
@@ -164,7 +164,7 @@ class AtkItemResource extends Resource
             ])
             ->recordActions([
                 Action::make('incoming')
-                    ->label('Stock in')
+                    ->label(__('Stock in'))
                     ->icon(Heroicon::OutlinedArrowDownCircle)
                     ->color('success')
                     ->form(static::stockForm('Number in'))
@@ -179,12 +179,12 @@ class AtkItemResource extends Resource
                         static::success('Stock entry\'s accounted for.');
                     }),
                 Action::make('adjust')
-                    ->label('Adjustment')
+                    ->label(__('Adjustment'))
                     ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
                     ->color('warning')
                     ->form(static::stockForm('Stock difference (+/-)', true))
                     ->requiresConfirmation()
-                    ->modalDescription('Enter positive values to add and negative values to reduce stock.')
+                    ->modalDescription(__('Enter positive values to add and negative values to reduce stock.'))
                     ->action(function (AtkItem $record, array $data): void {
                         app(AtkWarehouseStockService::class)->adjust(
                             $record,
@@ -236,14 +236,14 @@ class AtkItemResource extends Resource
     private static function stockForm(string $quantityLabel, bool $allowNegative = false): array
     {
         return [
-            Select::make('warehouse_id')->label('An entity warehouse')->options(static::warehouseOptions(...))->searchable()->required(),
+            Select::make('warehouse_id')->label(__('An entity warehouse'))->options(static::warehouseOptions(...))->searchable()->required(),
             TextInput::make('quantity')
                 ->label($quantityLabel)
                 ->numeric()
                 ->step(0.01)
                 ->minValue($allowNegative ? null : 0.01)
                 ->required(),
-            TextInput::make('note')->label('Notes')->required()->maxLength(500),
+            TextInput::make('note')->label(__('Notes'))->required()->maxLength(500),
         ];
     }
 

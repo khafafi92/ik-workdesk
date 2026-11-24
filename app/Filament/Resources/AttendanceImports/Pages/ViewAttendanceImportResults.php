@@ -50,7 +50,7 @@ class ViewAttendanceImportResults extends Page
     {
         if (AttendanceReportCenter::canAccess()) {
             return [
-                AttendanceReportCenter::getUrl(['periode' => $this->getRecord()->id]) => 'Attendance Report',
+                AttendanceReportCenter::getUrl(['periode' => $this->getRecord()->id]) => __('Attendance Report'),
                 $this->getBreadcrumb(),
             ];
         }
@@ -65,12 +65,12 @@ class ViewAttendanceImportResults extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return 'Attendance Results';
+        return __('Attendance Results');
     }
 
     public function getHeading(): string|Htmlable
     {
-        return 'Attendance Results';
+        return __('Attendance Results');
     }
 
     public function getSubheading(): string|Htmlable|null

@@ -46,7 +46,7 @@ class EditUser extends EditRecord
             $actor
                 && UserResource::canEdit($this->record),
             403,
-            'You do not have permission to change this user.'
+            __('You do not have permission to change this user.')
         );
 
         $this->selectedEmployeeId = filled($data['employee_id'] ?? null)
@@ -232,7 +232,7 @@ class EditUser extends EditRecord
                             $this->record
                         ),
                         403,
-                        'This user could not be deleted.'
+                        __('This user could not be deleted.')
                     );
 
                     Employee::query()

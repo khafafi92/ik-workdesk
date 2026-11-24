@@ -38,7 +38,7 @@ class TicketCollaborationRoom extends Component
         abort_unless(
             $this->canPostMessage($ticket),
             403,
-            'Post to group is only available for the already active requester, System Administrator, or PIC Work Log.'
+            __('Post to group is only available for the already active requester, System Administrator, or PIC Work Log.')
         );
 
         $this->validate([

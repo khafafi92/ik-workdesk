@@ -22,7 +22,7 @@ class DepartmentsTable
                 IconColumn::make('is_active')
                     ->boolean(),
                 IconColumn::make('requires_cbo_approval')
-                    ->label('CBO required')
+                    ->label(__('CBO required'))
                     ->boolean(),
                 TextColumn::make('created_at')
                     ->dateTime()

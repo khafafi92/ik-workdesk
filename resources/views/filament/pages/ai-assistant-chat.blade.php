@@ -1,8 +1,8 @@
 <x-filament-panels::page>
-    <section class="ik-ai-chat" aria-label="Ask Me conversation">
+    <section class="ik-ai-chat" aria-label="{{ __('Ask Me conversation') }}">
         <p class="ik-ai-disclosure">
-            Ask me a question to the AI provider you chose.
-            The AI answer can be incorrect and not yet connected to the WorkDesk internal document.
+            {{ __('Ask me a question to the AI provider you chose.') }}
+            {{ __('The AI answer can be incorrect and not yet connected to the WorkDesk internal document.') }}
         </p>
 
         @if (! $assistantAvailable)
@@ -31,7 +31,7 @@
                 <div
                     class="ik-ai-messages"
                     role="log"
-                    aria-label="Personal chat history"
+                    aria-label="{{ __('Personal chat history') }}"
                     aria-live="polite"
                     aria-relevant="additions"
                     tabindex="0"
@@ -41,7 +41,7 @@
                             class="ik-ai-message {{ $chatMessage->role === 'user' ? 'is-user' : 'is-assistant' }}"
                             wire:key="ai-message-{{ $chatMessage->id }}"
                         >
-                            <strong>{{ $chatMessage->role === 'user' ? 'You' : 'Ask Me' }}</strong>
+                            <strong>{{ $chatMessage->role === 'user' ? __('You') : __('Ask Me') }}</strong>
                             @if ($chatMessage->role === 'assistant' && $chatMessage->model)
                                 <span class="ik-ai-message-model">{{ $chatMessage->model }}</span>
                             @endif
@@ -49,7 +49,7 @@
                         </article>
                     @empty
                         <p class="ik-ai-empty">
-                            Write the questions downstairs to start a private conversation.
+                            {{ __('Write the questions downstairs to start a private conversation.') }}
                         </p>
                     @endforelse
                 </div>
@@ -61,7 +61,7 @@
                         wire:model="question"
                         rows="3"
                         maxlength="4000"
-                        placeholder="Write a question..."
+                        placeholder="{{ __('Write a question...') }}"
                         required
                         wire:loading.attr="disabled"
                         wire:target="provider,send"
@@ -82,7 +82,7 @@
                         </button>
                     </div>
                     <p class="ik-ai-loading" role="status" wire:loading wire:target="send">
-                        Contacting {{ $providerLabel }}...
+                        {{ __('Contacting') }} {{ $providerLabel }}...
                     </p>
                 </form>
             </div>

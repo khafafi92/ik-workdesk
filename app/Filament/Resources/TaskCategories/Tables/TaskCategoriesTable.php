@@ -17,22 +17,22 @@ class TaskCategoriesTable
         return $table
             ->columns([
                 TextColumn::make('department.name')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('name')
-                    ->label('Category')
+                    ->label(__('Category'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('code')
-                    ->label('Code')
+                    ->label(__('Code'))
                     ->searchable()
                     ->sortable(),
 
                 IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->boolean(),
             ])
             ->defaultSort('department_id')

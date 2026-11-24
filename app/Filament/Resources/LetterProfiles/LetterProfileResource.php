@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LetterProfiles;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\LetterProfiles\Pages\CreateLetterProfile;
 use App\Filament\Resources\LetterProfiles\Pages\EditLetterProfile;
 use App\Filament\Resources\LetterProfiles\Pages\ListLetterProfiles;
@@ -13,7 +14,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -44,23 +44,23 @@ class LetterProfileResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Mail profile')
-                ->description('Profile determines the form group and format the number used. Create a new profile if there are new units or needs mail.')
+            Section::make(__('Mail profile'))
+                ->description(__('Profile determines the form group and format the number used. Create a new profile if there are new units or needs mail.'))
                 ->columns(2)
                 ->schema([
                     TextInput::make('code')
-                        ->label('Profile code')
-                        ->helperText('Internal code for distinguishing profiles, for example HR-APCA or PROJECT-BD-KPMOG.')
+                        ->label(__('Profile code'))
+                        ->helperText(__('Internal code for distinguishing profiles, for example HR-APCA or PROJECT-BD-KPMOG.'))
                         ->required()
                         ->maxLength(50)
                         ->unique(ignoreRecord: true),
                     TextInput::make('name')
-                        ->label('Profile name')
+                        ->label(__('Profile name'))
                         ->required()
                         ->maxLength(255)
                         ->unique(ignoreRecord: true),
                     Select::make('permit_company_id')
-                        ->label('Default entity')
+                        ->label(__('Default entity'))
                         ->relationship('company', 'name')
                         ->searchable()
                         ->preload()
@@ -70,23 +70,23 @@ class LetterProfileResource extends Resource
                         ->relationship('department', 'name')
                         ->searchable()
                         ->preload()
-                        ->helperText('Empty if profile can be used by more than one department.'),
+                        ->helperText(__('Empty if profile can be used by more than one department.')),
                     Select::make('form_variant')
-                        ->label('Form forms')
+                        ->label(__('Form forms'))
                         ->options([
-                            'general' => 'General mail',
-                            'hr' => 'HR Letter',
-                            'project_bd' => 'Team Project/BD Mail',
+                            'general' => __('General mail'),
+                            'hr' => __('HR Letter'),
+                            'project_bd' => __('Team Project/BD Mail'),
                         ])
-                        ->helperText('Determines the content group that shows up when creating mail.')
+                        ->helperText(__('Determines the content group that shows up when creating mail.'))
                         ->default('general')
                         ->required(),
                     Toggle::make('is_active')
-                        ->label('Active')
+                        ->label(__('Active'))
                         ->default(true),
                     Textarea::make('description')
-                        ->label('Description')
-                        ->helperText('Note the use of the profile to make other admins choose the correct profile.')
+                        ->label(__('Description'))
+                        ->helperText(__('Note the use of the profile to make other admins choose the correct profile.'))
                         ->maxLength(2000)
                         ->columnSpanFull(),
                 ]),
@@ -97,33 +97,33 @@ class LetterProfileResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('code')->label('Code')->searchable()->sortable(),
-                TextColumn::make('name')->label('Profiles')->searchable()->sortable(),
-                TextColumn::make('company.code')->label('Entity')->placeholder('-')->sortable(),
-                TextColumn::make('department.code')->label('Department')->placeholder('More than one')->sortable(),
+                TextColumn::make('code')->label(__('Code'))->searchable()->sortable(),
+                TextColumn::make('name')->label(__('Profiles'))->searchable()->sortable(),
+                TextColumn::make('company.code')->label(__('Entity'))->placeholder('-')->sortable(),
+                TextColumn::make('department.code')->label(__('Department'))->placeholder(__('More than one'))->sortable(),
                 TextColumn::make('form_variant')
-                    ->label('Form')
+                    ->label(__('Form'))
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'hr' => 'HR',
                         'project_bd' => 'Team Project/BD',
                         default => 'General',
                     }),
-                IconColumn::make('is_active')->label('Active')->boolean(),
+                IconColumn::make('is_active')->label(__('Active'))->boolean(),
             ])
             ->filters([
-                SelectFilter::make('permit_company_id')->label('Entity')->relationship('company', 'name'),
-                SelectFilter::make('form_variant')->label('Form forms')->options([
-                    'general' => 'General mail',
-                    'hr' => 'HR Letter',
-                    'project_bd' => 'Team Project/BD Mail',
+                SelectFilter::make('permit_company_id')->label(__('Entity'))->relationship('company', 'name'),
+                SelectFilter::make('form_variant')->label(__('Form forms'))->options([
+                    'general' => __('General mail'),
+                    'hr' => __('HR Letter'),
+                    'project_bd' => __('Team Project/BD Mail'),
                 ]),
             ])
             ->defaultSort('name')
             ->headerActions([
-                CreateAction::make()->label('Create a mail profile'),
+                CreateAction::make()->label(__('Create a mail profile')),
             ])
             ->recordActions([
-                EditAction::make()->label('Change profile'),
+                EditAction::make()->label(__('Change profile')),
             ]);
     }
 

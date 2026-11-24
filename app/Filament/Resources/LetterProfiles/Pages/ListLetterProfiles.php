@@ -12,13 +12,13 @@ class ListLetterProfiles extends ListRecords
 
     public function getTitle(): string
     {
-        return 'Manage Mail Profiles';
+        return __('Manage Mail Profiles');
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Create a mail profile'),
+            CreateAction::make()->label(__('Create a mail profile')),
         ];
     }
 }

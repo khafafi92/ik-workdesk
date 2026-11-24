@@ -13,19 +13,19 @@ class ActivityCategoryForm
     {
         return $schema->components([
             TextInput::make('code')
-                ->label('Code')
+                ->label(__('Code'))
                 ->required()
                 ->unique(ignoreRecord: true)
                 ->maxLength(50),
             TextInput::make('name')
-                ->label('Category')
+                ->label(__('Category'))
                 ->required()
                 ->maxLength(255),
             Textarea::make('description')
                 ->rows(3)
                 ->columnSpanFull(),
             Toggle::make('is_active')
-                ->label('Active')
+                ->label(__('Active'))
                 ->default(true),
         ]);
     }

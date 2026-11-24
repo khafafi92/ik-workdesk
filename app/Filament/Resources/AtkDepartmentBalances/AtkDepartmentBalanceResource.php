@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\AtkDepartmentBalances;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\AtkDepartmentBalances\Pages\ListAtkDepartmentBalances;
 use App\Models\AtkDepartmentBalance;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -36,15 +36,15 @@ class AtkDepartmentBalanceResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('department.name')->label('Department')->searchable()->sortable(),
-                TextColumn::make('item.code')->label('Code')->searchable(),
-                TextColumn::make('item.name')->label('Office Supply Items')->searchable()->sortable(),
-                TextColumn::make('qty_available')->label('Balance')->numeric(decimalPlaces: 0)->sortable(),
-                TextColumn::make('item.unit')->label('Unit'),
-                TextColumn::make('updated_at')->label('Updated')->since()->sortable(),
+                TextColumn::make('department.name')->label(__('Department'))->searchable()->sortable(),
+                TextColumn::make('item.code')->label(__('Code'))->searchable(),
+                TextColumn::make('item.name')->label(__('Office Supply Items'))->searchable()->sortable(),
+                TextColumn::make('qty_available')->label(__('Balance'))->numeric(decimalPlaces: 0)->sortable(),
+                TextColumn::make('item.unit')->label(__('Unit')),
+                TextColumn::make('updated_at')->label(__('Updated'))->since()->sortable(),
             ])
             ->filters([
-                SelectFilter::make('department_id')->label('Department')->relationship('department', 'name')->searchable()->preload(),
+                SelectFilter::make('department_id')->label(__('Department'))->relationship('department', 'name')->searchable()->preload(),
             ])
             ->defaultSort('updated_at', 'desc');
     }

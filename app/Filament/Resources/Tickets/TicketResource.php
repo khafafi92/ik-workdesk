@@ -342,7 +342,7 @@ class TicketResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Service Desk';
+        return __('Service Desk');
     }
 
     public static function getNavigationBadge(): ?string
@@ -379,12 +379,12 @@ class TicketResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'Service Desk';
+        return __('Service Desk');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Service Desk';
+        return __('Service Desk');
     }
 
     public static function getNavigationGroup(): ?string

@@ -15,12 +15,12 @@ class EditHrApcaLetter extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Complete Draft HR APCA Letter';
+        return __('Complete Draft HR APCA Letter');
     }
 
     public function getBreadcrumb(): string
     {
-        return 'Complete draft';
+        return __('Complete draft');
     }
 
     public function getSubheading(): string|Htmlable|null
@@ -30,12 +30,12 @@ class EditHrApcaLetter extends EditRecord
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Save Draft');
+        return parent::getSaveFormAction()->label(__('Save Draft'));
     }
 
     protected function getCancelFormAction(): Action
     {
-        return parent::getCancelFormAction()->label('Back');
+        return parent::getCancelFormAction()->label(__('Back'));
     }
 
     protected function afterSave(): void

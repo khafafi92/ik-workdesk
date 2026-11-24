@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\AtkStockMovements;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\AtkStockMovements\Pages\ListAtkStockMovements;
 use App\Models\AtkStockMovement;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -36,18 +36,18 @@ class AtkStockMovementResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('created_at')->label('Time')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('item.code')->label('Code')->searchable(),
-                TextColumn::make('item.name')->label('Office Supply Items')->searchable()->sortable(),
-                TextColumn::make('movement_type')->label('Type')->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
-                TextColumn::make('qty')->label('Quantity')->numeric(decimalPlaces: 0),
-                TextColumn::make('balance_after')->label('End balance')->numeric(decimalPlaces: 0),
-                TextColumn::make('creator.name')->label('By')->toggleable(),
-                TextColumn::make('note')->label('Notes')->limit(45)->toggleable(),
+                TextColumn::make('created_at')->label(__('Time'))->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('item.code')->label(__('Code'))->searchable(),
+                TextColumn::make('item.name')->label(__('Office Supply Items'))->searchable()->sortable(),
+                TextColumn::make('movement_type')->label(__('Type'))->badge()->formatStateUsing(fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()),
+                TextColumn::make('qty')->label(__('Quantity'))->numeric(decimalPlaces: 0),
+                TextColumn::make('balance_after')->label(__('End balance'))->numeric(decimalPlaces: 0),
+                TextColumn::make('creator.name')->label(__('By'))->toggleable(),
+                TextColumn::make('note')->label(__('Notes'))->limit(45)->toggleable(),
             ])
             ->filters([
-                SelectFilter::make('movement_type')->label('Type')->options([
-                    'incoming' => 'Stock in', 'outgoing' => 'Issue', 'adjustment' => 'Adjustment',
+                SelectFilter::make('movement_type')->label(__('Type'))->options([
+                    'incoming' => __('Stock in'), 'outgoing' => __('Issue'), 'adjustment' => __('Adjustment'),
                 ]),
             ])
             ->defaultSort('created_at', 'desc');

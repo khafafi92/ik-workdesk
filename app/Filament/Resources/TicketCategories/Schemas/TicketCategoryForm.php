@@ -50,17 +50,17 @@ class TicketCategoryForm
                     ->maxLength(255),
 
                 TextInput::make('code')
-                    ->label('Code')
+                    ->label(__('Code'))
                     ->maxLength(50),
 
                 Toggle::make('requires_permit')
                     ->label('Requires Permit & KBLI')
-                    ->helperText('If active, Company and KBLI form forms appear and are obliged to be equipped in this category of Service Desk.')
+                    ->helperText(__('If active, Company and KBLI form forms appear and are obliged to be equipped in this category of Service Desk.'))
                     ->default(false),
 
                 Toggle::make('requires_manpower')
-                    ->label('Use manpower requirement form')
-                    ->helperText('Displaying the objectives of needs, locations, dates, and details of positions and numbers of people in the Desk Service to HR.')
+                    ->label(__('Use manpower requirement form'))
+                    ->helperText(__('Displaying the objectives of needs, locations, dates, and details of positions and numbers of people in the Desk Service to HR.'))
                     ->visible(fn (Get $get): bool => Department::query()->find($get('handler_department_id'))?->isHumanResources() === true)
                     ->default(false),
 
@@ -77,12 +77,12 @@ class TicketCategoryForm
                         fn (Get $get): bool => $get('workflow_type') === 'collaborative'
                     )
                     ->helperText(
-                        'Additional departments are going to be working on a collaborative request.'
+                        __('Additional departments are going to be working on a collaborative request.')
                     )
                     ->columnSpanFull(),
 
                 Toggle::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->default(true),
             ]);
     }

@@ -9,6 +9,7 @@ use App\Enums\ItDeviceType;
 use App\Enums\ItLicenseStatus;
 use App\Enums\ItSwitchFloor;
 use App\Filament\Actions\TransferItDeviceAction;
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Pages\ItInspectionPage;
 use App\Filament\Resources\ItDevices\Pages\CreateItDevice;
 use App\Filament\Resources\ItDevices\Pages\EditItDevice;
@@ -40,7 +41,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Components\Utilities\Get;
@@ -84,27 +84,27 @@ class ItDeviceResource extends Resource
         return $schema->components([
             Hidden::make('assignment_version'),
             Tabs::make('Data perangkat')->tabs([
-                Tab::make('Identity')->columns(['md' => 2, 'xl' => 3])->schema([
-                    Select::make('inventory_item_id')->label('Inventory Masters')
+                Tab::make(__('Identity'))->columns(['md' => 2, 'xl' => 3])->schema([
+                    Select::make('inventory_item_id')->label(__('Inventory item'))
                         ->options(fn () => InventoryCatalogue::installed() ? InventoryItem::where('kind', 'device')->where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($item) => [$item->id => $item->code.' / '.$item->name]) : [])
                         ->searchable()->live()->hidden(fn (Get $get) => $isRoom($get) || ! InventoryCatalogue::installed())
-                        ->helperText('Select the same type of items for units with the same brand and model. The asset number and serial number are kept recorded per unit.'),
-                    Select::make('inventory_balance_id')->label('Get units from storage')
+                        ->helperText(__('Select the same type of items for units with the same brand and model. The asset number and serial number are kept recorded per unit.')),
+                    Select::make('inventory_balance_id')->label(__('Source warehouse'))
                         ->options(fn (Get $get) => InventoryAccess::scopeBalances(InventoryBalance::query(), auth()->user())
                             ->where('inventory_item_id', $get('inventory_item_id'))->where('quantity_milli', '>=', 1000)
                             ->with(['warehouse.project', 'department'])->get()->mapWithKeys(fn ($balance) => [$balance->id => $balance->warehouse->label().' / '.$balance->department?->name.' / '.($balance->quantity_milli / 1000).' unit']))
                         ->searchable()->visible(fn (Get $get, ?ItDevice $record) => ! $record && ! $isRoom($get) && filled($get('inventory_item_id')))
-                        ->helperText('Select the source if the unit comes from the storage reception. Empty for old unit records; storage storage is unchanged.'),
-                    TextInput::make('asset_number')->label('Asset Number')->readOnly(fn (?ItDevice $record) => ! $record?->exists)->placeholder('Auto-created on saved')
+                        ->helperText(__('Select a warehouse if you are registering a unit from stock. Leave this blank for a device already in use.')),
+                    TextInput::make('asset_number')->label(__('Asset Number'))->readOnly(fn (?ItDevice $record) => ! $record?->exists)->placeholder(__('Generated when saved'))
                         ->helperText(fn (?ItDevice $record) => $record?->exists
-                            ? 'Correctable according to asset label. Format: 00035/APCA/IT/2025 or 00037/KPMOG/IT/2025.'
-                            : 'Automatic format: 00035/APCA/IT/2025 or 00037/KPMOG/IT/2025.')
+                            ? __('Correctable according to asset label. Format: 00035/APCA/IT/2025 or 00037/KPMOG/IT/2025.')
+                            : __('Automatic format: 00035/APCA/IT/2025 or 00037/KPMOG/IT/2025.'))
                         ->mutateStateForValidationUsing(fn ($state, ?ItDevice $record) => ItAssetNumber::normalize($state, $record?->getRawOriginal('asset_number')))
                         ->dehydrateStateUsing(fn ($state, ?ItDevice $record) => ItAssetNumber::normalize($state, $record?->getRawOriginal('asset_number')))
                         ->rules(fn (?ItDevice $record) => [new ItAssetNumber($record?->getRawOriginal('asset_number'))])
                         ->maxLength(255)->unique(ignoreRecord: true)->hidden($isRoom),
-                    TextInput::make('name')->label('Device Name')->required()->maxLength(255),
-                    Select::make('device_type')->label('Type of device / object')->default('laptop')->options(fn (?ItDevice $record) => collect($record?->editableDeviceTypes() ?? ItDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->label()])->all())->required()->disabled(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 1)->helperText(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 2 ? 'Laptops and PCs can be corrected. Check history remains with type when checked.' : null)->dehydrated()->live()->afterStateUpdated(function ($state, Set $set, Get $get): void {
+                    TextInput::make('name')->label(__('Device Name'))->required()->maxLength(255),
+                    Select::make('device_type')->label(__('Type of device / object'))->default('laptop')->options(fn (?ItDevice $record) => collect($record?->editableDeviceTypes() ?? ItDeviceType::cases())->mapWithKeys(fn ($type) => [$type->value => $type->label()])->all())->required()->disabled(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 1)->helperText(fn (?ItDevice $record) => $record && count($record->editableDeviceTypes()) === 2 ? __('Laptops and PCs can be corrected. Check history remains with type when checked.') : null)->dehydrated()->live()->afterStateUpdated(function ($state, Set $set, Get $get): void {
                         if ($state !== 'switch') {
                             $set('floor', null);
                         }
@@ -116,46 +116,46 @@ class ItDeviceResource extends Resource
                             $set('lifecycle_status', 'unused');
                         }
                     }),
-                    Select::make('managing_department_id')->label('Managing Department')->options(fn () => Department::query()->whereIn('id', auth()->user()->accessibleDepartmentIds())->orderBy('name')->pluck('name', 'id'))->default(fn () => auth()->user()->employee?->department_id)->searchable()->required(),
-                    Select::make('asset_company')->label('Asset Company')->options(['APCA' => 'APCA', 'KPMOG' => 'KPMOG'])
+                    Select::make('managing_department_id')->label(__('Managing Department'))->options(fn () => Department::query()->whereIn('id', auth()->user()->accessibleDepartmentIds())->orderBy('name')->pluck('name', 'id'))->default(fn () => auth()->user()->employee?->department_id)->searchable()->required(),
+                    Select::make('asset_company')->label(__('Asset Company'))->options(['APCA' => 'APCA', 'KPMOG' => 'KPMOG'])
                         ->hidden(fn (Get $get, ?ItDevice $record) => $isRoom($get) || filled($record?->asset_number))
                         ->required(fn (Get $get, ?ItDevice $record) => ! $record && ! $isRoom($get) && blank($get('asset_number'))),
-                    TextInput::make('asset_year')->label('Asset Year')->numeric()->default(fn () => now()->year)->minValue(1000)->maxValue(9999)
+                    TextInput::make('asset_year')->label(__('Asset Year'))->numeric()->default(fn () => now()->year)->minValue(1000)->maxValue(9999)
                         ->hidden(fn (Get $get, ?ItDevice $record) => $isRoom($get) || filled($record?->asset_number))
                         ->required(fn (Get $get, ?ItDevice $record) => ! $isRoom($get) && ((! $record && blank($get('asset_number'))) || filled($get('asset_company')))),
-                    Select::make('location_name')->label('Location')->placeholder('Select device location')->options(ItDeviceLocation::options())->required($isRoom),
-                    Select::make('floor')->label('Floor')->placeholder('Pick a floor')->options(collect(ItSwitchFloor::cases())->mapWithKeys(fn (ItSwitchFloor $floor) => [$floor->value => $floor->label()])->all())->visible(fn (Get $get) => $get('device_type') === 'switch'),
-                    TextInput::make('location_detail')->label('Room / rack details'),
-                    TextInput::make('serial_number')->label('Serial Number')->maxLength(255)->hidden($isRoom),
-                    Textarea::make('specifications')->label('Specification')->maxLength(6000)->rows(2)->columnSpanFull(),
+                    Select::make('location_name')->label(__('Location'))->placeholder(__('Select device location'))->options(ItDeviceLocation::options())->required($isRoom),
+                    Select::make('floor')->label(__('Floor'))->placeholder(__('Pick a floor'))->options(collect(ItSwitchFloor::cases())->mapWithKeys(fn (ItSwitchFloor $floor) => [$floor->value => $floor->label()])->all())->visible(fn (Get $get) => $get('device_type') === 'switch'),
+                    TextInput::make('location_detail')->label(__('Room / rack details')),
+                    TextInput::make('serial_number')->label(__('Serial Number'))->maxLength(255)->hidden($isRoom),
+                    Textarea::make('specifications')->label(__('Specification'))->maxLength(6000)->rows(2)->columnSpanFull(),
                 ]),
-                Tab::make('OS & license')->visible($isComputer)->columns(['md' => 2, 'xl' => 3])->schema([
+                Tab::make(__('OS & license'))->visible($isComputer)->columns(['md' => 2, 'xl' => 3])->schema([
                     TextInput::make('operating_system')->label('OS'),
-                    TextInput::make('windows_version')->label('Version'),
-                    Select::make('windows_license_status')->label('License')->options(self::licenseOptions())->default('unverified')->required(),
-                    TextInput::make('office_version')->label('Microsoft Office version'),
-                    Select::make('office_license_status')->label('Microsoft Office License')->options(self::licenseOptions())->default('unverified')->required(),
+                    TextInput::make('windows_version')->label(__('Version')),
+                    Select::make('windows_license_status')->label(__('License'))->options(self::licenseOptions())->default('unverified')->required(),
+                    TextInput::make('office_version')->label(__('Microsoft Office version')),
+                    Select::make('office_license_status')->label(__('Microsoft Office License'))->options(self::licenseOptions())->default('unverified')->required(),
                     TextInput::make('ram_gb')->label('RAM (GB)')->numeric()->minValue(0.01),
                     Repeater::make('storage_devices')->label('HDD / SSD')->schema([
-                        Select::make('type')->label('Media type')->options(['hdd' => 'HDD', 'ssd' => 'SSD', 'nvme' => 'NVMe SSD'])->required(),
-                        TextInput::make('capacity_gb')->label('Capacity (GB)')->numeric()->minValue(0.01)->required(),
-                    ])->defaultItems(0)->compact()->table([TableColumn::make('Jenis media'), TableColumn::make('Kapasitas (GB)')])->maxItems(8)->reorderable(false)->addActionLabel('Add HDD / SSD')->columnSpanFull(),
+                        Select::make('type')->label(__('Media type'))->options(['hdd' => 'HDD', 'ssd' => 'SSD', 'nvme' => 'NVMe SSD'])->required(),
+                        TextInput::make('capacity_gb')->label(__('Capacity (GB)'))->numeric()->minValue(0.01)->required(),
+                    ])->defaultItems(0)->compact()->table([TableColumn::make(__('Media type')), TableColumn::make(__('Capacity (GB)'))])->maxItems(8)->reorderable(false)->addActionLabel(__('Add HDD / SSD'))->columnSpanFull(),
                 ]),
-                Tab::make('Usage')->columns(['md' => 2, 'xl' => 3])->schema([
-                    Select::make('assigned_employee_id')->label('User registered')->options(fn (?ItDevice $record): array => Employee::query()
+                Tab::make(__('Usage'))->columns(['md' => 2, 'xl' => 3])->schema([
+                    Select::make('assigned_employee_id')->label(__('User registered'))->options(fn (?ItDevice $record): array => Employee::query()
                         ->where(fn (Builder $query) => $query->where(fn (Builder $query) => $query->where('is_active', true)->whereHas('user'))->orWhere('id', $record?->assigned_employee_id))
                         ->with('user')->orderBy('name')->get()->mapWithKeys(fn (Employee $employee) => [$employee->id => $employee->user?->name ?? $employee->name])->all())
-                        ->searchable()->live()->hidden($isRoom)->helperText('Optional. Empty for unallocated stock assets or units.')->afterStateUpdated(fn ($state, Set $set) => $set('assigned_user_name', Employee::query()->with('user')->find($state)?->user?->name)),
-                    TextEntry::make('assigned_position')->label('Position')->state(fn (Get $get) => self::assignedEmployee($get)?->position)->placeholder('Unrecorded')->hidden($isRoom),
-                    TextEntry::make('assigned_division')->label('Division')->state(fn (Get $get) => self::assignedEmployee($get)?->department?->name)->placeholder('Unrecorded')->hidden($isRoom),
-                    TextInput::make('assigned_user_name')->label('User Name')->placeholder('Empty if no user has yet')->maxLength(255)->hidden(fn (Get $get) => $isRoom($get) || filled($get('assigned_employee_id'))),
-                    Select::make('lifecycle_status')->label('Usage Status')->default('in_use')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all())->hidden($isRoom)->required(fn (Get $get) => $get('device_type') !== 'server_room')->helperText('Select Stock / Unused for unallocated assets. Active stock assets can still be checked.')->live(),
-                    Toggle::make('is_active')->label('Active for new checks')->default(true)->required(),
-                    DatePicker::make('disposed_at')->label('Disposal date')->maxDate(today())->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
-                    Textarea::make('disposal_reason')->label('The reason for the removal')->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
-                    Textarea::make('notes')->label('Description')->rows(2)->columnSpanFull(),
+                        ->searchable()->live()->hidden($isRoom)->helperText(__('Optional. Empty for unallocated stock assets or units.'))->afterStateUpdated(fn ($state, Set $set) => $set('assigned_user_name', Employee::query()->with('user')->find($state)?->user?->name)),
+                    TextEntry::make('assigned_position')->label(__('Position'))->state(fn (Get $get) => self::assignedEmployee($get)?->position)->placeholder(__('Unrecorded'))->hidden($isRoom),
+                    TextEntry::make('assigned_division')->label(__('Division'))->state(fn (Get $get) => self::assignedEmployee($get)?->department?->name)->placeholder(__('Unrecorded'))->hidden($isRoom),
+                    TextInput::make('assigned_user_name')->label(__('User Name'))->placeholder(__('Empty if no user has yet'))->maxLength(255)->hidden(fn (Get $get) => $isRoom($get) || filled($get('assigned_employee_id'))),
+                    Select::make('lifecycle_status')->label(__('Usage Status'))->default('in_use')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all())->hidden($isRoom)->required(fn (Get $get) => $get('device_type') !== 'server_room')->helperText(__('Select Stock / Unused for unallocated assets. Active stock assets can still be checked.'))->live(),
+                    Toggle::make('is_active')->label(__('Active for new checks'))->default(true)->required(),
+                    DatePicker::make('disposed_at')->label(__('Disposal date'))->maxDate(today())->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
+                    Textarea::make('disposal_reason')->label(__('The reason for the removal'))->visible(fn (Get $get) => $get('lifecycle_status') === 'disposed')->required(fn (Get $get) => $get('lifecycle_status') === 'disposed'),
+                    Textarea::make('notes')->label(__('Description'))->rows(2)->columnSpanFull(),
                 ]),
-                Tab::make('History')->visible(fn (?ItDevice $record) => $record?->exists === true)->schema([View::make('filament.components.it-device-history')]),
+                Tab::make(__('History'))->visible(fn (?ItDevice $record) => $record?->exists === true)->schema([View::make('filament.components.it-device-history')]),
             ])->columnSpanFull(),
         ]);
     }
@@ -173,43 +173,43 @@ class ItDeviceResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->extraAttributes(['class' => 'it-infrastructure-table'])->columns([
-            TextColumn::make('asset_number')->label('Asset Number')->searchable()->sortable()->placeholder('Not entered'),
-            TextColumn::make('name')->label('Device Name')->searchable()->sortable(),
-            TextColumn::make('device_type')->label('Type')->formatStateUsing(fn ($state) => $state->label()),
-            TextColumn::make('serial_number')->label('Serial Number')->searchable()->toggleable(isToggledHiddenByDefault: true),
-            TextColumn::make('managingDepartment.name')->label('Managed by')->sortable(),
-            TextColumn::make('location_name')->label('Location')->formatStateUsing(fn (ItDeviceLocation $state) => $state->value)->placeholder('Unselected')->sortable(),
+            TextColumn::make('asset_number')->label(__('Asset Number'))->searchable()->sortable()->placeholder(__('Not entered')),
+            TextColumn::make('name')->label(__('Device Name'))->searchable()->sortable(),
+            TextColumn::make('device_type')->label(__('Type'))->formatStateUsing(fn ($state) => $state->label()),
+            TextColumn::make('serial_number')->label(__('Serial Number'))->searchable()->toggleable(isToggledHiddenByDefault: true),
+            TextColumn::make('managingDepartment.name')->label(__('Managed by'))->sortable(),
+            TextColumn::make('location_name')->label(__('Location'))->formatStateUsing(fn (ItDeviceLocation $state) => $state->value)->placeholder(__('Unselected'))->sortable(),
             TextColumn::make('floor')->label('LT')->formatStateUsing(fn (?ItSwitchFloor $state) => $state?->label())->sortable()->toggleable(),
-            TextColumn::make('assigned_user_name')->label('Owner/user unit')->placeholder(fn (ItDevice $record) => $record->assigneeLabel())->searchable(),
-            TextColumn::make('lifecycle_status')->label('Usage Status')->formatStateUsing(fn ($state) => $state?->label() ?? 'Room equipment'),
-            TextColumn::make('is_active')->label('Active')->formatStateUsing(fn ($state) => $state ? 'Yes' : 'No'),
+            TextColumn::make('assigned_user_name')->label(__('Owner/user unit'))->placeholder(fn (ItDevice $record) => $record->assigneeLabel())->searchable(),
+            TextColumn::make('lifecycle_status')->label(__('Usage Status'))->formatStateUsing(fn ($state) => $state?->label() ?? 'Room equipment'),
+            TextColumn::make('is_active')->label(__('Active'))->formatStateUsing(fn ($state) => $state ? 'Yes' : 'No'),
         ])->filters([
-            SelectFilter::make('category')->label('Category')->options(collect(ItDeviceCategory::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
-            SelectFilter::make('device_type')->label('Device type')->options(collect(ItDeviceType::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
-            SelectFilter::make('lifecycle_status')->label('Usage Status')->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
-            TernaryFilter::make('is_active')->label('Active'),
+            SelectFilter::make('category')->label(__('Category'))->options(collect(ItDeviceCategory::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
+            SelectFilter::make('device_type')->label(__('Device type'))->options(collect(ItDeviceType::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
+            SelectFilter::make('lifecycle_status')->label(__('Usage Status'))->options(collect(ItAssetLifecycle::cases())->mapWithKeys(fn ($value) => [$value->value => $value->label()])->all()),
+            TernaryFilter::make('is_active')->label(__('Active')),
         ])->recordActions([
             ActionGroup::make([
-                EditAction::make()->label('Edit'),
+                EditAction::make()->label(__('Edit')),
                 TransferItDeviceAction::make(),
-                DeleteAction::make()->label('Delete')->authorize('delete')
-                    ->modalHeading(fn (ItDevice $record) => 'Delete '.$record->name.'?')
-                    ->modalDescription('Device will be deleted from Master Device and new check options, including if it has a Critical result. Check history and follow-up will be saved.')
-                    ->modalSubmitActionLabel('Delete device')->modalCancelActionLabel('Cancel')
-                    ->successNotificationTitle('Device successfully removed')->failureNotification(null)
+                DeleteAction::make()->label(__('Delete'))->authorize('delete')
+                    ->modalHeading(fn (ItDevice $record) => __('Delete ').$record->name.'?')
+                    ->modalDescription(__('Device will be deleted from Master Device and new check options, including if it has a Critical result. Check history and follow-up will be saved.'))
+                    ->modalSubmitActionLabel(__('Delete device'))->modalCancelActionLabel(__('Cancel'))
+                    ->successNotificationTitle(__('Device successfully removed'))->failureNotification(null)
                     ->using(function (ItDevice $record): bool {
                         try {
                             return app(ItDeviceService::class)->delete(auth()->user(), $record);
                         } catch (ValidationException $exception) {
-                            Notification::make()->title('The device could not be removed')->body(collect($exception->errors())->flatten()->first())->danger()->send();
+                            Notification::make()->title(__('The device could not be removed'))->body(collect($exception->errors())->flatten()->first())->danger()->send();
 
                             return false;
                         }
                     }),
-            ])->label('Device actions')->icon('heroicon-m-ellipsis-vertical')->iconButton()->tooltip('Device actions'),
-            ViewAction::make()->label('View')->hidden(fn (ItDevice $record) => Gate::allows('update', $record)),
-            Action::make('inspect')->label('Review')->url(fn (ItDevice $record) => ItInspectionPage::getUrl(['device' => $record->id]))->visible(fn (ItDevice $record) => Gate::allows('inspectDevice', [ItInspection::class, $record])),
-        ])->defaultSort('name')->emptyStateHeading('No device yet')->emptyStateDescription('Click Add Device to list laptops, servers, network devices, or server spaces.');
+            ])->label(__('Device actions'))->icon('heroicon-m-ellipsis-vertical')->iconButton()->tooltip(__('Device actions')),
+            ViewAction::make()->label(__('View'))->hidden(fn (ItDevice $record) => Gate::allows('update', $record)),
+            Action::make('inspect')->label(__('Review'))->url(fn (ItDevice $record) => ItInspectionPage::getUrl(['device' => $record->id]))->visible(fn (ItDevice $record) => Gate::allows('inspectDevice', [ItInspection::class, $record])),
+        ])->defaultSort('name')->emptyStateHeading(__('No device yet'))->emptyStateDescription(__('Click Add Device to list laptops, servers, network devices, or server spaces.'));
     }
 
     public static function getEloquentQuery(): Builder

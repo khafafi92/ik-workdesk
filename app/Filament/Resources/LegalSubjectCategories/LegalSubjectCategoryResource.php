@@ -33,19 +33,19 @@ class LegalSubjectCategoryResource extends Resource
     {
         return $schema->components([
             TextInput::make('name')
-                ->label('Subject Category')
+                ->label(__('Subject Category'))
                 ->required()
                 ->maxLength(255)
                 ->unique(ignoreRecord: true),
-            Toggle::make('is_active')->label('Active')->default(true),
+            Toggle::make('is_active')->label(__('Active'))->default(true),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Subject Category')->searchable()->sortable(),
-            IconColumn::make('is_active')->label('Active')->boolean(),
+            TextColumn::make('name')->label(__('Subject Category'))->searchable()->sortable(),
+            IconColumn::make('is_active')->label(__('Active'))->boolean(),
         ])->defaultSort('name');
     }
 

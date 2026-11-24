@@ -101,7 +101,7 @@
             </div>
             <div>
                 <div class="header-title">AVAILABILITY LTRO-<span class="accent">1B</span></div>
-                <div class="header-sub">Report period follows the 21st to the 20th</div>
+                <div class="header-sub">{{ __('Report period follows the 21st to the 20th') }}</div>
             </div>
         </div>
 
@@ -110,7 +110,7 @@
                 <i class="ti ti-arrow-left" aria-hidden="true"></i> Monitoring
             </a>
             <a href="{{ url('/panel') }}" class="btn btn-dark">
-                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Return to Dashboard
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> {{ __('Return to Dashboard') }}
             </a>
         </div>
     </header>
@@ -120,14 +120,14 @@
             <div class="panel-header">
                 <div>
                     <div class="panel-title">Period Availability</div>
-                    <div class="panel-sub">Choose active period or create a new period until the 20th.</div>
+                    <div class="panel-sub">{{ __('Choose active period or create a new period until the 20th.') }}</div>
                 </div>
 
                 <div class="availability-controls">
                     <div class="field">
-                        <label>Period</label>
+                        <label>{{ __('Period') }}</label>
                         <select wire:model.live="selectedPeriodStart">
-                            <option value="">No period yet</option>
+                            <option value="">{{ __('No period yet') }}</option>
                             @foreach($periods as $period)
                                 <option value="{{ $period['value'] }}">{{ $period['label'] }}</option>
                             @endforeach
@@ -136,11 +136,11 @@
 
                     <form wire:submit.prevent="createPeriod" class="availability-controls">
                         <div class="field">
-                            <label>Make period until the 20th</label>
+                            <label>{{ __('Make period until the 20th') }}</label>
                             <input type="month" wire:model="newPeriodEndMonth">
                         </div>
                         <button type="submit" class="btn btn-blue">
-                            <i class="ti ti-calendar-plus" aria-hidden="true"></i> Create Period
+                            <i class="ti ti-calendar-plus" aria-hidden="true"></i> {{ __('Create Period') }}
                         </button>
                     </form>
 
@@ -151,7 +151,7 @@
                             wire:click="deletePeriod"
                             wire:confirm="Delete all records for this period?"
                         >
-                            <i class="ti ti-trash" aria-hidden="true"></i> Remove Period
+                            <i class="ti ti-trash" aria-hidden="true"></i> {{ __('Remove Period') }}
                         </button>
                     @endif
                 </div>
@@ -162,22 +162,22 @@
                     <div class="summary-card">
                         <div class="summary-label">Total Days</div>
                         <div class="summary-value blue">{{ number_format($summary['days']) }}</div>
-                        <div class="summary-caption">Day</div>
+                        <div class="summary-caption">{{ __('Day') }}</div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Required Hours</div>
                         <div class="summary-value amber">{{ number_format($summary['total_required_hours'], 2) }}</div>
-                        <div class="summary-caption">Hours</div>
+                        <div class="summary-caption">{{ __('Hours') }}</div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Shutdown Hours</div>
                         <div class="summary-value amber">{{ number_format($summary['total_shutdown_hours'], 2) }}</div>
-                        <div class="summary-caption">Hours</div>
+                        <div class="summary-caption">{{ __('Hours') }}</div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Unplanned Hours</div>
                         <div class="summary-value amber">{{ number_format($summary['total_unplanned_hours'], 2) }}</div>
-                        <div class="summary-caption">Hours</div>
+                        <div class="summary-caption">{{ __('Hours') }}</div>
                     </div>
                     <div class="summary-card">
                         <div class="summary-label">Avg Availability</div>
@@ -208,12 +208,12 @@
             </div>
 
             <p class="scroll-hint">
-                <i class="ti ti-arrows-horizontal" aria-hidden="true"></i> Move to see all columns
+                <i class="ti ti-arrows-horizontal" aria-hidden="true"></i> {{ __('Move to see all columns') }}
             </p>
 
             @if(empty($rows))
                 <div class="table-wrap">
-                    <div class="empty-cell">No data yet. Create new period and then manual data content.</div>
+                    <div class="empty-cell">{{ __('No data yet. Create new period and then manual data content.') }}</div>
                 </div>
             @else
                 <form wire:submit.prevent="save">
@@ -221,11 +221,11 @@
                         <table class="dark-table">
                             <thead>
                                 <tr>
-                                    <th style="width:52px;">No</th>
-                                    <th style="width:92px;">Day</th>
-                                    <th style="width:96px;">Date</th>
+                                    <th style="width:52px;">{{ __('No') }}</th>
+                                    <th style="width:92px;">{{ __('Day') }}</th>
+                                    <th style="width:96px;">{{ __('Date') }}</th>
                                     <th style="width:82px;">Flow Rate<br>MMSCFD</th>
-                                    <th style="width:76px;">Rental<br>Code</th>
+                                    <th style="width:76px;">Rental<br>{{ __('Code') }}</th>
                                     <th style="width:90px;">Fuel Gas<br>MMSCFD</th>
                                     <th style="width:90px;">Spare Part<br>%</th>
                                     <th style="width:86px;">Unplan<br>Comp A</th>
@@ -237,7 +237,7 @@
                                     <th style="width:86px;">Unplan<br>Comp C</th>
                                     <th style="width:86px;">Shutdown<br>Comp C</th>
                                     <th style="width:86px;">Running<br>Comp C</th>
-                                    <th style="width:90px;">Required<br>Hours</th>
+                                    <th style="width:90px;">Required<br>{{ __('Hours') }}</th>
                                     <th style="width:90px;">ASC</th>
                                     <th style="width:70px;">LPO</th>
                                     <th style="width:84px;">Reliability<br>%</th>
@@ -248,7 +248,7 @@
                                     <th style="width:86px;">LTRX A<br>RH</th>
                                     <th style="width:86px;">LTRX B<br>RH</th>
                                     <th style="width:86px;">PK101<br>RH</th>
-                                    <th style="width:100px;">Action</th>
+                                    <th style="width:100px;">{{ __('Action') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -289,7 +289,7 @@
                                                     wire:click="deleteRow({{ $row['id'] }})"
                                                     wire:confirm="Delete the record dated {{ \Carbon\Carbon::parse($row['report_date'])->format('d-M-y') }}?"
                                                 >
-                                                    <i class="ti ti-trash" aria-hidden="true"></i> Delete
+                                                    <i class="ti ti-trash" aria-hidden="true"></i> {{ __('Delete') }}
                                                 </button>
                                             </div>
                                         </td>
@@ -300,10 +300,10 @@
                     </div>
 
                     <div class="form-actions" style="border-top:0.5px solid #e5e7eb;">
-                        <span class="edit-note">Edit data directly on the table, then click Save Data.</span>
+                        <span class="edit-note">{{ __('Edit data directly on the table, then click Save Data.') }}</span>
                         <button type="submit" class="btn btn-blue" wire:loading.attr="disabled" wire:target="save">
                             <i class="ti ti-device-floppy" aria-hidden="true"></i>
-                            <span wire:loading.remove wire:target="save">Save Data</span>
+                            <span wire:loading.remove wire:target="save">{{ __('Save Data') }}</span>
                             <span wire:loading wire:target="save">Saving...</span>
                         </button>
                     </div>

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\DocumentTypes;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\DocumentTypes\Pages\CreateDocumentType;
 use App\Filament\Resources\DocumentTypes\Pages\EditDocumentType;
 use App\Filament\Resources\DocumentTypes\Pages\ListDocumentTypes;
@@ -11,7 +12,6 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -35,20 +35,20 @@ class DocumentTypeResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('name')->label('Name')->required()->maxLength(255)->unique(ignoreRecord: true),
-            TextInput::make('code')->label('Document code')->maxLength(50)->helperText('Example: B.08 or SKK.'),
-            Textarea::make('description')->label('Description')->maxLength(2000)->columnSpanFull(),
-            Toggle::make('is_active')->label('Active')->default(true),
+            TextInput::make('name')->label(__('Name'))->required()->maxLength(255)->unique(ignoreRecord: true),
+            TextInput::make('code')->label(__('Document code'))->maxLength(50)->helperText(__('Example: B.08 or SKK.')),
+            Textarea::make('description')->label(__('Description'))->maxLength(2000)->columnSpanFull(),
+            Toggle::make('is_active')->label(__('Active'))->default(true),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Name')->searchable()->sortable(),
-            TextColumn::make('code')->label('Code')->searchable()->sortable()->placeholder('-'),
-            TextColumn::make('description')->label('Description')->limit(70)->toggleable(),
-            IconColumn::make('is_active')->label('Active')->boolean(),
+            TextColumn::make('name')->label(__('Name'))->searchable()->sortable(),
+            TextColumn::make('code')->label(__('Code'))->searchable()->sortable()->placeholder('-'),
+            TextColumn::make('description')->label(__('Description'))->limit(70)->toggleable(),
+            IconColumn::make('is_active')->label(__('Active'))->boolean(),
         ])->defaultSort('name')->recordActions([EditAction::make()]);
     }
 

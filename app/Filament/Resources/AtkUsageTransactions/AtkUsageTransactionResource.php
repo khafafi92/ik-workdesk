@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AtkUsageTransactions;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\AtkUsageTransactions\Pages\CreateAtkUsageTransaction;
 use App\Filament\Resources\AtkUsageTransactions\Pages\ListAtkUsageTransactions;
 use App\Models\AtkDepartmentBalance;
@@ -12,7 +13,6 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -39,11 +39,11 @@ class AtkUsageTransactionResource extends Resource
         $departmentId = auth()->user()?->employee?->department_id;
 
         return $schema->components([
-            Section::make('Note usage')
+            Section::make(__('Note usage'))
                 ->columns(2)
                 ->schema([
                     Select::make('atk_item_id')
-                        ->label('Office Supply Items')
+                        ->label(__('Office Supply Items'))
                         ->options(fn (): array => AtkDepartmentBalance::query()
                             ->where('department_id', $departmentId ?? 0)
                             ->where('qty_available', '>', 0)
@@ -54,9 +54,9 @@ class AtkUsageTransactionResource extends Resource
                             ])->all())
                         ->searchable()
                         ->required(),
-                    DatePicker::make('usage_date')->label('Date of use')->default(today())->required(),
-                    TextInput::make('qty_used')->label('Number used')->numeric()->minValue(0.01)->step(0.01)->required(),
-                    Textarea::make('purpose')->label('Requirement')->required()->maxLength(1000)->columnSpanFull(),
+                    DatePicker::make('usage_date')->label(__('Date of use'))->default(today())->required(),
+                    TextInput::make('qty_used')->label(__('Number used'))->numeric()->minValue(0.01)->step(0.01)->required(),
+                    Textarea::make('purpose')->label(__('Requirement'))->required()->maxLength(1000)->columnSpanFull(),
                 ]),
         ]);
     }
@@ -65,12 +65,12 @@ class AtkUsageTransactionResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('usage_date')->label('Date')->date('d M Y')->sortable(),
-                TextColumn::make('department.name')->label('Department')->searchable()->toggleable(),
-                TextColumn::make('item.name')->label('Office Supply Items')->searchable()->sortable(),
-                TextColumn::make('qty_used')->label('Quantity')->numeric(decimalPlaces: 2),
-                TextColumn::make('purpose')->label('Requirement')->limit(55)->tooltip(fn (AtkUsageTransaction $record): string => $record->purpose),
-                TextColumn::make('user.name')->label('Noted by')->toggleable(),
+                TextColumn::make('usage_date')->label(__('Date'))->date('d M Y')->sortable(),
+                TextColumn::make('department.name')->label(__('Department'))->searchable()->toggleable(),
+                TextColumn::make('item.name')->label(__('Office Supply Items'))->searchable()->sortable(),
+                TextColumn::make('qty_used')->label(__('Quantity'))->numeric(decimalPlaces: 2),
+                TextColumn::make('purpose')->label(__('Requirement'))->limit(55)->tooltip(fn (AtkUsageTransaction $record): string => $record->purpose),
+                TextColumn::make('user.name')->label(__('Noted by'))->toggleable(),
             ])
             ->defaultSort('usage_date', 'desc')
             ->headerActions([CreateAction::make()->visible(fn (): bool => static::canCreate())]);

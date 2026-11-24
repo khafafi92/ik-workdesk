@@ -34,7 +34,7 @@ class WorkTasksTable
                     ->sortable(),
 
                 TextColumn::make('ticket.ticket_no')
-                    ->label('Request No')
+                    ->label(__('Request No'))
                     ->searchable()
                     ->sortable(),
 
@@ -44,7 +44,7 @@ class WorkTasksTable
                     ->limit(35),
 
                 TextColumn::make('ticket.employee.name')
-                    ->label('Requester')
+                    ->label(__('Requester'))
                     ->searchable(),
 
                 TextColumn::make('ticket.requesterDepartment.name')
@@ -57,22 +57,22 @@ class WorkTasksTable
                     ->searchable(),
 
                 TextColumn::make('project.name')
-                    ->label('Project')
+                    ->label(__('Project'))
                     ->placeholder('Non-project')
                     ->searchable()
                     ->toggleable(),
 
                 TextColumn::make('ticket.category.name')
-                    ->label('Request Category')
+                    ->label(__('Request Category'))
                     ->searchable(),
 
                 TextColumn::make('employee.name')
-                    ->label('PIC / Execution')
-                    ->placeholder('Undetermined')
+                    ->label(__('PIC / Execution'))
+                    ->placeholder(__('Undetermined'))
                     ->searchable(),
 
                 TextColumn::make('priority')
-                    ->label('Priority')
+                    ->label(__('Priority'))
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'low' => 'gray',
@@ -119,12 +119,12 @@ class WorkTasksTable
                     ->toggleable(isToggledHiddenByDefault: true),
 
                 TextColumn::make('progress_percent')
-                    ->label('Progress')
+                    ->label(__('Progress'))
                     ->suffix('%')
                     ->sortable(),
 
                 TextColumn::make('due_at')
-                    ->label('Due At')
+                    ->label(__('Due At'))
                     ->dateTime('d M Y H:i')
                     ->sortable()
                     ->toggleable(),
@@ -148,7 +148,7 @@ class WorkTasksTable
                     ->color('success')
                     ->requiresConfirmation()
                     ->modalHeading('Approve task?')
-                    ->modalDescription('After it\'s done, the task can be done by the purpose department.')
+                    ->modalDescription(__('After it\'s done, the task can be done by the purpose department.'))
                     ->visible(
                         fn ($record): bool => $record->canBeApprovedBy(auth()->user())
                     )
@@ -156,8 +156,8 @@ class WorkTasksTable
                         $record->approveLegalTask(auth()->user());
 
                         Notification::make()
-                            ->title('Task successfully proofed')
-                            ->body('Task can now be done by the purpose department.')
+                            ->title(__('Task successfully proofed'))
+                            ->body(__('Task can now be done by the purpose department.'))
                             ->success()
                             ->send();
                     }),
@@ -168,10 +168,10 @@ class WorkTasksTable
                     ->color('danger')
                     ->requiresConfirmation()
                     ->modalHeading('Reject task?')
-                    ->modalDescription('The reason for mandatory rejection will be filled and will be seen by the register as well as the purpose department.')
+                    ->modalDescription(__('The reason for mandatory rejection will be filled and will be seen by the register as well as the purpose department.'))
                     ->schema([
                         Textarea::make('rejection_reason')
-                            ->label('Reason for Rejection')
+                            ->label(__('Reason for Rejection'))
                             ->required()
                             ->rows(4)
                             ->maxLength(2000),
@@ -186,8 +186,8 @@ class WorkTasksTable
                         );
 
                         Notification::make()
-                            ->title('Task has been rejected')
-                            ->body('Decisions and grounds for rejection are noted.')
+                            ->title(__('Task has been rejected'))
+                            ->body(__('Decisions and grounds for rejection are noted.'))
                             ->danger()
                             ->send();
                     }),
@@ -207,7 +207,7 @@ class WorkTasksTable
                         abort_unless(
                             WorkTaskResource::canDelete($record),
                             403,
-                            'This log work could not be deleted.'
+                            __('This log work could not be deleted.')
                         );
                     }),
             ])
@@ -221,7 +221,7 @@ class WorkTasksTable
                             abort_unless(
                                 WorkTaskResource::canDeleteAny(),
                                 403,
-                                'You do not have permission to delete the work log.'
+                                __('You do not have permission to delete the work log.')
                             );
                         }),
                 ]),

@@ -21,7 +21,7 @@ class MeetingBookingsTable
         return $table
             ->columns([
                 TextColumn::make('start_at')
-                    ->label('Date & Time')
+                    ->label(__('Date & Time'))
                     ->dateTime('d M Y H:i')
                     ->description(
                         fn (MeetingBooking $record): string => 'Until '.$record->end_at->format('H:i')
@@ -35,7 +35,7 @@ class MeetingBookingsTable
                     )
                     ->wrap(),
                 TextColumn::make('room.name')
-                    ->label('Room')
+                    ->label(__('Room'))
                     ->searchable()
                     ->description(
                         fn (MeetingBooking $record): string => $record->room?->location ?? '-'
@@ -45,7 +45,7 @@ class MeetingBookingsTable
                     ->counts('participants')
                     ->badge(),
                 TextColumn::make('display_status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->badge()
                     ->formatStateUsing(
                         fn (string $state): string => str($state)->title()->toString()
@@ -62,14 +62,14 @@ class MeetingBookingsTable
             ])
             ->filters([
                 SelectFilter::make('meeting_room_id')
-                    ->label('Room')
+                    ->label(__('Room'))
                     ->relationship('room', 'name')
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('status')
                     ->options([
                         'confirmed' => 'Confirmed',
-                        'cancelled' => 'Cancelled',
+                        'cancelled' => __('Cancelled'),
                     ]),
             ])
             ->defaultSort('start_at', 'desc')
@@ -79,7 +79,7 @@ class MeetingBookingsTable
                         fn (MeetingBooking $record): bool => MeetingBookingResource::canEdit($record)
                     ),
                 Action::make('complete')
-                    ->label('Set Done')
+                    ->label(__('Set Done'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(
@@ -95,7 +95,7 @@ class MeetingBookingsTable
                     ->requiresConfirmation()
                     ->modalHeading('Finish this meeting?')
                     ->modalDescription(
-                        'Meetings will be marked complete and the remaining room schedules are readily available for other bookings.'
+                        __('Meetings will be marked complete and the remaining room schedules are readily available for other bookings.')
                     )
                     ->action(
                         function (MeetingBooking $record): void {
@@ -108,14 +108,14 @@ class MeetingBookingsTable
                             Notification::make()
                                 ->title('Meeting marked as done')
                                 ->body(
-                                    'The remaining slot rooms are now available.'
+                                    __('The remaining slot rooms are now available.')
                                 )
                                 ->success()
                                 ->send();
                         }
                     ),
                 Action::make('cancel')
-                    ->label('Cancel')
+                    ->label(__('Cancel'))
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(

@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\KpmogProjectLetters;
 
 use App\Exports\KpmogProjectLettersExport;
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\KpmogProjectLetters\Pages\EditKpmogProjectLetter;
 use App\Filament\Resources\KpmogProjectLetters\Pages\ListKpmogProjectLetters;
 use App\Models\OutgoingLetter;
@@ -18,7 +19,6 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -46,30 +46,30 @@ class KpmogProjectLetterResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('KPMOG mail number')
-                ->description('Sort numbers and departments were selected when drafts were created. Mail dates could be updated before they were published.')
+            Section::make(__('KPMOG mail number'))
+                ->description(__('Sort numbers and departments were selected when drafts were created. Mail dates could be updated before they were published.'))
                 ->columns(3)
                 ->schema([
                     Placeholder::make('document_number')
-                        ->label('Mail number')
+                        ->label(__('Mail number'))
                         ->content(fn (?OutgoingLetter $record): string => $record?->document_number ?? '-'),
                     Placeholder::make('department_label')
-                        ->label('Department')
+                        ->label(__('Department'))
                         ->content(fn (?OutgoingLetter $record): string => $record?->department?->code ?? '-'),
                     DatePicker::make('document_date')
-                        ->label('Mail date')
+                        ->label(__('Mail date'))
                         ->required(),
                 ]),
-            Section::make('Mail content')
-                ->description('Complete data according to Team Project or BD mail registers, then save the draft.')
+            Section::make(__('Mail content'))
+                ->description(__('Complete data according to Team Project or BD mail registers, then save the draft.'))
                 ->columns(2)
                 ->schema([
                     TextInput::make('pin')->label('PIN')->maxLength(255),
                     TextInput::make('pic_name')->label('PIC')->maxLength(255),
-                    TextInput::make('recipient')->label('Mail destination')->maxLength(255)->columnSpanFull(),
+                    TextInput::make('recipient')->label(__('Mail destination'))->maxLength(255)->columnSpanFull(),
                     TextInput::make('subject')
-                        ->label('Subject')
-                        ->helperText('Example: Request for first installment payment.')
+                        ->label(__('Subject'))
+                        ->helperText(__('Example: Request for first installment payment.'))
                         ->required()
                         ->maxLength(255)
                         ->columnSpanFull(),
@@ -81,14 +81,14 @@ class KpmogProjectLetterResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('document_number')->label('Mail number')->searchable()->sortable()->wrap(),
+                TextColumn::make('document_number')->label(__('Mail number'))->searchable()->sortable()->wrap(),
                 TextColumn::make('department.code')->label('Dept')->sortable(),
-                TextColumn::make('document_date')->label('Date')->date('d M Y')->sortable(),
+                TextColumn::make('document_date')->label(__('Date'))->date('d M Y')->sortable(),
                 TextColumn::make('pin')->label('PIN')->placeholder('-')->searchable(),
                 TextColumn::make('pic_name')->label('PIC')->placeholder('-')->searchable(),
-                TextColumn::make('recipient')->label('Mail destination')->placeholder('-')->searchable()->wrap(),
-                TextColumn::make('subject')->label('Subject')->placeholder('Not entered')->searchable()->wrap(),
-                TextColumn::make('status')->label('Status')->badge()
+                TextColumn::make('recipient')->label(__('Mail destination'))->placeholder('-')->searchable()->wrap(),
+                TextColumn::make('subject')->label(__('Subject'))->placeholder(__('Not entered'))->searchable()->wrap(),
+                TextColumn::make('status')->label(__('Status'))->badge()
                     ->formatStateUsing(fn (string $state): string => $state === 'issued' ? 'Issue' : ($state === 'cancelled' ? 'Cancelled' : 'Draft'))
                     ->color(fn (string $state): string => match ($state) {
                         'issued' => 'success',
@@ -97,18 +97,18 @@ class KpmogProjectLetterResource extends Resource
                     }),
             ])
             ->filters([
-                SelectFilter::make('status')->label('Status')->options([
-                    'draft' => 'Draft',
-                    'issued' => 'Issue',
-                    'cancelled' => 'Cancelled',
+                SelectFilter::make('status')->label(__('Status'))->options([
+                    'draft' => __('Draft'),
+                    'issued' => __('Issue'),
+                    'cancelled' => __('Cancelled'),
                 ]),
             ])
-            ->emptyStateHeading('No KPMOG Project / BD mail yet')
-            ->emptyStateDescription('Use the next number to create the first mail draft.')
+            ->emptyStateHeading(__('No KPMOG Project / BD mail yet'))
+            ->emptyStateDescription(__('Use the next number to create the first mail draft.'))
             ->defaultSort('created_at', 'desc')
             ->headerActions([
                 Action::make('export_excel')
-                    ->label('Export Excel')
+                    ->label(__('Export Excel'))
                     ->icon(Heroicon::OutlinedDocumentArrowDown)
                     ->action(fn () => Excel::download(
                         new KpmogProjectLettersExport(static::getEloquentQuery()->orderBy('document_date')->orderBy('running_number')),
@@ -119,8 +119,8 @@ class KpmogProjectLetterResource extends Resource
                     ->icon(Heroicon::OutlinedArrowUpTray)
                     ->color('primary')
                     ->modalHeading('Import register KPMOG Project / BD')
-                    ->modalDescription('Use columns from the Excel master. The existing mail number will not be overwritten and will be reported after import.')
-                    ->modalSubmitActionLabel('Import and check data')
+                    ->modalDescription(__('Use columns from the Excel master. The existing mail number will not be overwritten and will be reported after import.'))
+                    ->modalSubmitActionLabel(__('Import and check data'))
                     ->form([
                         FileUpload::make('file')
                             ->label('File Excel')
@@ -141,32 +141,32 @@ class KpmogProjectLetterResource extends Resource
                             $details = collect($result['messages'])->take(5)->implode(' ');
 
                             Notification::make()
-                                ->title('Import register complete')
+                                ->title(__('Import register complete'))
                                 ->body("Login: {$result['created']}; already exists: {$result['skippedExisting']}; duplicate in file: {$result['skippedDuplicate']}; invalid: {$result['skippedInvalid']}. {$details}")
                                 ->success()
                                 ->send();
                         } catch (\Throwable $e) {
                             Notification::make()
-                                ->title('Import register failed')
+                                ->title(__('Import register failed'))
                                 ->body($e->getMessage())
                                 ->danger()
                                 ->send();
                         }
                     }),
                 Action::make('use_next_number')
-                    ->label(fn (): string => 'Use number '.app(KpmogProjectLetterService::class)->nextNumber())
+                    ->label(fn (): string => __('Use number ').app(KpmogProjectLetterService::class)->nextNumber())
                     ->icon(Heroicon::OutlinedDocumentPlus)
                     ->color('primary')
                     ->form([
-                        DatePicker::make('document_date')->label('Mail date')->default(today())->required(),
+                        DatePicker::make('document_date')->label(__('Mail date'))->default(today())->required(),
                         Select::make('department_id')
-                            ->label('Department')
+                            ->label(__('Department'))
                             ->options(fn (): array => app(KpmogProjectLetterService::class)->departmentOptions())
                             ->required(),
                     ])
-                    ->modalHeading(fn (): string => 'Use number '.app(KpmogProjectLetterService::class)->nextNumber())
-                    ->modalDescription('Select date and department. The system assigns sequence numbers and forms KPMOG mail numbers.')
-                    ->modalSubmitActionLabel('Use number and draft')
+                    ->modalHeading(fn (): string => __('Use number ').app(KpmogProjectLetterService::class)->nextNumber())
+                    ->modalDescription(__('Select date and department. The system assigns sequence numbers and forms KPMOG mail numbers.'))
+                    ->modalSubmitActionLabel(__('Use number and draft'))
                     ->visible(fn (): bool => static::canCreate())
                     ->action(function (array $data): void {
                         $letter = app(KpmogProjectLetterService::class)->createDraft(
@@ -176,36 +176,36 @@ class KpmogProjectLetterResource extends Resource
                         );
 
                         Notification::make()
-                            ->title('Draft '.$letter->document_number.' it\'s been made.')
-                            ->body('Complete PIN, PIC, destinations, and letter matters before publishing them.')
+                            ->title('Draft '.$letter->document_number.__(' it\'s been made.'))
+                            ->body(__('Complete PIN, PIC, destinations, and letter matters before publishing them.'))
                             ->success()
                             ->send();
                     }),
             ])
             ->recordActions([
                 Action::make('issue')
-                    ->label('Publish mail')
+                    ->label(__('Publish mail'))
                     ->icon(Heroicon::OutlinedPaperAirplane)
                     ->color('success')
                     ->requiresConfirmation()
-                    ->modalDescription('Make sure the mail data is correct. The mail number will remain listed as the print number.')
+                    ->modalDescription(__('Make sure the mail data is correct. The mail number will remain listed as the print number.'))
                     ->visible(fn (OutgoingLetter $record): bool => static::canIssue($record))
                     ->action(function (OutgoingLetter $record): void {
                         app(DocumentNumberService::class)->issue($record, auth()->user());
-                        Notification::make()->title('Correspondence '.$record->document_number.' successfully published.')->success()->send();
+                        Notification::make()->title(__('Correspondence ').$record->document_number.__(' successfully published.'))->success()->send();
                     }),
                 Action::make('cancel')
-                    ->label('Cancel draft')
+                    ->label(__('Cancel draft'))
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->modalDescription('The mail number remains recorded as canceled and will not be reused.')
+                    ->modalDescription(__('The mail number remains recorded as canceled and will not be reused.'))
                     ->visible(fn (OutgoingLetter $record): bool => $record->status === 'draft' && static::canEdit($record))
                     ->action(function (OutgoingLetter $record): void {
                         $record->update(['status' => 'cancelled']);
-                        Notification::make()->title('Draft '.$record->document_number.' cancelled.')->success()->send();
+                        Notification::make()->title('Draft '.$record->document_number.__(' cancelled.'))->success()->send();
                     }),
-                EditAction::make()->label('Complete draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
+                EditAction::make()->label(__('Complete draft'))->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
             ]);
     }
 

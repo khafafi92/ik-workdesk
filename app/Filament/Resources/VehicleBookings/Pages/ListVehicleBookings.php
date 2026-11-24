@@ -42,7 +42,7 @@ class ListVehicleBookings extends ListRecords
                 ->icon('heroicon-o-calendar-days')
                 ->url(VehicleBookingCalendar::getUrl()),
             CreateAction::make()
-                ->label('Book Vehicle'),
+                ->label(__('Book Vehicle')),
         ];
     }
 }

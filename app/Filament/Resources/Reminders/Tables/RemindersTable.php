@@ -23,7 +23,7 @@ class RemindersTable
         return $table
             ->columns([
                 TextColumn::make('reminder_type')
-                    ->label('Type')
+                    ->label(__('Type'))
                     ->badge()
                     ->formatStateUsing(fn (?string $state): string => match ($state) {
                         'meeting' => 'Meeting',
@@ -43,7 +43,7 @@ class RemindersTable
                     }),
 
                 TextColumn::make('title')
-                    ->label('Title')
+                    ->label(__('Title'))
                     ->searchable()
                     ->sortable()
                     ->limit(40),
@@ -60,12 +60,12 @@ class RemindersTable
                     ),
 
                 TextColumn::make('employee.name')
-                    ->label('Employee')
+                    ->label(__('Employee'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('department.name')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->searchable()
                     ->sortable(),
 
@@ -75,7 +75,7 @@ class RemindersTable
                     ->sortable(),
 
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'pending' => 'warning',
@@ -87,11 +87,11 @@ class RemindersTable
             ])
             ->filters([
                 SelectFilter::make('schedule')
-                    ->label('Reminder schedule is active')
+                    ->label(__('Reminder schedule is active'))
                     ->options([
-                        'today' => 'Today',
-                        'upcoming' => 'Will Come',
-                        'overdue' => 'Too late',
+                        'today' => __('Today'),
+                        'upcoming' => __('Will Come'),
+                        'overdue' => __('Too late'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         $todayStart = now()->startOfDay();
@@ -109,18 +109,18 @@ class RemindersTable
             ->recordActions([
                 ViewAction::make(),
                 Action::make('markAsDone')
-                    ->label('Done')
+                    ->label(__('Done'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(fn (Reminder $record): bool => $record->status !== 'done')
                     ->requiresConfirmation()
-                    ->modalHeading('Mark the reminder as Done?')
-                    ->modalDescription('This reminder will be completed and the next reminder email will not be sent.')
+                    ->modalHeading(__('Mark the reminder as Done?'))
+                    ->modalDescription(__('This reminder will be completed and the next reminder email will not be sent.'))
                     ->action(function (Reminder $record): void {
                         $record->markAsDone();
 
                         Notification::make()
-                            ->title('Reminder successfully marked Done')
+                            ->title(__('Reminder successfully marked Done'))
                             ->success()
                             ->send();
                     }),

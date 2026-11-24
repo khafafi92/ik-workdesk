@@ -16,7 +16,7 @@ class MeetingRoomForm
         return $schema->components([
             Section::make('Room Information')
                 ->description(
-                    'The name of the room can be changed at any time without deleting the booking history.'
+                    __('The name of the room can be changed at any time without deleting the booking history.')
                 )
                 ->schema([
                     TextInput::make('name')
@@ -31,11 +31,11 @@ class MeetingRoomForm
                         ->unique(ignoreRecord: true),
 
                     TextInput::make('location')
-                        ->label('Location')
+                        ->label(__('Location'))
                         ->maxLength(255),
 
                     TextInput::make('capacity')
-                        ->label('Capacity')
+                        ->label(__('Capacity'))
                         ->numeric()
                         ->minValue(1)
                         ->default(8)
@@ -55,12 +55,12 @@ class MeetingRoomForm
                         ->after('available_from'),
 
                     Textarea::make('description')
-                        ->label('Description')
+                        ->label(__('Description'))
                         ->rows(3)
                         ->columnSpanFull(),
 
                     Toggle::make('is_active')
-                        ->label('Active')
+                        ->label(__('Active'))
                         ->default(true)
                         ->required(),
                 ])

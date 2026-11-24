@@ -11,9 +11,9 @@
     @method($method)
     @endif
 
-    <x-ui.input label="Code" name="code" :value="$department?->code" placeholder="ICT" required />
+    <x-ui.input label="{{ __('Code') }}" name="code" :value="$department?->code" placeholder="ICT" required />
 
-    <x-ui.input label="Name" name="name" :value="$department?->name" placeholder="Information Communication Technology"
+    <x-ui.input label="{{ __('Name') }}" name="name" :value="$department?->name" placeholder="Information Communication Technology"
         required />
 
     <label class="flex items-center gap-3">
@@ -22,17 +22,17 @@
         >
 
         <span class="text-sm font-semibold text-slate-700">
-            Active
+            {{ __('Active') }}
         </span>
     </label>
 
     <div class="flex items-center gap-3 pt-4">
         <x-ui.button type="submit">
-            {{ $method === 'POST' ? 'Save' : 'Update' }}
+            {{ $method === 'POST' ? __('Save') : 'Update' }}
         </x-ui.button>
 
         <x-ui.button variant="secondary" :href="route('admin.departments.index')">
-            Cancel
+            {{ __('Cancel') }}
         </x-ui.button>
     </div>
 </form>

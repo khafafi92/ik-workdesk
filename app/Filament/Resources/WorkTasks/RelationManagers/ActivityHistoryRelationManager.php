@@ -37,11 +37,11 @@ class ActivityHistoryRelationManager extends RelationManager
                     ->searchable(),
 
                 TextColumn::make('workTask.task_no')
-                    ->label('Work Log')
+                    ->label(__('Work Log'))
                     ->badge(),
 
                 TextColumn::make('activity_type')
-                    ->label('Activity')
+                    ->label(__('Activity'))
                     ->badge()
                     ->formatStateUsing(
                         fn (string $state): string => str($state)->replace('_', ' ')->title()->toString()
@@ -49,43 +49,43 @@ class ActivityHistoryRelationManager extends RelationManager
 
                 TextColumn::make('user.name')
                     ->label('Actor')
-                    ->placeholder('System'),
+                    ->placeholder(__('System')),
 
                 TextColumn::make('message')
-                    ->label('Description')
+                    ->label(__('Description'))
                     ->wrap()
                     ->limit(120)
                     ->searchable(),
 
                 TextColumn::make('attachments')
-                    ->label('Files')
+                    ->label(__('Files'))
                     ->formatStateUsing(
                         fn (mixed $state): string => count((array) $state).' file(s)'
                     ),
 
                 TextColumn::make('created_at')
-                    ->label('Date & Time')
+                    ->label(__('Date & Time'))
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
             ->recordActions([
                 ViewAction::make('view')
-                    ->label('View')
+                    ->label(__('View'))
                     ->modalHeading('Activity Detail')
                     ->schema([
                         TextEntry::make('ticket.ticket_no')
                             ->label('Parent Request'),
 
                         TextEntry::make('workTask.task_no')
-                            ->label('Work Log'),
+                            ->label(__('Work Log')),
 
                         TextEntry::make('department.name')
-                            ->label('Department')
+                            ->label(__('Department'))
                             ->placeholder('-'),
 
                         TextEntry::make('user.name')
                             ->label('Actor')
-                            ->placeholder('System'),
+                            ->placeholder(__('System')),
 
                         TextEntry::make('activity_type')
                             ->label('Activity Type')
@@ -94,11 +94,11 @@ class ActivityHistoryRelationManager extends RelationManager
                             ),
 
                         TextEntry::make('message')
-                            ->label('Description')
+                            ->label(__('Description'))
                             ->columnSpanFull(),
 
                         TextEntry::make('attachments')
-                            ->label('Attachments')
+                            ->label(__('Attachments'))
                             ->html()
                             ->formatStateUsing(
                                 fn (
@@ -112,7 +112,7 @@ class ActivityHistoryRelationManager extends RelationManager
                             ->columnSpanFull(),
 
                         TextEntry::make('created_at')
-                            ->label('Date & Time')
+                            ->label(__('Date & Time'))
                             ->dateTime('d M Y H:i'),
                     ]),
             ])

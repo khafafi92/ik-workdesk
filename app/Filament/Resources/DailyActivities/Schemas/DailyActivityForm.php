@@ -30,11 +30,11 @@ class DailyActivityForm
                         ->default(today()->toDateString())->minDate(today()->subDays(3))->maxDate(today())
                         ->native(false)->displayFormat('d/m/Y')->live()->closeOnDateSelection()
                         ->helperText('You can record work from up to 3 days ago.')->required(),
-                    TimePicker::make('start_time')->label('Start Time')->seconds(false)->native(false)->live()
+                    TimePicker::make('start_time')->label(__('Start Time'))->seconds(false)->native(false)->live()
                         ->afterStateUpdated(fn (Get $get, Set $set) => self::updateDuration($get, $set))->required(),
-                    TimePicker::make('end_time')->label('End Time')->seconds(false)->native(false)->live()
+                    TimePicker::make('end_time')->label(__('End Time'))->seconds(false)->native(false)->live()
                         ->afterStateUpdated(fn (Get $get, Set $set) => self::updateDuration($get, $set))->required(),
-                    TextInput::make('duration_minutes')->label('Duration')->suffix('minutes')
+                    TextInput::make('duration_minutes')->label(__('Duration'))->suffix(__('minutes'))
                         ->disabled()->dehydrated()->required(),
                     TextInput::make('title')->label('Work Performed')
                         ->placeholder('Example: Prepare the monthly report')->required()->maxLength(255)->columnSpanFull(),
@@ -80,9 +80,9 @@ class DailyActivityForm
                             }
                         })->columnSpanFull(),
                     Select::make('work_context')->label('Work Context')->options([
-                        'project' => 'Project', 'operational' => 'Operational / Non-project',
+                        'project' => __('Project'), 'operational' => __('Operational / Non-project'),
                     ])->default('operational')->selectablePlaceholder(false)->live()->required(),
-                    Select::make('work_project_id')->label('Project')
+                    Select::make('work_project_id')->label(__('Project'))
                         ->relationship(
                             name: 'project', titleAttribute: 'name',
                             modifyQueryUsing: fn (Builder $query): Builder => $query->where('status', 'active')->orderBy('name')
@@ -107,14 +107,14 @@ class DailyActivityForm
             Section::make('Work Requester')
                 ->description('This can be filled automatically when the work comes from a task.')
                 ->schema([
-                    Select::make('requester_type')->label('Requested By')->options([
-                        'company' => 'Company / Client', 'division' => 'Department', 'individual' => 'Individual',
+                    Select::make('requester_type')->label(__('Requested By'))->options([
+                        'company' => __('Company / Client'), 'division' => __('Department'), 'individual' => 'Individual',
                     ])->selectablePlaceholder(false)->live()->required(),
                     TextInput::make('requester_company_name')->label('Company / Client Name')->maxLength(255)
                         ->visible(fn (Get $get): bool => $get('requester_type') === 'company')
                         ->required(fn (Get $get): bool => $get('requester_type') === 'company')
                         ->dehydrated(fn (Get $get): bool => $get('requester_type') === 'company'),
-                    Select::make('requester_department_id')->label('Department')
+                    Select::make('requester_department_id')->label(__('Department'))
                         ->relationship('requesterDepartment', 'name', fn (Builder $query) => $query->where('is_active', true))
                         ->searchable()->preload()->visible(fn (Get $get): bool => $get('requester_type') === 'division')
                         ->required(fn (Get $get): bool => $get('requester_type') === 'division')

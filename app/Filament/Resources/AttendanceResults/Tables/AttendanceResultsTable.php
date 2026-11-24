@@ -29,13 +29,13 @@ class AttendanceResultsTable
                     ->numeric()
                     ->sortable(),
                 TextColumn::make('employee_code')
-                    ->label('Employee ID')
+                    ->label(__('Employee ID'))
                     ->searchable(),
                 TextColumn::make('employee_name')
-                    ->label('Full Name')
+                    ->label(__('Full Name'))
                     ->searchable(),
                 TextColumn::make('attendance_date')
-                    ->label('Date')
+                    ->label(__('Date'))
                     ->date()
                     ->sortable(),
                 TextColumn::make('clock_in')
@@ -52,14 +52,14 @@ class AttendanceResultsTable
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('location_gps_name')
-                    ->label('Location')
+                    ->label(__('Location'))
                     ->searchable(),
                 TextColumn::make('expected_checkout')
                     ->time()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('location_check')
-                    ->label('Location Check')
+                    ->label(__('Location Check'))
                     ->formatStateUsing($translateStatus)
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
@@ -69,10 +69,10 @@ class AttendanceResultsTable
                     })
                     ->searchable(),
                 TextColumn::make('duration_text')
-                    ->label('Time Check')
+                    ->label(__('Time Check'))
                     ->searchable(),
                 TextColumn::make('checkout_check')
-                    ->label('Clock-out Check')
+                    ->label(__('Clock-out Check'))
                     ->formatStateUsing($translateStatus)
                     ->badge()
                     ->color(fn (?string $state): string => str_contains((string) $state, '19:00 UP') || str_contains((string) $state, 'Diatas 19:00') ? 'danger' : 'success')

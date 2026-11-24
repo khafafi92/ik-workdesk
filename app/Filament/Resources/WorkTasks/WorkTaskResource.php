@@ -262,7 +262,7 @@ class WorkTaskResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Work Logs';
+        return __('Work Logs');
     }
 
     public static function getNavigationBadge(): ?string
@@ -300,12 +300,12 @@ class WorkTaskResource extends Resource
 
     public static function getModelLabel(): string
     {
-        return 'Work Log';
+        return __('Work Log');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Work Logs';
+        return __('Work Logs');
     }
 
     public static function getNavigationGroup(): ?string

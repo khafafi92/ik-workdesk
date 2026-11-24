@@ -50,7 +50,7 @@ class ListMeetingBookings extends ListRecords
                 ->icon('heroicon-o-calendar-days')
                 ->url(MeetingRoomCalendar::getUrl()),
             CreateAction::make()
-                ->label('Book Meeting Room'),
+                ->label(__('Book Meeting Room')),
         ];
     }
 }

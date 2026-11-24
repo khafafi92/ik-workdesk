@@ -20,9 +20,9 @@ class VehicleBookingForm
     public static function configure(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Book Vehicle')
+            Section::make(__('Book Vehicle'))
                 ->description(
-                    'Select vehicles, departure time, and the duration of use.'
+                    __('Select vehicles, departure time, and the duration of use.')
                 )
                 ->schema([
                     TextInput::make('title')
@@ -31,7 +31,7 @@ class VehicleBookingForm
                         ->maxLength(255)
                         ->columnSpanFull(),
                     Select::make('vehicle_id')
-                        ->label('Vehicle')
+                        ->label(__('Vehicle'))
                         ->relationship(
                             name: 'vehicle',
                             titleAttribute: 'name',
@@ -55,7 +55,7 @@ class VehicleBookingForm
                         ->preload()
                         ->required(),
                     TextInput::make('destination')
-                        ->label('Destination')
+                        ->label(__('Destination'))
                         ->required()
                         ->maxLength(255),
                     DatePicker::make('booking_date')
@@ -73,7 +73,7 @@ class VehicleBookingForm
                         ->live()
                         ->required(),
                     TimePicker::make('start_time')
-                        ->label('Start Time')
+                        ->label(__('Start Time'))
                         ->native(false)
                         ->displayFormat('H:i')
                         ->seconds(false)
@@ -88,7 +88,7 @@ class VehicleBookingForm
                         ->live()
                         ->required(),
                     Select::make('duration_hours')
-                        ->label('Duration')
+                        ->label(__('Duration'))
                         ->options([
                             '0.5' => '30 minutes',
                             '1' => '1 hour',
@@ -144,7 +144,7 @@ class VehicleBookingForm
                         ->required(),
                     TextInput::make('driver_name')
                         ->label('Driver')
-                        ->placeholder('Optional')
+                        ->placeholder(__('Optional'))
                         ->maxLength(255),
                     Textarea::make('purpose')
                         ->label('Purpose')
@@ -153,15 +153,15 @@ class VehicleBookingForm
                 ])
                 ->columns(2),
 
-            Section::make('Requester')
+            Section::make(__('Requester'))
                 ->schema([
                     Placeholder::make('requester_name')
-                        ->label('Requester')
+                        ->label(__('Requester'))
                         ->content(
                             fn (): string => auth()->user()?->name ?? '-'
                         ),
                     Placeholder::make('department_name')
-                        ->label('Department')
+                        ->label(__('Department'))
                         ->content(
                             fn (): string => auth()->user()?->employee?->department?->name
                                 ?? '-'

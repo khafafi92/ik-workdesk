@@ -12,9 +12,12 @@ class CreateItDevice extends CreateRecord
 {
     protected static string $resource = ItDeviceResource::class;
 
-    protected static ?string $title = 'Add Device';
-
     protected string $view = 'filament.pages.it-device-record';
+
+    public function getTitle(): string
+    {
+        return __('Add Device');
+    }
 
     protected function handleRecordCreation(array $data): Model
     {
@@ -23,12 +26,12 @@ class CreateItDevice extends CreateRecord
 
     protected function getCreateFormAction(): Action
     {
-        return parent::getCreateFormAction()->label('Save Device');
+        return parent::getCreateFormAction()->label(__('Save Device'));
     }
 
     protected function getCreateAnotherFormAction(): Action
     {
-        return parent::getCreateAnotherFormAction()->label('Save & add more');
+        return parent::getCreateAnotherFormAction()->label(__('Save & add more'));
     }
 
     protected function getRedirectUrl(): string

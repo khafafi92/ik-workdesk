@@ -14,7 +14,7 @@ class TaskCategoryForm
         return $schema
             ->components([
                 Select::make('department_id')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->relationship('department', 'name')
                     ->searchable()
                     ->preload(),
@@ -25,11 +25,11 @@ class TaskCategoryForm
                     ->maxLength(255),
 
                 TextInput::make('code')
-                    ->label('Code')
+                    ->label(__('Code'))
                     ->maxLength(50),
 
                 Toggle::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->default(true),
             ]);
     }

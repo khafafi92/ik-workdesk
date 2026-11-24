@@ -13,11 +13,11 @@ enum ItInspectionCondition: string
     public function label(): string
     {
         return match ($this) {
-            self::Normal => 'Normal',
-            self::Warning => 'Warning',
-            self::Critical => 'Critical',
-            self::NotApplicable => 'N/A',
-            self::Unchecked => 'Not Inspected',
+            self::Normal => __('Normal'),
+            self::Warning => __('Warning'),
+            self::Critical => __('Critical'),
+            self::NotApplicable => __('N/A'),
+            self::Unchecked => __('Not Inspected'),
         };
     }
 

@@ -183,7 +183,7 @@
 
         @if ($errors->any())
         <div class="no-print border border-red-300 bg-red-50 px-4 py-2 text-sm text-red-700">
-            <div class="font-semibold">Incomplete input data.</div>
+            <div class="font-semibold">{{ __('Incomplete input data.') }}</div>
             <ul class="mt-2 list-disc space-y-1 pl-5">
                 @foreach ($errors->all() as $error)
                 <li>{{ $error }}</li>
@@ -221,7 +221,7 @@
 
                         <th colspan="4" class="border-t border-black bg-white px-1 py-1 text-left align-middle">
                             <div class="grid grid-cols-[56px_8px_56px_1fr] items-center gap-1">
-                                <span class="text-right font-bold">Unit</span>
+                                <span class="text-right font-bold">{{ __('Unit') }}</span>
                                 <span class="text-center font-bold">:</span>
 
                                 <select wire:model.live="selectedUnit"
@@ -252,7 +252,7 @@
                     <tr>
                         <th colspan="4" class="bg-white px-1 py-1 text-left">
                             <div class="grid grid-cols-[56px_8px_1fr] items-center gap-1">
-                                <span class="text-right font-bold">Date</span>
+                                <span class="text-right font-bold">{{ __('Date') }}</span>
                                 <span class="text-center font-bold">:</span>
 
                                 <input type="date" wire:model.live="report_date"
@@ -274,7 +274,7 @@
                     <tr>
                         <th colspan="4" class="bg-white px-1 py-1 text-left">
                             <div class="grid grid-cols-[56px_8px_1fr] items-center gap-1">
-                                <span class="text-right font-bold">Day</span>
+                                <span class="text-right font-bold">{{ __('Day') }}</span>
                                 <span class="text-center font-bold">:</span>
 
                                 <span
@@ -301,11 +301,11 @@
                     </tr>
 
                     <tr class="text-center font-black">
-                        <th rowspan="3" class="border border-black px-1 py-1">No</th>
+                        <th rowspan="3" class="border border-black px-1 py-1">{{ __('No') }}</th>
                         <th rowspan="3" class="border border-black px-1 py-1">DESCRIPTION</th>
-                        <th rowspan="3" class="border border-black px-1 py-1">Unit</th>
+                        <th rowspan="3" class="border border-black px-1 py-1">{{ __('Unit') }}</th>
                         <th colspan="2" class="border border-black px-1 py-1">Alarm , Shutdown</th>
-                        <th rowspan="3" class="border border-black px-1 py-1">Normal<br>Range</th>
+                        <th rowspan="3" class="border border-black px-1 py-1">{{ __('Normal') }}<br>Range</th>
                         <th colspan="{{ count($timeColumns) }}" class="border border-black px-1 py-1">RECORD TIME</th>
                         <th colspan="3" rowspan="3"
                             class="border border-black px-1 py-1 text-center text-xs font-black">
@@ -423,7 +423,7 @@
                                 class="h-[18px] w-full border-0 px-1 text-right text-[10px] font-black outline-none focus:bg-cyan-50">
                         </td>
 
-                        <td class="average-unit border-r border-gray-300 px-1 text-left font-black">Hours</td>
+                        <td class="average-unit border-r border-gray-300 px-1 text-left font-black">{{ __('Hours') }}</td>
                     </tr>
 
                     @foreach($compressorParameters as $parameter)
@@ -555,7 +555,7 @@
 
         <div class="daily-actions no-print daily-action-bar">
             <a href="{{ url('/panel') }}" class="btn btn-dark">
-                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Return to Dashboard
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> {{ __('Return to Dashboard') }}
             </a>
 
             <a href="{{ route('monitoring') }}" class="btn btn-dark">
@@ -567,13 +567,13 @@
             </a>
 
             <button type="button" onclick="window.print()" class="btn btn-warning">
-                <i class="ti ti-printer" aria-hidden="true"></i> Print A4
+                <i class="ti ti-printer" aria-hidden="true"></i> {{ __('Print A4') }}
             </button>
 
             <button type="submit" wire:loading.attr="disabled" wire:target="save"
                 class="btn btn-primary disabled:cursor-wait disabled:opacity-60">
                 <i class="ti ti-device-floppy" aria-hidden="true"></i>
-                <span wire:loading.remove wire:target="save">Save Daily Input</span>
+                <span wire:loading.remove wire:target="save">{{ __('Save Daily Input') }}</span>
                 <span wire:loading wire:target="save">Saving...</span>
             </button>
         </div>

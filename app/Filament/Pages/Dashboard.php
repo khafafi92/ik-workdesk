@@ -74,28 +74,28 @@ class Dashboard extends BaseDashboard
     {
         return [
             Action::make('editDashboard')
-                ->label('Edit Dashboard')
+                ->label(__('Edit Dashboard'))
                 ->icon('heroicon-o-adjustments-horizontal')
                 ->color('gray')
-                ->modalHeading('Customize dashboard')
-                ->modalDescription('Choose which sections to show. Your access to menus and data stays the same.')
-                ->modalSubmitActionLabel('Save layout')
+                ->modalHeading(__('Customize dashboard'))
+                ->modalDescription(__('Choose which sections to show. Your access to menus and data stays the same.'))
+                ->modalSubmitActionLabel(__('Save layout'))
                 ->fillForm(fn (): array => [
                     'sections' => $this->getVisibleDashboardSections(),
                 ])
                 ->form([
                     CheckboxList::make('sections')
-                        ->label('Dashboard sections')
+                        ->label(__('Dashboard sections'))
                         ->options(fn (): array => $this->getDashboardSectionOptions())
                         ->columns(1)
-                        ->helperText('Your permissions and reporting hierarchy determine which sections are available.'),
+                        ->helperText(__('Your permissions and reporting hierarchy determine which sections are available.')),
                 ])
                 ->action(function (array $data): void {
                     $this->updateDashboardSections($data['sections'] ?? []);
 
                     Notification::make()
                         ->success()
-                        ->title('Dashboard layout saved')
+                        ->title(__('Dashboard layout saved'))
                         ->send();
                 }),
         ];

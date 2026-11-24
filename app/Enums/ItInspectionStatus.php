@@ -9,6 +9,6 @@ enum ItInspectionStatus: string
 
     public function label(): string
     {
-        return $this === self::Finalized ? 'Final' : 'Draft';
+        return $this === self::Finalized ? 'Final' : __('Draft');
     }
 }

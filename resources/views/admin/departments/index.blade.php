@@ -37,11 +37,11 @@
         <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50">
                 <tr>
-                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Code</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Name</th>
-                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">Status
+                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{{ __('Code') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{{ __('Name') }}</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">{{ __('Status') }}
                     </th>
-                    <th class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-500">Action
+                    <th class="px-6 py-3 text-right text-xs font-bold uppercase tracking-wider text-slate-500">{{ __('Action') }}
                     </th>
                 </tr>
             </thead>
@@ -71,9 +71,9 @@
                         @endif --}}
 
                         @if ($department->is_active)
-                        <x-ui.badge type="success">Active</x-ui.badge>
+                        <x-ui.badge type="success">{{ __('Active') }}</x-ui.badge>
                         @else
-                        <x-ui.badge type="danger">Inactive</x-ui.badge>
+                        <x-ui.badge type="danger">{{ __('Inactive') }}</x-ui.badge>
                         @endif
 
                     </td>
@@ -82,7 +82,7 @@
                         <div class="flex justify-end gap-2">
                             <a href="{{ route('admin.departments.edit', $department) }}"
                                 class="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50">
-                                Edit
+                                {{ __('Edit') }}
                             </a>
 
                             <form method="POST" action="{{ route('admin.departments.destroy', $department) }}"
@@ -92,7 +92,7 @@
 
                                 <button type="submit"
                                     class="px-3 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">
-                                    Delete
+                                    {{ __('Delete') }}
                                 </button>
                             </form>
                         </div>
@@ -101,7 +101,7 @@
                 @empty
                 <tr>
                     <td colspan="4" class="px-6 py-10 text-center text-sm text-slate-500">
-                        No department data yet.
+                        {{ __('No department data yet.') }}
                     </td>
                 </tr>
                 @endforelse

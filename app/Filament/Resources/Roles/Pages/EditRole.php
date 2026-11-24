@@ -17,7 +17,7 @@ class EditRole extends EditRecord
         abort_unless(
             RoleResource::canEdit($this->record),
             403,
-            'You do not have permission to change this role.'
+            __('You do not have permission to change this role.')
         );
 
         /*
@@ -99,7 +99,7 @@ class EditRole extends EditRecord
                             $this->record
                         ),
                         403,
-                        'This role cannot be removed.'
+                        __('This role cannot be removed.')
                     );
                 }),
         ];

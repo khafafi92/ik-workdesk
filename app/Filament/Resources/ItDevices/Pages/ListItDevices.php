@@ -12,6 +12,6 @@ class ListItDevices extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [CreateAction::make()->label('Add Device')];
+        return [CreateAction::make()->label(__('Add Device'))];
     }
 }

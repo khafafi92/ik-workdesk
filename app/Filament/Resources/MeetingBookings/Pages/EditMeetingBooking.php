@@ -57,7 +57,7 @@ class EditMeetingBooking extends EditRecord
     {
         return [
             Action::make('complete')
-                ->label('Set Done')
+                ->label(__('Set Done'))
                 ->icon('heroicon-o-check-circle')
                 ->color('success')
                 ->visible(
@@ -66,7 +66,7 @@ class EditMeetingBooking extends EditRecord
                 ->requiresConfirmation()
                 ->modalHeading('Finish this meeting?')
                 ->modalDescription(
-                    'Meetings will be marked complete and the remaining room schedules are readily available.'
+                    __('Meetings will be marked complete and the remaining room schedules are readily available.')
                 )
                 ->action(function (): void {
                     app(MeetingBookingService::class)

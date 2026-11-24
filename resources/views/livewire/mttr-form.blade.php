@@ -974,10 +974,10 @@
         </div>
         <div class="header-right">
             <a href="{{ url('/panel') }}" class="btn-input">
-                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> Return to Dashboard
+                <i class="ti ti-layout-dashboard" aria-hidden="true"></i> {{ __('Return to Dashboard') }}
             </a>
             <a href="{{ route('daily.input') }}" class="btn-input">
-                <i class="ti ti-plus" aria-hidden="true"></i> Daily Input
+                <i class="ti ti-plus" aria-hidden="true"></i> {{ __('Daily Input') }}
             </a>
             <a href="{{ route('availability.ltro-1b') }}" class="btn-input">
                 <i class="ti ti-chart-bar" aria-hidden="true"></i> Availability LTRO-1B
@@ -994,7 +994,7 @@
             <div class="stat-card blue">
                 <div class="stat-label">Total Event</div>
                 <div class="stat-value">{{ number_format($totalRecords) }}</div>
-                <span class="stat-badge badge-blue">This month</span>
+                <span class="stat-badge badge-blue">{{ __('This month') }}</span>
             </div>
             <div class="stat-card amber">
                 <div class="stat-label">Downtime Unplan</div>
@@ -1011,12 +1011,12 @@
                 <span class="stat-badge badge-green">Planned</span>
             </div>
             <div class="stat-card blue">
-                <div class="stat-label">Active Unit</div>
+                <div class="stat-label">{{ __('Active Unit') }}</div>
                 <div class="stat-value">{{ count($unitDashboard) }}</div>
-                <span class="stat-badge badge-blue">Unit</span>
+                <span class="stat-badge badge-blue">{{ __('Unit') }}</span>
             </div>
             <div class="stat-card amber">
-                <div class="stat-label">Average MTTR</div>
+                <div class="stat-label">{{ __('Average MTTR') }}</div>
                 <div class="stat-value">
                     {{ $totalRecords > 0 ? number_format($unplannedDowntime / $totalRecords, 0) : 0 }}<span
                         class="unit">mnt</span>
@@ -1033,18 +1033,18 @@
                 <div class="section-line"></div>
                 <span class="section-count">{{ $recentRecords->count() }} record</span>
             </div>
-            <p class="scroll-hint"><i class="ti ti-arrows-horizontal" aria-hidden="true"></i> Move to see all
-                column</p>
+            <p class="scroll-hint"><i class="ti ti-arrows-horizontal" aria-hidden="true"></i> {{ __('Move to see all') }}
+                {{ __('column') }}</p>
             <div class="table-wrap">
                 <table class="dark-table" style="min-width:1400px;">
                     <thead>
                         <tr>
-                            <th class="center">No</th>
-                            <th>Month</th>
+                            <th class="center">{{ __('No') }}</th>
+                            <th>{{ __('Month') }}</th>
                             <th>Rental Period</th>
                             <th>Date Shutdown</th>
                             <th>Date Running</th>
-                            <th class="center">Unit</th>
+                            <th class="center">{{ __('Unit') }}</th>
                             <th class="center">Time Shutdown</th>
                             <th class="center">Time Running</th>
                             <th class="right">Downtime (mnt)</th>
@@ -1052,7 +1052,7 @@
                             <th class="right">RH</th>
                             <th class="right">PK-100</th>
                             @endif
-                            <th>Category</th>
+                            <th>{{ __('Category') }}</th>
                             <th>Indication</th>
                             <th>Immediate Cause</th>
                             <th>Activity Troubleshooting</th>
@@ -1101,7 +1101,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="{{ $rhPk100Enabled ? 15 : 13 }}" class="empty-cell">No MTTR event yet.</td>
+                            <td colspan="{{ $rhPk100Enabled ? 15 : 13 }}" class="empty-cell">{{ __('No MTTR event yet.') }}</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -1112,7 +1112,7 @@
         <!-- ===== DONUT SUMMARY ===== -->
         <div>
             <div class="section-head">
-                <span class="section-title">Summary</span>
+                <span class="section-title">{{ __('Summary') }}</span>
                 <div class="section-line"></div>
             </div>
             <div class="donut-grid">
@@ -1128,7 +1128,7 @@
 
                 <div class="donut-card">
                     <div class="donut-card-header">Downtime Unplan</div>
-                    <div class="donut-card-sub">Minutes per unit</div>
+                    <div class="donut-card-sub">{{ __('Minutes per unit') }}</div>
                     <div class="donut-wrap">
                         <svg class="donut-svg" width="84" height="84" viewBox="0 0 84 84" role="img"
                             aria-label="Downtime unplan per unit. Total {{ number_format($unplannedDowntime) }} menit.">
@@ -1202,7 +1202,7 @@
                 <!-- Shutdown per Category -->
                 <div class="donut-card">
                     <div class="donut-card-header">Total Shutdown</div>
-                    <div class="donut-card-sub">Events per category</div>
+                    <div class="donut-card-sub">{{ __('Events per category') }}</div>
                     <div class="donut-wrap">
                         <svg class="donut-svg" width="84" height="84" viewBox="0 0 84 84" role="img"
                             aria-label="Total shutdown per kategori. Total {{ number_format($totalRecords) }} event.">
@@ -1347,7 +1347,7 @@
                             $x = $legendX + ($legendGap * $unitIndex);
                         @endphp
                         <rect x="{{ $x }}" y="{{ $legendY - 9 }}" width="42" height="10" fill="{{ $unitColors[$unitIndex % count($unitColors)] }}" />
-                        <text x="{{ $x + 48 }}" y="{{ $legendY }}" fill="#f8fafc" font-size="16">{{ $unitSeries['label'] ?? 'Unit' }}</text>
+                        <text x="{{ $x + 48 }}" y="{{ $legendY }}" fill="#f8fafc" font-size="16">{{ $unitSeries['label'] ?? __('Unit') }}</text>
                     @endforeach
 
                     @php $lineLegendY = 430; @endphp
@@ -1379,7 +1379,7 @@
 
             @if (session()->has('import_warnings'))
             <div class="alert-error">
-                <strong>Import notes:</strong>
+                <strong>{{ __('Import notes:') }}</strong>
                 <ul>
                     @foreach(session('import_warnings') as $warning)
                     <li>{{ $warning }}</li>
@@ -1393,8 +1393,8 @@
                 @csrf
                 <div class="import-bar">
                     <div>
-                        <div class="import-label">Import from Excel</div>
-                        <div class="import-sub">Supported formats:.xlsx,.xls,.csv</div>
+                        <div class="import-label">{{ __('Import from Excel') }}</div>
+                        <div class="import-sub">{{ __('Supported formats:.xlsx,.xls,.csv') }}</div>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         <input id="mttr_file" name="mttr_file" type="file" accept=".xlsx,.xls,.csv" required
@@ -1416,20 +1416,20 @@
                     <table class="form-table">
                         <thead>
                             <tr>
-                                <th style="width:44px;">No</th>
-                                <th style="width:96px;">Month</th>
+                                <th style="width:44px;">{{ __('No') }}</th>
+                                <th style="width:96px;">{{ __('Month') }}</th>
                                 <th style="width:110px;">Rental Period</th>
-                                <th style="width:110px;">Date<br>Shutdown</th>
-                                <th style="width:110px;">Date<br>Running</th>
-                                <th style="width:96px;">Unit</th>
-                                <th style="width:90px;">Time<br>Shutdown</th>
-                                <th style="width:90px;">Time<br>Running</th>
-                                <th style="width:96px;">Downtime<br>(menite)</th>
+                                <th style="width:110px;">{{ __('Date') }}<br>Shutdown</th>
+                                <th style="width:110px;">{{ __('Date') }}<br>Running</th>
+                                <th style="width:96px;">{{ __('Unit') }}</th>
+                                <th style="width:90px;">{{ __('Time') }}<br>Shutdown</th>
+                                <th style="width:90px;">{{ __('Time') }}<br>Running</th>
+                                <th style="width:96px;">Downtime<br>{{ __('(menite)') }}</th>
                                 @if($rhPk100Enabled)
                                 <th style="width:90px;">RH</th>
                                 <th style="width:90px;">PK-100</th>
                                 @endif
-                                <th style="width:110px;">Category</th>
+                                <th style="width:110px;">{{ __('Category') }}</th>
                                 <th>Indication</th>
                                 <th>Immediate Cause</th>
                                 <th>Activity Troubleshooting</th>
@@ -1445,7 +1445,7 @@
                                 <td><input type="date" wire:model.live="running_date"></td>
                                 <td class="amber-col">
                                     <select wire:model="unit_id">
-                                        <option value="">Unit</option>
+                                        <option value="">{{ __('Unit') }}</option>
                                         @foreach($units as $unit)
                                         <option value="{{ $unit->id }}">{{ $unit->unit_name }}</option>
                                         @endforeach
@@ -1466,18 +1466,18 @@
                                 @endif
                                 <td>
                                     <select wire:model="category_id">
-                                        <option value="">Category</option>
+                                        <option value="">{{ __('Category') }}</option>
                                         @foreach($categories as $category)
                                         <option value="{{ $category->id }}">{{ $category->category_name }}</option>
                                         @endforeach
                                     </select>
                                 </td>
                                 <td><textarea wire:model="indication" rows="3"
-                                        placeholder="Describe the issue..."></textarea></td>
+                                        placeholder="{{ __('Describe the issue...') }}"></textarea></td>
                                 <td><textarea wire:model="immediate_cause" rows="3"
-                                        placeholder="The direct cause..."></textarea></td>
+                                        placeholder="{{ __('The direct cause...') }}"></textarea></td>
                                 <td><textarea wire:model="activity_troubleshooting" rows="3"
-                                        placeholder="Step troubleshooting..."></textarea></td>
+                                        placeholder="{{ __('Step troubleshooting...') }}"></textarea></td>
                             </tr>
                         </tbody>
                     </table>
@@ -1485,7 +1485,7 @@
 
                 @if ($errors->any())
                 <div class="alert-error" style="margin: 0 1.5rem 0.75rem;">
-                    <strong>Incomplete input data.</strong>
+                    <strong>{{ __('Incomplete input data.') }}</strong>
                     <ul>
                         @foreach ($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -1501,7 +1501,7 @@
                     <button type="button" wire:click="save" wire:loading.attr="disabled" wire:target="save"
                         class="btn-save">
                         <span wire:loading.remove wire:target="save">
-                            <i class="ti ti-device-floppy" aria-hidden="true"></i> Save MTTR Data
+                            <i class="ti ti-device-floppy" aria-hidden="true"></i> {{ __('Save MTTR Data') }}
                         </span>
                         <span wire:loading wire:target="save">Saving...</span>
                     </button>

@@ -22,17 +22,17 @@ class TicketCategoriesTable
                     ->sortable(),
 
                 TextColumn::make('name')
-                    ->label('Category')
+                    ->label(__('Category'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('code')
-                    ->label('Code')
+                    ->label(__('Code'))
                     ->searchable()
                     ->sortable(),
 
                 IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->boolean(),
 
                 IconColumn::make('requires_permit')

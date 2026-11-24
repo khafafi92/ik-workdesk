@@ -22,7 +22,7 @@ class EnsureActiveUser
         $request->session()->regenerateToken();
 
         if ($request->expectsJson()) {
-            abort(403, 'Employee account is disabled.');
+            abort(403, __('Employee account is disabled.'));
         }
 
         return redirect()

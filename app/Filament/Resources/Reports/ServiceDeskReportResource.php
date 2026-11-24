@@ -44,31 +44,31 @@ class ServiceDeskReportResource extends ReportResource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('ticket_no')->label('Ticket Number')->searchable()->sortable(),
+            TextColumn::make('ticket_no')->label(__('Ticket Number'))->searchable()->sortable(),
             TextColumn::make('created_at')->label('Created Date')->dateTime('d M Y H:i')->sortable(),
-            TextColumn::make('employee.name')->label('Requester')->searchable()
+            TextColumn::make('employee.name')->label(__('Requester'))->searchable()
                 ->description(fn (Ticket $record) => $record->employee?->department?->name ?? '-'),
-            TextColumn::make('subject')->label('Subject')->searchable()->wrap(),
-            TextColumn::make('category.name')->label('Category')->toggleable(),
-            TextColumn::make('priority')->label('Priority')->badge(),
-            TextColumn::make('work_tasks_count')->label('Work Logs')->numeric()->sortable(),
+            TextColumn::make('subject')->label(__('Subject'))->searchable()->wrap(),
+            TextColumn::make('category.name')->label(__('Category'))->toggleable(),
+            TextColumn::make('priority')->label(__('Priority'))->badge(),
+            TextColumn::make('work_tasks_count')->label(__('Work Logs'))->numeric()->sortable(),
             TextColumn::make('work_duration_minutes')->label('Actual Work Duration')
                 ->formatStateUsing(fn ($state) => static::duration((int) $state)),
-            TextColumn::make('status')->label('Status')->badge(),
+            TextColumn::make('status')->label(__('Status'))->badge(),
             TextColumn::make('first_response_at')->label('First Response')->dateTime('d M Y H:i')->toggleable(isToggledHiddenByDefault: true),
-            TextColumn::make('resolved_at')->label('Resolved')->dateTime('d M Y H:i')->toggleable(),
+            TextColumn::make('resolved_at')->label(__('Resolved'))->dateTime('d M Y H:i')->toggleable(),
             TextColumn::make('resolution_time')->label('Resolution Time')
                 ->state(fn (Ticket $record) => $record->resolved_at ? static::duration($record->created_at->diffInMinutes($record->resolved_at)) : '-')
                 ->toggleable(isToggledHiddenByDefault: true),
         ])->filters([
-            Filter::make('period')->label('Date Range')->schema([
-                DatePicker::make('from')->label('Start Date')->default(now()->startOfMonth()),
-                DatePicker::make('until')->label('End Date')->default(now()->endOfMonth()),
+            Filter::make('period')->label(__('Date Range'))->schema([
+                DatePicker::make('from')->label(__('Start Date'))->default(now()->startOfMonth()),
+                DatePicker::make('until')->label(__('End Date'))->default(now()->endOfMonth()),
             ])->query(fn (Builder $query, array $data) => app(ReportQueryService::class)
                 ->range($query, $data['from'] ?? null, $data['until'] ?? null, 'tickets.created_at')),
-            SelectFilter::make('requester_department_id')->label('Department')->relationship('requesterDepartment', 'name')->searchable()->preload(),
-            SelectFilter::make('ticket_category_id')->label('Category')->relationship('category', 'name')->searchable()->preload(),
-            SelectFilter::make('employee_id')->label('Requester')->relationship('employee', 'name')->searchable()->preload(),
+            SelectFilter::make('requester_department_id')->label(__('Department'))->relationship('requesterDepartment', 'name')->searchable()->preload(),
+            SelectFilter::make('ticket_category_id')->label(__('Category'))->relationship('category', 'name')->searchable()->preload(),
+            SelectFilter::make('employee_id')->label(__('Requester'))->relationship('employee', 'name')->searchable()->preload(),
             SelectFilter::make('status')->options(static::statuses()),
             SelectFilter::make('priority')->options(static::priorities()),
         ])->defaultSort('created_at', 'desc');

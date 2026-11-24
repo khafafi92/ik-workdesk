@@ -2,11 +2,11 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\LocalizedPage as Page;
 use App\Models\FinanceAccount;
 use App\Services\Scm\Access;
 use App\Services\Scm\Workflow;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
 use Illuminate\Database\QueryException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -146,7 +146,7 @@ class FinanceChartOfAccounts extends Page
             app(Workflow::class)->audit(auth()->user(), $account, 'simpan_coa', ['before' => $before, 'after' => $account->getAttributes()]);
         });
         $this->newAccount();
-        Notification::make()->title('COA\'s saved.')->success()->send();
+        Notification::make()->title(__('COA\'s saved.'))->success()->send();
     }
 
     protected function getViewData(): array

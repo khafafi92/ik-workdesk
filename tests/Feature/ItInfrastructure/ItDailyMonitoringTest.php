@@ -87,7 +87,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         $this->assertSame('no', $record->checks[0]['data_present']);
         $this->assertSame(today()->toDateString(), $record->backup_date->toDateString());
         $this->assertStringContainsString('00:01', $record->checks[0]['started_at']);
-        Livewire::test(EditItDailyMonitoring::class, ['record' => $record->id])->assertSee('00.01 WIB');
+        Livewire::test(EditItDailyMonitoring::class, ['record' => $record->id])->assertSee('00:01 WIB');
     }
 
     public function test_vm_planned_shutdown_is_distinct_from_unexpected_shutdown(): void
@@ -267,7 +267,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         $data = $this->data();
         unset($data['managing_department_id']);
         Livewire::test(CreateItDailyMonitoring::class)->assertFormFieldDoesNotExist('managing_department_id')
-            ->fillForm($data)->assertSee('Managed by IT')->assertSee('Internet connection per link')->assertSee('Target uji koneksi')->assertSee('Save Draft')->assertSee('Finalisasi')
+            ->fillForm($data)->assertSee('Managed by IT')->assertSee('Internet connection per link')->assertSee('Target connection test')->assertSee('Save Draft')->assertSee('Finalize monitoring')
             ->call('create')->assertHasNoFormErrors();
         $this->assertSame(2, ItDailyMonitoring::query()->where('managing_department_id', $this->department->id)->count());
         $this->expectException(AuthorizationException::class);
@@ -307,9 +307,9 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
             $source = app(ItDailyMonitoringService::class)->save($this->inspector, $data);
             $component = Livewire::withQueryParams(['repeat' => (string) $source->id])->test(CreateItDailyMonitoring::class)
                 ->assertFormSet(['monitoring_type' => $type->value, 'source_name' => $source->source_name, 'location' => $source->location, 'finalize' => false, 'revision' => 1])
-                ->assertSee('Results are blank for the new inspection.');
+                ->assertSee('Enter the new results.');
             $checks = array_values($component->get('data.checks'));
-            $expected = [...$type->emptyCheck(), 'name' => $data['checks'][0]['name']];
+            $expected = [...$type->emptyCheck(), 'name' => $source->checks[0]['name']];
             if ($type === ItMonitoringType::Firewall) {
                 $expected['test_target'] = $data['checks'][0]['test_target'];
             } elseif ($type === ItMonitoringType::Vsphere) {
@@ -353,18 +353,18 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         $component = Livewire::test(CreateItDailyMonitoring::class)->fillForm([
             'monitoring_type' => 'synology', 'checks' => [[...ItMonitoringType::Synology->emptyCheck(), 'status' => 'success']],
         ])->call('create')->assertHasFormErrors(['source_name' => 'required'])
-            ->assertSee('wajib diisi.')->assertDontSee('field is required.');
-        $component->set('data.monitoring_type', 'vsphere')->assertHasNoFormErrors()->assertDontSee('nama Synology wajib diisi.');
+            ->assertSee('is mandatory.')->assertDontSee('field is required.');
+        $component->set('data.monitoring_type', 'vsphere')->assertHasNoFormErrors()->assertDontSee('Synology Name is mandatory.');
         $record = app(ItDailyMonitoringService::class)->save($this->inspector, $this->data());
         Livewire::test(EditItDailyMonitoring::class, ['record' => $record->id])->fillForm(['source_name' => ''])->call('save')
-            ->assertHasFormErrors(['source_name' => 'required'])->assertSee('wajib diisi.')->assertDontSee('field is required.');
+            ->assertHasFormErrors(['source_name' => 'required'])->assertSee('is mandatory.')->assertDontSee('field is required.');
         $data = $this->data();
         $data['checks'][0]['packet_loss_percent'] = 101;
         try {
             app(ItDailyMonitoringService::class)->save($this->inspector, $data);
             $this->fail('Persentase di atas 100 harus ditolak.');
         } catch (ValidationException $exception) {
-            $this->assertSame(['Packet loss (%) harus antara 0 dan 100.'], $exception->errors()['data.checks.0.packet_loss_percent']);
+            $this->assertSame(['Packet loss (%) must be between 0 and 100.'], $exception->errors()['data.checks.0.packet_loss_percent']);
         }
         $this->assertSame(1, ItDailyMonitoring::query()->count());
     }

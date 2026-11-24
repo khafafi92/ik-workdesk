@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\AtkDepartmentStockMovements;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\AtkDepartmentStockMovements\Pages\ListAtkDepartmentStockMovements;
 use App\Models\AtkDepartmentStockMovement;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
@@ -36,17 +36,17 @@ class AtkDepartmentStockMovementResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('created_at')->label('Time')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('department.name')->label('Department')->searchable()->sortable(),
-                TextColumn::make('item.name')->label('Office Supply Items')->searchable(),
-                TextColumn::make('movement_type')->label('Type')->badge()->formatStateUsing(fn (string $state): string => str($state)->title()->toString()),
-                TextColumn::make('qty')->label('Quantity')->numeric(decimalPlaces: 2),
-                TextColumn::make('balance_after')->label('End balance')->numeric(decimalPlaces: 2),
-                TextColumn::make('request.request_number')->label('Request')->searchable()->toggleable(),
-                TextColumn::make('performer.name')->label('By')->toggleable(),
+                TextColumn::make('created_at')->label(__('Time'))->dateTime('d M Y H:i')->sortable(),
+                TextColumn::make('department.name')->label(__('Department'))->searchable()->sortable(),
+                TextColumn::make('item.name')->label(__('Office Supply Items'))->searchable(),
+                TextColumn::make('movement_type')->label(__('Type'))->badge()->formatStateUsing(fn (string $state): string => str($state)->title()->toString()),
+                TextColumn::make('qty')->label(__('Quantity'))->numeric(decimalPlaces: 2),
+                TextColumn::make('balance_after')->label(__('End balance'))->numeric(decimalPlaces: 2),
+                TextColumn::make('request.request_number')->label(__('Request'))->searchable()->toggleable(),
+                TextColumn::make('performer.name')->label(__('By'))->toggleable(),
             ])
             ->filters([
-                SelectFilter::make('movement_type')->label('Type')->options(['received' => 'Received', 'used' => 'In Use']),
+                SelectFilter::make('movement_type')->label(__('Type'))->options(['received' => __('Received'), 'used' => __('In Use')]),
             ])
             ->defaultSort('created_at', 'desc');
     }

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\LtroMttrRecords;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\LtroMttrRecords\Pages\CreateLtroMttrRecord;
 use App\Filament\Resources\LtroMttrRecords\Pages\EditLtroMttrRecord;
 use App\Filament\Resources\LtroMttrRecords\Pages\ListLtroMttrRecords;
@@ -12,7 +13,6 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
@@ -69,8 +69,8 @@ class LtroMttrRecordResource extends Resource
         return $schema->components([
             Section::make('Shutdown event')->schema([
                 TextInput::make('sequence_no')->numeric()->minValue(1),
-                Select::make('ltro_unit_id')->label('Unit')->relationship('unit', 'name')->searchable()->preload()->required(),
-                Select::make('ltro_category_id')->label('Category')->relationship('categoryMaster', 'name')->searchable()->preload(),
+                Select::make('ltro_unit_id')->label(__('Unit'))->relationship('unit', 'name')->searchable()->preload()->required(),
+                Select::make('ltro_category_id')->label(__('Category'))->relationship('categoryMaster', 'name')->searchable()->preload(),
                 TextInput::make('rental_period')->maxLength(255),
                 DatePicker::make('shutdown_month')->label('Report month')->native(false),
                 DateTimePicker::make('shutdown_datetime')->label('Shutdown at')->seconds(false)->required(),
@@ -90,16 +90,16 @@ class LtroMttrRecordResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('sequence_no')->label('No.')->sortable(),
-            TextColumn::make('unit.name')->label('Unit')->sortable()->searchable(),
-            TextColumn::make('categoryMaster.name')->label('Category')->badge()->placeholder('-'),
+            TextColumn::make('sequence_no')->label(__('No.'))->sortable(),
+            TextColumn::make('unit.name')->label(__('Unit'))->sortable()->searchable(),
+            TextColumn::make('categoryMaster.name')->label(__('Category'))->badge()->placeholder('-'),
             TextColumn::make('shutdown_datetime')->label('Shutdown')->dateTime('d M Y H:i')->sortable(),
             TextColumn::make('running_datetime')->label('Running')->dateTime('d M Y H:i')->placeholder('-'),
             TextColumn::make('downtime_minutes')->label('Downtime')->suffix(' min')->sortable(),
             TextColumn::make('immediate_cause')->label('Immediate cause')->limit(60)->tooltip(fn (LtroMttrRecord $record): ?string => $record->immediate_cause),
         ])->filters([
-            SelectFilter::make('ltro_unit_id')->label('Unit')->relationship('unit', 'name'),
-            SelectFilter::make('ltro_category_id')->label('Category')->relationship('categoryMaster', 'name'),
+            SelectFilter::make('ltro_unit_id')->label(__('Unit'))->relationship('unit', 'name'),
+            SelectFilter::make('ltro_category_id')->label(__('Category'))->relationship('categoryMaster', 'name'),
         ])->defaultSort('shutdown_datetime', 'desc');
     }
 

@@ -3,6 +3,7 @@
     $children = $item->getChildItems();
     $isActive = $item->isActive();
     $badge = $item->getBadge();
+    $label = $translateLabels ? __($item->getLabel()) : $item->getLabel();
 @endphp
 
 <li @class(['ik-sidebar-flyout-entry', 'is-nested' => $nested])>
@@ -13,13 +14,13 @@
             @if ($isActive) aria-current="page" @endif
             x-on:click="open = false; if (window.matchMedia('(max-width: 1023px)').matches) $store.sidebar.close()"
         >
-            <span>{{ $item->getLabel() }}</span>
+            <span>{{ $label }}</span>
             @if (filled($badge))
                 <x-filament::badge :color="$item->getBadgeColor($badge)" :tooltip="$item->getBadgeTooltip($badge)">{{ $badge }}</x-filament::badge>
             @endif
         </a>
     @else
-        <span class="ik-sidebar-flyout-heading">{{ $item->getLabel() }}</span>
+        <span class="ik-sidebar-flyout-heading">{{ $label }}</span>
     @endif
 
     @if ($children)

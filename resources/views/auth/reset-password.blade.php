@@ -1,9 +1,9 @@
 <x-guest-layout>
     <section class="wd-login-card" aria-labelledby="reset-password-title">
         <div class="wd-login-card-heading">
-            <span class="wd-login-card-kicker">Account recovery</span>
-            <h2 id="reset-password-title">Create new password</h2>
-            <p>Enter the new password and repeat it to make sure they're the same.</p>
+            <span class="wd-login-card-kicker">{{ __('Account recovery') }}</span>
+            <h2 id="reset-password-title">{{ __('Create new password') }}</h2>
+            <p>{{ __('Enter the new password and repeat it to make sure they\'re the same.') }}</p>
         </div>
 
         <form method="POST" action="{{ route('password.store') }}" class="wd-login-form">
@@ -31,7 +31,7 @@
             </div>
 
             <div x-data="{ showPassword: false }">
-                <label for="password">New password</label>
+                <label for="password">{{ __('New password') }}</label>
                 <div class="wd-login-input-wrap">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M16.5 10.5V6.75a4.5 4.5 0 0 0-9 0v3.75m-.75 9h10.5a2.25 2.25 0 0 0 2.25-2.25v-4.5a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v4.5a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -43,7 +43,7 @@
                         name="password"
                         required
                         autocomplete="new-password"
-                        placeholder="Enter new password"
+                        placeholder="{{ __('Enter new password') }}"
                     >
                     <button
                         type="button"
@@ -65,7 +65,7 @@
             </div>
 
             <div x-data="{ showPassword: false }">
-                <label for="password_confirmation">Confirm new password</label>
+                <label for="password_confirmation">{{ __('Confirm new password') }}</label>
                 <div class="wd-login-input-wrap">
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                         <path d="M16.5 10.5V6.75a4.5 4.5 0 0 0-9 0v3.75m-.75 9h10.5a2.25 2.25 0 0 0 2.25-2.25v-4.5a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v4.5a2.25 2.25 0 0 0 2.25 2.25Z" />
@@ -77,7 +77,7 @@
                         name="password_confirmation"
                         required
                         autocomplete="new-password"
-                        placeholder="Repeat new password"
+                        placeholder="{{ __('Repeat new password') }}"
                     >
                     <button
                         type="button"

@@ -9,7 +9,7 @@
                 <p class="mr-calendar-eyebrow">VEHICLE BOOKING</p>
                 <h1>Weekly vehicle schedule</h1>
                 <p>
-                    See what vehicles are available and plan an unscheduled journey.
+                    {{ __('See what vehicles are available and plan an unscheduled journey.') }}
                 </p>
             </div>
 
@@ -18,7 +18,7 @@
                     <x-heroicon-o-chevron-left />
                 </button>
                 <button type="button" wire:click="currentWeek" class="mr-calendar-today">
-                    Today
+                    {{ __('Today') }}
                 </button>
                 <button type="button" wire:click="nextWeek" aria-label="Next week">
                     <x-heroicon-o-chevron-right />
@@ -35,13 +35,13 @@
         @if ($calendar['vehicles']->isEmpty())
             <div class="mr-calendar-empty">
                 <x-heroicon-o-truck />
-                <strong>No active vehicles yet</strong>
-                <p>Admins or GAs can add vehicles through the Vehicles menu.</p>
+                <strong>{{ __('No active vehicles yet') }}</strong>
+                <p>{{ __('Admins or GAs can add vehicles through the Vehicles menu.') }}</p>
             </div>
         @else
             <div class="mr-calendar-scroll">
                 <div class="mr-calendar-grid">
-                    <div class="mr-calendar-corner">Vehicle</div>
+                    <div class="mr-calendar-corner">{{ __('Vehicle') }}</div>
 
                     @foreach ($calendar['days'] as $day)
                         <div @class([
@@ -109,11 +109,11 @@
                                             wire:navigate
                                         >
                                             <x-heroicon-o-plus />
-                                            <span>Available</span>
+                                            <span>{{ __('Available') }}</span>
                                         </a>
                                     @else
                                         <span class="mr-calendar-open">
-                                            <span>Available</span>
+                                            <span>{{ __('Available') }}</span>
                                         </span>
                                     @endif
                                 @endforelse
@@ -126,8 +126,8 @@
 
         <div class="mr-calendar-legend">
             <span><i class="is-booked"></i> Booked</span>
-            <span><i class="is-open"></i> Available</span>
-            <span>Calendar uses Asia/Jakarta time.</span>
+            <span><i class="is-open"></i> {{ __('Available') }}</span>
+            <span>{{ __('Calendar uses Asia/Jakarta time.') }}</span>
         </div>
     </div>
 </x-filament-panels::page>

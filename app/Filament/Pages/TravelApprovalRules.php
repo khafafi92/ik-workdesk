@@ -2,13 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\LocalizedPage as Page;
 use App\Models\Department;
 use App\Models\TravelApprovalPolicy;
 use App\Models\User;
 use App\Services\Travel\TravelAccess;
 use App\Services\Travel\TravelApprovalPolicies;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
 use Livewire\Attributes\Locked;
 use Livewire\WithPagination;
 use UnitEnum;
@@ -87,7 +87,7 @@ class TravelApprovalRules extends Page
         abort_unless(static::canAccess(), 403);
         app(TravelApprovalPolicies::class)->save(auth()->user(), $this->rule, $this->editingId, $this->version);
         $this->newRule();
-        Notification::make()->title('SPD/LPJ approval rules saved')->success()->send();
+        Notification::make()->title(__('SPD/LPJ approval rules saved'))->success()->send();
     }
 
     public function deleteRule(int $id, int $version): void

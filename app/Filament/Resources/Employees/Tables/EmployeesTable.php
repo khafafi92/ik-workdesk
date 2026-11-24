@@ -17,12 +17,12 @@ class EmployeesTable
         return $table
             ->columns([
                 TextColumn::make('department.name')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->placeholder('-')
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('permitCompanies.name')
-                    ->label('Companies')
+                    ->label(__('Companies'))
                     ->placeholder('-')
                     ->listWithLineBreaks()
                     ->searchable(),
@@ -31,20 +31,20 @@ class EmployeesTable
                 TextColumn::make('name')
                     ->searchable(),
                 TextColumn::make('email')
-                    ->label('Email address')
+                    ->label(__('Email address'))
                     ->searchable(),
                 TextColumn::make('phone')
                     ->searchable(),
                 TextColumn::make('position')
                     ->searchable(),
                 TextColumn::make('position_level')
-                    ->label('Job Level')
+                    ->label(__('Job Level'))
                     ->formatStateUsing(fn (string $state): string => EmployeeHierarchy::levels()[$state] ?? $state)
-                    ->placeholder('Unmapped')
+                    ->placeholder(__('Unmapped'))
                     ->sortable(),
                 TextColumn::make('supervisor.name')
-                    ->label('Direct Top')
-                    ->placeholder('Unmapped')
+                    ->label(__('Direct Top'))
+                    ->placeholder(__('Unmapped'))
                     ->searchable(),
                 IconColumn::make('is_active')
                     ->boolean(),

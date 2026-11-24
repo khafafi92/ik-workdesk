@@ -21,13 +21,13 @@ class LocationReportForm
 
                 TextInput::make('period_name')
                     ->label('Period Name')
-                    ->placeholder('Example: May 21 - June 20, 2026')
+                    ->placeholder(__('Example: May 21 - June 20, 2026'))
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
 
                 FileUpload::make('attendance_file_path')
-                    ->label('Attendance Location File')
+                    ->label(__('Attendance Location File'))
                     ->disk('local')
                     ->directory('attendance-imports')
                     ->acceptedFileTypes([
@@ -44,18 +44,18 @@ class LocationReportForm
                     ->default(null),
 
                 Select::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->options([
-                        'draft' => 'Draft',
+                        'draft' => __('Draft'),
                         'uploaded' => 'Uploaded',
                         'processed' => 'Processed',
-                        'failed' => 'Failed',
+                        'failed' => __('Failed'),
                     ])
                     ->default('uploaded')
                     ->required(),
 
                 Textarea::make('notes')
-                    ->label('Notes')
+                    ->label(__('Notes'))
                     ->rows(3)
                     ->columnSpanFull(),
             ]);

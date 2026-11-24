@@ -24,7 +24,7 @@ class CreateRole extends CreateRecord
                     )
                 ),
             403,
-            'You don\'t have a license to make roles.'
+            __('You don\'t have a license to make roles.')
         );
 
         /*

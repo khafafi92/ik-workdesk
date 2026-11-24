@@ -29,7 +29,7 @@ class AttendanceImportsTable
             ->searchOnBlur()
             ->columns([
                 TextColumn::make('period_name')
-                    ->label('Period')
+                    ->label(__('Period'))
                     ->searchable()
                     ->sortable(),
 
@@ -54,7 +54,7 @@ class AttendanceImportsTable
                     ),
 
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->badge()
                     ->color(
                         fn (?string $state): string => match ($state) {
@@ -82,7 +82,7 @@ class AttendanceImportsTable
             ->defaultSort('created_at', 'desc')
             ->recordActions([
                 Action::make('view_results')
-                    ->label('View Results')
+                    ->label(__('View Results'))
                     ->icon('heroicon-o-table-cells')
                     ->color('info')
                     ->visible(
@@ -94,7 +94,7 @@ class AttendanceImportsTable
                             auth()->user()
                                 ?->hasPermission('attendance.view') === true,
                             403,
-                            'You don\'t have clearance to look at attention.'
+                            __('You don\'t have clearance to look at attention.')
                         );
                     })
                     ->url(
@@ -118,7 +118,7 @@ class AttendanceImportsTable
                             auth()->user()
                                 ?->hasPermission('attendance.manage') === true,
                             403,
-                            'You don\'t have permission to process attendance.'
+                            __('You don\'t have permission to process attendance.')
                         );
                     })
                     ->action(
@@ -129,7 +129,7 @@ class AttendanceImportsTable
                             Notification::make()
                                 ->title('Attendance report processed')
                                 ->body(
-                                    'Excel data was successfully processed to Attendance Results.'
+                                    __('Excel data was successfully processed to Attendance Results.')
                                 )
                                 ->success()
                                 ->send();

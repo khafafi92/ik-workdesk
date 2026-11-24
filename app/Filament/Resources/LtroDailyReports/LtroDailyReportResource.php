@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\LtroDailyReports;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\LtroDailyReports\Pages\ListLtroDailyReports;
 use App\Models\LtroDailyReport;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -38,7 +38,7 @@ class LtroDailyReportResource extends Resource
     {
         return $table->columns([
             TextColumn::make('report_date')->label('Report date')->date('d M Y')->sortable(),
-            TextColumn::make('unit_code')->label('Unit')->badge()->sortable(),
+            TextColumn::make('unit_code')->label(__('Unit'))->badge()->sortable(),
             TextColumn::make('operator_day')->label('Day operator')->placeholder('-'),
             TextColumn::make('operator_night')->label('Night operator')->placeholder('-'),
             TextColumn::make('combined_average')->label('Combined average')->numeric(decimalPlaces: 2)->placeholder('-'),
@@ -46,7 +46,7 @@ class LtroDailyReportResource extends Resource
             TextColumn::make('down_reactive_hours')->label('Down reactive')->suffix(' h')->placeholder('-'),
             TextColumn::make('updated_at')->label('Last update')->since()->sortable(),
         ])->filters([
-            SelectFilter::make('unit_code')->label('Unit')->options(fn (): array => LtroDailyReport::query()->distinct()->orderBy('unit_code')->pluck('unit_code', 'unit_code')->all()),
+            SelectFilter::make('unit_code')->label(__('Unit'))->options(fn (): array => LtroDailyReport::query()->distinct()->orderBy('unit_code')->pluck('unit_code', 'unit_code')->all()),
         ])->defaultSort('report_date', 'desc');
     }
 

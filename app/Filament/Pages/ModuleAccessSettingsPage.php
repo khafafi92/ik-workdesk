@@ -39,7 +39,7 @@ class ModuleAccessSettingsPage extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Module Settings';
+        return __('Module Settings');
     }
 
     public static function getNavigationSort(): ?int
@@ -65,8 +65,8 @@ class ModuleAccessSettingsPage extends Page
 
         return $schema
             ->components([
-                Section::make('Module Availability')
-                    ->description('Settings apply to all users. The disabled module is hidden and cannot be opened until restarted. The active module remains following role privileges.')
+                Section::make(__('Module Availability'))
+                    ->description(__('Settings apply to all users. The disabled module is hidden and cannot be opened until restarted. The active module remains following role privileges.'))
                     ->schema($toggles)
                     ->columns(2),
             ])
@@ -85,7 +85,7 @@ class ModuleAccessSettingsPage extends Page
             array_diff(array_keys($states), $moduleKeys) !== []
                 || array_diff($moduleKeys, array_keys($states)) !== [],
             422,
-            'The module list changed. Reload the page before saving.',
+            __('The module list changed. Reload the page before saving.'),
         );
 
         DB::transaction(function () use ($modules, $states): void {
@@ -103,7 +103,7 @@ class ModuleAccessSettingsPage extends Page
         $this->form->fill(['modules' => $states]);
 
         Notification::make()
-            ->title('Module settings saved')
+            ->title(__('Module settings saved'))
             ->success()
             ->send();
     }

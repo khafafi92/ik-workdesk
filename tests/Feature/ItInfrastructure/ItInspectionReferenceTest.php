@@ -50,7 +50,7 @@ class ItInspectionReferenceTest extends ItInfrastructureTestCase
         $export = new ItInspectionExport(ItInspectionResult::query()->where('it_inspection_id', $inspection->id));
         $row = array_combine($export->headings(), $export->map($export->query()->firstOrFail()));
         $this->assertSame($number, $row['Inspection Number']);
-        $this->assertSame('Pemakai saat diperiksa', $row['Nama User']);
+        $this->assertSame('Pemakai saat diperiksa', $row['User Name']);
         $this->assertSame($before, $inspection->fresh()->getRawOriginal());
     }
 
@@ -75,21 +75,21 @@ class ItInspectionReferenceTest extends ItInfrastructureTestCase
             ->set('data', $data)->call('finalizeInspection')->assertHasNoErrors();
         $inspection = $device->inspections()->sole();
         $before = $inspection->getRawOriginal();
-        $this->assertSame('Stok (belum dialokasikan)', $inspection->assigneeLabel());
+        $this->assertSame('Stock (unallocated)', $inspection->assigneeLabel());
         Livewire::test(ItInfrastructureReportPage::class)->assertSee('Stock (unallocated)');
         Livewire::test(EditItDevice::class, ['record' => $device->id])->fillForm([
             'assigned_employee_id' => $this->inspector->employee->id, 'lifecycle_status' => 'in_use',
         ])->call('save')->assertHasNoFormErrors();
         $this->assertSame($this->inspector->name, $device->fresh()->assigned_user_name);
         $this->assertSame($before, $inspection->fresh()->getRawOriginal());
-        $this->assertSame('Stok (belum dialokasikan)', $inspection->fresh()->assigneeLabel());
+        $this->assertSame('Stock (unallocated)', $inspection->fresh()->assigneeLabel());
     }
 
     public function test_unknown_assignees_are_not_invented_or_treated_as_stock(): void
     {
         $this->assertSame('Unassigned', ItDevice::assigneeLabelFor([]));
         $this->assertSame('Unassigned', ItDevice::assigneeLabelFor(['lifecycle_status' => 'in_use']));
-        $this->assertSame('Tidak berlaku', ItDevice::assigneeLabelFor(['object_kind' => 'room']));
+        $this->assertSame('Not valid', ItDevice::assigneeLabelFor(['object_kind' => 'room']));
         $this->assertSame('Pemakai terdaftar', ItDevice::assigneeLabelFor(['assigned_user_name' => '', 'assigned_employee' => ['name' => 'Pemakai terdaftar']]));
     }
 }

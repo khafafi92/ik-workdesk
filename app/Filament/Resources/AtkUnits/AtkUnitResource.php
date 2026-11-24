@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AtkUnits;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\AtkUnits\Pages\CreateAtkUnit;
 use App\Filament\Resources\AtkUnits\Pages\EditAtkUnit;
 use App\Filament\Resources\AtkUnits\Pages\ListAtkUnits;
@@ -10,7 +11,6 @@ use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
@@ -34,17 +34,17 @@ class AtkUnitResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            TextInput::make('name')->label('Unit name')->required()->maxLength(50)->unique(ignoreRecord: true),
-            Toggle::make('is_active')->label('Active')->default(true),
+            TextInput::make('name')->label(__('Unit name'))->required()->maxLength(50)->unique(ignoreRecord: true),
+            Toggle::make('is_active')->label(__('Active'))->default(true),
         ]);
     }
 
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('name')->label('Unit')->searchable()->sortable(),
-            TextColumn::make('items_count')->label('Item')->counts('items')->alignCenter(),
-            IconColumn::make('is_active')->label('Active')->boolean(),
+            TextColumn::make('name')->label(__('Unit'))->searchable()->sortable(),
+            TextColumn::make('items_count')->label(__('Item'))->counts('items')->alignCenter(),
+            IconColumn::make('is_active')->label(__('Active'))->boolean(),
         ])->defaultSort('name')->recordActions([EditAction::make()]);
     }
 

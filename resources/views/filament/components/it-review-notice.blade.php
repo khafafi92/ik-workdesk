@@ -28,6 +28,7 @@
         .it-review-worksheet { padding: 0; border: 0; border-radius: 0; }
         .it-review-worksheet .it-review-toolbar { justify-content: space-between; align-items: center; }
         .it-review-worksheet .it-review-table-wrap { margin-top: 0; }
+        .it-review-mobile-help { display: none; }
         .it-review .it-review-worksheet table { table-layout: fixed; min-width: 60rem; }
         .it-review .it-review-worksheet :is(th, td) { border: 1px solid #64748b; padding: .4rem .5rem; }
         .it-review-worksheet td { background: #fff; }
@@ -72,6 +73,7 @@
         .it-review-errors ul { padding-left: 1.25rem; list-style: disc; }
         .it-review form { min-width: 0; }
         @media (max-width: 640px) {
+            .it-review-mobile-help { display: block; }
             .it-review-toolbar { display: grid; grid-template-columns: minmax(0, 1fr); }
             .it-review-finding-fields { grid-template-columns: minmax(0, 1fr); }
             .it-review .fi-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -82,10 +84,10 @@
         }
     </style>
 @endonce
-<div class="it-review-loading" role="status" wire:loading>Loading changes...</div>
+<div class="it-review-loading" role="status" wire:loading>{{ __('Loading changes...') }}</div>
 @if ($errors->any())
     <div class="it-review-errors" role="alert" tabindex="-1">
-        <strong>Check the following contents.</strong>
+        <strong>{{ __('Check the following contents.') }}</strong>
         <ul>@foreach ($errors->all() as $message)<li>{{ $message }}</li>@endforeach</ul>
     </div>
 @endif

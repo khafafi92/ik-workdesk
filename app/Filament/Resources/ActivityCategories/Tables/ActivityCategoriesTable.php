@@ -14,18 +14,18 @@ class ActivityCategoriesTable
         return $table
             ->columns([
                 TextColumn::make('code')
-                    ->label('Code')
+                    ->label(__('Code'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('name')
-                    ->label('Category')
+                    ->label(__('Category'))
                     ->searchable()
                     ->sortable(),
                 TextColumn::make('description')
                     ->limit(60)
                     ->wrap(),
                 IconColumn::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->boolean(),
             ])
             ->defaultSort('name')

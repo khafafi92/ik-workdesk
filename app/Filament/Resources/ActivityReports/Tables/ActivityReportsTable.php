@@ -19,11 +19,11 @@ class ActivityReportsTable
         return $table
             ->columns([
                 TextColumn::make('work_date')
-                    ->label('Date')
+                    ->label(__('Date'))
                     ->date('d M Y')
                     ->sortable(),
                 TextColumn::make('user.name')
-                    ->label('User')
+                    ->label(__('User'))
                     ->searchable()
                     ->sortable()
                     ->description(
@@ -35,7 +35,7 @@ class ActivityReportsTable
                     ->wrap()
                     ->description(fn (DailyActivity $record): ?string => $record->result),
                 TextColumn::make('work_context')
-                    ->label('Context')
+                    ->label(__('Context'))
                     ->badge()
                     ->formatStateUsing(
                         fn (string $state): string => $state === 'project'
@@ -48,7 +48,7 @@ class ActivityReportsTable
                             ?? '-'
                     ),
                 TextColumn::make('source_type')
-                    ->label('Source')
+                    ->label(__('Source'))
                     ->badge()
                     ->formatStateUsing(
                         fn (string $state): string => $state === 'task'
@@ -57,7 +57,7 @@ class ActivityReportsTable
                     )
                     ->description(fn (DailyActivity $record): ?string => $record->workTask?->task_no),
                 TextColumn::make('requester_type')
-                    ->label('Requested By')
+                    ->label(__('Requested By'))
                     ->formatStateUsing(fn (string $state): string => match ($state) {
                         'company' => 'Company',
                         'division' => 'Department',
@@ -66,7 +66,7 @@ class ActivityReportsTable
                     })
                     ->description(fn (DailyActivity $record): string => $record->requester_label),
                 TextColumn::make('duration_minutes')
-                    ->label('Duration')
+                    ->label(__('Duration'))
                     ->sortable()
                     ->formatStateUsing(fn (DailyActivity $record): string => $record->formatted_duration)
                     ->summarize(
@@ -91,10 +91,10 @@ class ActivityReportsTable
             ])
             ->filters([
                 Filter::make('period')
-                    ->label('Period')
+                    ->label(__('Period'))
                     ->schema([
                         DatePicker::make('from')
-                            ->label('From')
+                            ->label(__('From'))
                             ->native(false)
                             ->default(now()->startOfMonth()),
                         DatePicker::make('until')
@@ -112,13 +112,13 @@ class ActivityReportsTable
                             fn (Builder $query, $date) => $query->whereDate('work_date', '<=', $date)
                         )),
                 SelectFilter::make('user_id')
-                    ->label('Employee / PIC')
+                    ->label(__('Employee / PIC'))
                     ->relationship('user', 'name')
                     ->searchable()
                     ->preload()
                     ->visible(fn (): bool => static::canViewTeam()),
                 SelectFilter::make('department')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->query(fn (Builder $query, array $data): Builder => $query->when(
                         $data['value'] ?? null,
                         fn (Builder $query, $departmentId): Builder => $query->whereHas(
@@ -129,24 +129,24 @@ class ActivityReportsTable
                     ->options(fn (): array => Department::query()->orderBy('name')->pluck('name', 'id')->all())
                     ->visible(fn (): bool => static::canViewTeam()),
                 SelectFilter::make('work_context')
-                    ->label('Context')
+                    ->label(__('Context'))
                     ->options([
-                        'project' => 'Project',
-                        'operational' => 'Operational / Non-project',
+                        'project' => __('Project'),
+                        'operational' => __('Operational / Non-project'),
                     ]),
                 SelectFilter::make('source_type')
-                    ->label('Source')
+                    ->label(__('Source'))
                     ->options([
-                        'task' => 'Task',
+                        'task' => __('Task'),
                         'manual' => 'Manual',
                     ]),
                 SelectFilter::make('work_project_id')
-                    ->label('Project')
+                    ->label(__('Project'))
                     ->relationship('project', 'name')
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('activity_category_id')
-                    ->label('Category')
+                    ->label(__('Category'))
                     ->relationship('activityCategory', 'name')
                     ->searchable()
                     ->preload(),

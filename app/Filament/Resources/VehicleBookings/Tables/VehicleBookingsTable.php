@@ -21,7 +21,7 @@ class VehicleBookingsTable
         return $table
             ->columns([
                 TextColumn::make('start_at')
-                    ->label('Date & Time')
+                    ->label(__('Date & Time'))
                     ->dateTime('d M Y H:i')
                     ->description(
                         fn (VehicleBooking $record): string => 'Until '.$record->end_at->format('H:i')
@@ -35,19 +35,19 @@ class VehicleBookingsTable
                     )
                     ->wrap(),
                 TextColumn::make('vehicle.name')
-                    ->label('Vehicle')
+                    ->label(__('Vehicle'))
                     ->searchable()
                     ->description(
                         fn (VehicleBooking $record): string => $record->vehicle?->plate_number ?? '-'
                     ),
                 TextColumn::make('requester.name')
-                    ->label('Requester')
+                    ->label(__('Requester'))
                     ->searchable(),
                 TextColumn::make('passengers_count')
                     ->label('Passengers')
                     ->badge(),
                 TextColumn::make('display_status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->badge()
                     ->formatStateUsing(
                         fn (string $state): string => str($state)->title()->toString()
@@ -64,15 +64,15 @@ class VehicleBookingsTable
             ])
             ->filters([
                 SelectFilter::make('vehicle_id')
-                    ->label('Vehicle')
+                    ->label(__('Vehicle'))
                     ->relationship('vehicle', 'name')
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('status')
                     ->options([
                         'confirmed' => 'Confirmed',
-                        'completed' => 'Completed',
-                        'cancelled' => 'Cancelled',
+                        'completed' => __('Completed'),
+                        'cancelled' => __('Cancelled'),
                     ]),
             ])
             ->defaultSort('start_at', 'desc')
@@ -82,7 +82,7 @@ class VehicleBookingsTable
                         fn (VehicleBooking $record): bool => VehicleBookingResource::canEdit($record)
                     ),
                 Action::make('complete')
-                    ->label('Set Done')
+                    ->label(__('Set Done'))
                     ->icon('heroicon-o-check-circle')
                     ->color('success')
                     ->visible(
@@ -91,7 +91,7 @@ class VehicleBookingsTable
                     )
                     ->requiresConfirmation()
                     ->modalDescription(
-                        'The journey will be marked completed and the vehicle available directly.'
+                        __('The journey will be marked completed and the vehicle available directly.')
                     )
                     ->action(
                         function (VehicleBooking $record): void {
@@ -104,7 +104,7 @@ class VehicleBookingsTable
                         }
                     ),
                 Action::make('cancel')
-                    ->label('Cancel')
+                    ->label(__('Cancel'))
                     ->icon('heroicon-o-x-circle')
                     ->color('danger')
                     ->visible(

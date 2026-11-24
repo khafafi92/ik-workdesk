@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\VehicleBookings;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\VehicleBookings\Pages\CreateVehicleBooking;
 use App\Filament\Resources\VehicleBookings\Pages\EditVehicleBooking;
 use App\Filament\Resources\VehicleBookings\Pages\ListVehicleBookings;
@@ -9,7 +10,6 @@ use App\Filament\Resources\VehicleBookings\Schemas\VehicleBookingForm;
 use App\Filament\Resources\VehicleBookings\Tables\VehicleBookingsTable;
 use App\Models\VehicleBooking;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;

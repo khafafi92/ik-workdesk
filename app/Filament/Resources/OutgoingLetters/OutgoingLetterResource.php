@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\OutgoingLetters;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\OutgoingLetters\Pages\CreateOutgoingLetter;
 use App\Filament\Resources\OutgoingLetters\Pages\EditOutgoingLetter;
 use App\Filament\Resources\OutgoingLetters\Pages\ListOutgoingLetters;
@@ -19,7 +20,6 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -58,12 +58,12 @@ class OutgoingLetterResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('1. Choose a profile and identify the letter')
-                ->description('Select profiles according to mail groups. Entity and department are filled from the author\'s profile or account, and complete the mail type and date.')
+            Section::make(__('1. Choose a profile and identify the letter'))
+                ->description(__('Select profiles according to mail groups. Entity and department are filled from the author\'s profile or account, and complete the mail type and date.'))
                 ->columns(3)
                 ->schema([
-                    Select::make('letter_profile_id')->label('Mail profile')->relationship('profile', 'name')->searchable()->preload()->required()->live()
-                        ->helperText('Example: APCA General Letter, H.R. APCA, HR KPMOG, or Team Project/BD KPMOG.')
+                    Select::make('letter_profile_id')->label(__('Mail profile'))->relationship('profile', 'name')->searchable()->preload()->required()->live()
+                        ->helperText(__('Example: APCA General Letter, H.R. APCA, HR KPMOG, or Team Project/BD KPMOG.'))
                         ->afterStateUpdated(function ($state, Set $set): void {
                             $profile = LetterProfile::find($state);
 
@@ -77,52 +77,52 @@ class OutgoingLetterResource extends Resource
                                 : $profile->department_id);
                         })
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    Select::make('permit_company_id')->label('Issuer entity')->relationship('company', 'name')->searchable()->preload()->required()->live()
-                        ->helperText('Select the entity that publishes the mail.')
+                    Select::make('permit_company_id')->label(__('Issuer entity'))->relationship('company', 'name')->searchable()->preload()->required()->live()
+                        ->helperText(__('Select the entity that publishes the mail.'))
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    Select::make('department_id')->label('Publisher Department')->relationship('department', 'name')->searchable()->preload()->live()
+                    Select::make('department_id')->label(__('Publisher Department'))->relationship('department', 'name')->searchable()->preload()->live()
                         ->helperText(fn (Get $get): string => static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))
                             ? (auth()->user()?->is_admin
-                                ? 'Select the department that publishes the mail.'
-                                : 'Department code was taken from the Mailman\'s Department account.')
-                            : 'Select the sender department if mail uses department code.')
+                                ? __('Select the department that publishes the mail.')
+                                : __('Department code was taken from the Mailman\'s Department account.'))
+                            : __('Select the sender department if mail uses department code.'))
                         ->disabled(fn (Get $get, ?OutgoingLetter $record): bool => static::isNumberLocked($record)
                             || (static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))
                                 && auth()->user()?->is_admin !== true))
                         ->dehydrated(fn (Get $get): bool => static::usesApcaGeneralNumbering($get('letter_profile_id'), $get('permit_company_id'))),
-                    Select::make('document_type_id')->label('Mail type')->relationship('documentType', 'name')->searchable()->preload()->live()
-                        ->helperText('The type of mail determines the code in the mail number, if the template uses it.')
+                    Select::make('document_type_id')->label(__('Mail type'))->relationship('documentType', 'name')->searchable()->preload()->live()
+                        ->helperText(__('The type of mail determines the code in the mail number, if the template uses it.'))
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    DatePicker::make('document_date')->label('Mail date')->default(today())->required()->live()
+                    DatePicker::make('document_date')->label(__('Mail date'))->default(today())->required()->live()
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
                 ]),
-            Section::make('2. Add the recipient and letter content')
-                ->description('Project, PIN, PIC name, location code, and description are only filled if needed by this letter.')
+            Section::make(__('2. Add the recipient and letter content'))
+                ->description(__('Project, PIN, PIC name, location code, and description are only filled if needed by this letter.'))
                 ->columns(3)
                 ->schema([
                     Select::make('work_project_id')->label('Project / Job Order')->relationship('project', 'code')->getOptionLabelFromRecordUsing(fn ($record): string => trim($record->code.' - '.$record->name))->searchable()->preload(),
                     TextInput::make('pin')->label('PIN')->maxLength(100),
                     Select::make('pic_user_id')->label('PIC user')->relationship('picUser', 'name')->searchable()->preload(),
-                    TextInput::make('pic_name')->label('PIC Name')->maxLength(255),
-                    TextInput::make('recipient')->label('Mail destination')->helperText('The name of the agency, the company, or the recipient of the mail.')->maxLength(255),
-                    TextInput::make('subject')->label('Subject')->helperText('Summarize what the letter is about.')->required()->maxLength(255)->columnSpanFull(),
-                    TextInput::make('location_code')->label('Location / reference code')->maxLength(100)->live()
-                        ->helperText('Fill only when template mail numbers using location code.'),
-                    Textarea::make('description')->label('Additional description')->helperText('Optional. Contents if necessary internal notes for this message.')->maxLength(4000)->columnSpanFull(),
+                    TextInput::make('pic_name')->label(__('PIC Name'))->maxLength(255),
+                    TextInput::make('recipient')->label(__('Mail destination'))->helperText(__('The name of the agency, the company, or the recipient of the mail.'))->maxLength(255),
+                    TextInput::make('subject')->label(__('Subject'))->helperText(__('Summarize what the letter is about.'))->required()->maxLength(255)->columnSpanFull(),
+                    TextInput::make('location_code')->label(__('Location / reference code'))->maxLength(100)->live()
+                        ->helperText(__('Fill only when template mail numbers using location code.')),
+                    Textarea::make('description')->label(__('Additional description'))->helperText(__('Optional. Contents if necessary internal notes for this message.'))->maxLength(4000)->columnSpanFull(),
                 ]),
-            Section::make('3. Review the number and save the draft')
-                ->description('The number below is preview. Save it as a draft first. Number becomes final and reserved only when mail is published.')
+            Section::make(__('3. Review the number and save the draft'))
+                ->description(__('The number below is preview. Save it as a draft first. Number becomes final and reserved only when mail is published.'))
                 ->schema([
-                    Toggle::make('is_legacy_number')->label('Input executing / legacy number')->live()
-                        ->helperText('Use it only to record old letters that already have numbers.')
+                    Toggle::make('is_legacy_number')->label(__('Input executing / legacy number'))->live()
+                        ->helperText(__('Use it only to record old letters that already have numbers.'))
                         ->visible(fn (): bool => static::canUseLegacyNumbers())
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    TextInput::make('document_number')->label('Existing message number')->maxLength(500)->unique(ignoreRecord: true)
+                    TextInput::make('document_number')->label(__('Existing message number'))->maxLength(500)->unique(ignoreRecord: true)
                         ->visible(fn (Get $get): bool => (bool) $get('is_legacy_number'))
                         ->required(fn (Get $get): bool => (bool) $get('is_legacy_number'))
                         ->disabled(fn (?OutgoingLetter $record): bool => static::isNumberLocked($record)),
-                    Placeholder::make('number_preview')->label('Preview mail numbers')->content(fn (Get $get): string => static::preview($get)),
-                    Placeholder::make('number_status')->label('Status')->content(fn (?OutgoingLetter $record): string => $record?->status ? static::statusLabel($record->status) : 'Draft'),
+                    Placeholder::make('number_preview')->label(__('Preview mail numbers'))->content(fn (Get $get): string => static::preview($get)),
+                    Placeholder::make('number_status')->label(__('Status'))->content(fn (?OutgoingLetter $record): string => $record?->status ? static::statusLabel($record->status) : __('Draft')),
                 ]),
         ]);
     }
@@ -130,36 +130,36 @@ class OutgoingLetterResource extends Resource
     public static function table(Table $table): Table
     {
         return $table->columns([
-            TextColumn::make('document_number')->label('Mail number')->searchable()->sortable()->placeholder('Draft'),
-            TextColumn::make('document_date')->label('Date')->date('d M Y')->sortable(),
-            TextColumn::make('profile.name')->label('Profiles')->placeholder('-')->toggleable(),
-            TextColumn::make('company.code')->label('Company')->sortable(),
-            TextColumn::make('department.code')->label('Department')->placeholder('-'),
-            TextColumn::make('documentType.name')->label('Mail type')->placeholder('-')->toggleable(),
+            TextColumn::make('document_number')->label(__('Mail number'))->searchable()->sortable()->placeholder(__('Draft')),
+            TextColumn::make('document_date')->label(__('Date'))->date('d M Y')->sortable(),
+            TextColumn::make('profile.name')->label(__('Profiles'))->placeholder('-')->toggleable(),
+            TextColumn::make('company.code')->label(__('Company'))->sortable(),
+            TextColumn::make('department.code')->label(__('Department'))->placeholder('-'),
+            TextColumn::make('documentType.name')->label(__('Mail type'))->placeholder('-')->toggleable(),
             TextColumn::make('project.code')->label('Project / Job Order')->placeholder('-')->searchable()->toggleable(),
             TextColumn::make('pic_name')->label('PIC')->placeholder('-')->searchable()->toggleable(),
-            TextColumn::make('recipient')->label('Destination')->limit(35)->searchable()->toggleable(),
-            TextColumn::make('subject')->label('Subject')->limit(55)->searchable(),
-            TextColumn::make('status')->label('Status')->badge()->formatStateUsing(fn (string $state): string => static::statusLabel($state))
+            TextColumn::make('recipient')->label(__('Destination'))->limit(35)->searchable()->toggleable(),
+            TextColumn::make('subject')->label(__('Subject'))->limit(55)->searchable(),
+            TextColumn::make('status')->label(__('Status'))->badge()->formatStateUsing(fn (string $state): string => static::statusLabel($state))
                 ->color(fn (string $state): string => match ($state) {
                     'issued' => 'success', 'archived' => 'gray', 'cancelled' => 'danger', default => 'warning'
                 }),
         ])->filters([
-            SelectFilter::make('letter_profile_id')->label('Mail profile')->relationship('profile', 'name'),
-            SelectFilter::make('permit_company_id')->label('Issuer entity')->relationship('company', 'name'),
-            SelectFilter::make('department_id')->label('Publisher Department')->relationship('department', 'name'),
-            SelectFilter::make('document_type_id')->label('Mail type')->relationship('documentType', 'name'),
-            SelectFilter::make('work_project_id')->label('Project')->relationship('project', 'code'),
-            SelectFilter::make('status')->label('Status')->options(static::statusOptions()),
-            Filter::make('document_date')->label('Year / month')->form([
-                Select::make('year')->label('Year')->options(fn (): array => OutgoingLetter::query()
+            SelectFilter::make('letter_profile_id')->label(__('Mail profile'))->relationship('profile', 'name'),
+            SelectFilter::make('permit_company_id')->label(__('Issuer entity'))->relationship('company', 'name'),
+            SelectFilter::make('department_id')->label(__('Publisher Department'))->relationship('department', 'name'),
+            SelectFilter::make('document_type_id')->label(__('Mail type'))->relationship('documentType', 'name'),
+            SelectFilter::make('work_project_id')->label(__('Project'))->relationship('project', 'code'),
+            SelectFilter::make('status')->label(__('Status'))->options(static::statusOptions()),
+            Filter::make('document_date')->label(__('Year / month'))->form([
+                Select::make('year')->label(__('Year'))->options(fn (): array => OutgoingLetter::query()
                     ->orderByDesc('document_date')
                     ->pluck('document_date')
                     ->map(fn ($date): int => Carbon::parse($date)->year)
                     ->unique()
                     ->mapWithKeys(fn (int $year): array => [$year => $year])
                     ->all()),
-                Select::make('month')->label('Month')->options(collect(range(1, 12))->mapWithKeys(
+                Select::make('month')->label(__('Month'))->options(collect(range(1, 12))->mapWithKeys(
                     fn (int $month): array => [$month => Carbon::create()->month($month)->translatedFormat('F')]
                 )->all()),
             ])->query(function (Builder $query, array $data): Builder {
@@ -168,40 +168,40 @@ class OutgoingLetterResource extends Resource
                     ->when($data['month'] ?? null, fn (Builder $builder, $month): Builder => $builder->whereMonth('document_date', $month));
             }),
         ])->defaultSort('document_date', 'desc')->headerActions([
-            CreateAction::make()->label('Create a mail draft')->visible(fn (): bool => static::canCreate()),
+            CreateAction::make()->label(__('Create a mail draft'))->visible(fn (): bool => static::canCreate()),
         ])->recordActions([
             Action::make('issue')
-                ->label('Publish Mail')
+                ->label(__('Publish Mail'))
                 ->icon(Heroicon::OutlinedPaperAirplane)
                 ->color('success')
                 ->requiresConfirmation()
-                ->modalDescription('Make sure the mail data is correct. The mail number will be final and cannot be used again.')
+                ->modalDescription(__('Make sure the mail data is correct. The mail number will be final and cannot be used again.'))
                 ->visible(fn (OutgoingLetter $record): bool => static::canIssue($record))
                 ->action(function (OutgoingLetter $record): void {
                     app(DocumentNumberService::class)->issue($record, auth()->user());
-                    Notification::make()->title('Mail successfully published.')->success()->send();
+                    Notification::make()->title(__('Mail successfully published.'))->success()->send();
                 }),
             Action::make('archive')
-                ->label('Archive')
+                ->label(__('Archive'))
                 ->icon(Heroicon::OutlinedArchiveBox)
                 ->color('gray')
                 ->requiresConfirmation()
                 ->visible(fn (OutgoingLetter $record): bool => $record->status === 'issued' && static::canManageLifecycle())
                 ->action(function (OutgoingLetter $record): void {
                     $record->update(['status' => 'archived']);
-                    Notification::make()->title('The letter has been filed.')->success()->send();
+                    Notification::make()->title(__('The letter has been filed.'))->success()->send();
                 }),
             Action::make('cancel')
-                ->label('Cancel draft')
+                ->label(__('Cancel draft'))
                 ->icon(Heroicon::OutlinedXCircle)
                 ->color('danger')
                 ->requiresConfirmation()
                 ->visible(fn (OutgoingLetter $record): bool => $record->status === 'draft' && static::canManageLifecycle())
                 ->action(function (OutgoingLetter $record): void {
                     $record->update(['status' => 'cancelled']);
-                    Notification::make()->title('Draft mail canceled.')->success()->send();
+                    Notification::make()->title(__('Draft mail canceled.'))->success()->send();
                 }),
-            EditAction::make()->label('Change draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
+            EditAction::make()->label(__('Change draft'))->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
         ]);
     }
 

@@ -11,11 +11,14 @@ class ViewItDailyMonitoring extends ViewRecord
 {
     protected static string $resource = ItDailyMonitoringResource::class;
 
-    protected static ?string $title = 'Monitoring details';
+    public function getTitle(): string
+    {
+        return __('Monitoring details');
+    }
 
     public function getBreadcrumb(): string
     {
-        return 'Details';
+        return __('Details');
     }
 
     protected function mutateFormDataBeforeFill(array $data): array
@@ -25,7 +28,7 @@ class ViewItDailyMonitoring extends ViewRecord
 
     protected function getHeaderActions(): array
     {
-        return [EditAction::make()->label('Change draft'), Action::make('repeat')->label('Check again')
+        return [EditAction::make()->label(__('Change draft')), Action::make('repeat')->label(__('Check again'))
             ->color('gray')->visible(fn (): bool => ItDailyMonitoringResource::canCreate())
             ->url(fn (): string => ItDailyMonitoringResource::getUrl('create', ['repeat' => $this->getRecord()->getKey()]))];
     }

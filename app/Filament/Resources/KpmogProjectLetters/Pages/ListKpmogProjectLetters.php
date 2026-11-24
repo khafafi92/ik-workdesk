@@ -12,16 +12,16 @@ class ListKpmogProjectLetters extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'KPMOG Project / BD Mail Register';
+        return __('KPMOG Project / BD Mail Register');
     }
 
     public function getBreadcrumb(): string
     {
-        return 'List';
+        return __('List');
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Use the next number, select the department, then complete the mail data from this list.';
+        return __('Use the next number, select the department, then complete the mail data from this list.');
     }
 }

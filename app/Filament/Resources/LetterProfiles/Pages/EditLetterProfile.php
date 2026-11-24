@@ -13,11 +13,11 @@ class EditLetterProfile extends EditRecord
 
     public function getTitle(): string|Htmlable
     {
-        return 'Change Mail Profile';
+        return __('Change Mail Profile');
     }
 
     protected function getSaveFormAction(): Action
     {
-        return parent::getSaveFormAction()->label('Save changes');
+        return parent::getSaveFormAction()->label(__('Save changes'));
     }
 }

@@ -20,7 +20,7 @@ class EnsureModuleIsEnabled
             $module !== null
             && ! app(ModuleAccessService::class)->isEnabled($module['label'])
         ) {
-            abort(403, 'This module is currently disabled.');
+            abort(403, __('This module is currently disabled.'));
         }
 
         return $next($request);

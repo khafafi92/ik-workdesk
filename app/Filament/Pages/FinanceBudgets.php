@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Exports\FinanceBudgetUsageExport;
+use App\Filament\LocalizedPage as Page;
 use App\Models\Department;
 use App\Models\FinanceAccount;
 use App\Models\FinanceBudget;
@@ -14,7 +15,6 @@ use App\Services\Finance\BudgetLedger;
 use App\Services\Scm\Access;
 use App\Services\Scm\Decimal;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Attributes\Locked;
 use Maatwebsite\Excel\Facades\Excel;
@@ -69,7 +69,7 @@ class FinanceBudgets extends Page
         $record = app(BudgetMasters::class)->createBudget(auth()->user(), $this->budget);
         $this->reset('budget');
         $this->openBudget($record->id);
-        Notification::make()->title('Main budgets are stored.')->success()->send();
+        Notification::make()->title(__('Main budgets are stored.'))->success()->send();
     }
 
     public function openBudget(int $id): void
@@ -110,7 +110,7 @@ class FinanceBudgets extends Page
     {
         app(BudgetMasters::class)->updateAmount(auth()->user(), $this->editLevel, $this->editId, $this->editVersion, $this->editAmount);
         $this->cancelEdit();
-        Notification::make()->title('Budget updated.')->success()->send();
+        Notification::make()->title(__('Budget updated.'))->success()->send();
     }
 
     public function createScope(): void
@@ -118,7 +118,7 @@ class FinanceBudgets extends Page
         app(BudgetMasters::class)->createScope(auth()->user(), $this->selectedBudget, $this->scope);
         $this->reset('scope');
         $this->resetValidation();
-        Notification::make()->title('Ho or project allocation stored.')->success()->send();
+        Notification::make()->title(__('Ho or project allocation stored.'))->success()->send();
     }
 
     public function createLine(): void
@@ -128,7 +128,7 @@ class FinanceBudgets extends Page
         app(BudgetMasters::class)->createLine(auth()->user(), $scope->id, $this->line);
         $this->reset('line');
         $this->resetValidation();
-        Notification::make()->title('The department\'s allocation is stored.')->success()->send();
+        Notification::make()->title(__('The department\'s allocation is stored.'))->success()->send();
     }
 
     public function exportBudget()

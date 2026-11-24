@@ -41,15 +41,15 @@ class KblisRelationManager extends RelationManager
                         ->where('code', trim((string) $get('code'))),
                 )
                 ->validationMessages([
-                    'unique' => 'The same number and name of the KBLI are already registered to the Permit Company.',
+                    'unique' => __('The same number and name of the KBLI are already registered to the Permit Company.'),
                 ])
                 ->maxLength(255),
             Textarea::make('description')
-                ->label('Description')
+                ->label(__('Description'))
                 ->rows(3)
                 ->columnSpanFull(),
             Toggle::make('is_active')
-                ->label('Active')
+                ->label(__('Active'))
                 ->default(true)
                 ->required(),
         ]);
@@ -60,7 +60,7 @@ class KblisRelationManager extends RelationManager
         return $table
             ->columns([
                 TextColumn::make('row_number')
-                    ->label('No.')
+                    ->label(__('No.'))
                     ->rowIndex()
                     ->width('1%'),
                 TextColumn::make('code')->searchable()->sortable(),

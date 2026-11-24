@@ -3,10 +3,10 @@
 namespace App\Filament\Pages;
 
 use App\Exports\AtkReportExport;
+use App\Filament\LocalizedPage as Page;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
-use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
@@ -35,11 +35,11 @@ class AtkReports extends Page
     {
         return [
             Action::make('export')
-                ->label('Export Excel')
+                ->label(__('Export Excel'))
                 ->icon(Heroicon::OutlinedArrowDownTray)
                 ->form([
-                    DatePicker::make('from')->label('From date'),
-                    DatePicker::make('until')->label('Until date')->afterOrEqual('from'),
+                    DatePicker::make('from')->label(__('From date')),
+                    DatePicker::make('until')->label(__('Until date'))->afterOrEqual('from'),
                 ])
                 ->action(function (array $data) {
                     $from = filled($data['from'] ?? null) ? Carbon::parse($data['from'])->startOfDay() : null;

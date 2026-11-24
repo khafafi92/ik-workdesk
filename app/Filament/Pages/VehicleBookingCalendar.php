@@ -2,13 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\LocalizedPage as Page;
 use App\Filament\Resources\VehicleBookings\VehicleBookingResource;
 use App\Models\Vehicle;
 use App\Models\VehicleBooking;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Actions\Action;
-use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
 use UnitEnum;
 
@@ -64,7 +64,7 @@ class VehicleBookingCalendar extends Page
     {
         return [
             Action::make('book')
-                ->label('Book Vehicle')
+                ->label(__('Book Vehicle'))
                 ->icon('heroicon-o-plus')
                 ->visible(
                     fn (): bool => $this->canCreateBooking()

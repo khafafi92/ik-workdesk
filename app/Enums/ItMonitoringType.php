@@ -14,9 +14,9 @@ enum ItMonitoringType: string
     {
         return match ($this) {
             self::Internet => 'Internet',
-            self::Firewall => $version === 1 ? 'Firewall & Internet connection' : 'Firewall',
-            self::ServerRoom => 'Server room',
-            self::Synology => $version === 1 ? 'Backup Synology' : 'Backup',
+            self::Firewall => $version === 1 ? __('Firewall & Internet connection') : 'Firewall',
+            self::ServerRoom => __('Server room'),
+            self::Synology => $version === 1 ? __('Backup Synology') : __('Backup'),
             self::Vsphere => $version === 1 ? 'VM vSphere' : 'VM',
         };
     }
@@ -29,18 +29,20 @@ enum ItMonitoringType: string
     public function statuses(int $version = 1): array
     {
         if ($version === 2 || in_array($this, [self::Internet, self::ServerRoom], true)) {
-            return ['unchecked' => 'Not inspected', ...match ($this) {
+            $statuses = ['unchecked' => 'Not inspected', ...match ($this) {
                 self::Internet, self::Firewall, self::Synology => ['normal' => 'Normal', 'issue' => 'Issue detected'],
                 self::ServerRoom => ['recorded' => 'Temperature recorded'],
                 self::Vsphere => ['up_to_date' => 'Up to date', 'update' => 'Update'],
             }];
+        } else {
+            $statuses = ['unchecked' => 'Not inspected', ...match ($this) {
+                self::Firewall => ['up' => 'Connected', 'unstable' => 'Intermittent', 'down' => 'Disconnected'],
+                self::Synology => ['success' => 'Success', 'running' => 'Still running', 'failed' => 'Failed', 'not_run' => 'Not running'],
+                self::Vsphere => ['powered_on' => 'Powered on', 'powered_off' => 'Powered off', 'suspended' => 'Suspended', 'unknown' => 'Unable to check'],
+            }];
         }
 
-        return ['unchecked' => 'Not inspected', ...match ($this) {
-            self::Firewall => ['up' => 'Connected', 'unstable' => 'Intermittent', 'down' => 'Disconnected'],
-            self::Synology => ['success' => 'Success', 'running' => 'Still running', 'failed' => 'Failed', 'not_run' => 'Not running'],
-            self::Vsphere => ['powered_on' => 'Powered on', 'powered_off' => 'Powered off', 'suspended' => 'Suspended', 'unknown' => 'Unable to check'],
-        }];
+        return array_map(static fn (string $label): string => __($label), $statuses);
     }
 
     public function needsAttention(array $check): bool

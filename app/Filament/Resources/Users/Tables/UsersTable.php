@@ -25,23 +25,23 @@ class UsersTable
             ->searchOnBlur()
             ->columns([
                 TextColumn::make('name')
-                    ->label('User Name')
+                    ->label(__('User Name'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('employee.name')
-                    ->label('Employee')
+                    ->label(__('Employee'))
                     ->placeholder('Not connected')
                     ->searchable(),
 
                 TextColumn::make('employee.department.name')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->badge()
                     ->placeholder('-')
                     ->searchable(),
 
                 TextColumn::make('roles.name')
-                    ->label('Role')
+                    ->label(__('Role'))
                     ->badge()
                     ->separator(',')
                     ->placeholder('No Role'),
@@ -63,7 +63,7 @@ class UsersTable
                     ->boolean(),
 
                 TextColumn::make('created_at')
-                    ->label('Created At')
+                    ->label(__('Created At'))
                     ->dateTime('d M Y H:i')
                     ->sortable(),
             ])
@@ -78,7 +78,7 @@ class UsersTable
                         abort_unless(
                             UserResource::canDelete($record),
                             403,
-                            'This user could not be deleted.'
+                            __('This user could not be deleted.')
                         );
                     }),
             ])

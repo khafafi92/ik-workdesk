@@ -55,7 +55,7 @@ class AiAssistantSettingsPage extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Ask Me Settings';
+        return __('Ask Me Settings');
     }
 
     public static function getNavigationSort(): ?int
@@ -65,12 +65,12 @@ class AiAssistantSettingsPage extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return 'Ask Me Settings';
+        return __('Ask Me Settings');
     }
 
     public function getHeading(): string|Htmlable
     {
-        return 'Ask Me Settings';
+        return __('Ask Me Settings');
     }
 
     public function mount(): void
@@ -150,7 +150,7 @@ class AiAssistantSettingsPage extends Page
         $this->apiKeyConfigured = $settings->hasApiKey();
 
         Notification::make()
-            ->title('Ask Me settings saved')
+            ->title(__('Ask Me settings saved'))
             ->success()
             ->send();
     }

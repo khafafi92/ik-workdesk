@@ -48,14 +48,14 @@
                             wire:model="apiKey"
                             autocomplete="new-password"
                             maxlength="500"
-                            placeholder="{{ $apiKeyConfigured ? 'Fill it up just to change key.' : 'Insert API key' }}"
+                            placeholder="{{ $apiKeyConfigured ? __('Fill it up just to change key.') : __('Insert API key') }}"
                         >
                         @error('apiKey')
                             <p class="ik-ai-error" role="alert">{{ $message }}</p>
                         @enderror
                         <p class="ik-ai-help">
-                            Status key: {{ $apiKeyConfigured ? 'Saved' : 'Not set' }}.
-                            WorkDesk keeps keys encrypted and does not re-show them.
+                            Status key: {{ $apiKeyConfigured ? __('Saved') : __('Not set') }}.
+                            {{ __('WorkDesk keeps keys encrypted and does not re-show them.') }}
                         </p>
                     </div>
 
@@ -75,7 +75,7 @@
                             <p class="ik-ai-error" role="alert">{{ $message }}</p>
                         @enderror
                         <p class="ik-ai-help">
-                            This limit applies to {{ $providerLabel }} it's not a balance or an official quota provider.
+                            {{ __('This limit applies to') }} {{ $providerLabel }} {{ __('it\'s not a balance or an official quota provider.') }}
                         </p>
                     </div>
 
@@ -117,7 +117,7 @@
                     <div
                         class="ik-ai-progress-track"
                         role="progressbar"
-                        aria-label="The remaining internal token limit"
+                        aria-label="{{ __('The remaining internal token limit') }}"
                         aria-valuemin="0"
                         aria-valuemax="100"
                         aria-valuenow="{{ $remainingPercent }}"
@@ -125,12 +125,12 @@
                         <span style="width: {{ $remainingPercent }}%"></span>
                     </div>
                     <p class="ik-ai-help">
-                        Usage recorded from input tokens and reported responses {{ $providerLabel }}WorkDesk doesn't read the provider account balance.
+                        {{ __('Usage recorded from input tokens and reported responses') }} {{ $providerLabel }}{{ __('WorkDesk doesn\'t read the provider account balance.') }}
                     </p>
                 </div>
             @else
                 <p class="ik-ai-empty" role="status">
-                    The token limit is not set. Set the month limit above to start monitoring the use.
+                    {{ __('The token limit is not set. Set the month limit above to start monitoring the use.') }}
                 </p>
             @endif
         </section>

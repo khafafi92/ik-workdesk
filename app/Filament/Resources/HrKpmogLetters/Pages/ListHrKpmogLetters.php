@@ -12,16 +12,16 @@ class ListHrKpmogLetters extends ListRecords
 
     public function getTitle(): string|Htmlable
     {
-        return 'KPMOG HR Mail Register';
+        return __('KPMOG HR Mail Register');
     }
 
     public function getBreadcrumb(): string
     {
-        return 'List';
+        return __('List');
     }
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Use the next number to create a draft. After the complete mail content, publish mail from this list.';
+        return __('Use the next number to create a draft. After the complete mail content, publish mail from this list.');
     }
 }

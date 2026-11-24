@@ -26,24 +26,24 @@ class CreateAttendanceImport extends CreateRecord
 
     public function getSubheading(): string|Htmlable|null
     {
-        return 'Select two Excel files. Period will be automatically determined from date on Total Clock File.';
+        return __('Select two Excel files. Period will be automatically determined from date on Total Clock File.');
     }
 
     public function getBreadcrumbs(): array
     {
-        return [AttendanceReportCenter::getUrl() => 'Attendance Report', 'Upload'];
+        return [AttendanceReportCenter::getUrl() => __('Attendance Report'), __('Upload')];
     }
 
     protected function getCreateFormAction(): Action
     {
         return parent::getCreateFormAction()->label(
-            auth()->user()?->hasPermission('attendance.manage') ? 'Upload and process' : 'Upload data'
+            auth()->user()?->hasPermission('attendance.manage') ? __('Upload and process') : 'Upload data'
         );
     }
 
     protected function getCancelFormAction(): Action
     {
-        return Action::make('cancel')->label('Back')->color('gray')->url(AttendanceReportCenter::getUrl());
+        return Action::make('cancel')->label(__('Back'))->color('gray')->url(AttendanceReportCenter::getUrl());
     }
 
     protected function afterCreate(): void
@@ -64,11 +64,11 @@ class CreateAttendanceImport extends CreateRecord
     protected function getCreatedNotification(): ?Notification
     {
         return match ($this->record->status) {
-            'processed' => Notification::make()->success()->title('Report completed'),
-            'failed' => Notification::make()->danger()->title('File saved, process not successfully')
-                ->body('Check the description on the report, then fix the file and reprocess.'),
-            default => Notification::make()->success()->title('File successfully uploaded')
-                ->body('Waiting for the user with an attendance process permit.'),
+            'processed' => Notification::make()->success()->title(__('Report completed')),
+            'failed' => Notification::make()->danger()->title(__('File saved, process not successfully'))
+                ->body(__('Check the description on the report, then fix the file and reprocess.')),
+            default => Notification::make()->success()->title(__('File successfully uploaded'))
+                ->body(__('Waiting for the user with an attendance process permit.')),
         };
     }
 

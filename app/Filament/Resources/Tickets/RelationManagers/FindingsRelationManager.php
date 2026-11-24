@@ -49,7 +49,7 @@ class FindingsRelationManager extends RelationManager
         return $schema
             ->components([
                 TextEntry::make('finding_no')
-                    ->label('Finding No'),
+                    ->label(__('Finding No')),
 
                 TextEntry::make('workTask.department.name')
                     ->label('Reviewer Department'),
@@ -113,7 +113,7 @@ class FindingsRelationManager extends RelationManager
                 Textarea::make('requester_response')
                     ->label('Requester Response / Clarification')
                     ->helperText(
-                        'Write down a clarifying, an answer, or a follow - up on this find.'
+                        __('Write down a clarifying, an answer, or a follow - up on this find.')
                     )
                     ->rows(5)
                     ->required()
@@ -212,12 +212,12 @@ class FindingsRelationManager extends RelationManager
             ->recordTitleAttribute('title')
             ->columns([
                 TextColumn::make('finding_no')
-                    ->label('Finding No')
+                    ->label(__('Finding No'))
                     ->searchable()
                     ->sortable(),
 
                 TextColumn::make('workTask.department.name')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->badge()
                     ->searchable(),
 
@@ -238,7 +238,7 @@ class FindingsRelationManager extends RelationManager
                     }),
 
                 TextColumn::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->badge()
                     ->color(fn (?string $state): string => match ($state) {
                         'open' => 'danger',
@@ -250,7 +250,7 @@ class FindingsRelationManager extends RelationManager
                 TextColumn::make('requester_response')
                     ->label('Requester Response')
                     ->limit(40)
-                    ->placeholder('No response yet'),
+                    ->placeholder(__('No response yet')),
 
                 TextColumn::make('responded_at')
                     ->label('Responded At')
@@ -270,7 +270,7 @@ class FindingsRelationManager extends RelationManager
                         abort_unless(
                             $this->currentUserCanRespond(),
                             403,
-                            'Only the requester can give a response.'
+                            __('Only the requester can give a response.')
                         );
                     })
                     ->mutateDataUsing(

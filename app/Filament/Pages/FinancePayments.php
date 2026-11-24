@@ -2,13 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\LocalizedPage as Page;
 use App\Models\FinancePoPayment;
 use App\Models\InventoryReceipt;
 use App\Services\Finance\PoPayments;
 use App\Services\Scm\Access;
 use App\Services\Scm\Decimal;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
 use Illuminate\Database\QueryException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Schema;
@@ -181,7 +181,7 @@ class FinancePayments extends Page
         $this->reset('plan', 'invoiceFile');
         $this->suggestedAmount = $this->suggestedDescription = '';
         $this->resetValidation();
-        Notification::make()->title('Payment installment saved.')->success()->send();
+        Notification::make()->title(__('Payment installment saved.'))->success()->send();
     }
 
     public function preparePaid(int $id): void
@@ -219,7 +219,7 @@ class FinancePayments extends Page
         $this->paymentAction = '';
         $this->reset('lateInvoiceFile', 'lateInvoiceNumber');
         $this->resetValidation();
-        Notification::make()->title('Invoice saved.')->success()->send();
+        Notification::make()->title(__('Invoice saved.'))->success()->send();
     }
 
     public function savePaid(): void
@@ -232,7 +232,7 @@ class FinancePayments extends Page
         $this->paymentAction = '';
         $this->reset('paid', 'proofFile', 'paidInvoiceFile');
         $this->resetValidation();
-        Notification::make()->title('Payment and evidence are stored.')->success()->send();
+        Notification::make()->title(__('Payment and evidence are stored.'))->success()->send();
     }
 
     public function cancelPlan(): void
@@ -244,7 +244,7 @@ class FinancePayments extends Page
         $this->paymentAction = '';
         $this->reset('paid', 'proofFile', 'paidInvoiceFile', 'cancelReason');
         $this->resetValidation();
-        Notification::make()->title('Installment cancelled.')->success()->send();
+        Notification::make()->title(__('Installment cancelled.'))->success()->send();
     }
 
     public function prepareCancelOrder(): void
@@ -252,7 +252,8 @@ class FinancePayments extends Page
         $order = app(PoPayments::class)->order(auth()->user(), $this->selectedOrder);
         abort_unless($order->status !== 'cancelled'
             && ! $order->payments()->where('status', 'paid')->exists()
-            && ! $order->receipts()->exists(), 409);
+            && ! $order->receipts()->exists()
+            && ($order->request->kind !== 'SR' || ! $order->serviceReceipts()->exists()), 409);
         $this->paymentAction = 'cancel_order';
         $this->reset('orderCancelReason');
         $this->resetValidation();
@@ -264,7 +265,7 @@ class FinancePayments extends Page
         $this->paymentAction = '';
         $this->reset('orderCancelReason');
         $this->resetValidation();
-        Notification::make()->title('PO canceled and budget commitment removed.')->success()->send();
+        Notification::make()->title(__('PO canceled and budget commitment removed.'))->success()->send();
     }
 
     protected function getViewData(): array
@@ -275,6 +276,7 @@ class FinancePayments extends Page
         $order = null;
         $payments = collect();
         $receipts = collect();
+        $hasServiceReceipts = false;
         try {
             $schemaMissing = ! Schema::hasTable('finance_po_payments') || ! Schema::hasTable('finance_po_payment_files')
                 || ! Schema::hasTable('finance_po_payment_events') || ! Schema::hasColumn('scm_purchase_orders', 'status')
@@ -283,7 +285,7 @@ class FinancePayments extends Page
                 $orders = new LengthAwarePaginator([], 0, 15);
             } else {
                 $orders = app(PoPayments::class)->orders(auth()->user())->with(['request', 'cbe.selectedVendor'])
-                    ->withExists('receipts')->withCount(['payments', 'payments as planned_count' => fn ($query) => $query->where('status', 'planned')])
+                    ->withExists(['receipts', 'serviceReceipts'])->withCount(['payments', 'payments as planned_count' => fn ($query) => $query->where('status', 'planned')])
                     ->withSum(['payments as paid_minor' => fn ($query) => $query->where('status', 'paid')], 'amount_minor')
                     ->when(trim($this->search) !== '', fn ($query) => $query->where(fn ($scope) => $scope->where('number', 'like', '%'.trim($this->search).'%')
                         ->orWhereHas('request', fn ($request) => $request->where('number', 'like', '%'.trim($this->search).'%'))))
@@ -292,6 +294,7 @@ class FinancePayments extends Page
                     $order = app(PoPayments::class)->order(auth()->user(), $this->selectedOrder);
                     $payments = $order->payments()->with('files')->orderBy('id')->get();
                     $receipts = InventoryReceipt::with('movements.balance.item')->where('purchase_order_id', $order->id)->orderByDesc('received_on')->get(['id', 'received_on', 'reference']);
+                    $hasServiceReceipts = $order->request->kind === 'SR' && $order->serviceReceipts()->exists();
                 }
             }
         } catch (QueryException $exception) {
@@ -300,6 +303,6 @@ class FinancePayments extends Page
             $orders = new LengthAwarePaginator([], 0, 15);
         }
 
-        return compact('orders', 'order', 'payments', 'receipts', 'loadError', 'schemaMissing');
+        return compact('orders', 'order', 'payments', 'receipts', 'hasServiceReceipts', 'loadError', 'schemaMissing');
     }
 }

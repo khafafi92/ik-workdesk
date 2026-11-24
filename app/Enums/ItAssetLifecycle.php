@@ -14,12 +14,12 @@ enum ItAssetLifecycle: string
     public function label(): string
     {
         return match ($this) {
-            self::InUse => 'In Use',
-            self::Spare => 'Spare',
-            self::UnderRepair => 'Under Repair',
-            self::Unused => 'In Stock / Unassigned',
-            self::Damaged => 'Damaged',
-            self::Disposed => 'Disposed',
+            self::InUse => __('In Use'),
+            self::Spare => __('Spare'),
+            self::UnderRepair => __('Under Repair'),
+            self::Unused => __('In Stock / Unassigned'),
+            self::Damaged => __('Damaged'),
+            self::Disposed => __('Disposed'),
         };
     }
 }

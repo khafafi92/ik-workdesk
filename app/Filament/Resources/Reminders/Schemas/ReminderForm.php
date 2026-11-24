@@ -67,29 +67,29 @@ class ReminderForm
                             $set('reminder_at', $task->due_at);
                         }
                     })
-                    ->helperText('Select task to remind of, or empty it for manual reminder.')
+                    ->helperText(__('Select task to remind of, or empty it for manual reminder.'))
                     ->columnSpanFull(),
 
                 Select::make('reminder_type')
                     ->label('Reminder Type')
                     ->options([
                         'meeting' => 'Meeting',
-                        'task' => 'Task',
-                        'service_request' => 'Service Desk',
+                        'task' => __('Task'),
+                        'service_request' => __('Service Desk'),
                         'report' => 'Report',
-                        'general' => 'General',
+                        'general' => __('General'),
                     ])
                     ->default('general')
                     ->required(),
 
                 TextInput::make('title')
-                    ->label('Title')
+                    ->label(__('Title'))
                     ->required()
                     ->maxLength(255)
                     ->columnSpanFull(),
 
                 Textarea::make('description')
-                    ->label('Description')
+                    ->label(__('Description'))
                     ->rows(4)
                     ->columnSpanFull(),
 
@@ -106,7 +106,7 @@ class ReminderForm
                     ->dehydrated(! $isSuperadmin),
 
                 Select::make('department_id')
-                    ->label('Department')
+                    ->label(__('Department'))
                     ->relationship('department', 'name')
                     ->searchable()
                     ->preload()
@@ -119,28 +119,28 @@ class ReminderForm
 
                 DateTimePicker::make('reminder_at')
                     ->label('Deadline / Reminder At')
-                    ->helperText('The alarm email will be sent before this date as long as the status is still Pending.')
+                    ->helperText(__('The alarm email will be sent before this date as long as the status is still Pending.'))
                     ->required(),
 
                 CheckboxList::make('email_alarm_days')
                     ->label('Email Alarm')
                     ->options([
-                        90 => '3 Months',
-                        30 => '1 Month',
-                        3 => '3 days before deadline (H-3)',
-                        1 => '1 day before deadline (H-1)',
+                        90 => __('3 Months'),
+                        30 => __('1 Month'),
+                        3 => __('3 days before deadline (H-3)'),
+                        1 => __('1 day before deadline (H-1)'),
                     ])
                     ->default([3, 1])
                     ->columns(2)
-                    ->helperText('Select a reminder time or some time. Blank if you do not want to receive an email.')
+                    ->helperText(__('Select a reminder time or some time. Blank if you do not want to receive an email.'))
                     ->columnSpanFull(),
 
                 Select::make('status')
-                    ->label('Status')
+                    ->label(__('Status'))
                     ->options([
-                        'pending' => 'Pending',
-                        'done' => 'Done',
-                        'cancel' => 'Cancel',
+                        'pending' => __('Pending'),
+                        'done' => __('Done'),
+                        'cancel' => __('Cancel'),
                     ])
                     ->default('pending')
                     ->required(),

@@ -13,7 +13,7 @@ class PermitKblisPickerTable
         return $table
             ->columns([
                 TextColumn::make('row_number')
-                    ->label('No.')
+                    ->label(__('No.'))
                     ->rowIndex()
                     ->width('1%'),
                 TextColumn::make('code')
@@ -27,7 +27,7 @@ class PermitKblisPickerTable
                     ->sortable()
                     ->wrap(),
                 TextColumn::make('description')
-                    ->label('Description')
+                    ->label(__('Description'))
                     ->placeholder('-')
                     ->searchable()
                     ->wrap()

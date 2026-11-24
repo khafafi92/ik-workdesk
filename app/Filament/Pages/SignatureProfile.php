@@ -2,10 +2,10 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\LocalizedPage as Page;
 use App\Services\Scm\Access;
 use App\Services\Scm\Signatures;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
 use Livewire\WithFileUploads;
 
 class SignatureProfile extends Page
@@ -37,7 +37,7 @@ class SignatureProfile extends Page
         ]);
         app(Signatures::class)->upload(auth()->user(), $this->signatureFile);
         $this->signatureFile = null;
-        Notification::make()->title('The profile signature is stored.')->success()->send();
+        Notification::make()->title(__('The profile signature is stored.'))->success()->send();
     }
 
     protected function getViewData(): array

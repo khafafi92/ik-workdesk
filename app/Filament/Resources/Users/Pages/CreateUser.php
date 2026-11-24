@@ -29,7 +29,7 @@ class CreateUser extends CreateRecord
             $actor
                 && $actor->hasPermission('users.manage'),
             403,
-            'You don\'t have a user-make permit.'
+            __('You don\'t have a user-make permit.')
         );
 
         $this->selectedEmployeeId =

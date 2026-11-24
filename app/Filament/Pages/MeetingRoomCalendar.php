@@ -2,13 +2,13 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\LocalizedPage as Page;
 use App\Filament\Resources\MeetingBookings\MeetingBookingResource;
 use App\Models\MeetingBooking;
 use App\Models\MeetingRoom;
 use BackedEnum;
 use Carbon\Carbon;
 use Filament\Actions\Action;
-use Filament\Pages\Page;
 use Illuminate\Contracts\Support\Htmlable;
 use UnitEnum;
 
@@ -66,7 +66,7 @@ class MeetingRoomCalendar extends Page
     {
         return [
             Action::make('book')
-                ->label('Book Meeting Room')
+                ->label(__('Book Meeting Room'))
                 ->icon('heroicon-o-plus')
                 ->visible(
                     fn (): bool => $this->canCreateBooking()

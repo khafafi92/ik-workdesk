@@ -38,13 +38,13 @@ enum ItDeviceType: string
     public function label(): string
     {
         return match ($this) {
-            self::Server => 'Physical Server',
-            self::ServerRoom => 'Server Room',
-            self::Storage => 'Storage / NAS',
+            self::Server => __('Physical Server'),
+            self::ServerRoom => __('Server Room'),
+            self::Storage => __('Storage / NAS'),
             self::Ups => 'UPS',
             self::AirConditioner => 'AC',
             self::Hypervisor => 'Hypervisor',
-            self::VirtualMachine => 'Virtual Machine',
+            self::VirtualMachine => __('Virtual Machine'),
             self::Fortigate => 'FortiGate Firewall',
             self::AccessPoint => 'Access Point',
             self::Switch => 'Switch',

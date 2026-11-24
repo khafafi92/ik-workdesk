@@ -194,7 +194,7 @@ class ItDailyMonitoringFormatTest extends ItInfrastructureTestCase
     {
         $component = Livewire::test(CreateItDailyMonitoring::class)->fillForm($this->data(ItMonitoringType::Synology))
             ->callAction(TestAction::make('add')->schemaComponent('checks', 'form'))
-            ->assertSee('1 of 2 the results have been selected.');
+            ->assertSee('1 of 2 checks completed');
         $checks = array_values($component->get('data.checks'));
         $this->assertCount(2, $checks);
         $this->assertSame('File Station 1', $checks[0]['name']);

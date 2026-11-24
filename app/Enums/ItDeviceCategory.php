@@ -11,8 +11,8 @@ enum ItDeviceCategory: string
     public function label(): string
     {
         return match ($this) {
-            self::ServerDataCenter => 'Server & Data Center',
-            self::Network => 'Network Infrastructure',
+            self::ServerDataCenter => __('Server & Data Center'),
+            self::Network => __('Network Infrastructure'),
             self::Computer => 'Laptop/PC',
         };
     }

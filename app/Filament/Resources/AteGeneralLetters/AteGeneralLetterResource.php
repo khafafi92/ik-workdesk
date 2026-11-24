@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AteGeneralLetters;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\AteGeneralLetters\Pages\EditAteGeneralLetter;
 use App\Filament\Resources\AteGeneralLetters\Pages\ListAteGeneralLetters;
 use App\Models\Department;
@@ -16,7 +17,6 @@ use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
@@ -43,38 +43,38 @@ class AteGeneralLetterResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Section::make('Number and type of mail')
-                ->description('The type of mail selected when the number is used. The sequence is separated per type and year.')
+            Section::make(__('Number and type of mail'))
+                ->description(__('The type of mail selected when the number is used. The sequence is separated per type and year.'))
                 ->columns(3)
                 ->schema([
                     Placeholder::make('document_number')
-                        ->label('Mail number')
+                        ->label(__('Mail number'))
                         ->content(fn (?OutgoingLetter $record): string => $record?->document_number ?? '-'),
                     Placeholder::make('document_type_label')
-                        ->label('Mail type')
+                        ->label(__('Mail type'))
                         ->content(fn (?OutgoingLetter $record): string => $record?->documentType?->name ?? '-'),
                     Select::make('department_id')
-                        ->label('Department')
+                        ->label(__('Department'))
                         ->options(static::departmentOptions())
                         ->searchable()
                         ->required()
-                        ->helperText('Number uses department code on selected master.')
+                        ->helperText(__('Number uses department code on selected master.'))
                         ->disabled(fn (?OutgoingLetter $record): bool => $record?->status !== 'draft'),
                     DatePicker::make('document_date')
-                        ->label('Mail date')
+                        ->label(__('Mail date'))
                         ->required()
                         ->disabled(fn (?OutgoingLetter $record): bool => $record?->status !== 'draft'),
                 ]),
-            Section::make('Mail content')
-                ->description('Complete the information and purpose of the letter before it is published.')
+            Section::make(__('Mail content'))
+                ->description(__('Complete the information and purpose of the letter before it is published.'))
                 ->columns(2)
                 ->schema([
-                    TextInput::make('recipient')->label('Mail destination')->maxLength(255),
+                    TextInput::make('recipient')->label(__('Mail destination'))->maxLength(255),
                     TextInput::make('pin')->label('PIN')->maxLength(255),
                     TextInput::make('pic_name')->label('PIC')->maxLength(255),
                     TextInput::make('subject')
-                        ->label('Mail description')
-                        ->helperText('Example: Request price information and specs.')
+                        ->label(__('Mail description'))
+                        ->helperText(__('Example: Request price information and specs.'))
                         ->required()
                         ->maxLength(255)
                         ->columnSpanFull(),
@@ -86,13 +86,13 @@ class AteGeneralLetterResource extends Resource
     {
         return $table
             ->columns([
-                TextColumn::make('document_date')->label('Date')->date('d M Y')->sortable(),
-                TextColumn::make('document_number')->label('Mail number')->searchable()->sortable()->wrap(),
-                TextColumn::make('documentType.name')->label('Mail type')->searchable()->wrap(),
-                TextColumn::make('department.code')->label('Department')->placeholder('-')->searchable(),
-                TextColumn::make('recipient')->label('Mail destination')->placeholder('-')->searchable()->wrap(),
-                TextColumn::make('subject')->label('Mail description')->placeholder('Need to be equipped')->searchable()->wrap(),
-                TextColumn::make('status')->label('Status')->badge()
+                TextColumn::make('document_date')->label(__('Date'))->date('d M Y')->sortable(),
+                TextColumn::make('document_number')->label(__('Mail number'))->searchable()->sortable()->wrap(),
+                TextColumn::make('documentType.name')->label(__('Mail type'))->searchable()->wrap(),
+                TextColumn::make('department.code')->label(__('Department'))->placeholder('-')->searchable(),
+                TextColumn::make('recipient')->label(__('Mail destination'))->placeholder('-')->searchable()->wrap(),
+                TextColumn::make('subject')->label(__('Mail description'))->placeholder(__('Need to be equipped'))->searchable()->wrap(),
+                TextColumn::make('status')->label(__('Status'))->badge()
                     ->formatStateUsing(fn (string $state): string => $state === 'issued' ? 'Issue' : ($state === 'cancelled' ? 'Cancelled' : 'Draft'))
                     ->color(fn (string $state): string => match ($state) {
                         'issued' => 'success',
@@ -101,36 +101,36 @@ class AteGeneralLetterResource extends Resource
                     }),
             ])
             ->filters([
-                SelectFilter::make('status')->label('Status')->options([
-                    'draft' => 'Draft',
-                    'issued' => 'Issue',
-                    'cancelled' => 'Cancelled',
+                SelectFilter::make('status')->label(__('Status'))->options([
+                    'draft' => __('Draft'),
+                    'issued' => __('Issue'),
+                    'cancelled' => __('Cancelled'),
                 ]),
             ])
-            ->emptyStateHeading('No public APCA mail yet')
-            ->emptyStateDescription('Select mail type, then use number to create the first draft.')
+            ->emptyStateHeading(__('No public APCA mail yet'))
+            ->emptyStateDescription(__('Select mail type, then use number to create the first draft.'))
             ->defaultSort('created_at', 'desc')
             ->headerActions([
                 Action::make('use_ate_number')
-                    ->label('Select type and use number')
+                    ->label(__('Select type and use number'))
                     ->icon(Heroicon::OutlinedDocumentPlus)
                     ->color('primary')
                     ->form([
                         Select::make('letter_kind')
-                            ->label('Mail type')
+                            ->label(__('Mail type'))
                             ->options(app(AteGeneralLetterService::class)->kinds())
                             ->required(),
                         Select::make('department_id')
-                            ->label('Department')
+                            ->label(__('Department'))
                             ->options(static::departmentOptions())
                             ->searchable()
                             ->required()
-                            ->helperText('Number uses department code on selected master.'),
-                        DatePicker::make('document_date')->label('Mail date')->default(today())->required(),
+                            ->helperText(__('Number uses department code on selected master.')),
+                        DatePicker::make('document_date')->label(__('Mail date'))->default(today())->required(),
                     ])
-                    ->modalHeading('Select APCA mail type')
-                    ->modalDescription('Sort separate numbers for each type of mail and year. Select the department to publish the mail.')
-                    ->modalSubmitActionLabel('Use number and draft')
+                    ->modalHeading(__('Select APCA mail type'))
+                    ->modalDescription(__('Sort separate numbers for each type of mail and year. Select the department to publish the mail.'))
+                    ->modalSubmitActionLabel(__('Use number and draft'))
                     ->visible(fn (): bool => static::canCreate())
                     ->action(function (array $data): void {
                         $letter = app(AteGeneralLetterService::class)->createDraft(
@@ -141,37 +141,37 @@ class AteGeneralLetterResource extends Resource
                         );
 
                         Notification::make()
-                            ->title('Draft '.$letter->document_number.' it\'s been made.')
-                            ->body('Complete the mail information, then save the draft before publishing it.')
+                            ->title('Draft '.$letter->document_number.__(' it\'s been made.'))
+                            ->body(__('Complete the mail information, then save the draft before publishing it.'))
                             ->success()
                             ->send();
                     }),
             ])
             ->recordActions([
                 Action::make('issue')
-                    ->label('Publish mail')
+                    ->label(__('Publish mail'))
                     ->icon(Heroicon::OutlinedPaperAirplane)
                     ->color('success')
                     ->requiresConfirmation()
-                    ->modalDescription('Make sure the mail data is correct. The mail number will remain listed as the print number.')
+                    ->modalDescription(__('Make sure the mail data is correct. The mail number will remain listed as the print number.'))
                     ->visible(fn (OutgoingLetter $record): bool => static::canIssue($record))
                     ->action(function (OutgoingLetter $record): void {
                         $letter = app(AteGeneralLetterService::class)->refreshNumber($record);
                         app(DocumentNumberService::class)->issue($letter, auth()->user());
-                        Notification::make()->title('Correspondence '.$record->document_number.' successfully published.')->success()->send();
+                        Notification::make()->title(__('Correspondence ').$record->document_number.__(' successfully published.'))->success()->send();
                     }),
                 Action::make('cancel')
-                    ->label('Cancel draft')
+                    ->label(__('Cancel draft'))
                     ->icon(Heroicon::OutlinedXCircle)
                     ->color('danger')
                     ->requiresConfirmation()
-                    ->modalDescription('The mail number remains recorded as canceled and will not be reused.')
+                    ->modalDescription(__('The mail number remains recorded as canceled and will not be reused.'))
                     ->visible(fn (OutgoingLetter $record): bool => $record->status === 'draft' && static::canEdit($record))
                     ->action(function (OutgoingLetter $record): void {
                         $record->update(['status' => 'cancelled']);
-                        Notification::make()->title('Draft '.$record->document_number.' cancelled.')->success()->send();
+                        Notification::make()->title('Draft '.$record->document_number.__(' cancelled.'))->success()->send();
                     }),
-                EditAction::make()->label('Complete draft')->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
+                EditAction::make()->label(__('Complete draft'))->visible(fn (OutgoingLetter $record): bool => static::canEdit($record)),
             ]);
     }
 

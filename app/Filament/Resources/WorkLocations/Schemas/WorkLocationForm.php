@@ -14,24 +14,24 @@ class WorkLocationForm
         return $schema
             ->components([
                 TextInput::make('gps_name')
-                    ->label('Location Group Name')
-                    ->helperText('For some points in the same location, use the same name, such as the KPMOG Office.')
+                    ->label(__('Location Group Name'))
+                    ->helperText(__('For some points in the same location, use the same name, such as the KPMOG Office.'))
                     ->maxLength(255)
                     ->required(),
                 Textarea::make('address')
-                    ->label('Point Description')
-                    ->helperText('Example: front door, main building, parking, or back door.')
+                    ->label(__('Point Description'))
+                    ->helperText(__('Example: front door, main building, parking, or back door.'))
                     ->columnSpanFull(),
                 TextInput::make('latitude')
                     ->label('Latitude')
-                    ->helperText('Example: -6,2849340')
+                    ->helperText(__('Example: -6,2849340'))
                     ->numeric()
                     ->minValue(-90)
                     ->maxValue(90)
                     ->required(),
                 TextInput::make('longitude')
                     ->label('Longitude')
-                    ->helperText('Example: 106,8069252')
+                    ->helperText(__('Example: 106,8069252'))
                     ->numeric()
                     ->minValue(-180)
                     ->maxValue(180)
@@ -45,11 +45,11 @@ class WorkLocationForm
                     ->maxValue(1000)
                     ->default(50),
                 Toggle::make('is_flexible')
-                    ->label('Flexible Location')
-                    ->helperText('Enable only if absenteeship is permissible from any location.')
+                    ->label(__('Flexible Location'))
+                    ->helperText(__('Enable only if absenteeship is permissible from any location.'))
                     ->default(false),
                 Toggle::make('is_active')
-                    ->label('Active')
+                    ->label(__('Active'))
                     ->default(true),
             ]);
     }

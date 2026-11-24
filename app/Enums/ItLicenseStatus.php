@@ -12,10 +12,10 @@ enum ItLicenseStatus: string
     public function label(): string
     {
         return match ($this) {
-            self::Valid => 'Original/Valid',
-            self::Unofficial => 'Unofficial / Cracked',
-            self::Unverified => 'Unverified',
-            self::NotApplicable => 'Not Applicable',
+            self::Valid => __('Original/Valid'),
+            self::Unofficial => __('Unofficial / Cracked'),
+            self::Unverified => __('Unverified'),
+            self::NotApplicable => __('Not Applicable'),
         };
     }
 }

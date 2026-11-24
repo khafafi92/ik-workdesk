@@ -25,7 +25,7 @@
         <p class="ik-error-code">{{ $status }}</p>
         <h1>{{ $heading }}</h1>
         <p>{{ $description }}</p>
-        <a class="ik-button ik-button--primary" href="{{ $canReturnToWorkspace ? url('/panel') : route('login') }}">{{ $canReturnToWorkspace ? 'Open workspace' : 'Sign in to WorkDesk' }}</a>
+        <a class="ik-button ik-button--primary" href="{{ $canReturnToWorkspace ? url('/panel') : route('login') }}">{{ $canReturnToWorkspace ? __('Open workspace') : __('Sign in to WorkDesk') }}</a>
     </main>
 </body>
 </html>

@@ -48,17 +48,17 @@ class WorkLocationResource extends Resource
 
     public static function getNavigationLabel(): string
     {
-        return 'Work Locations';
+        return __('Work Locations');
     }
 
     public static function getModelLabel(): string
     {
-        return 'Work Location';
+        return __('Work Location');
     }
 
     public static function getPluralModelLabel(): string
     {
-        return 'Work Locations';
+        return __('Work Locations');
     }
 
     public static function getNavigationGroup(): ?string

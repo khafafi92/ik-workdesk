@@ -14,14 +14,14 @@ class ListAttendanceImports extends ListRecords
 
     public function getTitle(): string
     {
-        return 'Manage upload attendance';
+        return __('Manage upload attendance');
     }
 
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Upload new data'),
-            Action::make('reportCenter')->label('Return to report')->color('gray')->url(AttendanceReportCenter::getUrl()),
+            CreateAction::make()->label(__('Upload new data')),
+            Action::make('reportCenter')->label(__('Return to report'))->color('gray')->url(AttendanceReportCenter::getUrl()),
         ];
     }
 }

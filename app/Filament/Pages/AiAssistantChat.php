@@ -56,7 +56,7 @@ class AiAssistantChat extends Page
 
     public static function getNavigationLabel(): string
     {
-        return 'Ask Me';
+        return __('Ask Me');
     }
 
     public static function getNavigationSort(): ?int
@@ -66,12 +66,12 @@ class AiAssistantChat extends Page
 
     public function getTitle(): string|Htmlable
     {
-        return 'Ask Me';
+        return __('Ask Me');
     }
 
     public function getHeading(): string|Htmlable
     {
-        return 'Ask Me';
+        return __('Ask Me');
     }
 
     public function send(): void
@@ -98,8 +98,8 @@ class AiAssistantChat extends Page
             Report::report($exception);
 
             Notification::make()
-                ->title('Response unavailable')
-                ->body('Try again later or contact your administrator.')
+                ->title(__('Response unavailable'))
+                ->body(__('Try again later or contact your administrator.'))
                 ->danger()
                 ->send();
 

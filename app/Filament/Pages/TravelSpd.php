@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\LocalizedPage as Page;
 use App\Models\Scm\ProjectNumbering;
 use App\Services\Scm\Decimal;
 use App\Services\Travel\TravelAccess;
@@ -11,7 +12,6 @@ use App\Services\Travel\TravelDocumentAdministration;
 use App\Services\Travel\TravelSchedule;
 use App\Services\Travel\TravelWorkflow;
 use Filament\Notifications\Notification;
-use Filament\Pages\Page;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Locked;
@@ -292,7 +292,7 @@ class TravelSpd extends Page
     {
         $document = app(TravelWorkflow::class)->save(auth()->user(), static::$kind, $this->selected ?: null, $this->version, $this->input, $this->uploads);
         $this->openDocument($document->id);
-        Notification::make()->title('Draft '.strtoupper(static::$kind).' saved')->success()->send();
+        Notification::make()->title('Draft '.strtoupper(static::$kind).__(' saved'))->success()->send();
     }
 
     public function submitDocument(): void
@@ -301,7 +301,7 @@ class TravelSpd extends Page
         $this->openDocument($document->id);
         $document = app(TravelWorkflow::class)->submit(auth()->user(), $document->id, $document->version);
         $this->openDocument($document->id);
-        Notification::make()->title('Document filed for approval')->success()->send();
+        Notification::make()->title(__('Document filed for approval'))->success()->send();
     }
 
     public function approveDocument(): void
@@ -319,7 +319,7 @@ class TravelSpd extends Page
         app(TravelWorkflow::class)->document(auth()->user(), $this->selected, static::$kind);
         $document = app(TravelWorkflow::class)->decide(auth()->user(), $this->selected, $this->version, $approve, $this->returnReason);
         $this->openDocument($document->id);
-        Notification::make()->title($approve ? 'Approval noted' : 'Document returned to be repaired')->success()->send();
+        Notification::make()->title($approve ? __('Approval noted') : __('Document returned to be repaired'))->success()->send();
     }
 
     public function removeAttachment(int $fileId): void

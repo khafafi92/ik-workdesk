@@ -16,7 +16,7 @@ abstract class ListReportRecords extends ListRecords
 
         return [
             Action::make('export')
-                ->label('Export Excel')
+                ->label(__('Export Excel'))
                 ->icon('heroicon-o-arrow-down-tray')
                 ->visible(fn (): bool => $resource::canExport())
                 ->action(function () use ($resource) {

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\WorkProjects;
 
+use App\Filament\LocalizedResource as Resource;
 use App\Filament\Resources\Concerns\AdminOnlyResource;
 use App\Filament\Resources\WorkProjects\Pages\CreateWorkProject;
 use App\Filament\Resources\WorkProjects\Pages\EditWorkProject;
@@ -10,7 +11,6 @@ use App\Filament\Resources\WorkProjects\Schemas\WorkProjectForm;
 use App\Filament\Resources\WorkProjects\Tables\WorkProjectsTable;
 use App\Models\WorkProject;
 use BackedEnum;
-use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
