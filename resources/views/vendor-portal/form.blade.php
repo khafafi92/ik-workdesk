@@ -10,8 +10,17 @@
     $documentGroups = collect(\App\Services\Scm\VendorForm::documentGroups($savedAnswers, $registration->context))
         ->map(fn ($codes) => array_values(array_filter($codes, fn ($code) => $definitions[$code][1] === $step)))->filter();
     $showApcaChecklist = $isApca && $step === 2;
-    $checklistGroups = $showApcaChecklist ? \App\Services\Scm\ApcaVendorChecklist::numberedGroups($savedAnswers) : $documentGroups;
     $profileSaved = $showApcaChecklist && $documentGroups->isNotEmpty();
+    $checklistPreview = $showApcaChecklist && !$profileSaved;
+    $checklistGroups = $documentGroups;
+    if ($showApcaChecklist) {
+        $checklistGroups = collect(\App\Services\Scm\ApcaVendorChecklist::numberedGroups($savedAnswers));
+        if ($profileSaved) {
+            $checklistGroups = $checklistGroups
+                ->map(fn ($codes, $title) => array_intersect($codes, $documentGroups->get($title, [])))
+                ->filter();
+        }
+    }
 @endphp
 <x-vendor-portal.layout :registration="$registration" :token="$token" :step="$step" :vendor-id="$vendorId">
     <section class="vp-paper">
@@ -22,7 +31,7 @@
         @elseif($isApca)
             @if($step === 1)
                 <p>Simpan jenis penyedia dan skala usaha untuk mengetahui status dokumen pada checklist.</p>
-                <a href="{{ route('vendor.portal', ['token' => $token, 'step' => 2]) }}">Lihat checklist 28 poin</a>
+                <a href="{{ route('vendor.portal', ['token' => $token, 'step' => 2]) }}">Lihat checklist dokumen</a>
             @elseif($step === 2)
                 @if($profileSaved)
                     <p>Unggah dokumen sesuai checklist. Jika satu poin meminta beberapa berkas, gabungkan menjadi satu PDF.</p>
@@ -89,7 +98,8 @@
         @endunless
     </section>
     @if($showApcaChecklist || $documentGroups->isNotEmpty())
-    <section class="vp-paper" data-vp-documents><h2>{{ $showApcaChecklist ? 'Daftar dokumen 1–28' : ($step === 1 ? 'Dokumen vendor' : 'Lampiran bagian '.$step) }}</h2>
+    <section class="vp-paper" data-vp-documents>
+        <h2>{{ $checklistPreview ? 'Daftar dokumen 1–28' : ($showApcaChecklist ? 'Dokumen sesuai profil' : ($step === 1 ? 'Dokumen vendor' : 'Lampiran bagian '.$step)) }}</h2>
         @if($profileSaved)
             <p>Profil yang digunakan <strong>{{ \App\Services\Scm\ApcaVendorChecklist::KINDS[$savedAnswers[1]['apca_kind']] }} - {{ \App\Services\Scm\ApcaVendorChecklist::SCALES[$savedAnswers[1]['apca_scale']] }}</strong></p>
             <p class="vp-note">Pilih dokumen untuk melihat ketentuan dan tempat unggah. Anda bisa mengirim pendaftaran tanpa mengunggah dokumen opsional. PDF/JPG/PNG, maksimal {{ number_format(config('scm.upload_max_kb') / 1024, 0) }} MB per file.</p>
@@ -100,22 +110,20 @@
         @if($step === 1 && $savedOrigin === 'indonesia' && $savedBasis !== 'npwp_ktp')<p class="vp-note">Dokumen wajib: Akta Pendirian, Perizinan, NPWP, dan KTP. Lampiran lainnya opsional. Perubahan akta dan PKP tersedia sesuai jawaban yang disimpan; pernyataan hukum dan referensi bank tersedia untuk konteks konstruksi yang sesuai.</p>@endif
         <div data-vp-document-list>
             @foreach($checklistGroups as $groupTitle => $codes)
-                @php($applicableCodes = $documentGroups->get($groupTitle, []))
                 <section class="vp-document-group">
                     <header>
                         <h3>{{ $groupTitle }}</h3>
-                        @if($applicableCodes)
-                            <p>{{ $files->filter(fn ($file) => in_array($file->code, $applicableCodes, true))->count() }} dari {{ count($applicableCodes) }} {{ $showApcaChecklist ? 'dokumen yang berlaku ' : '' }}diunggah</p>
-                        @endif
+                        @unless($checklistPreview)
+                            <p>{{ $files->filter(fn ($file) => in_array($file->code, $codes, true))->count() }} dari {{ count($codes) }} diunggah</p>
+                        @endunless
                     </header>
                     <div class="vp-documents">
                         @foreach($codes as $position => $code)
-                            @php($applicable = in_array($code, $applicableCodes, true))
                             @include('vendor-portal.partials.document', [
                                 'definition' => $definitions[$code],
-                                'file' => $applicable ? $files->get($code) : null,
+                                'file' => $checklistPreview ? null : $files->get($code),
                                 'point' => $showApcaChecklist ? $position : null,
-                                'unavailableStatus' => $applicable ? null : ($profileSaved ? 'Tidak berlaku' : 'Menunggu profil usaha'),
+                                'unavailableStatus' => $checklistPreview ? 'Menunggu profil usaha' : null,
                             ])
                         @endforeach
                     </div>

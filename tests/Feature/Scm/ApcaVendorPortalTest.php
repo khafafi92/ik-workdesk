@@ -40,7 +40,7 @@ class ApcaVendorPortalTest extends TestCase
         $apca = $this->post(route('vendor.register'), ['company' => 'APCA', 'name' => 'PT APCA Vendor QA'])->assertRedirect();
         $profileUrl = $apca->headers->get('Location');
         $this->get($profileUrl)->assertOk()->assertSee('Registrasi Vendor APCA')
-            ->assertSee('Lihat checklist 28 poin')->assertSee('Jasa Konsultan')->assertSee('Jasa Kontraktor')
+            ->assertSee('Lihat checklist dokumen')->assertSee('Jasa Konsultan')->assertSee('Jasa Kontraktor')
             ->assertSee('Skala usaha')->assertDontSee('Manajemen Mutu');
 
         $checklist = $this->get(preg_replace('~/1$~', '/2', $profileUrl))->assertOk()
@@ -77,6 +77,8 @@ class ApcaVendorPortalTest extends TestCase
 
     public function test_matrix_distinguishes_the_six_apca_profiles_and_conditional_documents(): void
     {
+        [$record, $token] = app(VendorPublicPortal::class)->register(['company' => 'APCA', 'name' => 'PT Vendor APCA QA']);
+        $portal = app(VendorEnrollment::class);
         $company = [...$this->company(), 'construction_consultancy' => 'yes', 'high_risk_work' => 'yes'];
         foreach ([
             ['barang', 'kecil', null, false, null, null],
@@ -97,6 +99,13 @@ class ApcaVendorPortalTest extends TestCase
             $this->assertSame($scale === 'besar', $requirements['APCA_NON_PKP']);
             $this->assertArrayNotHasKey('APCA_PKP', $requirements);
             $this->assertStringContainsString($scale === 'kecil' ? '3 bulan' : '6 bulan', ApcaVendorChecklist::documents($answers)['APCA_REKENING_KORAN'][4]);
+
+            $portal->saveStep($record, $record->version, 1, $answers[1]);
+            $record->refresh();
+            $checklist = $this->get(route('vendor.portal', ['token' => $token, 'step' => 2]))->assertOk()
+                ->assertDontSee('Tidak berlaku')->assertSee('Wajib')->assertSee('Opsional');
+            preg_match_all('/id="document-(APCA_[A-Z0-9_]+)"/', $checklist->getContent(), $documents);
+            $this->assertSame(array_keys($requirements), $documents[1]);
         }
         $conditional = ApcaVendorChecklist::requirements([1 => [...$company, 'has_amendments' => 'yes',
             'non_pkp' => 'no', 'is_producer' => 'yes', 'imports_goods' => 'yes']]);
@@ -122,7 +131,8 @@ class ApcaVendorPortalTest extends TestCase
         $this->get(route('vendor.portal', ['token' => $token, 'step' => 2]))->assertOk()
             ->assertSee('Barang - Kecil')
             ->assertSee('rekening koran 3 bulan terakhir.')
-            ->assertSeeInOrder(['5. Sertifikat Badan Usaha (SBU)', 'Tidak berlaku', '8. Surat Pernyataan Non-PKP', '28. Perjanjian kerahasiaan (NDA)'])
+            ->assertSeeInOrder(['8. Surat Pernyataan Non-PKP', '28. Perjanjian kerahasiaan (NDA)'])
+            ->assertDontSee('Sertifikat Badan Usaha (SBU)')->assertDontSee('E. K3 & Ketenagakerjaan')
             ->assertDontSee('8. Surat Pengukuhan Pengusaha Kena Pajak (PKP)')
             ->assertSee('id="file-APCA_NON_PKP"', false)->assertDontSee('id="file-APCA_SBU"', false);
 
