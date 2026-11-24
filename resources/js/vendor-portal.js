@@ -1,5 +1,19 @@
 import initializeVendorAddress from './vendor-address';
 
+const companyTarget = document.getElementById('vendor-company');
+if (companyTarget) {
+    const provider = document.querySelector('[data-vp-legacy-provider]');
+    const apcaPreview = document.querySelector('[data-vp-apca-preview]');
+    const updateCompanyTarget = () => {
+        const apca = companyTarget.value === 'APCA';
+        provider.hidden = apca;
+        provider.querySelector('select').disabled = apca;
+        apcaPreview.hidden = !apca;
+    };
+    companyTarget.addEventListener('change', updateCompanyTarget);
+    updateCompanyTarget();
+}
+
 const form = document.querySelector('[data-vp-form]');
 
 if (form) {
@@ -16,7 +30,8 @@ if (form) {
     const update = () => {
         if (origin) {
             const foreign = origin.value === 'foreign';
-            relevant(form.querySelector('[data-vp-basis]'), !foreign);
+            const basisGroup = form.querySelector('[data-vp-basis]');
+            if (basisGroup) relevant(basisGroup, !foreign);
             if (foreign) basis.value = 'company';
             if (country) {
                 country.readOnly = !foreign;

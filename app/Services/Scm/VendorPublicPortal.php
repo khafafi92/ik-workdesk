@@ -17,14 +17,18 @@ class VendorPublicPortal
     public function register(array $input): array
     {
         $data = Validation::make($input, ['company' => ['required', Rule::in(array_keys(config('scm.companies')))],
-            'name' => 'required|string|min:2|max:255', 'provider_type' => 'required|in:barang,jasa,keduanya'])->validate();
+            'name' => 'required|string|min:2|max:255', 'provider_type' => 'exclude_if:company,APCA|required|in:barang,jasa,keduanya'])->validate();
         $secret = $this->newSecret();
         $code = $secret;
         [$record, $token] = DB::transaction(function () use ($data, $secret, $code): array {
             $access = VendorPortalAccess::create(['code_hash' => hash('sha256', $secret), 'access_code' => $code]);
 
-            return $this->createDraft($access, $secret, $data['company'],
-                ['provider_type' => $data['provider_type'], 'is_construction' => false, 'amount_minor' => 0, 'duration_months' => null],
+            $context = ['provider_type' => $data['provider_type'] ?? null, 'is_construction' => false, 'amount_minor' => 0, 'duration_months' => null];
+            if ($data['company'] === 'APCA') {
+                $context['document_profile'] = ApcaVendorChecklist::PROFILE;
+            }
+
+            return $this->createDraft($access, $secret, $data['company'], $context,
                 [1 => ['name' => $data['name'], 'country' => 'Indonesia', 'company_origin' => 'indonesia', 'document_basis' => 'company']]);
         });
 
@@ -91,15 +95,15 @@ class VendorPublicPortal
                         if (! Storage::disk('scm')->copy($file->path, $path)) {
                             throw ValidationException::withMessages(['access_code' => 'Berkas sebelumnya belum dapat disiapkan. Coba kembali.']);
                         }
-                        $draft->files()->create([...$file->only(['code', 'number', 'issued_at', 'expires_at', 'original_name', 'mime', 'size']), 'path' => $path]);
+                        $draft->files()->create([...$file->only(['code', 'number', 'issued_at', 'expires_at', 'original_name', 'mime', 'size', 'notes']), 'path' => $path]);
                     }
 
-                    return [$draft, $token];
+                    return [$draft, $token, $access->code_hash];
                 }
                 $record->expires_at = now()->addDays(30);
                 $record->save();
 
-                return [$record, $this->token($secret, $record->id)];
+                return [$record, $this->token($secret, $record->id), $access->code_hash];
             });
         } catch (\Throwable $exception) {
             foreach ($createdPaths as $path) {

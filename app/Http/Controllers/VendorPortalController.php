@@ -23,14 +23,22 @@ class VendorPortalController extends Controller
         return $this->privateResponse(response()->json($result));
     }
 
-    public function show(string $token, int $step, VendorEnrollment $enrollment)
+    public function show(Request $request, string $token, int $step, VendorEnrollment $enrollment)
     {
-        abort_unless(isset(VendorForm::TITLES[$step]), 404);
         $registration = $enrollment->resolve($token);
+        abort_unless(isset(VendorForm::titles($registration->context)[$step]), 404);
         $files = $enrollment->latestFiles($registration);
+        $vendorId = null;
+        $access = $registration->company === 'APCA' ? $registration->portalAccess : null;
+        if ($access) {
+            $verifiedHash = $request->session()->get('apca_vendor_access.'.$registration->portal_access_id);
+            if (is_string($verifiedHash) && hash_equals($access->code_hash, $verifiedHash)) {
+                $vendorId = $access->access_code;
+            }
+        }
 
         return $this->privateResponse(response()->view('vendor-portal.form', ['registration' => $registration, 'step' => $step,
-            'token' => $token, 'fields' => VendorForm::fields($step, $registration->answers ?? []), 'files' => $files,
+            'token' => $token, 'vendorId' => $vendorId, 'fields' => VendorForm::fields($step, $registration->answers ?? [], $registration->context), 'files' => $files,
             'checklist' => $step === 5 ? $enrollment->submissionChecklist($registration, $files) : []]));
     }
 
@@ -54,15 +62,15 @@ class VendorPortalController extends Controller
     public function upload(Request $request, string $token, string $code, VendorEnrollment $enrollment)
     {
         $registration = $enrollment->resolve($token);
-        $definition = VendorForm::documents()[$code] ?? abort(404);
+        $definition = VendorForm::documents($registration->context)[$code] ?? abort(404);
         try {
             $input = $request->validate(['version' => 'required|integer|min:1', 'file' => 'required|file']);
-            $enrollment->upload($registration, $input['version'], $code, $request->only(['number', 'issued_at', 'expires_at']), $input['file']);
+            $enrollment->upload($registration, $input['version'], $code, $request->only(['number', 'issued_at', 'expires_at', 'notes']), $input['file']);
         } catch (ValidationException $exception) {
             return $this->privateResponse(redirect()->route('vendor.portal', ['token' => $token, 'step' => $definition[1]])->withErrors($exception->errors()));
         }
 
-        return $this->privateResponse(redirect()->route('vendor.portal', ['token' => $token, 'step' => $definition[1]])->with('status', VendorForm::documentLabel($code, $registration->answers ?? []).' tersimpan.'));
+        return $this->privateResponse(redirect()->route('vendor.portal', ['token' => $token, 'step' => $definition[1]])->with('status', VendorForm::documentLabel($code, $registration->answers ?? [], $registration->context).' tersimpan.'));
     }
 
     public function download(string $token, int $file, VendorEnrollment $enrollment)

@@ -12,7 +12,12 @@ class VendorForm
 
     public const REQUIRED_INDONESIA = ['AKTA_PENDIRIAN', 'IZIN_USAHA', 'NPWP', 'KTP'];
 
-    public static function fields(int $step, array $answers = []): array
+    public static function titles(array $context): array
+    {
+        return ApcaVendorChecklist::applies($context) ? ApcaVendorChecklist::TITLES : self::TITLES;
+    }
+
+    public static function fields(int $step, array $answers = [], array $context = []): array
     {
         $fields = match ($step) {
             1 => [
@@ -71,6 +76,13 @@ class VendorForm
             ],
             default => [],
         };
+        if (ApcaVendorChecklist::applies($context)) {
+            return match ($step) {
+                1 => array_diff_key($fields, array_flip(['supplied_before', 'supplied_description'])),
+                5 => $fields,
+                default => [],
+            };
+        }
         if (self::origin($answers) === 'foreign') {
             if ($step === 3) {
                 $fields['equipment_used'] = ['Menggunakan peralatan lifting / hoisting?', 'choice', true];
@@ -84,8 +96,12 @@ class VendorForm
         return $fields;
     }
 
-    public static function documents(): array
+    public static function documents(array $context = [], array $answers = []): array
     {
+        if (ApcaVendorChecklist::applies($context)) {
+            return ApcaVendorChecklist::documents($answers);
+        }
+
         return [
             'AKTA_PENDIRIAN' => ['Salinan Akta Pendirian Perusahaan', 1, 'always', false],
             'AKTA_PERUBAHAN' => ['Perubahan akta terakhir (jika ada)', 1, 'amendments', false],
@@ -141,6 +157,15 @@ class VendorForm
 
     public static function documentGroups(array $answers, array $context): array
     {
+        if (ApcaVendorChecklist::applies($context)) {
+            $applies = ApcaVendorChecklist::requirements($answers);
+
+            return array_filter(array_map(
+                fn (array $group): array => array_keys(array_intersect_key($group, $applies)),
+                ApcaVendorChecklist::catalog(),
+            ));
+        }
+
         if (self::basis($answers) === 'npwp_ktp') {
             return ['Dokumen pengganti Indonesia' => ['NPWP', 'KTP']];
         }
@@ -163,11 +188,15 @@ class VendorForm
     {
         $codes = array_merge([], ...array_values(self::documentGroups($answers, $context)));
 
-        return array_intersect_key(self::documents(), array_flip($codes));
+        return array_intersect_key(self::documents($context, $answers), array_flip($codes));
     }
 
-    public static function documentLabel(string $code, array $answers): string
+    public static function documentLabel(string $code, array $answers, array $context = []): string
     {
+        if (ApcaVendorChecklist::applies($context)) {
+            return self::documents($context, $answers)[$code][0] ?? self::documents()[$code][0] ?? $code;
+        }
+
         if (self::basis($answers) === 'npwp_ktp' && $code === 'NPWP') {
             return 'NPWP';
         }
@@ -209,6 +238,10 @@ class VendorForm
 
     public static function required(string $code, array $answers, array $context): bool
     {
+        if (ApcaVendorChecklist::applies($context)) {
+            return ApcaVendorChecklist::requirements($answers)[$code] ?? false;
+        }
+
         return array_key_exists($code, self::requestedDocuments($answers, $context))
             && (self::origin($answers) === 'foreign' || in_array($code, self::REQUIRED_INDONESIA, true));
     }
