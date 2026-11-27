@@ -66,7 +66,7 @@ class KpmogForms
         $drawing->setCoordinates($original->getCoordinates());
         $drawing->setOffsetX($original->getOffsetX());
         $drawing->setOffsetY($original->getOffsetY());
-        $drawing->setHeight($original->getHeight());
+        $drawing->setWidth(208);
         $drawings->offsetUnset(0);
         $drawing->setWorksheet($sheet);
     }

@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $record->reference() }} · {{ $record->documentLabel() }}</title>
+    @if($record->company === 'KPMOG')
+        <link rel="stylesheet" href="{{ asset('css/kpmog-document-logo.css') }}?v={{ filemtime(public_path('css/kpmog-document-logo.css')) }}">
+    @endif
     <style>
         @page { size: A4 landscape; margin: 12mm; }
         * { box-sizing: border-box }
@@ -11,7 +14,7 @@
         main { width: min(100% - 2rem, 69rem); margin: 1rem auto 2rem }
         h1, p, dd, dl { margin: 0 }
         header { display: grid; grid-template-columns: minmax(0, 8rem) 1fr; gap: .75rem; align-items: center; border-bottom: 1px solid; padding-block: .5rem }
-        .kpmog-legacy-header { grid-template-columns: minmax(0, 13rem) 1fr }
+        .kpmog-legacy-header { grid-template-columns: var(--kpmog-document-logo-width) 1fr }
         header > img { display: block; width: 100%; height: 4.25rem; object-fit: contain }
         h1 { font-size: clamp(1.15rem, 3vw, 1.65rem) }
         .screen-controls { display: flex; justify-content: end; margin-bottom: .5rem }
@@ -36,8 +39,7 @@
             .steps.reimbursement { grid-template-columns: repeat(4, minmax(0, 1fr)); }
         }
         @media (max-width: 30rem) {
-            header { grid-template-columns: minmax(0, 5rem) 1fr }
-            .kpmog-legacy-header { grid-template-columns: minmax(0, 7rem) 1fr }
+            header:not(.kpmog-legacy-header) { grid-template-columns: minmax(0, 5rem) 1fr }
         }
         @media print {
             body { font-size: 10pt }

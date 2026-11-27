@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ $record->reference() }} · {{ \App\Models\FinanceRequest::KINDS[$record->kind] }}</title>
     <link rel="stylesheet" href="{{ asset('css/travel.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/finance-requests.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/finance-requests.css') }}?v={{ filemtime(public_path('css/finance-requests.css')) }}">
     <style>
         @page { size: A4 portrait; margin: 12mm; }
         body { margin: 0; background: #fff; color: #111827; font: 1rem/1.4 Arial, sans-serif; }

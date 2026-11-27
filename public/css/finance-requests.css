@@ -1,3 +1,5 @@
+@import url("kpmog-document-logo.css?v=1");
+
 .finance-travel {
     container-type: inline-size;
 }
@@ -79,6 +81,7 @@
 .finance-apca-footer > table { align-self: start; }
 .finance-kpmog-sheet .finance-kpmog-block { display: grid; gap: .75rem; padding: .9rem 1rem; border-bottom: 1px solid #111; }
 .finance-kpmog-sheet .travel-logo { flex-wrap: wrap; gap: .5rem; }
+.finance-kpmog-sheet .kpmog-document-logo > img { max-width: none; height: auto; }
 .finance-kpmog-sheet .finance-kpmog-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
 .finance-kpmog-sheet .finance-er-expenses th:nth-child(1) { width: 7%; }
 .finance-kpmog-sheet .finance-er-expenses th:nth-child(3) { width: 43%; }
