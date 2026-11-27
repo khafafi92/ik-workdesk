@@ -99,7 +99,7 @@ class ItDailyMonitoringResource extends Resource
                     'vsphere' => 'vCenter / hostname',
                     default => 'System / device name',
                 }))->required()->maxLength(255),
-                DateTimePicker::make('checked_at')->label(__('Check time'))->seconds(false)->required()->default(fn () => now())->maxDate(fn () => now()),
+                DateTimePicker::make('checked_at')->label(__('Check time'))->seconds(false)->required()->default(fn () => now()),
                 DatePicker::make('backup_date')->label(__('Backup date checked'))->default(today())->required()->visible(fn (Get $get): bool => static::selectedVersion($get) === 1 && $get('monitoring_type') === 'synology')
                     ->helperText(__('The backup runs daily at 00:01 WIB. Record when you reviewed the result.')),
                 Section::make(__('Location & note (optional)'))->compact()->collapsible()
@@ -257,7 +257,7 @@ class ItDailyMonitoringResource extends Resource
             $fields[] = TextInput::make('update_version')->label(__('Update version description'))->maxLength(1000)
                 ->visible(fn (Get $get): bool => $get('status') === 'update')->required(fn (Get $get): bool => $get('status') === 'update');
         }
-        $fields[] = DateTimePicker::make('checked_at')->label(__('Date and hour'))->seconds(false)->live(condition: false)->maxDate(fn () => now())
+        $fields[] = DateTimePicker::make('checked_at')->label(__('Date and hour'))->seconds(false)->live(condition: false)
             ->required(fn (Get $get): bool => $type === ItMonitoringType::ServerRoom ? filled($get('temperature_c')) : $get('status') !== 'unchecked');
         $fields[] = Textarea::make('notes')->label(__('Description'))->rows(2)->live(condition: false)->maxLength(3000)->columnSpanFull()
             ->required(fn (Get $get): bool => $get('status') === 'issue');

@@ -39,7 +39,6 @@ class ItDailyMonitoringService
             'between' => __(':attribute must be between :min and :max.'),
             'date' => __(':attribute must be a valid date and time.'),
             'date_format' => __('Format :attribute mismatch.'),
-            $prefix.'checked_at.before_or_equal' => __('Check time shouldn\'t exceed current time.'),
             $prefix.'backup_date.before_or_equal' => __('Backup date must not pass check time.'),
             $prefix.'checks.*.started_at.after_or_equal' => __('Backup start time must not be before backup date.'),
             $prefix.'checks.*.started_at.before_or_equal' => __('Backup start time must not pass check time.'),
@@ -116,7 +115,7 @@ class ItDailyMonitoringService
             'monitoring_type' => ['required', Rule::enum(ItMonitoringType::class)],
             'source_name' => ['required', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
-            'checked_at' => ['required', 'date', 'before_or_equal:now'],
+            'checked_at' => ['required', 'date'],
             'notes' => ['nullable', 'string', 'max:3000'],
             'finalize' => ['sometimes', 'boolean'],
             'checks' => ['required', 'array', 'min:1', 'max:'.($type?->fixedCheckName() !== null ? 1 : 500)],
@@ -124,7 +123,7 @@ class ItDailyMonitoringService
             'checks.*.name' => ['required', 'string', 'max:255', 'distinct:ignore_case'],
             'checks.*.status' => ['required', Rule::in(array_keys($type?->statuses(2) ?? []))],
             'checks.*.notes' => ['nullable', 'string', 'max:3000'],
-            'checks.*.checked_at' => ['required_unless:checks.*.status,unchecked', 'nullable', 'date', 'before_or_equal:now'],
+            'checks.*.checked_at' => ['required_unless:checks.*.status,unchecked', 'nullable', 'date'],
         ];
         foreach ($fields as $field => $definition) {
             $rules['checks.*.'.$field] = $definition;
@@ -132,7 +131,6 @@ class ItDailyMonitoringService
         $validator = Validator::make($data, $rules, [
             ...static::validationMessages(),
             'required_if' => ':attribute must be filled for selected results.',
-            'checks.*.checked_at.before_or_equal' => 'The date and hour of inspection must not exceed current time.',
             'checks.*.name.distinct' => 'File Station or VM names may not be repeated in one note.',
         ], [
             'managing_department_id' => 'Department IT', 'monitoring_type' => 'Monitoring type',
@@ -206,7 +204,7 @@ class ItDailyMonitoringService
             'monitoring_type' => ['required', Rule::enum(ItMonitoringType::class)],
             'source_name' => ['required', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
-            'checked_at' => ['required', 'date', 'before_or_equal:now'],
+            'checked_at' => ['required', 'date'],
             'backup_date' => $type === ItMonitoringType::Synology ? ['required', 'date_format:Y-m-d', 'before_or_equal:checked_at'] : ['exclude'],
             'notes' => ['nullable', 'string', 'max:3000'],
             'finalize' => ['sometimes', 'boolean'],

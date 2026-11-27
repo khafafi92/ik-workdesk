@@ -82,11 +82,16 @@ class ItDailyMonitoringFormatTest extends ItInfrastructureTestCase
 
     public function test_monitoring_time_and_each_row_time_can_be_edited_independently(): void
     {
-        $data = $this->data(ItMonitoringType::Synology);
+        $data = $this->data(ItMonitoringType::Internet);
+        $data['checked_at'] = now()->toDateTimeString();
+        $data['checks'][0]['checked_at'] = now()->addMinutes(4)->toDateTimeString();
         $component = Livewire::test(CreateItDailyMonitoring::class)->fillForm($data)->call('create')->assertHasNoFormErrors();
         $record = ItDailyMonitoring::findOrFail($component->get('record')->id);
-        $generalTime = now()->subHours(2)->toDateTimeString();
-        $rowTime = now()->subDay()->setTime(15, 30)->toDateTimeString();
+        $this->assertSame($data['checked_at'], $record->checked_at->toDateTimeString());
+        $this->assertSame($data['checks'][0]['checked_at'], $record->checks[0]['checked_at']);
+
+        $generalTime = now()->addMinutes(2)->toDateTimeString();
+        $rowTime = now()->addDay()->setTime(15, 30)->toDateTimeString();
         $edit = Livewire::test(EditItDailyMonitoring::class, ['record' => $record->id]);
         $key = array_key_first($edit->get('data.checks'));
         $edit->set('data.checks.'.$key.'.checked_at', $rowTime)
@@ -147,13 +152,13 @@ class ItDailyMonitoringFormatTest extends ItInfrastructureTestCase
         $this->assertSame(0, $record->fresh()->attention_count);
     }
 
-    public function test_per_item_time_is_required_for_completed_results_and_future_times_are_rejected(): void
+    public function test_per_item_time_requires_a_valid_date_for_completed_results(): void
     {
         foreach (ItMonitoringType::cases() as $type) {
             $data = $this->data($type);
             $data['checks'][0]['checked_at'] = null;
             $this->assertRejected($data, 'data.checks.0.checked_at');
-            $data['checks'][0]['checked_at'] = now()->addMinute()->toDateTimeString();
+            $data['checks'][0]['checked_at'] = 'invalid-date';
             $this->assertRejected($data, 'data.checks.0.checked_at');
         }
         $this->assertSame(0, ItDailyMonitoring::query()->count());

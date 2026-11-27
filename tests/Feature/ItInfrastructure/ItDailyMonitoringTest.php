@@ -122,7 +122,7 @@ class ItDailyMonitoringTest extends ItInfrastructureTestCase
         $data = $this->data('synology');
         $data['checks'][0]['completed_at'] = today()->setTime(0, 0)->format('Y-m-d H:i:s');
         $cases[] = [$data, 'data.checks.0.completed_at'];
-        $cases[] = [$this->data(overrides: ['checked_at' => now()->addDay()->toDateTimeString()]), 'data.checked_at'];
+        $cases[] = [$this->data(overrides: ['checked_at' => 'invalid-date']), 'data.checked_at'];
         $cases[] = [$this->data(overrides: ['checks' => []]), 'data.checks'];
         $data = $this->data();
         $data['checks'][] = [...$data['checks'][0], 'name' => ' LINK UJI '];
