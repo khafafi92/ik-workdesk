@@ -74,6 +74,31 @@ class FinanceRequestsTest extends TestCase
         $this->assertFalse($isSubmitDisabled($page->html()));
     }
 
+    public function test_department_finance_approval_overrides_company_rule_and_keeps_other_departments_on_default(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $requester = $this->applicant();
+        $other = $this->applicant();
+        [$default, $local] = User::factory()->count(2)->create()->all();
+        $service = app(RequestApprovals::class);
+        $service->save($admin, 'APCA', 'payment', [$default->id], 0);
+
+        $settings = Livewire::actingAs($admin)->test(FinanceRequestApprovalSettings::class, ['kind' => 'payment', 'fixedCompany' => 'APCA'])
+            ->set('department', (string) $requester->employee->department_id)
+            ->assertSet('version', 0)->set('reviewers', [$local->id])->call('save')->assertHasNoErrors()
+            ->assertSee($requester->employee->department->name)->assertSee('Semua departemen');
+
+        foreach ([[$requester, $local], [$other, $default]] as [$applicant, $reviewer]) {
+            $document = new FinanceRequest(['company' => 'APCA', 'kind' => 'payment',
+                'department_id' => $applicant->employee->department_id, 'requester_id' => $applicant->id]);
+            $this->assertSame($reviewer->id, $service->plan($document)[0]['user_id']);
+        }
+
+        $settings->call('deletePolicy', $settings->get('policyId'), 1)->assertHasNoErrors()->assertSet('version', 0);
+        $document->department_id = $requester->employee->department_id;
+        $this->assertSame($default->id, $service->plan($document)[0]['user_id']);
+    }
+
     public function test_configured_company_route_controls_approval_and_keeps_previous_assignments(): void
     {
         Filament::setCurrentPanel(Filament::getPanel('admin'));
@@ -171,6 +196,13 @@ class FinanceRequestsTest extends TestCase
         $this->get(TravelApprovalRules::getUrl(['dokumen' => 'payment']))->assertForbidden();
         $this->actingAs($financeManager)->get($master)->assertOk()->assertSee('Urutan approval APCA')->assertDontSee('travel-rule-signer-search');
         Livewire::actingAs($financeManager)->test(TravelApprovalRules::class)->call('newRule')->assertForbidden();
+        $scmTravelMaster = ScmProcurement::getUrl(['bagian' => 'settings', 'dokumen' => 'travel']);
+        $this->get($scmTravelMaster)->assertOk()->assertDontSee('travel-rule-signer-search');
+        Livewire::actingAs($financeManager)->test(TravelApprovalRules::class, ['embedded' => true])->assertForbidden();
+
+        $admin = User::factory()->create(['is_admin' => true]);
+        $this->actingAs($admin)->get($scmTravelMaster)->assertOk()->assertSee('travel-rule-signer-search');
+
     }
 
     public function test_apca_documents_share_a_pr_and_receive_separate_approvals(): void

@@ -14,6 +14,7 @@ use App\Services\Scm\Workflow;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class RequestApprovals
@@ -43,10 +44,14 @@ class RequestApprovals
         };
     }
 
-    public function save(User $actor, string $company, string $kind, array $reviewers, int $version): void
+    public function save(User $actor, string $company, string $kind, array $reviewers, int $version, int $departmentId = 0, ?int $expectedPolicyId = null): void
     {
         abort_unless(self::canConfigure($actor), 403);
         abort_unless(isset(self::STEPS[$kind]) && in_array($company, self::companies($kind), true), 422);
+        Validator::make(['department' => $departmentId], [
+            'department' => ['integer', Rule::when($departmentId !== 0, Rule::exists('departments', 'id'))],
+        ])->validate();
+        $scope = ['company' => $company, 'kind' => $kind, 'approval_department_id' => $departmentId];
         $reviewers = Validator::make(['reviewers' => $reviewers], [
             'reviewers' => 'required|array|list|size:'.count(self::steps($kind, $company)),
             'reviewers.*' => 'required|integer|distinct|exists:users,id',
@@ -60,16 +65,16 @@ class RequestApprovals
         }
 
         try {
-            DB::transaction(function () use ($actor, $company, $kind, $reviewers, $version): void {
-                $policy = FinanceRequestPolicy::where(compact('company', 'kind'))->lockForUpdate()->first();
-                if (($policy?->version ?? 0) !== $version) {
+            DB::transaction(function () use ($actor, $scope, $reviewers, $version, $expectedPolicyId): void {
+                $policy = FinanceRequestPolicy::where($scope)->lockForUpdate()->first();
+                if (($policy?->version ?? 0) !== $version || ($expectedPolicyId !== null && $policy?->id !== $expectedPolicyId)) {
                     throw ValidationException::withMessages(['policy' => 'Aturan sudah diperbarui. Muat ulang sebelum menyimpan.']);
                 }
                 $before = $policy?->reviewers;
-                $policy ??= new FinanceRequestPolicy(compact('company', 'kind'));
+                $policy ??= new FinanceRequestPolicy($scope);
                 $policy->fill(['reviewers' => $reviewers, 'version' => $version + 1])->save();
                 app(Workflow::class)->audit($actor, $policy, 'master_approval_finance_request', [
-                    'company' => $company, 'kind' => $kind, 'before' => $before, 'after' => $reviewers, 'version' => $policy->version,
+                    ...$scope, 'before' => $before, 'after' => $reviewers, 'version' => $policy->version,
                 ]);
             }, 3);
         } catch (UniqueConstraintViolationException) {
@@ -77,9 +82,30 @@ class RequestApprovals
         }
     }
 
+    public function delete(User $actor, string $company, string $kind, int $id, int $version): int
+    {
+        abort_unless(self::canConfigure($actor), 403);
+
+        return DB::transaction(function () use ($actor, $company, $kind, $id, $version): int {
+            $policy = FinanceRequestPolicy::where(compact('company', 'kind'))->whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($policy->version !== $version) {
+                throw ValidationException::withMessages(['policy' => 'Aturan sudah diperbarui. Muat ulang sebelum menghapus.']);
+            }
+            app(Workflow::class)->audit($actor, $policy, 'delete_finance_request_approval_policy', [
+                'company' => $company, 'kind' => $kind, 'approval_department_id' => $policy->approval_department_id,
+                'before' => $policy->reviewers, 'version' => $policy->version,
+            ]);
+            $policy->delete();
+
+            return (int) $policy->approval_department_id;
+        }, 3);
+    }
+
     public function plan(FinanceRequest $request): array
     {
-        $policy = FinanceRequestPolicy::where(['company' => $request->company, 'kind' => $request->kind])->first();
+        $policy = FinanceRequestPolicy::where(['company' => $request->company, 'kind' => $request->kind])
+            ->whereIn('approval_department_id', [0, (int) $request->department_id])
+            ->orderByDesc('approval_department_id')->first();
         $steps = self::steps($request->kind, $request->company);
         if (! $policy || count($policy->reviewers) !== count($steps)) {
             if ($scmPlan = $this->planFromScm($request)) {

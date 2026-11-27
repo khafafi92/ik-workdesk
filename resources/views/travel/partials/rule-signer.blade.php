@@ -1,4 +1,4 @@
-<div>
+<div class="scm-field">
     <label for="travel-rule-{{ $role }}">{{ $roleLabel }}</label>
     <select id="travel-rule-{{ $role }}" wire:model="rule.{{ $role }}_id" aria-describedby="travel-rule-{{ $role }}-help" @if($role !== 'supervisor') required @endif>
         <option value="">{{ $role === 'supervisor' ? 'Use the employee’s supervisor' : 'Select '.$roleLabel }}</option>

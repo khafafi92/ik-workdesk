@@ -40,6 +40,7 @@ use App\Services\Scm\VendorDeletion;
 use App\Services\Scm\VendorEnrollment;
 use App\Services\Scm\VendorIdentity;
 use App\Services\Scm\Workflow;
+use App\Services\Travel\TravelAccess;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Collection;
@@ -185,7 +186,8 @@ class ScmProcurement extends Page
     {
         abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
         abort_unless(in_array($this->approvalDocument, ['PRSR', 'CBE', 'PO', 'BUDGET'], true)
-            || isset(self::FINANCE_APPROVAL_DOCUMENTS[$this->approvalDocument]), 422);
+            || isset(self::FINANCE_APPROVAL_DOCUMENTS[$this->approvalDocument])
+            || ($this->approvalDocument === 'travel' && TravelAccess::has(auth()->user(), 'travel.configure')), 422);
         if ($this->approvalDocument === 'CBE') {
             $this->newCbeApprovalPolicy();
         } elseif ($this->approvalDocument === 'PO') {
@@ -328,7 +330,8 @@ class ScmProcurement extends Page
         }
         $document = request()->query('dokumen');
         if ($this->section === 'settings' && Access::has(auth()->user(), 'scm.configure')
-            && is_string($document) && isset(self::FINANCE_APPROVAL_DOCUMENTS[$document])) {
+            && is_string($document) && (isset(self::FINANCE_APPROVAL_DOCUMENTS[$document])
+                || ($document === 'travel' && TravelAccess::has(auth()->user(), 'travel.configure')))) {
             $this->approvalDocument = $document;
         }
         if ($this->selected) {

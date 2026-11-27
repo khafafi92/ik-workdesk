@@ -56,9 +56,13 @@ class TravelApprovalRules extends Page
         return TravelAccess::has(auth()->user(), 'travel.configure');
     }
 
-    public function mount(): void
+    #[Locked]
+    public bool $embedded = false;
+
+    public function mount(bool $embedded = false): void
     {
-        abort_unless(static::canAccess(), 403);
+        abort_unless(static::canAccess() && (! $embedded || self::canConfigureTravel()), 403);
+        $this->embedded = $embedded;
         $groups = $this->documentGroups();
         if ($this->documentGroup === 'travel' && ! isset($groups['travel'])) {
             $this->documentGroup = array_key_first($groups);
@@ -67,9 +71,14 @@ class TravelApprovalRules extends Page
         $this->rule = TravelApprovalPolicies::defaults();
     }
 
+    public function getView(): string
+    {
+        return $this->embedded ? 'livewire.scm-travel-approval-settings' : parent::getView();
+    }
+
     public function updatedCompanyFilter(): void
     {
-        $this->resetPage();
+        $this->resetPage('travelApprovalPage');
     }
 
     public function newRule(): void
@@ -154,7 +163,7 @@ class TravelApprovalRules extends Page
         $departments = Department::where(fn ($query) => $query->where('is_active', true)
             ->when($this->editingId, fn ($same) => $same->orWhere('id', $this->rule['department_id'] ?? null)))->orderBy('name')->pluck('name', 'id')->all();
         $rules = $missing ? null : TravelApprovalPolicy::with(['department', 'hr', 'finance', 'supervisor'])
-            ->when($this->companyFilter !== '', fn ($query) => $query->where('company', $this->companyFilter))->orderBy('company')->orderBy('department_id')->orderBy('document_kind')->paginate(15);
+            ->when($this->companyFilter !== '', fn ($query) => $query->where('company', $this->companyFilter))->orderBy('company')->orderBy('department_id')->orderBy('document_kind')->paginate(15, pageName: 'travelApprovalPage');
 
         return compact('groups', 'missing', 'signerOptions', 'eligibleCounts', 'departments', 'rules', 'canAssignActive');
     }

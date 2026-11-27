@@ -6,6 +6,9 @@
             @foreach(\App\Filament\Pages\ScmProcurement::FINANCE_APPROVAL_DOCUMENTS as $key => [$kind, $company, $label])
                 <option value="{{ $key }}">{{ $label }}</option>
             @endforeach
+            @if(\App\Services\Travel\TravelAccess::has(auth()->user(), 'travel.configure'))
+                <option value="travel">SPD / LPJ</option>
+            @endif
         </select>
     </div>
     @if($approvalDocument === 'CBE')
@@ -14,9 +17,10 @@
         @include('filament.pages.scm.partials.po-approval-settings')
     @elseif($approvalDocument === 'BUDGET')
         @include('filament.pages.scm.partials.budget-approval-settings')
+    @elseif($approvalDocument === 'travel')
+        @livewire(\App\Filament\Pages\TravelApprovalRules::class, ['embedded' => true], key('scm-travel-approval'))
     @elseif(isset(\App\Filament\Pages\ScmProcurement::FINANCE_APPROVAL_DOCUMENTS[$approvalDocument]))
         @php([$kind, $company, $label] = \App\Filament\Pages\ScmProcurement::FINANCE_APPROVAL_DOCUMENTS[$approvalDocument])
-        <link rel="stylesheet" href="{{ asset('css/travel.css') }}?v={{ filemtime(public_path('css/travel.css')) }}">
         <livewire:finance-request-approval-settings :kind="$kind" :fixed-company="$company" :key="'scm-approval-'.$approvalDocument" />
     @else
     <p>Atur penandatangan per perusahaan, divisi, jenis kebutuhan, dan PR/SR. Kebutuhan HO dan Project memakai master terpisah. CBO hanya untuk HO. Perubahan berlaku saat pengajuan berikutnya diajukan.</p>
