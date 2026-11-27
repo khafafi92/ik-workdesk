@@ -1,6 +1,10 @@
 <section class="scm-request-sheet scm-project-sheet scm-project-sr" aria-label="Form SERVICE REQUEST AND MATERIALS Project {{ $projectCompany }}">
-    <header class="scm-sheet-header">
-        <img src="{{ asset($projectBrand['logo']) }}" alt="{{ $projectBrand['logo_alt'] }}" width="140" height="105">
+    <header @class(['scm-sheet-header', 'scm-sheet-header-kpmog' => $projectCompany === 'KPMOG'])>
+        @if($projectCompany === 'KPMOG')
+            <x-kpmog-document-logo />
+        @else
+            <img src="{{ asset($projectBrand['logo']) }}" alt="{{ $projectBrand['logo_alt'] }}" width="140" height="105">
+        @endif
         <div class="scm-sheet-title"><h2>SERVICE REQUEST AND MATERIALS</h2></div>
     </header>
     <div class="scm-project-sr-identity">

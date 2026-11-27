@@ -18,8 +18,12 @@
         ? $record->approvals->where('round', $record->approval_round)->keyBy('role') : collect();
 @endphp
 <section class="scm-request-sheet" aria-label="Form {{ $sheetTitle }} {{ $sheetCompany }}">
-    <header class="scm-sheet-header">
-        <img src="{{ asset($sheetBrand['logo']) }}" alt="{{ $sheetBrand['logo_alt'] }}" width="140" height="105">
+    <header @class(['scm-sheet-header', 'scm-sheet-header-kpmog' => $sheetCompany === 'KPMOG'])>
+        @if($sheetCompany === 'KPMOG')
+            <x-kpmog-document-logo />
+        @else
+            <img src="{{ asset($sheetBrand['logo']) }}" alt="{{ $sheetBrand['logo_alt'] }}" width="140" height="105">
+        @endif
         <div class="scm-sheet-title">
             <h2>{{ $sheetTitle }}</h2>
             @if($sheetEditing)<label class="scm-sheet-sr" for="scm-request-number">Nomor {{ $sheetKind }}</label><input id="scm-request-number" class="scm-sheet-number" value="{{ $sheetNumber }}" readonly aria-readonly="true">

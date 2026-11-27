@@ -25,7 +25,7 @@
     @if($expenseReport)
         <header class="travel-lpj-header">
             <div class="travel-logo">
-                <img src="{{ asset('img/brands/kpmog.png') }}" alt="KPMOG" width="203" height="60">
+                <x-kpmog-document-logo />
             </div>
             <table class="travel-document-meta">
                 <tbody>
@@ -120,7 +120,7 @@
         <div class="kpmog-pv-top">
             <div class="kpmog-pv-brand-col">
                 <div class="kpmog-pv-brand-row">
-                    <img src="{{ asset('img/brands/kpmog.png') }}" alt="KPMOG" width="140" height="42">
+                    <x-kpmog-document-logo />
                     <strong>PT KPM - OIL &amp; GAS</strong>
                 </div>
                 <h2 class="kpmog-pv-banner">PAYMENT VOUCHER</h2>

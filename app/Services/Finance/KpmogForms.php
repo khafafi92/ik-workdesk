@@ -9,6 +9,7 @@ use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\MemoryDrawing;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class KpmogForms
@@ -36,6 +37,7 @@ class KpmogForms
         $workbook = IOFactory::createReader('Xlsx')->load(resource_path('data/finance/kpmog-'.$template.'.xlsx'));
         $sheet = $workbook->getActiveSheet();
         $sheet->setTitle(strtoupper($template));
+        $this->replaceLogo($sheet);
         $reviewers = $record->approvals->where('round', $record->round)->where('status', 'approved')->pluck('reviewer_name', 'label')->all();
 
         if ($expenseReport) {
@@ -45,6 +47,28 @@ class KpmogForms
         }
 
         return $workbook;
+    }
+
+    private function replaceLogo(Worksheet $sheet): void
+    {
+        $drawings = $sheet->getDrawingCollection();
+        $original = $drawings->offsetGet(0);
+        $source = imagecreatefrompng(public_path('img/brands/kpmog.png'));
+        $logo = imagecrop($source, ['x' => 0, 'y' => 177, 'width' => 508, 'height' => 158]);
+        imagesavealpha($logo, true);
+
+        $drawing = new MemoryDrawing;
+        $drawing->setName('KPMOG');
+        $drawing->setDescription('KPMOG');
+        $drawing->setImageResource($logo);
+        $drawing->setRenderingFunction(MemoryDrawing::RENDERING_PNG);
+        $drawing->setMimeType(MemoryDrawing::MIMETYPE_PNG);
+        $drawing->setCoordinates($original->getCoordinates());
+        $drawing->setOffsetX($original->getOffsetX());
+        $drawing->setOffsetY($original->getOffsetY());
+        $drawing->setHeight($original->getHeight());
+        $drawings->offsetUnset(0);
+        $drawing->setWorksheet($sheet);
     }
 
     private function voucher(Worksheet $sheet, FinanceRequest $record, array $reviewers): void

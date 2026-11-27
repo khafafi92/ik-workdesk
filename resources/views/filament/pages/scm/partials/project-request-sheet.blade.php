@@ -12,8 +12,12 @@
     @include('filament.pages.scm.partials.project-service-sheet')
 @else
 <section class="scm-request-sheet scm-project-sheet scm-project-pr" aria-label="Form PURCHASE REQUEST Project {{ $projectCompany }}">
-    <header class="scm-sheet-header">
-        <img src="{{ asset($projectBrand['logo']) }}" alt="{{ $projectBrand['logo_alt'] }}" width="140" height="105">
+    <header @class(['scm-sheet-header', 'scm-sheet-header-kpmog' => $projectCompany === 'KPMOG'])>
+        @if($projectCompany === 'KPMOG')
+            <x-kpmog-document-logo />
+        @else
+            <img src="{{ asset($projectBrand['logo']) }}" alt="{{ $projectBrand['logo_alt'] }}" width="140" height="105">
+        @endif
         <div class="scm-sheet-title"><h2>PURCHASE REQUEST</h2><p class="scm-project-number-label">No.</p>
             @if($sheetEditing)<label class="scm-sheet-sr" for="scm-request-number">Nomor PR</label><input id="scm-request-number" class="scm-sheet-number" value="{{ $projectNumber }}" readonly aria-readonly="true">
             @else<p class="scm-sheet-number">{{ $projectNumber }}</p>@endif

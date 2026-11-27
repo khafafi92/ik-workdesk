@@ -11,7 +11,8 @@
         main { width: min(100% - 2rem, 69rem); margin: 1rem auto 2rem }
         h1, p, dd, dl { margin: 0 }
         header { display: grid; grid-template-columns: minmax(0, 8rem) 1fr; gap: .75rem; align-items: center; border-bottom: 1px solid; padding-block: .5rem }
-        header img { display: block; width: 100%; height: 4.25rem; object-fit: contain }
+        .kpmog-legacy-header { grid-template-columns: minmax(0, 13rem) 1fr }
+        header > img { display: block; width: 100%; height: 4.25rem; object-fit: contain }
         h1 { font-size: clamp(1.15rem, 3vw, 1.65rem) }
         .screen-controls { display: flex; justify-content: end; margin-bottom: .5rem }
         button { min-height: 44px; padding: .5rem .75rem; color: #004ca7; background: #fff; border: 1px solid #6d7e92; border-radius: .3rem; font: inherit; cursor: pointer }
@@ -36,6 +37,7 @@
         }
         @media (max-width: 30rem) {
             header { grid-template-columns: minmax(0, 5rem) 1fr }
+            .kpmog-legacy-header { grid-template-columns: minmax(0, 7rem) 1fr }
         }
         @media print {
             body { font-size: 10pt }
@@ -54,12 +56,15 @@
     $payment = $record->kind === 'payment';
     $data = $record->data;
     $approvals = $record->approvals->where('round', $record->round)->keyBy('step');
-    $logo = $record->company === 'KPMOG' ? 'img/brands/kpmog.png' : 'img/brands/apca.png';
 @endphp
 <main>
     <div class="screen-controls" lang="id">@include('documents.print-button', ['files' => $record->files])</div>
-    <header>
-        <img src="{{ asset($logo) }}" alt="{{ $record->company }}">
+    <header @class(['kpmog-legacy-header' => $record->company === 'KPMOG'])>
+        @if($record->company === 'KPMOG')
+            <x-kpmog-document-logo />
+        @else
+            <img src="{{ asset('img/brands/apca.png') }}" alt="{{ $record->company }}">
+        @endif
         <div>
             <h1>{{ $payment ? strtoupper($record->documentLabel()) : 'FORM REIMBURSEMENT' }}</h1>
             <p lang="id">{{ \App\Models\FinanceRequest::STATUSES[$record->status] }}</p>

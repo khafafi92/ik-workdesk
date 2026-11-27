@@ -672,7 +672,7 @@ class ProcurementTest extends TestCase
         $page->call('chooseCompany')->call('newDraft', 'KPMOG')->assertHasNoErrors()
             ->assertSet('draft.company', 'KPMOG')->assertSee('Brand')->assertSee('Item')->assertSee('Requested by')
             ->assertDontSee('Delivery Point')->assertDontSee('Model/PN')->assertDontSee('Prepared by')->assertDontSee('KPM_OG-FRM-003')
-            ->assertSee('img/brands/kpmog-request.jpg', false)->assertDontSee('img/brands/apca.png', false);
+            ->assertSee('img/brands/kpmog.png', false)->assertDontSee('img/brands/apca.png', false);
         $number = $page->get('requestNumber');
         $data = [...$this->draftData($kind), 'company' => 'KPMOG', 'customer_po' => 'PO-DEMO', 'job_order' => 'JO-DEMO'];
         $data['items'][0] += ['brand' => 'DEMO Brand', 'item_reference' => 'ITEM-DEMO-123'];
@@ -685,9 +685,9 @@ class ProcurementTest extends TestCase
             ->call('signPrepared')->assertHasNoErrors()->call('submitRequest')->assertHasNoErrors();
         $this->approve($request->fresh());
         Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)
-            ->assertSee($number)->assertSee('img/brands/kpmog-request.jpg', false)->assertSee('DEMO Brand')
+            ->assertSee($number)->assertSee('img/brands/kpmog.png', false)->assertSee('DEMO Brand')
             ->call('receiveRequest')->assertHasNoErrors()->call('showTab', 'request')
-            ->assertSee('ITEM-DEMO-123')->assertSee('img/brands/kpmog-request.jpg', false);
+            ->assertSee('ITEM-DEMO-123')->assertSee('img/brands/kpmog.png', false);
         $this->assertSame($number, $request->fresh()->number);
         $this->assertSame('KPMOG', $request->fresh()->company);
         $this->actingAs($this->user('scm.request'))->get($pageClass::getUrl(['permintaan' => $request->id]))->assertForbidden();

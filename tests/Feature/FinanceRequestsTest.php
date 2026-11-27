@@ -287,6 +287,7 @@ class FinanceRequestsTest extends TestCase
             $this->assertSame('B1:AD45', $sheet->getPageSetup()->getPrintArea());
             $this->assertArrayHasKey('D8:M9', $sheet->getMergeCells());
             $this->assertCount(1, $sheet->getDrawingCollection());
+            $this->assertSame('KPMOG', $sheet->getDrawingCollection()->offsetGet(0)->getName());
             $this->assertSame('Penerima QA', $sheet->getCell('H11')->getValue());
             $this->assertEquals(100000, $sheet->getCell('H19')->getValue());
         } finally {
