@@ -6,6 +6,7 @@ use App\Mail\ReminderAlertMail;
 use App\Models\Department;
 use App\Models\Employee;
 use App\Models\Reminder;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Mail;
@@ -32,6 +33,9 @@ class ReminderEmailAlertTest extends TestCase
             'email_alarm_days' => [3, 1],
         ]);
 
+        $user = User::factory()->create(['preferred_locale' => 'id']);
+        $reminder->employee->update(['user_id' => $user->id]);
+
         $this->artisan('reminders:send-email-alerts')->assertSuccessful();
         $this->artisan('reminders:send-email-alerts')->assertSuccessful();
 
@@ -39,6 +43,7 @@ class ReminderEmailAlertTest extends TestCase
         Mail::assertSent(ReminderAlertMail::class, function (ReminderAlertMail $mail) use ($reminder) {
             return $mail->reminder->is($reminder)
                 && $mail->daysBefore === 3
+                && $mail->locale === 'id'
                 && $mail->hasTo('staff@kpmog.com');
         });
 
@@ -47,7 +52,9 @@ class ReminderEmailAlertTest extends TestCase
             'days_before' => 3,
         ]);
 
-        $html = (new ReminderAlertMail($reminder, 3, 'Staff Test'))->render();
+        $mail = new ReminderAlertMail($reminder, 3, 'Staff Test');
+        $this->assertStringContainsString('View reminder', $mail->locale('en')->render());
+        $html = $mail->locale('id')->render();
         $this->assertStringContainsString('Pengingat H-3', $html);
         $this->assertStringContainsString('Lihat Reminder', $html);
     }

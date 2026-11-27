@@ -1,31 +1,27 @@
 <x-mail::message>
-# Reminder H-{{ $daysBefore }}
+# {{ __('Reminder H-:days', ['days' => $daysBefore]) }}
 
-Halo {{ $recipientName }},
+{{ __('Hello :name,', ['name' => $recipientName]) }}
 
-The following reminder is still in **Pending* status and will reach the deadline in {{ $daysBefore }} days.
+{{ __('The following reminder is pending.') }}
 
-- **Title:* {{ $reminder->title }}
-- **Type:* {{ str($reminder->reminder_type)->replace('_', ' ')->title() }}
-- **Deadline:** {{ $reminder->reminder_at->format('d M Y H:i') }} WIB
+- **{{ __('Title') }}:** {{ $reminder->title }}
+- **{{ __('Type') }}:** {{ str($reminder->reminder_type)->replace('_', ' ')->title() }}
+- **{{ __('Deadline') }}:** {{ $reminder->reminder_at->format('d M Y H:i') }} WIB
 
 @if ($reminder->workTask)
-**Source Task:** {{ $reminder->workTask->task_no }} · {{ $reminder->workTask->title }}
+**{{ __('Source task') }}:** {{ $reminder->workTask->task_no }} ? {{ $reminder->workTask->title }}
 @endif
 
 @if ($reminder->description)
-**Note:*
+**{{ __('Note') }}:**
 
 {{ $reminder->description }}
 @endif
 
 <x-mail::button :url="$viewUrl">
-View reminder
+{{ __('View reminder') }}
 </x-mail::button>
 
-The next email will only be sent according to the selected alarm and will stop if the status is changed to Done or Cancel.
-
-Greetings,
-
-IK WorkDesk System
+{{ __('Further emails follow your selected alarms and stop when the reminder is completed or cancelled.') }}
 </x-mail::message>

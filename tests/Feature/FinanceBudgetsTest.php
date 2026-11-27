@@ -213,7 +213,7 @@ class FinanceBudgetsTest extends TestCase
             ->assertSee('Export to Excel')
             ->call('exportBudget')
             ->assertHasNoErrors();
-        Excel::assertDownloaded('penggunaan-anggaran-kpmog-2026-idr.xlsx', fn (FinanceBudgetUsageExport $download): bool => $download->array()[8][11] === 1250.0);
+        Excel::assertDownloaded('budget-usage-kpmog-2026-idr.xlsx', fn (FinanceBudgetUsageExport $download): bool => $download->array()[8][11] === 1250.0);
     }
 
     public function test_department_budget_view_is_limited_to_accessible_departments(): void

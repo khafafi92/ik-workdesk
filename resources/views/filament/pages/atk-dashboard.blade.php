@@ -38,7 +38,7 @@
                                 <th scope="col">Peminta</th>
                                 <th scope="col">{{ __('Department') }}</th>
                                 <th scope="col">{{ __('Entity') }}</th>
-                                <th scope="col">{{ __('Stuff and progress') }}</th>
+                                <th scope="col">{{ __('Item progress') }}</th>
                                 <th scope="col">{{ __('Status') }}</th>
                                 <th scope="col">{{ __('Requirement') }}</th>
                             </tr>

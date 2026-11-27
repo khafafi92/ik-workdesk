@@ -203,7 +203,7 @@ class FinancePaymentsTest extends TestCase
         $payment = $this->order->payments()->sole();
         Livewire::actingAs($this->finance)->test(FinancePayments::class)->call('openOrder', $this->order->id)
             ->call('preparePaid', $payment->id)->set('paid.payment_reference', 'TRX-QA')->set('proofFile', $this->pdf('proof.pdf'))
-            ->call('savePaid')->assertHasNoErrors()->assertSee('Paid')->assertSee('Bukti bayar');
+            ->call('savePaid')->assertHasNoErrors()->assertSee('Paid')->assertSee('Proof of payment');
         $this->assertSame('paid', $payment->fresh()->status);
     }
 
@@ -278,14 +278,14 @@ class FinancePaymentsTest extends TestCase
         $payment->update(['status' => 'paid', 'paid_on' => today(), 'vendor_bank_snapshot' => null]);
 
         Livewire::actingAs($this->finance)->test(FinancePayments::class)
-            ->call('openOrder', $this->order->id)->assertSee('Rekening saat dicatat: Tidak tercatat');
+            ->call('openOrder', $this->order->id)->assertSee('Account on record: Unrecorded');
     }
 
     public function test_order_list_shows_actual_receipts_plans_and_accessible_orders(): void
     {
         app(PoPayments::class)->plan($this->finance, $this->order->id, $this->input(), null);
         Livewire::actingAs($this->finance)->test(FinancePayments::class)
-            ->assertSee('No receipts have been recorded for this PO.')->assertSee('1 termin tercatat')->assertSee('Unpaid installments');
+            ->assertSee('No receipts yet')->assertSee('1 installment recorded')->assertSee('Unpaid installments');
         Livewire::actingAs($this->outsider)->test(FinancePayments::class)->assertDontSee('PO-FIN-QA');
     }
 
@@ -339,7 +339,7 @@ class FinancePaymentsTest extends TestCase
         Livewire::actingAs($this->finance)->test(FinancePayments::class)->call('openOrder', $this->order->id)
             ->assertSee('Cancel entire PO')->call('prepareCancelOrder')
             ->set('orderCancelReason', 'Pengadaan dibatalkan oleh Finance')
-            ->call('cancelOrder')->assertHasNoErrors()->assertSee('PO dibatalkan pada')
+            ->call('cancelOrder')->assertHasNoErrors()->assertSee('PO canceled on')
             ->assertDontSee('Add installment');
     }
 

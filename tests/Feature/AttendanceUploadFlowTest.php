@@ -154,7 +154,7 @@ class AttendanceUploadFlowTest extends TestCase
         $user->directPermissions()->attach(Permission::firstOrCreate(['code' => 'attendance.manage'], ['name' => 'Manage', 'is_active' => true]));
         $this->actingAs($user->fresh());
         Livewire::withQueryParams(['periode' => $import->id])->test(AttendanceReportCenter::class)
-            ->callAction('process')->assertSee('Failed to process')->assertSee('Process not yet successful.')
+            ->callAction('process')->assertSee('Failed to process')->assertSee('The process is not yet successful.')
             ->assertSee('Fix files')->assertDontSee('View report results');
         $this->assertSame('failed', $import->fresh()->status);
     }

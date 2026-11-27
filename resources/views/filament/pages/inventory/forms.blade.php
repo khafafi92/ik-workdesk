@@ -73,7 +73,7 @@
                                 <div class="scm-actions"><button type="button" wire:click="saveReceiptItem" wire:loading.attr="disabled" wire:target="saveReceiptItem">{{ __('Save and select a Master of goods') }}</button><button type="button" wire:click="cancelReceiptItem">{{ __('Cancel the master add') }}</button></div>
                             </div>
                         @elseif(! filled($line['inventory_item_id'] ?? null))
-                            <div class="scm-actions"><button type="button" wire:click="newReceiptItem({{ $source->id }})">{{ __('Add Master Stuff to') }} {{ $source->name }}</button></div>
+                            <div class="scm-actions"><button type="button" wire:click="newReceiptItem({{ $source->id }})">{{ __('Create catalogue item for') }} {{ $source->name }}</button></div>
                         @endif
                     @endif
                 </fieldset>

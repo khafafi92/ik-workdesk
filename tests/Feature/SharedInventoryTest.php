@@ -403,8 +403,8 @@ class SharedInventoryTest extends TestCase
             ->call('openReceipt', $request->id)
             ->set('receiptForm.reference', 'SJ-VALVE')
             ->set('receiptLines.0.quantity', '1')
-            ->set('receiptLines.0.inventory_item_id', $oldItem->id)->assertDontSee('Tambah Master Barang untuk Valve baru')
-            ->set('receiptLines.0.inventory_item_id', '')->assertSee('Tambah Master Barang untuk Valve baru')
+            ->set('receiptLines.0.inventory_item_id', $oldItem->id)->assertDontSee('Create catalogue item for Valve baru')
+            ->set('receiptLines.0.inventory_item_id', '')->assertSee('Create catalogue item for Valve baru')
             ->call('newReceiptItem', $source->id)
             ->assertSet('receiptNewItem.name', 'Valve baru')
             ->assertSet('receiptNewItem.unit', 'unit')
@@ -439,7 +439,7 @@ class SharedInventoryTest extends TestCase
         $atk = $this->item('atk')->atkItem;
         app(AtkWarehouseStockService::class)->incoming($atk, 3, $this->admin, 'Saldo lama QA');
         $page = Livewire::actingAs($this->admin)->test(Inventory::class)->call('openAllocation', $atk->id)
-            ->assertSee('Pemetaan saldo ATK')->set('allocation.KPMOG', '2')->set('allocation.APCA', '1')
+            ->assertSee('Office supplies balance mapping')->set('allocation.KPMOG', '2')->set('allocation.APCA', '1')
             ->call('allocate')->assertHasNoErrors();
         $this->assertSame('3.00', $atk->fresh()->current_stock);
         $item = $this->item();

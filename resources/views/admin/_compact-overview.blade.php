@@ -71,11 +71,11 @@
         <div class="ik-compact-reminder-grid">
             @foreach ([
                 ['Today', $todayReminders, 'No reminders today.', false],
-                ['Will Come', $upcomingReminders, 'No upcoming reminders.', false],
-                ['Too late', $overdueReminders, 'No overdue reminders.', true],
+                ['Upcoming', $upcomingReminders, 'No upcoming reminders.', false],
+                ['Overdue', $overdueReminders, 'No overdue reminders.', true],
             ] as [$label, $reminders, $emptyText, $danger])
                 <div class="ik-compact-reminder-lane {{ $danger ? 'is-danger' : '' }}">
-                    <div class="ik-compact-lane-heading"><strong>{{ $label }}</strong><span>{{ $reminders->count() }}</span></div>
+                    <div class="ik-compact-lane-heading"><strong>{{ __($label) }}</strong><span>{{ $reminders->count() }}</span></div>
                     <div class="ik-compact-list">
                         @forelse ($reminders->take(3) as $reminder)
                             <div class="ik-compact-list-item">
@@ -83,7 +83,7 @@
                                 <span>{{ $reminder->reminder_at?->format('d M Y H:i') }}</span>
                             </div>
                         @empty
-                            <div class="ik-compact-empty">{{ $emptyText }}</div>
+                            <div class="ik-compact-empty">{{ __($emptyText) }}</div>
                         @endforelse
                     </div>
                 </div>

@@ -265,15 +265,15 @@ class AtkManagementTest extends TestCase
             ->assertSeeText('Requests to be performed')
             ->assertSeeText($requester->name)
             ->assertSeeText('Pulpen Hitam')
-            ->assertSeeText('Progress')
-            ->assertSeeText('Stok tersedia:')
-            ->assertSeeText('Kekurangan:')
-            ->assertSeeText('Perlu ditinjau GA');
+            ->assertSeeText('Item progress')
+            ->assertSeeText('Available stock:')
+            ->assertSeeText('Shortage:')
+            ->assertSeeText('GA review required');
 
         $this->actingAs($manager)
             ->get('/panel/atk-requests')
             ->assertOk()
-            ->assertSeeText('Progres barang')
+            ->assertSeeText('Progress')
             ->assertSeeText('Pulpen Hitam')
             ->assertSeeText('Issue available items. Create a purchase request for any shortage.');
     }
@@ -305,16 +305,16 @@ class AtkManagementTest extends TestCase
             ->assertOk()
             ->assertSeeText('Unfinished office supplies needs')
             ->assertSeeText('An open request')
-            ->assertSeeText('Belum diserahkan')
-            ->assertSeeText('Menunggu konfirmasi')
+            ->assertSeeText('Not handed in yet')
+            ->assertSeeText('Waiting for confirmation')
             ->assertSeeText($request->request_number)
             ->assertSeeText($requester->name)
             ->assertSeeText($department->name)
-            ->assertSeeText('Diminta')
-            ->assertSeeText('Diserahkan')
-            ->assertSeeText('Diterima')
-            ->assertSeeText('Perlu diserahkan dan dikonfirmasi')
-            ->assertSeeText('Catatan GA: Sisa sedang disiapkan.');
+            ->assertSeeText('Requested')
+            ->assertSeeText('Issued')
+            ->assertSeeText('Received')
+            ->assertSeeText('Awaiting issue and receipt confirmation')
+            ->assertSeeText('GA note: Sisa sedang disiapkan.');
     }
 
     public function test_outgoing_letter_form_explains_the_draft_and_issuance_flow(): void
@@ -325,9 +325,9 @@ class AtkManagementTest extends TestCase
             ->get('/panel/outgoing-letters/create')
             ->assertOk()
             ->assertSeeText('Choose a profile and identify the letter')
-            ->assertSeeText('Lengkapi tujuan dan isi')
-            ->assertSeeText('Tinjau nomor dan simpan draft')
-            ->assertSeeText('Nomor menjadi final dan dicadangkan hanya saat surat diterbitkan.');
+            ->assertSeeText('Add the recipient and letter content')
+            ->assertSeeText('Review the number and save the draft')
+            ->assertSeeText('Number becomes final and reserved only when mail is published.');
     }
 
     public function test_requester_can_see_the_receipt_action_after_ga_issues_an_item(): void
@@ -363,28 +363,28 @@ class AtkManagementTest extends TestCase
         $this->actingAs($requester)
             ->get('/panel/atk-requests')
             ->assertOk()
-            ->assertSeeText('Konfirmasi barang diterima')
+            ->assertSeeText('Confirm item received')
             ->assertSeeText('Confirm the acceptance of the submitted items.')
             ->assertSeeInOrder([
                 'ik-atk-progress-name', 'Map Dokumen',
-                'Diminta:', '<dd>2</dd>',
-                'Diserahkan:', '<dd>2</dd>',
-                'Belum diserahkan:', '<dd>0</dd>',
-                'Diterima:', '<dd>0</dd>',
-                'Stok tersedia:', '<dd>0</dd>',
-                'Kekurangan:', '<dd>0</dd>',
+                'Requested:', '<dd>2</dd>',
+                'Issued:', '<dd>2</dd>',
+                'Not yet issued:', '<dd>0</dd>',
+                'Received:', '<dd>0</dd>',
+                'Available stock:', '<dd>0</dd>',
+                'Shortage:', '<dd>0</dd>',
             ], false);
 
         $anotherRequest = $this->request($ga, $department);
         $this->get('/panel')->assertOk()
             ->assertSeeInOrder([
-                'Lihat daftar ATK', $request->request_number, 'Sebagian dipenuhi', 'Konfirmasi barang yang sudah diterima di daftar ATK.',
+                'View office supply requests', $request->request_number, 'Partially fulfilled', 'Confirm receipt on the Office Supply Requests page.',
             ])
             ->assertDontSeeText($anotherRequest->request_number);
 
         app(AtkDepartmentStockService::class)->receive($requestItem->fresh(), $requester);
         $this->get('/panel')->assertOk()
-            ->assertSeeInOrder([$request->request_number, 'Selesai'])
+            ->assertSeeInOrder([$request->request_number, 'Completed'])
             ->assertDontSeeText('Confirm receipt on the Office Supply Requests page.');
     }
 
@@ -656,7 +656,7 @@ class AtkManagementTest extends TestCase
             ->assertOk()
             ->assertSeeText('Monthly Summary')
             ->assertSeeText('request month')
-            ->assertSeeText('Permintaan yang dibatalkan tidak dihitung.');
+            ->assertSeeText('Canceled requests do not count.');
     }
 
     public function test_department_receipt_summary_excludes_requests_that_have_not_been_received(): void

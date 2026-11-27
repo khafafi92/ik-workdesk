@@ -39,9 +39,9 @@ class MinimalDashboardTest extends TestCase
             ->assertSeeText('Work Logs')
             ->assertSeeText('available space')
             ->assertSeeText('Reminder')
-            ->assertSeeText('Hari Ini')
-            ->assertSeeText('Akan Datang')
-            ->assertSeeText('Terlambat')
+            ->assertSeeText('Today')
+            ->assertSeeText('Upcoming')
+            ->assertSeeText('Overdue')
             ->assertDontSeeText("Today's Reminders")
             ->assertDontSeeText('Upcoming Reminders');
     }

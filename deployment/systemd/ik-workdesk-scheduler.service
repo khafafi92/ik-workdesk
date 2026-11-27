@@ -1,0 +1,11 @@
+[Unit]
+Description=Run scheduled WorkDesk tasks
+
+[Service]
+Type=oneshot
+WorkingDirectory=/var/www/ik-workdesk
+CacheDirectory=ik-workdesk/scheduler
+CacheDirectoryMode=0700
+Environment=APP_CONFIG_CACHE=%C/ik-workdesk/scheduler/config.php
+Environment=VIEW_COMPILED_PATH=%C/ik-workdesk/scheduler
+ExecStart=/usr/bin/php artisan schedule:run --no-interaction

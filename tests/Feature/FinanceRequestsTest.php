@@ -49,6 +49,31 @@ class FinanceRequestsTest extends TestCase
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
     }
 
+    public function test_missing_finance_approval_blocks_submission_but_allows_saving_a_draft(): void
+    {
+        $requester = $this->applicant();
+        $page = Livewire::actingAs($requester)->test(Reimbursements::class)->call('newRequest')
+            ->set('input', $this->input($requester, 'APCA', 'reimbursement'))
+            ->assertSee('Aturan approval belum tersedia')
+            ->call('saveRequest')->assertHasNoErrors();
+        $isSubmitDisabled = static function (string $html): bool {
+            $document = new \DOMDocument;
+            $document->loadHTML($html, LIBXML_NOERROR | LIBXML_NOWARNING);
+            $button = (new \DOMXPath($document))->query('//button[@*[name()="wire:click" and .="submitRequest"]]')->item(0);
+
+            return $button->hasAttribute('disabled');
+        };
+
+        $this->assertTrue($isSubmitDisabled($page->html()));
+        $page->call('submitRequest')->assertHasErrors(['request']);
+        $this->assertSame('draft', FinanceRequest::sole()->status);
+        $admin = User::factory()->create(['is_admin' => true]);
+        $reviewers = User::factory()->count(3)->create()->modelKeys();
+        app(RequestApprovals::class)->save($admin, 'APCA', 'reimbursement', $reviewers, 0);
+        $page->call('$refresh')->assertViewHas('planError', null);
+        $this->assertFalse($isSubmitDisabled($page->html()));
+    }
+
     public function test_configured_company_route_controls_approval_and_keeps_previous_assignments(): void
     {
         Filament::setCurrentPanel(Filament::getPanel('admin'));

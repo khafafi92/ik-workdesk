@@ -66,7 +66,8 @@ class SendReminderEmailAlerts extends Command
                                         $reminder,
                                         $daysBefore,
                                         $employee?->name ?? 'User',
-                                    ))->from($from['address'], $from['name'])
+                                    ))->locale($employee?->user?->preferred_locale ?? config('app.locale'))
+                                        ->from($from['address'], $from['name'])
                                 );
 
                             $delivery->update(['sent_at' => now()]);

@@ -446,7 +446,7 @@ class FinanceRequests extends Page
                 }
                 $plan = app(RequestApprovals::class)->plan($planRecord);
             } catch (ValidationException $exception) {
-                $planError = $exception->getMessage();
+                $planError = $planDepartmentId ? $exception->getMessage() : null;
             }
         }
 

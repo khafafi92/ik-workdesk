@@ -94,6 +94,7 @@
                 @endif
                 @if($planError)
                     <p class="travel-rule-notice" role="status">{{ $planError }}
+                        <button type="button" class="travel-control" wire:click="$refresh" wire:loading.attr="disabled">Periksa kembali jalur approval</button>
                         @if(\App\Services\Finance\RequestApprovals::canConfigure(auth()->user()))
                             <a class="travel-control" href="{{ \App\Filament\Pages\ScmProcurement::getUrl(['bagian' => 'settings', 'dokumen' => $financeApprovalTabs[$kind]]) }}">Buka Master Approval SCM</a>
                         @endif
@@ -154,7 +155,7 @@
                         :disabled="$requiresPurchaseRequest && !$linkedPurchaseRequest">Simpan draft</x-filament::button>
                     @if(!$onBehalf)
                         <x-filament::button wire:click="submitRequest" wire:confirm="Kirim pengajuan ini ke approver?" wire:loading.attr="disabled"
-                            :disabled="($requiresInvoice && !$hasInvoice) || ($expenseReport && !$hasEvidence) || ($requiresPurchaseRequest && !$linkedPurchaseRequest)">Kirim untuk approval</x-filament::button>
+                            :disabled="blank($input['department_id'] ?? null) || filled($planError) || ($requiresInvoice && !$hasInvoice) || ($expenseReport && !$hasEvidence) || ($requiresPurchaseRequest && !$linkedPurchaseRequest)">Kirim untuk approval</x-filament::button>
                     @endif
                 </div>
                 @if($onBehalf)<p class="travel-help">{{ $applicant ?: 'Pemohon' }} mengirim draft untuk approval dari akunnya.</p>@endif

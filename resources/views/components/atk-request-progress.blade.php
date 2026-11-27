@@ -6,8 +6,8 @@
             <p class="ik-atk-progress-name">{{ $item['name'] }}</p>
             <dl class="ik-atk-progress-metrics">
                 @foreach ($item['metrics'] as $label => $quantity)
-                    <div @class(['ik-atk-progress-metric', 'is-shortage' => $label === 'Kekurangan' && $item['shortage'] > 0])>
-                        <dt>{{ $label }}:</dt>
+                    <div @class(['ik-atk-progress-metric', 'is-shortage' => $label === 'Shortage' && $item['shortage'] > 0])>
+                        <dt>{{ __($label) }}:</dt>
                         <dd>{{ rtrim(rtrim(number_format($quantity, 2, ',', '.'), '0'), ',') }}</dd>
                     </div>
                 @endforeach

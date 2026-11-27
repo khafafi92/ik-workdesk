@@ -23,7 +23,7 @@ class ReminderAlertMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: sprintf('[IK WorkDesk] Reminder H-%d: %s', $this->daysBefore, $this->reminder->title),
+            subject: '[IK WorkDesk] '.__('Reminder H-:days', ['days' => $this->daysBefore]).': '.$this->reminder->title,
         );
     }
 
