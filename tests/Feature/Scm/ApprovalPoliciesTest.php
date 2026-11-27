@@ -141,6 +141,23 @@ class ApprovalPoliciesTest extends TestCase
         $this->assertSame($this->coo->id, $ho->approvals()->where('role', 'approved')->sole()->user_id);
     }
 
+    public function test_project_sr_shows_pending_assignees_without_signature_images(): void
+    {
+        $crosschecker = $this->actor('Pemeriksa Project', 'manager');
+        app(ApprovalPolicies::class)->save($this->scm, $this->data(['crosschecker_id' => $crosschecker->id]));
+        $request = $this->pending(kind: 'SR');
+        $html = view('filament.pages.scm.partials.request-sheet', ['record' => $request->load(['requester', 'department', 'items', 'approvals.user']), 'sheetEditing' => false])->render();
+        $doc = new \DOMDocument;
+        @$doc->loadHTML($html);
+        $xpath = new \DOMXPath($doc);
+
+        foreach (['acknowledged' => $this->manager->name, 'crosschecked' => $crosschecker->name, 'approved' => $this->coo->name] as $role => $name) {
+            $column = $xpath->query('//div[contains(concat(" ",normalize-space(@class)," ")," scm-project-signature-'.$role.' ")]')->item(0);
+            $this->assertSame($name, trim($xpath->query('./div[3]', $column)->item(0)->textContent));
+            $this->assertSame(0, $xpath->query('.//img', $column)->length);
+        }
+    }
+
     public static function signerFields(): array
     {
         return [['supervisor_id'], ['acknowledger_id'], ['crosschecker_id'], ['approver_id'], ['high_approver_id']];

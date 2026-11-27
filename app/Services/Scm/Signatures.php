@@ -43,11 +43,9 @@ class Signatures
 
     public function sign(User $actor, int $id, int $version): Procurement
     {
-        abort_unless(Access::has($actor, 'scm.request'), 403);
-
         return DB::transaction(function () use ($actor, $id, $version): Procurement {
             $request = Procurement::lockForUpdate()->findOrFail($id);
-            abort_unless($actor->isSystemAdministrator() || (int) $request->requester_id === (int) $actor->id, 403);
+            abort_unless(Access::canSignRequestedBy($actor, $request->kind, (int) $request->requester_id), 403);
             if ($request->status !== 'draft' || $request->version !== $version) {
                 throw ValidationException::withMessages(['scm' => 'Data draft sudah berubah atau bukan lagi draft. Buka ulang sebelum menandatangani.']);
             }

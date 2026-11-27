@@ -200,6 +200,7 @@ class PoPayments
             $this->reject($order->status === 'cancelled', 'PO\'s been canceled.');
             $this->reject($order->payments()->where('status', 'paid')->exists(), 'You cannot cancel a paid PO.');
             $this->reject($order->receipts()->exists(), 'The PO cannot be canceled after the receipts are recorded.');
+            $this->reject($order->request->kind === 'SR' && $order->serviceReceipts()->exists(), __('The PO cannot be canceled because service receipts are recorded.'));
 
             if ($order->request->finance_budget_line_id) {
                 FinanceBudgetLine::lockForUpdate()->findOrFail($order->request->finance_budget_line_id);

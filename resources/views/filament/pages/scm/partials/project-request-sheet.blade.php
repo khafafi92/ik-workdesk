@@ -88,8 +88,8 @@
 @if($canRequest && ($sheetEditing || $record?->status === 'draft'))
     @if($canSignPrepared ?? true)
     <p class="scm-help">Tanda tangani Requested by sebelum mengajukan persetujuan. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD di profil (tab baru)</a>. Setelah isi draft diedit, tanda tangani kembali.</p>
-    @else
-    <p class="scm-help">Pemohon {{ $projectRequestor }} perlu masuk melalui akunnya sendiri untuk menandatangani Requested by dan mengajukan persetujuan.</p>
+    @elseif($waitingForRequestedSignature ?? false)
+    <p class="scm-help">{{ $projectRequestor }} perlu masuk dengan akunnya untuk menandatangani Requested by.</p>
     @endif
 @endif
-@if(!$sheetEditing && $record?->prepared_signed_at)<p class="scm-help">Requested by: {{ $record->prepared_signed_name }}, ditandatangani {{ $record->prepared_signed_at->format('d/m/Y H:i') }}.</p>@endif
+@if($showPreparedSignature)<p class="scm-help">Requested by: {{ $record->prepared_signed_name }}, ditandatangani {{ $record->prepared_signed_at->format('d/m/Y H:i') }}.</p>@endif

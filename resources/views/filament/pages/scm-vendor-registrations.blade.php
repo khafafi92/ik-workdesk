@@ -3,7 +3,7 @@
         <section class="scm-panel scm-vendor-master scm-vendor-registrations" aria-labelledby="vendor-directory-heading">
             <header class="scm-heading">
                 <div>
-                    <h2 id="vendor-directory-heading">Pendaftaran vendor (Form 005)</h2>
+                    <h2 id="vendor-directory-heading">Pendaftaran vendor</h2>
                     <p class="scm-help">Pantau pengisian dan periksa kiriman. Profil dan rekening pembayaran dikelola di Master Vendor.</p>
                 </div>
                 <div class="scm-actions">

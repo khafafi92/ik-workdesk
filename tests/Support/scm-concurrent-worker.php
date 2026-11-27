@@ -5,6 +5,7 @@ use App\Services\Inventory\InventoryStock;
 use App\Services\Inventory\ProcurementReceipt;
 use App\Services\Scm\Approvals;
 use App\Services\Scm\CbeApprovals;
+use App\Services\Scm\ServiceReceipts;
 use App\Services\Scm\VendorPublicPortal;
 use App\Services\Scm\Workflow;
 use Illuminate\Contracts\Console\Kernel;
@@ -32,6 +33,9 @@ $actor = User::findOrFail($job['actor_id']);
 try {
     if ($job['mode'] === 'inventory_receipt') {
         $receipt = app(ProcurementReceipt::class)->receive($actor, $job['request_id'], $job['data']);
+        echo json_encode(['result' => 'received', 'id' => $receipt->id]), PHP_EOL;
+    } elseif ($job['mode'] === 'service_receipt') {
+        $receipt = app(ServiceReceipts::class)->receive($actor, $job['order_id'], $job['data']);
         echo json_encode(['result' => 'received', 'id' => $receipt->id]), PHP_EOL;
     } elseif ($job['mode'] === 'inventory_stock') {
         app(InventoryStock::class)->transact($actor, 'outgoing', $job['data']);

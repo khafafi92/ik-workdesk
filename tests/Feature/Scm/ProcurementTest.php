@@ -286,7 +286,55 @@ class ProcurementTest extends TestCase
         $this->assertSame('pending', $steps[1]->fresh()->status);
     }
 
-    public function test_opening_po_reuses_reviewed_vendor_documents_after_cbe_approval(): void
+    public function test_final_cbe_signature_completes_legal_checklist_from_selected_vendors_documents(): void
+    {
+        $type = DocumentType::where('code', 'NIB')->sole();
+        Requirement::create(['category_id' => $this->category->id, 'document_type_id' => $type->id, 'is_required' => true]);
+        $request = $this->quoted('SR');
+        $cbeData = $this->cbeData($request);
+        $document = $this->flow->saveDocument($this->scm, ['vendor_id' => $cbeData['selected_vendor_id'], 'document_type_id' => $type->id,
+            'number' => 'NIB-SR', 'title' => 'NIB'], $this->pdf());
+        $request = $this->flow->saveCbe($this->scm, $request->id, $request->version, $cbeData, true);
+        $this->assertSame('selected', $request->status);
+        $this->assertNull($request->legalCase);
+
+        $request = $this->approveCbe($request);
+        $this->assertSame('completed', $request->status);
+        $this->assertNotNull($request->legalCase->completed_at);
+        $this->assertSame($cbeData['selected_vendor_id'], $request->legalCase->vendor_id);
+        $this->assertSame($document->id, $request->legalCase->items()->sole()->vendor_document_id);
+
+        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'cbe')
+            ->assertSee('Buat Purchase Order')->assertDontSee('Mulai pengumpulan legalitas');
+    }
+
+    public static function unusableLegalDocuments(): array
+    {
+        return [['expired'], ['missing_file']];
+    }
+
+    #[DataProvider('unusableLegalDocuments')]
+    public function test_final_cbe_approval_leaves_legal_collection_available_when_a_required_document_cannot_be_reused(string $condition): void
+    {
+        $type = DocumentType::where('code', 'SBU')->sole();
+        Requirement::create(['category_id' => $this->category->id, 'document_type_id' => $type->id, 'is_required' => true]);
+        $request = $this->quoted('SR');
+        $cbeData = $this->cbeData($request);
+        $document = $this->flow->saveDocument($this->scm, ['vendor_id' => $cbeData['selected_vendor_id'], 'document_type_id' => $type->id,
+            'number' => 'SBU-SR', 'title' => 'SBU', 'expires_at' => ($condition === 'expired' ? today()->subDay() : today()->addMonth())->toDateString()], $this->pdf());
+        if ($condition === 'missing_file') {
+            Storage::disk('scm')->delete($document->attachments()->sole()->path);
+        }
+
+        $request = $this->approveCbe($this->flow->saveCbe($this->scm, $request->id, $request->version, $cbeData, true));
+        $this->assertSame('selected', $request->status);
+        $this->assertNull($request->legalCase);
+
+        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'cbe')
+            ->assertSee('Mulai pengumpulan legalitas')->assertDontSee('Buat Purchase Order');
+    }
+
+    public function test_opening_procurement_reuses_reviewed_vendor_documents_after_cbe_approval(): void
     {
         $request = $this->finalized();
         $vendor = $request->cbe->selected_vendor_id;
@@ -298,9 +346,11 @@ class ProcurementTest extends TestCase
                 'number' => 'QA-'.$code, 'title' => $code], $this->pdf());
         }
 
-        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'po')
-            ->assertHasNoErrors()->assertSee('Nomor Purchase Order');
+        $page = Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)
+            ->assertSee('Buat Purchase Order');
         $this->assertSame('completed', $request->fresh()->status);
+        $page->call('showTab', 'po')
+            ->assertHasNoErrors()->assertSee('Nomor Purchase Order');
         $this->assertNotNull($request->fresh()->legalCase->completed_at);
     }
 
@@ -867,6 +917,67 @@ class ProcurementTest extends TestCase
         $this->actingAs($this->scm);
         Livewire::test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'quotes')
             ->assertViewHas('candidateVendors', fn ($vendors) => ! $vendors->contains('id', $first->id) && ! $vendors->contains('id', $duplicate->id));
+    }
+
+    #[DataProvider('kinds')]
+    public function test_candidate_form_only_lists_active_vendors_that_match_the_request_kind(string $kind): void
+    {
+        $request = $this->sourcing($kind);
+        $providerType = $kind === 'PR' ? 'barang' : 'jasa';
+        $wrongType = $kind === 'PR' ? 'jasa' : 'barang';
+        $incompatible = $this->flow->saveVendor($this->scm, ['code' => 'CANDIDATE-WRONG-TYPE', 'name' => 'Vendor jenis lain', 'provider_type' => $wrongType, 'is_active' => true]);
+        $inactive = $this->flow->saveVendor($this->scm, ['code' => 'CANDIDATE-INACTIVE', 'name' => 'Vendor tidak aktif', 'provider_type' => $providerType, 'is_active' => false]);
+
+        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'quotes')
+            ->assertSee('Tidak ada vendor lain yang bisa ditambahkan.')
+            ->assertDontSeeHtml('wire:submit="addCandidate"');
+
+        $matching = $this->flow->saveVendor($this->scm, ['code' => 'CANDIDATE-MATCH', 'name' => 'Vendor sesuai', 'provider_type' => $providerType, 'is_active' => true]);
+        $both = $this->flow->saveVendor($this->scm, ['code' => 'CANDIDATE-BOTH', 'name' => 'Vendor barang dan jasa', 'provider_type' => 'keduanya', 'is_active' => true]);
+        Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'quotes')
+            ->assertViewHas('candidateVendors', fn ($vendors) => $vendors->pluck('id')->sort()->values()->all() === [$matching->id, $both->id])
+            ->set('candidate.vendor_id', $incompatible->id)->call('addCandidate')->assertHasErrors('scm')
+            ->assertSee('Untuk '.$kind.', pilih vendor dengan jenis penyedia '.ucfirst($providerType).' atau Barang dan jasa.')
+            ->set('candidate.vendor_id', $inactive->id)->call('addCandidate')->assertHasErrors('scm')->assertSee('Vendor ini sudah tidak aktif.')
+            ->set('candidate.vendor_id', $matching->id)->call('addCandidate')->assertHasNoErrors();
+
+        $this->assertSame($matching->id, $request->candidates()->sole()->vendor_id);
+    }
+
+    #[DataProvider('kinds')]
+    public function test_quotation_editor_saves_vendor_document_with_its_selected_vendor_and_version(string $kind): void
+    {
+        $request = $this->vendors($this->sourcing($kind));
+        [$candidate, $other] = $request->candidates->values()->all();
+        $field = 'quotationFiles.'.$candidate->id;
+        $page = Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)->call('open', $request->id)->call('showTab', 'quotes')
+            ->call('prepareQuotation', $candidate->id)->assertSee('Penawaran: '.$candidate->vendor->name)
+            ->assertSeeHtml('wire:model="'.$field.'"');
+
+        $page->set('quotation', $this->quoteData($request, $other->id))
+            ->set($field, UploadedFile::fake()->createWithContent('bukan-penawaran.txt', 'Isi dokumen uji'))
+            ->call('saveQuotation')->assertHasErrors('file');
+        $this->assertSame($request->version, $request->fresh()->version);
+        $this->assertSame('diminta', $candidate->fresh()->followup_status);
+        $this->assertFalse($candidate->quotations()->exists());
+
+        $page->set($field, $this->pdf('penawaran-vendor.pdf'))->call('saveQuotation')->assertHasNoErrors()
+            ->assertSee('Dokumen penawaran: penawaran-vendor.pdf')->assertDontSeeHtml('wire:submit="uploadAttachment"');
+        $quote = $candidate->quotations()->sole();
+        $document = $quote->attachments()->sole();
+        $this->assertSame($candidate->vendor_id, Quotation::findOrFail($document->quotation_id)->candidate->vendor_id);
+        $this->assertFalse($other->quotations()->exists());
+        Storage::disk('scm')->assertExists($document->path);
+        $this->get(route('scm.download', $document))->assertOk();
+
+        $page->call('prepareQuotation', $candidate->id)->assertSet('quotationFiles', [])
+            ->set($field, $this->pdf('revisi-vendor.pdf'))->call('saveQuotation')->assertHasNoErrors()
+            ->assertSee('Dokumen penawaran: revisi-vendor.pdf');
+        $this->assertSame('penawaran-vendor.pdf', $quote->attachments()->sole()->original_name);
+        $this->assertSame('revisi-vendor.pdf', $candidate->quotations()->where('version', 2)->sole()->attachments()->sole()->original_name);
+
+        $page->call('prepareQuotation', $candidate->id)->call('saveQuotation')->assertHasNoErrors();
+        $this->assertFalse($candidate->quotations()->where('version', 3)->sole()->attachments()->exists());
     }
 
     public function test_duplicate_company_names_are_rejected_for_both_draft_and_final_cbe_without_modifying_data(): void
@@ -1648,7 +1759,6 @@ class ProcurementTest extends TestCase
         $data['selected_vendor_id'] = $winner;
         $second = $this->flow->saveCbe($this->scm, $second->id, $second->version, $data, true);
         $second = $this->approveCbe($second);
-        $second = $this->flow->startLegal($this->scm, $second->id, $second->version);
         $this->assertSame('completed', $second->status);
         $this->assertSame($doc->id, $second->legalCase->items->first()->vendor_document_id);
         Storage::disk('scm')->delete($doc->attachments->first()->path);
@@ -1701,19 +1811,22 @@ class ProcurementTest extends TestCase
     public function test_attachment_form_stays_in_context_after_saving_cbe_and_switching_tabs(): void
     {
         $request = $this->quoted();
+        $quote = $request->candidates->first()->quotations->first();
+        $request = $this->flow->attach($this->scm, $request->id, $request->version, 'quotation', $quote->id, $this->pdf('penawaran-lama.pdf'));
         $page = Livewire::actingAs($this->scm)->test(PurchasingOfficer::class)
             ->call('open', $request->id)->call('showTab', 'cbe')
             ->set('cbeForm', $this->cbeData($request))->call('saveCbe')->assertHasNoErrors()
-            ->assertSet('attachmentTarget', 'cbe')->assertSee('Tambahkan lampiran CBE');
+            ->assertSee('Tambahkan lampiran CBE');
         $cbe = $request->fresh()->cbe;
         $page->assertSet('attachmentTargetId', $cbe->id)
             ->set('attachmentFile', $this->pdf())->call('uploadAttachment')->assertHasNoErrors();
         $this->assertDatabaseHas('scm_attachments', ['cbe_id' => $cbe->id, 'quotation_id' => null]);
-        $page->call('showTab', 'quotes')->assertSet('attachmentTarget', 'quotation')
-            ->assertSet('attachmentTargetId', 0)->assertSee('Tambahkan lampiran quotation')
+        $page->call('showTab', 'quotes')->assertSet('attachmentTargetId', 0)
+            ->assertSee('Dokumen penawaran: penawaran-lama.pdf')->assertDontSeeHtml('wire:submit="uploadAttachment"')
             ->call('showTab', 'history')->assertDontSee('Tambahkan lampiran')
             ->call('showTab', 'legal')->assertDontSee('Tambahkan lampiran')
             ->call('showTab', 'request')->assertDontSee('Tambahkan lampiran');
+        $page->call('showTab', 'quotes')->call('uploadAttachment')->assertForbidden();
     }
 
     public function test_switching_vendor_clears_document_and_invitation_context(): void

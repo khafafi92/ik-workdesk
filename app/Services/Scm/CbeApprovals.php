@@ -133,6 +133,9 @@ class CbeApprovals
             $request->save();
             app(Workflow::class)->audit($actor, $cbe, 'tanda_tangan_cbe', ['role' => $step->role, 'signature_id' => $signature->id, 'signed_name' => $actor->name,
                 'assigned_user_id' => $step->user_id, 'superuser_override' => (int) $step->user_id !== (int) $actor->id], $request->id);
+            if ($step->role === 'approved') {
+                app(Workflow::class)->completeLegalFromMaster($actor, $request->id);
+            }
 
             return $cbe->fresh();
         });

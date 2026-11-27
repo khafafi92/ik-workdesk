@@ -623,15 +623,16 @@
     font-size: 13px;
     font-weight: 600;
     line-height: 1.4;
-    outline: none;
     appearance: auto;
     -webkit-appearance: auto;
     position: relative;
     z-index: 80;
 }
 
-.mttr-cause-report-page .filter-control:focus {
-    border-color: #3AAFE4;
+.mttr-cause-report-page .filter-control:focus-visible {
+    border-color: #005fcc;
+    outline: 3px solid #005fcc;
+    outline-offset: 2px;
 }
 
 .mttr-cause-report-page select.filter-control option,
@@ -1000,13 +1001,14 @@
     color: #0f172a;
     font: inherit;
     font-size: 13px;
-    outline: none;
     padding: 0 12px;
 }
 
-.admin-field input:focus,
-.admin-field select:focus {
-    border-color: #3AAFE4;
+.admin-field input:focus-visible,
+.admin-field select:focus-visible {
+    border-color: #005fcc;
+    outline: 3px solid #005fcc;
+    outline-offset: 2px;
 }
 
 .admin-field small {

@@ -131,14 +131,14 @@
 
 .ik-collab-composer.is-disabled {
     background: #f5f6f8;
-    color: #8b8d97;
+    color: #5b6070;
 }
 
 .ik-collab-composer.is-disabled textarea,
 .ik-collab-composer.is-disabled .ik-collab-file-picker {
     background: #eef0f3;
     border-color: #d8dbe2;
-    color: #8b8d97;
+    color: #5b6070;
     cursor: not-allowed;
 }
 
@@ -534,7 +534,7 @@ body,
 
 .fi-sidebar-group-label {
     padding-inline: 0.65rem !important;
-    color: #8b8d97 !important;
+    color: #5b6070 !important;
     font-size: 0.69rem !important;
     font-weight: 800 !important;
     letter-spacing: 0.075em !important;
@@ -614,7 +614,6 @@ body,
         box-shadow 160ms ease;
 }
 
-.fi-section:hover,
 .fi-wi-stats-overview-stat:hover {
     border-color: var(--ik-border-strong) !important;
     box-shadow: var(--ik-shadow-sm) !important;
@@ -639,14 +638,6 @@ body,
 .fi-wi-stats-overview-stat {
     position: relative;
     min-height: 7.25rem;
-}
-
-.fi-wi-stats-overview-stat::before {
-    position: absolute;
-    inset: 0 auto 0 0;
-    width: 4px;
-    background: var(--ik-primary);
-    content: "";
 }
 
 .fi-wi-stats-overview-stat-label {

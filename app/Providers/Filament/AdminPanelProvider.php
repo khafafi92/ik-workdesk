@@ -143,6 +143,10 @@ class AdminPanelProvider extends PanelProvider
                     '" defer></script>',
             )
             ->renderHook(
+                PanelsRenderHook::SIDEBAR_NAV_START,
+                fn (): string => view('filament.components.workspace-icon-rail')->render(),
+            )
+            ->renderHook(
                 PanelsRenderHook::SIDEBAR_FOOTER,
                 fn (): string => view('filament.components.sidebar-collapse-footer')->render(),
             )

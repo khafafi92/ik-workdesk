@@ -14,7 +14,9 @@ use App\Models\Scm\Cbe;
 use App\Models\Scm\CbeApprovalPolicy;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\ProjectNumbering;
+use App\Models\Scm\PurchaseOrder;
 use App\Models\Scm\Quotation;
+use App\Models\Scm\ServiceReceiptLine;
 use App\Models\Scm\Vendor;
 use App\Models\User;
 use App\Services\Inventory\InventoryStock;
@@ -141,7 +143,11 @@ class ScmConcurrencyTest extends TestCase
             'department_id' => $department->id, 'requester_id' => $actor->id, 'title' => 'Uji penerimaan', 'reason' => 'QA', 'status' => 'selected']);
         $line = $request->items()->create(['inventory_item_id' => $item->id, 'name' => 'Barang QA', 'specification' => 'QA', 'quantity_milli' => 5000, 'unit' => 'PCS', 'position' => 1]);
         $vendor = Vendor::create(['code' => 'INV-PG', 'name' => 'Vendor QA', 'provider_type' => 'barang', 'is_active' => true, 'created_by' => $actor->id, 'updated_by' => $actor->id]);
-        Cbe::create(['request_id' => $request->id, 'number' => 'INV/PG/CBE', 'date' => today(), 'status' => 'final', 'prepared_by' => $actor->id, 'selected_vendor_id' => $vendor->id]);
+        $cbe = Cbe::create(['request_id' => $request->id, 'number' => 'INV/PG/CBE', 'date' => today(), 'status' => 'final', 'prepared_by' => $actor->id, 'selected_vendor_id' => $vendor->id]);
+        PurchaseOrder::create(['request_id' => $request->id, 'cbe_id' => $cbe->id, 'company' => 'KPMOG',
+            'number' => 'INV/PG/PO', 'number_key' => 'inv/pg/po', 'issued_at' => today(), 'delivery_terms' => 'Kantor HO',
+            'delivery_time' => '7 hari', 'payment_terms' => 'Setelah diterima', 'created_by' => $actor->id, 'updated_by' => $actor->id,
+            'snapshot' => ['lines' => [['name' => $line->name, 'quantity_milli' => $line->quantity_milli, 'unit' => $line->unit]]]]);
         $warehouse = app(Warehouses::class)->forContext('KPMOG', 'HO', null);
         $data = ['token' => (string) Str::uuid(), 'warehouse_id' => $warehouse->id, 'received_on' => today()->toDateString(), 'reference' => 'SJ-QA',
             'lines' => [['request_item_id' => $line->id, 'inventory_item_id' => $item->id, 'quantity' => '4']]];
@@ -155,6 +161,36 @@ class ScmConcurrencyTest extends TestCase
         $this->assertSame($results[0]['id'], $results[1]['id']);
         $this->assertSame(5000, (int) InventoryBalance::sum('quantity_milli'));
         $this->assertSame(2, InventoryReceipt::count());
+    }
+
+    public function test_service_receipts_serialize_partial_quantities_and_duplicate_submissions(): void
+    {
+        $actor = User::factory()->create(['is_admin' => true]);
+        $department = Department::create(['code' => 'SR-PG', 'name' => 'Penerimaan jasa PostgreSQL QA']);
+        $request = Procurement::create(['number' => 'SR-PG-01', 'kind' => 'SR', 'company' => 'KPMOG', 'need_type' => 'HO', 'date' => today(),
+            'department_id' => $department->id, 'requester_id' => $actor->id, 'title' => 'Servis AC', 'reason' => 'QA', 'status' => 'completed']);
+        $vendor = Vendor::create(['code' => 'SR-PG', 'name' => 'Vendor QA', 'provider_type' => 'jasa', 'created_by' => $actor->id, 'updated_by' => $actor->id]);
+        $cbe = Cbe::create(['request_id' => $request->id, 'number' => 'CBE-SR-PG', 'date' => today(), 'status' => 'final',
+            'prepared_by' => $actor->id, 'selected_vendor_id' => $vendor->id]);
+        $order = PurchaseOrder::create(['request_id' => $request->id, 'cbe_id' => $cbe->id, 'company' => 'KPMOG',
+            'number' => 'PO-SR-PG', 'number_key' => 'po-sr-pg', 'issued_at' => today(), 'delivery_terms' => 'Kantor HO',
+            'delivery_time' => '7 hari', 'payment_terms' => 'Setelah diterima', 'created_by' => $actor->id, 'updated_by' => $actor->id,
+            'snapshot' => ['lines' => [['name' => 'Servis AC', 'quantity_milli' => 5000, 'unit' => 'unit']]]]);
+        $job = ['mode' => 'service_receipt', 'actor_id' => $actor->id, 'order_id' => $order->id, 'data' => [
+            'token' => (string) Str::uuid(), 'received_on' => today()->toDateString(), 'reference' => 'BAST-PG', 'quantities' => [1 => '4'],
+        ]];
+
+        $first = $this->workers([...$job, 'different_tokens' => true]);
+        $this->assertEqualsCanonicalizing(['received', 'conflict'], array_column($first, 'result'));
+        $this->assertSame(4000, (int) ServiceReceiptLine::sum('quantity_milli'));
+
+        $job['data']['quantities'][1] = '1';
+        $replayed = $this->workers($job);
+        $this->assertSame(['received', 'received'], array_column($replayed, 'result'));
+        $this->assertSame($replayed[0]['id'], $replayed[1]['id']);
+        $this->assertSame(5000, (int) ServiceReceiptLine::sum('quantity_milli'));
+        $this->assertSame(2, $order->serviceReceipts()->count());
+        $this->assertSame(0, InventoryReceipt::count());
     }
 
     public function test_inventory_stock_cannot_be_overdrawn_by_simultaneous_issues(): void

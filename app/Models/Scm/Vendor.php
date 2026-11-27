@@ -11,6 +11,11 @@ class Vendor extends Record
         return ['is_active' => 'boolean'];
     }
 
+    public function supportsRequestKind(string $kind): bool
+    {
+        return in_array($this->provider_type, [$kind === 'PR' ? 'barang' : 'jasa', 'keduanya'], true);
+    }
+
     public function documents()
     {
         return $this->hasMany(VendorDocument::class);

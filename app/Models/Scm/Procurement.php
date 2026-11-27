@@ -28,6 +28,12 @@ class Procurement extends Record
         return $this->belongsTo(UserSignature::class, 'prepared_signature_id');
     }
 
+    public function hasPreparedSignature(): bool
+    {
+        return $this->prepared_signed_at !== null && $this->preparedSignature !== null
+            && ($this->kind !== 'SR' || $this->status !== 'draft' || (int) $this->preparedSignature->user_id === (int) $this->requester_id);
+    }
+
     public function approvals()
     {
         return $this->hasMany(RequestApproval::class, 'request_id')->orderBy('round')->orderBy('position');

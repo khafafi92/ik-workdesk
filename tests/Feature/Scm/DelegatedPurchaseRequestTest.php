@@ -10,6 +10,7 @@ use App\Models\Employee;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Scm\ApprovalPolicy;
+use App\Models\Scm\ApprovalRoute;
 use App\Models\Scm\Audit;
 use App\Models\Scm\Procurement;
 use App\Models\Scm\ProjectNumbering;
@@ -177,6 +178,72 @@ class DelegatedPurchaseRequestTest extends TestCase
         Livewire::actingAs($this->owner)->test(ServiceRequests::class)->call('newDraft', 'KPMOG')->assertSeeHtml('id="scm-draft-requester_id"');
         $sr = app(Workflow::class)->saveDraft($this->owner, $this->data(['kind' => 'SR']));
         $this->assertSame($this->requester->id, $sr->requester_id);
+    }
+
+    public function test_project_sr_can_select_and_save_requester_next_to_department(): void
+    {
+        $projectId = (string) ProjectNumbering::where('code', 'COMP-19E001')->sole()->id;
+        $page = Livewire::test(ServiceRequests::class)->call('chooseCompany')->set('newRequestNeedType', 'PROJECT')
+            ->set('newProjectNumberingId', $projectId)->call('newDraft', 'KPMOG');
+
+        $document = new \DOMDocument;
+        @$document->loadHTML($page->html());
+        $xpath = new \DOMXPath($document);
+        $this->assertSame(1, $xpath->query('//select[@id="scm-draft-requester_id"]')->length);
+        $this->assertSame(1, $xpath->query('//select[@id="scm-draft-requester_id"]/../following-sibling::div/select[@id="scm-draft-department_id"]')->length);
+
+        $page->set('draft.requester_id', (string) $this->requester->id)->assertSet('draft.department_id', $this->department->id)
+            ->set('draft.items.0.specification', 'Inspeksi pompa')->set('draft.items.0.unit', 'job')->call('saveDraft')->assertHasNoErrors();
+        $request = Procurement::sole();
+        $this->assertSame($this->requester->id, $request->requester_id);
+        $this->assertSame($this->owner->id, Audit::where('request_id', $request->id)->where('action', 'simpan_draft')->sole()->actor_id);
+
+        Livewire::actingAs($this->requester)->test(ServiceRequests::class)->call('open', $request->id)->call('editDraft')
+            ->assertDontSeeHtml('id="scm-draft-requester_id"')->set('draft.requester_id', $this->other->id)->assertForbidden();
+    }
+
+    #[DataProvider('needTypes')]
+    public function test_delegated_sr_uses_only_the_selected_requesters_signature(string $type): void
+    {
+        if ($type === 'PROJECT') {
+            $approver = $this->policy();
+        } else {
+            $approver = $this->other;
+            ApprovalRoute::create(['company' => 'KPMOG', 'department_id' => $this->department->id,
+                'acknowledger_id' => $this->requester->id, 'cbo_id' => $approver->id]);
+        }
+        $this->signature($this->owner);
+        $this->signature($this->requester);
+        $request = app(Workflow::class)->saveDraft($this->owner, $this->data(['kind' => 'SR', 'need_type' => $type]));
+
+        Livewire::test(ServiceRequests::class)->call('open', $request->id)->call('editDraft')
+            ->assertSee('Menunggu tanda tangan')->assertDontSeeHtml('wire:click="signPrepared"')->call('signPrepared')->assertForbidden();
+        $this->assertSame($request->version, $request->fresh()->version);
+        $this->assertNull($request->fresh()->prepared_signature_id);
+
+        $request->update(['prepared_signature_id' => app(Signatures::class)->current($this->owner)->id,
+            'prepared_signed_name' => $this->owner->name, 'prepared_signed_at' => now()]);
+        Livewire::test(ServiceRequests::class)->call('open', $request->id)
+            ->assertSee($this->requester->name.' perlu masuk dengan akunnya untuk menandatangani Requested by.')
+            ->assertDontSeeHtml('alt="Tanda tangan '.$this->owner->name.'"')->assertDontSeeHtml('wire:click="submitRequest"')
+            ->call('submitRequest')->assertHasErrors('scm');
+        $this->get(route('scm.signature-prepared', $request))->assertNotFound();
+
+        Livewire::actingAs($this->requester)->test(ServiceRequests::class)->call('open', $request->id)
+            ->assertSeeHtml('wire:click="signPrepared"')->call('signPrepared')->assertHasNoErrors()
+            ->assertSeeHtml('alt="Tanda tangan '.$this->requester->name.'"');
+        $this->assertSame($this->requester->id, $request->fresh()->preparedSignature->user_id);
+        $this->get(route('scm.signature-prepared', $request))->assertOk();
+
+        Livewire::actingAs($this->owner)->test(ServiceRequests::class)->call('open', $request->id)
+            ->assertDontSee('Menunggu tanda tangan')->assertSeeHtml('wire:click="submitRequest"')->call('submitRequest')->assertHasNoErrors();
+        $request->refresh();
+        $this->assertSame('approval', $request->status);
+        $requested = $request->approvals->firstWhere('role', 'requested');
+        $this->assertSame($this->requester->id, $requested->user_id);
+        $this->assertSame($this->requester->name, $requested->signed_name);
+        $this->assertSame($approver->id, $request->approvals->firstWhere('role', 'approved')->user_id);
+        $this->assertSame($this->requester->id, Audit::where('request_id', $request->id)->where('action', 'tanda_tangan_prepared')->sole()->actor_id);
     }
 
     public function test_owner_can_assign_a_department_outside_the_requester_access(): void

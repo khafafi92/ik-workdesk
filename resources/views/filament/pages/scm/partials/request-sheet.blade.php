@@ -1,3 +1,6 @@
+@php
+    $showPreparedSignature = !$sheetEditing && $record?->hasPreparedSignature();
+@endphp
 @if(($sheetEditing ? ($draft['need_type'] ?? 'HO') : ($record->need_type ?? 'HO')) === 'PROJECT')
     @include('filament.pages.scm.partials.project-request-sheet')
 @else
@@ -88,15 +91,17 @@
             @php($sheetStep = $sheetApprovals->get(array_keys(\App\Services\Scm\Approvals::LABELS)[$signatureIndex] ?? ''))
             <div class="scm-sheet-signature"><div>{{ $signatureLabel }}</div><div class="scm-sheet-signature-space">
                 @if($signatureIndex === 0)
-                    @if(!$sheetEditing && $record?->prepared_signed_at)
+                    @if($showPreparedSignature)
                         <img src="{{ route('scm.signature-prepared', $record) }}" alt="Tanda tangan {{ $record->prepared_signed_name }}" width="180" height="60">
-                    @elseif(($canSignPrepared ?? $canRequest) && ($sheetEditing || ($record?->status === 'draft' && (($isSuperuser ?? false) || (int) $record->requester_id === (int) auth()->id()))))
+                    @elseif($canSignPrepared ?? false)
                         <button type="button" wire:click="signPrepared" wire:loading.attr="disabled" wire:target="signPrepared,saveDraft">{{ $preparedSignatureLabel ?? 'Tanda tangani' }}</button>
+                    @elseif($waitingForRequestedSignature ?? false)
+                        <span>Menunggu tanda tangan</span>
                     @endif
                 @elseif($sheetStep?->status === 'signed')
                     <img src="{{ route('scm.signature-approval', $sheetStep) }}" alt="Tanda tangan {{ $sheetStep->signed_name }} sebagai {{ $signatureLabel }}" width="180" height="60">
                 @endif
-            </div><div>{{ $signatureIndex === 0 ? ($record?->prepared_signed_name ?? $sheetRequestor) : (in_array($signatureIndex, [1, 2], true) && $sheetStep?->status !== 'signed' ? '' : ($sheetStep?->signed_name ?? $sheetStep?->user?->name ?? '')) }}</div></div>
+            </div><div>{{ $signatureIndex === 0 ? ($showPreparedSignature ? $record->prepared_signed_name : $sheetRequestor) : (in_array($signatureIndex, [1, 2], true) && $sheetStep?->status !== 'signed' ? '' : ($sheetStep?->signed_name ?? $sheetStep?->user?->name ?? '')) }}</div></div>
             @endforeach
         </div>
         <table class="scm-sheet-receipt"><caption>Date of request received:</caption><tbody>@for($revision = 0; $revision < 4; $revision++)<tr><th scope="row">Rev. {{ $revision }}</th><td>{{ $revision === 0 ? $record?->received_at?->format('d/m/Y H:i') : '' }}</td></tr>@endfor</tbody></table>
@@ -105,9 +110,9 @@
 @if($canRequest && ($sheetEditing || $record?->status === 'draft'))
     @if($canSignPrepared ?? true)
     <p class="scm-help">Tanda tangani Requested by sebelum mengajukan persetujuan. <a href="{{ \App\Filament\Pages\SignatureProfile::getUrl() }}" target="_blank" rel="noopener">Atur TTD di profil (tab baru)</a>. Setelah isi draft diedit, tanda tangani kembali.</p>
-    @else
-    <p class="scm-help">Pemohon {{ $sheetRequestor }} perlu masuk melalui akunnya sendiri untuk menandatangani Requested by dan mengajukan persetujuan.</p>
+    @elseif($waitingForRequestedSignature ?? false)
+    <p class="scm-help">{{ $sheetRequestor }} perlu masuk dengan akunnya untuk menandatangani Requested by.</p>
     @endif
 @endif
-@if(!$sheetEditing && $record?->prepared_signed_at)<p class="scm-help">{{ $sheetHo ? 'Requested by' : 'Prepared by' }}: {{ $record->prepared_signed_name }}, ditandatangani {{ $record->prepared_signed_at->format('d/m/Y H:i') }}.</p>@endif
+@if($showPreparedSignature)<p class="scm-help">{{ $sheetHo ? 'Requested by' : 'Prepared by' }}: {{ $record->prepared_signed_name }}, ditandatangani {{ $record->prepared_signed_at->format('d/m/Y H:i') }}.</p>@endif
 @endif

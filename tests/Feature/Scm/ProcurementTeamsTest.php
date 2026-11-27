@@ -152,7 +152,8 @@ class ProcurementTeamsTest extends TestCase
         AtkItem::create(['code' => 'INV-QA', 'name' => 'Barang inventori pengujian', 'unit' => 'PCS', 'current_stock' => 7]);
         Livewire::actingAs($manager)->test(Inventory::class)->assertSee('Barang inventori pengujian')->call('switchDataset', 'requests')
             ->assertSee($mine->number)->assertSee($other->number)->set('companyFilter', 'KPMOG')->set('needTypeFilter', 'PROJECT')
-            ->assertSee($other->number)->assertDontSee($mine->number)->set('search', 'tidak-ada-nomor')->assertSee('Belum ada PR/SR sesuai filter');
+            ->assertSee($other->number)->assertDontSee($mine->number)->set('search', 'tidak-ada-nomor')
+            ->assertSee(__('No PR/SR according to your filter and access yet. Change filters or make requests via the PR/SR menu.'));
     }
 
     public function test_user_management_exposes_scoped_team_access_and_legacy_access_stays_compatible(): void

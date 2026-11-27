@@ -7,7 +7,11 @@
         <div class="scm-project-sr-requested">
             @include('filament.pages.scm.partials.project-signature', ['projectRole' => 'requested', 'projectLabel' => 'Requested by:', 'showSignatureDate' => false])
             <div class="scm-project-sr-department">
-                @if($sheetEditing)<x-scm.select model="draft.department_id" label="Department:" :options="$departments" :live="true" required />
+                @if($sheetEditing)
+                    @if($canChooseRequester ?? false)
+                        @include('filament.pages.scm.partials.requestor-field')
+                    @endif
+                    <x-scm.select model="draft.department_id" label="Department:" :options="$departments" :live="true" required />
                 @else<dl><dt>Department:</dt><dd>{{ $record->department->name }}</dd></dl>@endif
             </div>
         </div>

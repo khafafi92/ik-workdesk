@@ -98,6 +98,9 @@ class PurchaseOrders
                 if ($order && InventoryReceipt::where('purchase_order_id', $order->id)->exists()) {
                     throw ValidationException::withMessages(['scm' => 'PO tidak dapat diubah setelah penerimaan barang tercatat.']);
                 }
+                if ($order && $request->kind === 'SR' && $order->serviceReceipts()->exists()) {
+                    throw ValidationException::withMessages(['scm' => 'PO tidak dapat diubah setelah penerimaan jasa tercatat.']);
+                }
                 $snapshot = $order?->snapshot ?? $this->snapshot($cbe);
                 if ($request->finance_budget_line_id) {
                     $budgetLine = FinanceBudgetLine::with('scope.budget')->lockForUpdate()->findOrFail($request->finance_budget_line_id);

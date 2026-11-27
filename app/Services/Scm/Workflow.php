@@ -21,6 +21,7 @@ use App\Services\Scm\Validation as Validator;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -197,8 +198,7 @@ class Workflow
         return $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
             abort_unless($actor->isSystemAdministrator() || (Access::has($actor, 'scm.request') && (int) $request->requester_id === (int) $actor->id), 403);
             $this->reject($request->status !== 'draft' || ! $request->items()->exists(), 'Permintaan harus berupa draft dengan minimal satu item.');
-            $this->reject(! $request->prepared_signed_at || ! $request->prepared_signature_id
-                || ! $request->preparedSignature || ! Storage::disk('scm')->exists($request->preparedSignature->path),
+            $this->reject(! $request->hasPreparedSignature() || ! Storage::disk('scm')->exists($request->preparedSignature->path),
                 'Tanda tangani bagian Requested by sebelum mengajukan persetujuan.');
             app(Approvals::class)->start($actor, $request);
         }, false);
@@ -258,7 +258,10 @@ class Workflow
         return $this->mutate($actor, $id, $version, function ($request) use ($actor, $data): void {
             $this->reject(! in_array($request->status, ['sourcing', 'quotations', 'evaluation']), 'Kandidat hanya dapat ditambah sebelum CBE final.');
             $vendor = Vendor::findOrFail($data['vendor_id']);
-            $this->reject(! $vendor->is_active || ! in_array($vendor->provider_type, [$request->kind === 'PR' ? 'barang' : 'jasa', 'keduanya']), 'Vendor tidak aktif atau jenis penyedianya tidak sesuai permintaan.');
+            $this->reject(! $vendor->is_active, 'Vendor ini sudah tidak aktif. Pilih vendor aktif dari Master Vendor.');
+            $this->reject(! $vendor->supportsRequestKind($request->kind), $request->kind === 'SR'
+                ? 'Untuk SR, pilih vendor dengan jenis penyedia Jasa atau Barang dan jasa.'
+                : 'Untuk PR, pilih vendor dengan jenis penyedia Barang atau Barang dan jasa.');
             $this->reject($request->candidates()->where('vendor_id', $vendor->id)->exists(), 'Vendor sudah menjadi kandidat.');
             $company = VendorIdentity::companyKey($vendor->name);
             $this->reject($request->candidates()->with('vendor')->get()->contains(fn ($candidate) => VendorIdentity::companyKey($candidate->vendor->name) === $company),
@@ -271,7 +274,7 @@ class Workflow
         });
     }
 
-    public function saveQuotation(User $actor, int $id, int $version, array $data): Procurement
+    public function saveQuotation(User $actor, int $id, int $version, array $data, ?UploadedFile $file = null): Procurement
     {
         $data = Validator::make($data, ['candidate_id' => 'required|integer', 'number' => 'required|string|max:255', 'date' => 'required|date',
             'valid_until' => 'nullable|date|after_or_equal:date', 'currency' => ['required', Rule::in(config('scm.currencies'))],
@@ -280,7 +283,8 @@ class Workflow
             'lines.*.description' => 'required|string|max:10000', 'lines.*.quantity' => 'required', 'lines.*.unit' => 'required|string|max:50',
             'lines.*.price' => 'required', 'lines.*.discount' => 'required', 'lines.*.tax' => 'required'])->validate();
 
-        return $this->mutate($actor, $id, $version, function ($request) use ($actor, $data): void {
+        $storedFile = null;
+        $save = function ($request) use ($actor, $data, $file, &$storedFile): void {
             $this->reject(! in_array($request->status, ['sourcing', 'quotations', 'evaluation']), 'Penawaran terkunci setelah CBE final.');
             $candidate = $request->candidates()->findOrFail($data['candidate_id']);
             $extra = Decimal::parse($data['extra']);
@@ -304,9 +308,23 @@ class Workflow
             $quote = Quotation::create([...$header, 'version' => ($candidate->quotations()->max('version') ?? 0) + 1,
                 'extra_minor' => $extra, 'total_minor' => $total, 'created_by' => $actor->id]);
             $quote->lines()->createMany($lines);
+            if ($file) {
+                $storedFile ??= $this->storeFileData($actor, $file);
+                $attachment = $quote->attachments()->create($storedFile);
+                $this->audit($actor, $attachment, 'unggah_lampiran', ['mime' => $attachment->mime, 'size' => $attachment->size], $request->id);
+            }
             $candidate->update(['followup_status' => 'diterima']);
             $this->audit($actor, $quote, 'versi_penawaran', ['version' => $quote->version, 'total_minor' => $total, 'currency' => $quote->currency], $request->id);
-        });
+        };
+
+        try {
+            return $this->mutate($actor, $id, $version, $save);
+        } catch (\Throwable $e) {
+            if ($storedFile !== null) {
+                Storage::disk('scm')->delete($storedFile['path']);
+            }
+            throw $e;
+        }
     }
 
     public function saveCbe(User $actor, int $id, int $version, array $data, bool $finalize = false): Procurement
@@ -385,49 +403,99 @@ class Workflow
         $request = $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
             $this->reject($request->status !== 'selected' || $request->cbe?->status !== 'final', 'Legalitas hanya dapat dimulai dari CBE final.');
             $this->reject(! app(CbeApprovals::class)->complete($request->cbe), 'Persetujuan CBE belum lengkap. Tunggu penandatangan yang masih memiliki tahap wajib sebelum memulai legalitas.');
-            $case = LegalCase::create(['request_id' => $request->id, 'cbe_id' => $request->cbe->id, 'vendor_id' => $request->cbe->selected_vendor_id,
-                'scm_pic_id' => $actor->id, 'requested_at' => now()]);
-            $registration = VendorRegistration::where('vendor_id', $case->vendor_id)->where('status', 'accepted')->latest('id')->first();
-            if ($registration && isset($registration->answers[1]['company_origin'])) {
-                $definitions = VendorForm::requestedDocuments($registration->answers, $registration->context);
-                $types = DocumentType::whereIn('code', array_keys($definitions))->where('is_active', true)->get();
-                $this->reject($types->count() !== count($definitions), 'Jenis dokumen Form 005 belum lengkap atau nonaktif. Lengkapi master dokumen sebelum memulai legalitas.');
-                foreach ($types as $type) {
-                    $case->items()->create(['document_type_id' => $type->id, 'document_name' => VendorForm::documentLabel($type->code, $registration->answers),
-                        'has_expiry' => $type->has_expiry, 'is_required' => VendorForm::required($type->code, $registration->answers, $registration->context), 'status' => 'belum_diminta']);
-                }
-                $basis = VendorForm::basis($registration->answers);
-                $case->update(['document_basis' => $basis === 'npwp_ktp' ? 'npwp_ktp' : (VendorForm::origin($registration->answers) === 'foreign' ? 'foreign_company' : 'indonesia_company'),
-                    'document_basis_snapshot' => ['source' => 'form005', 'registration_id' => $registration->id,
-                        'required' => $types->filter(fn ($type) => VendorForm::required($type->code, $registration->answers, $registration->context))->pluck('id')->values()->all(),
-                        'company_origin' => VendorForm::origin($registration->answers), 'codes' => array_keys($definitions), 'substituted' => []]]);
-            }
-            $nationalCodes = [...VendorForm::INDONESIA_LEGAL, ...VendorForm::ADDITIONAL_DOCUMENTS, 'NIB', 'SBU'];
-            foreach (Requirement::with('documentType')->where('category_id', $request->category_id)->get() as $requirement) {
-                if (! $requirement->documentType->is_active) {
-                    continue;
-                }
-                $required = $requirement->is_required;
-                if (in_array($case->document_basis, ['foreign_company', 'npwp_ktp'], true)
-                    && in_array($requirement->documentType->code, $nationalCodes, true)) {
-                    $required = false;
-                }
-                $existing = $case->items()->where('document_type_id', $requirement->document_type_id)->first();
-                if ($existing) {
-                    if ($required && ! $existing->is_required) {
-                        $existing->update(['is_required' => true]);
-                    }
-
-                    continue;
-                }
-                $case->items()->create(['document_type_id' => $requirement->document_type_id, 'document_name' => $requirement->documentType->name,
-                    'has_expiry' => $requirement->documentType->has_expiry, 'is_required' => $required, 'status' => 'belum_diminta']);
-            }
+            $this->createLegalCase($actor, $request, $this->legalChecklist($request));
             $request->status = 'legal';
-            $this->audit($actor, $case, 'snapshot_persyaratan', ['items' => $case->items->toArray()], $request->id);
         });
 
         return $this->reuseVendorDocuments($actor, $request->id, $request->version);
+    }
+
+    public function completeLegalFromMaster(User $actor, int $id): Procurement
+    {
+        return DB::transaction(function () use ($actor, $id): Procurement {
+            $request = Procurement::lockForUpdate()->findOrFail($id);
+            $cbe = $request->cbe;
+            abort_unless(Access::manages($actor, $request) || ($cbe && $actor->isActiveForAccess()
+                && $cbe->approvals()->where('role', 'approved')->where('status', 'signed')->where('user_id', $actor->id)->exists()), 403);
+            if ($request->status !== 'selected' || ! $cbe?->selected_vendor_id || ! app(PurchaseOrders::class)->approved($cbe)) {
+                return $request;
+            }
+            if ($request->legalCase()->exists()) {
+                return $request;
+            }
+            try {
+                $checklist = $this->legalChecklist($request);
+            } catch (ValidationException) {
+                return $request;
+            }
+            $required = $checklist['items']->where('is_required', true);
+            $basis = $checklist['basis'];
+            if ($required->isEmpty() || (($basis['document_basis'] ?? null) === 'npwp_ktp' && count($basis['document_basis_snapshot']['required']) !== 2)) {
+                return $request;
+            }
+            $documents = $this->reusableVendorDocuments($cbe->selected_vendor_id, $checklist['items']->pluck('document_type_id'));
+            if ($required->contains(fn ($item) => ! $documents->has($item['document_type_id']))) {
+                return $request;
+            }
+
+            $case = $this->createLegalCase($actor, $request, $checklist, $request->scm_pic_id ?? $cbe->prepared_by);
+            $this->applyVendorDocuments($actor, $request, $case, $case->items, $documents);
+            $this->markLegalComplete($actor, $request, $case);
+            $request->version++;
+            $request->save();
+
+            return $request->fresh();
+        }, 3);
+    }
+
+    private function legalChecklist(Procurement $request): array
+    {
+        $items = collect();
+        $basis = [];
+        $registration = VendorRegistration::where('vendor_id', $request->cbe->selected_vendor_id)->where('status', 'accepted')
+            ->where(fn ($query) => $query->whereNull('context->document_profile')->orWhere('company', $request->company))
+            ->when($request->company === 'APCA', fn ($query) => $query->orderByRaw('case when company = ? then 0 else 1 end', [$request->company]))
+            ->latest('id')->first();
+        if ($registration && isset($registration->answers[1]['company_origin'])) {
+            $definitions = VendorForm::requestedDocuments($registration->answers, $registration->context);
+            $source = ApcaVendorChecklist::applies($registration->context) ? ApcaVendorChecklist::PROFILE : 'form005';
+            $types = DocumentType::whereIn('code', array_keys($definitions))->where('is_active', true)->get();
+            $this->reject($types->count() !== count($definitions), 'Jenis dokumen '.($source === 'form005' ? 'Form 005' : 'Registrasi Vendor APCA').' belum lengkap atau nonaktif. Lengkapi master dokumen sebelum memulai legalitas.');
+            foreach ($types as $type) {
+                $items->put($type->id, ['document_type_id' => $type->id, 'document_name' => VendorForm::documentLabel($type->code, $registration->answers, $registration->context),
+                    'has_expiry' => $type->has_expiry, 'is_required' => VendorForm::required($type->code, $registration->answers, $registration->context), 'status' => 'belum_diminta']);
+            }
+            $origin = VendorForm::origin($registration->answers);
+            $basis = ['document_basis' => VendorForm::basis($registration->answers) === 'npwp_ktp' ? 'npwp_ktp' : ($origin === 'foreign' ? 'foreign_company' : 'indonesia_company'),
+                'document_basis_snapshot' => ['source' => $source, 'registration_id' => $registration->id,
+                    'required' => $items->where('is_required', true)->pluck('document_type_id')->all(),
+                    'company_origin' => $origin, 'codes' => array_keys($definitions), 'substituted' => []]];
+        }
+        $nationalCodes = [...VendorForm::INDONESIA_LEGAL, ...VendorForm::ADDITIONAL_DOCUMENTS, 'NIB', 'SBU'];
+        foreach (Requirement::with('documentType')->where('category_id', $request->category_id)->get() as $requirement) {
+            $type = $requirement->documentType;
+            if (! $type->is_active) {
+                continue;
+            }
+            $required = $requirement->is_required && (! in_array($basis['document_basis'] ?? null, ['foreign_company', 'npwp_ktp'], true)
+                || ! in_array($type->code, $nationalCodes, true));
+            $item = $items->get($type->id, ['document_type_id' => $type->id, 'document_name' => $type->name,
+                'has_expiry' => $type->has_expiry, 'is_required' => false, 'status' => 'belum_diminta']);
+            $item['is_required'] = $item['is_required'] || $required;
+            $items->put($type->id, $item);
+        }
+
+        return ['basis' => $basis, 'items' => $items];
+    }
+
+    private function createLegalCase(User $actor, Procurement $request, array $checklist, ?int $picId = null): LegalCase
+    {
+        $case = LegalCase::create(['request_id' => $request->id, 'cbe_id' => $request->cbe->id, 'vendor_id' => $request->cbe->selected_vendor_id,
+            'scm_pic_id' => $picId ?? $actor->id, 'requested_at' => now(), ...$checklist['basis']]);
+        $case->items()->createMany($checklist['items']);
+        $this->audit($actor, $case, 'snapshot_persyaratan', ['items' => $case->items->toArray()], $request->id);
+
+        return $case;
     }
 
     public function reuseVendorDocuments(User $actor, int $id, int $version): Procurement
@@ -441,26 +509,9 @@ class Workflow
                 return $request;
             }
             $items = $case->items()->with('document.attachments')->lockForUpdate()->get();
-            $documents = VendorDocument::with('attachments')->where('vendor_id', $case->vendor_id)
-                ->whereIn('document_type_id', $items->pluck('document_type_id'))->orderByDesc('version')->orderByDesc('id')->get()
-                ->unique('document_type_id')->keyBy('document_type_id');
-            $reused = [];
-            foreach ($items as $item) {
-                if (! in_array($item->status, ['belum_diminta', 'diminta'], true) || $item->vendor_document_id) {
-                    continue;
-                }
-                $document = $documents->get($item->document_type_id);
-                if (! $document || ($document->expires_at && $document->expires_at->lt(today())) || $document->attachments->isEmpty()
-                    || $document->attachments->contains(fn ($file) => ! Storage::disk('scm')->exists($file->path))) {
-                    continue;
-                }
-                $item->update(['vendor_document_id' => $document->id, 'status' => 'diterima', 'requested_at' => now(), 'received_at' => now()]);
-                $item->setRelation('document', $document);
-                $reused[$item->id] = $document->id;
-            }
-            if ($reused) {
+            $documents = $this->reusableVendorDocuments($case->vendor_id, $items->pluck('document_type_id'));
+            if ($this->applyVendorDocuments($actor, $request, $case, $items, $documents)) {
                 $request->increment('version');
-                $this->audit($actor, $case, 'gunakan_dokumen_vendor', ['documents' => $reused], $request->id);
             }
             $required = $items->where('is_required', true);
             $basis = $case->document_basis === 'npwp_ktp' ? ($case->document_basis_snapshot ?? []) : null;
@@ -479,6 +530,34 @@ class Workflow
 
             return $ready ? $this->complete($actor, $request->id, $request->version) : $request->fresh();
         }, 3);
+    }
+
+    private function reusableVendorDocuments(int $vendorId, Collection $typeIds): Collection
+    {
+        return VendorDocument::with('attachments')->where('vendor_id', $vendorId)->whereIn('document_type_id', $typeIds)
+            ->orderByDesc('version')->orderByDesc('id')->get()->unique('document_type_id')
+            ->filter(fn ($document) => (! $document->expires_at || ! $document->expires_at->lt(today())) && $document->attachments->isNotEmpty()
+                && $document->attachments->every(fn ($file) => Storage::disk('scm')->exists($file->path)))
+            ->keyBy('document_type_id');
+    }
+
+    private function applyVendorDocuments(User $actor, Procurement $request, LegalCase $case, Collection $items, Collection $documents): bool
+    {
+        $reused = [];
+        foreach ($items as $item) {
+            $document = $documents->get($item->document_type_id);
+            if (! $document || ! in_array($item->status, ['belum_diminta', 'diminta'], true) || $item->vendor_document_id) {
+                continue;
+            }
+            $item->update(['vendor_document_id' => $document->id, 'status' => 'diterima', 'requested_at' => now(), 'received_at' => now()]);
+            $item->setRelation('document', $document);
+            $reused[$item->id] = $document->id;
+        }
+        if ($reused) {
+            $this->audit($actor, $case, 'gunakan_dokumen_vendor', ['documents' => $reused], $request->id);
+        }
+
+        return $reused !== [];
     }
 
     public function useAlternativeDocuments(User $actor, int $id, int $version, string $reason): Procurement
@@ -557,32 +636,37 @@ class Workflow
     {
         return $this->mutate($actor, $id, $version, function ($request) use ($actor): void {
             $this->reject($request->status !== 'legal', 'Penyelesaian hanya dari tahap pengumpulan legalitas.');
-            $items = $request->legalCase->items()->with('document.attachments')->get();
-            $basis = $request->legalCase->document_basis === 'npwp_ktp' ? ($request->legalCase->document_basis_snapshot ?? []) : null;
-            if ($basis !== null) {
-                $required = array_unique($basis['required'] ?? []);
-                $this->reject(count($required) !== 2 || $items->whereIn('document_type_id', $required)->where('is_required', true)->count() !== 2, 'NPWP dan KTP wajib ada pada checklist pengganti SBU/NIB.');
-            }
-            foreach ($items as $item) {
-                if ($basis !== null && ! $item->is_required && in_array($item->document_type_id, $basis['substituted'] ?? [], true)) {
-                    continue;
-                }
-                $this->reject($item->status === 'perlu_perbaikan', $item->document_name.' masih perlu perbaikan.');
-                if (! $item->is_required) {
-                    continue;
-                }
-                $doc = $item->document;
-                $this->reject($item->status !== 'diterima' || ! $doc || $doc->attachments->isEmpty(), $item->document_name.' wajib diterima beserta file.');
-                $this->reject($doc->expires_at && $doc->expires_at->lt(today()), $item->document_name.' sudah kedaluwarsa.');
-                foreach ($doc->attachments as $file) {
-                    $this->reject(! Storage::disk('scm')->exists($file->path), $item->document_name.' tidak memiliki file yang dapat dibaca.');
-                }
-            }
-            $request->status = 'completed';
-            $request->completed_at = now();
-            $request->legalCase->update(['completed_at' => now()]);
-            $this->audit($actor, $request, 'selesai', ['status' => 'completed'], $request->id);
+            $this->markLegalComplete($actor, $request, $request->legalCase);
         });
+    }
+
+    private function markLegalComplete(User $actor, Procurement $request, LegalCase $case): void
+    {
+        $items = $case->items()->with('document.attachments')->get();
+        $basis = $case->document_basis === 'npwp_ktp' ? ($case->document_basis_snapshot ?? []) : null;
+        if ($basis !== null) {
+            $required = array_unique($basis['required'] ?? []);
+            $this->reject(count($required) !== 2 || $items->whereIn('document_type_id', $required)->where('is_required', true)->count() !== 2, 'NPWP dan KTP wajib ada pada checklist pengganti SBU/NIB.');
+        }
+        foreach ($items as $item) {
+            if ($basis !== null && ! $item->is_required && in_array($item->document_type_id, $basis['substituted'] ?? [], true)) {
+                continue;
+            }
+            $this->reject($item->status === 'perlu_perbaikan', $item->document_name.' masih perlu perbaikan.');
+            if (! $item->is_required) {
+                continue;
+            }
+            $doc = $item->document;
+            $this->reject($item->status !== 'diterima' || ! $doc || $doc->attachments->isEmpty(), $item->document_name.' wajib diterima beserta file.');
+            $this->reject($doc->expires_at && $doc->expires_at->lt(today()), $item->document_name.' sudah kedaluwarsa.');
+            foreach ($doc->attachments as $file) {
+                $this->reject(! Storage::disk('scm')->exists($file->path), $item->document_name.' tidak memiliki file yang dapat dibaca.');
+            }
+        }
+        $request->status = 'completed';
+        $request->completed_at = now();
+        $case->update(['completed_at' => now()]);
+        $this->audit($actor, $request, 'selesai', ['status' => 'completed'], $request->id);
     }
 
     public function saveDocument(User $actor, array $data, UploadedFile $file): VendorDocument
@@ -635,6 +719,17 @@ class Workflow
 
     private function storeFile(User $actor, UploadedFile $file, array $links): Attachment
     {
+        $storedFile = $this->storeFileData($actor, $file);
+        try {
+            return Attachment::create([...$links, ...$storedFile]);
+        } catch (\Throwable $e) {
+            Storage::disk('scm')->delete($storedFile['path']);
+            throw $e;
+        }
+    }
+
+    private function storeFileData(User $actor, UploadedFile $file): array
+    {
         Validator::make(['file' => $file], ['file' => 'required|file|max:'.config('scm.upload_max_kb').'|mimes:pdf,jpg,jpeg,png|mimetypes:application/pdf,image/jpeg,image/png'])->validate();
         $extension = strtolower($file->getClientOriginalExtension());
         $mime = $file->getMimeType();
@@ -646,14 +741,11 @@ class Workflow
             default => false,
         };
         $this->reject(! $valid, 'File harus PDF/JPG/PNG dengan ekstensi, MIME, dan signature yang sesuai.');
+        $originalName = mb_substr(preg_replace('/[\x00-\x1F\x7F]/', '', basename(str_replace('\\', '/', $file->getClientOriginalName()))) ?: 'dokumen.'.$extension, 0, 255);
+        $size = $file->getSize();
         $path = $file->storeAs(now()->format('Y/m'), Str::uuid().'.'.$extension, 'scm');
         $this->reject(! $path, 'File gagal disimpan. Silakan coba kembali.');
-        try {
-            return Attachment::create([...$links, 'path' => $path, 'original_name' => mb_substr(preg_replace('/[\x00-\x1F\x7F]/', '', basename(str_replace('\\', '/', $file->getClientOriginalName()))) ?: 'dokumen.'.$extension, 0, 255),
-                'mime' => $mime, 'size' => $file->getSize(), 'uploaded_by' => $actor->id]);
-        } catch (\Throwable $e) {
-            Storage::disk('scm')->delete($path);
-            throw $e;
-        }
+
+        return ['path' => $path, 'original_name' => $originalName, 'mime' => $mime, 'size' => $size, 'uploaded_by' => $actor->id];
     }
 }

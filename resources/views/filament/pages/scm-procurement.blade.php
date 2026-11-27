@@ -62,7 +62,7 @@
         @elseif($editing)
         <form class="scm-sheet-editor" wire:submit="saveDraft">
             <p>Perusahaan: <strong>{{ $draft['company'] ?? 'APCA' }}</strong>. Untuk perusahaan lain, kembali ke daftar dan buat {{ $requestKind }} baru.</p>
-            @if($canChooseRequester)<p class="scm-help">Superuser dapat memilih Requestor dan seluruh departemen. Jika menandatangani atau mengajukan atas nama pemohon, akun pelaksana tetap tercatat pada riwayat.</p>@endif
+            @if($canChooseRequester && $requestKind === 'PR')<p class="scm-help">Superuser dapat memilih Requestor dan seluruh departemen. Jika menandatangani atau mengajukan atas nama pemohon, akun pelaksana tetap tercatat pada riwayat.</p>@endif
             @include('filament.pages.scm.partials.request-routing', ['routingEditing' => true])
             <fieldset class="scm-sheet-inputs" wire:loading.attr="disabled" wire:target="saveDraft,signPrepared"><legend class="scm-sheet-sr">Form {{ $requestKind }}</legend>
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => true])
@@ -110,8 +110,7 @@
                                 @if($submissionPlan['supervisor'])<p>Persetujuan pertama ditugaskan kepada SPV {{ $submissionPlan['supervisor']->name }}.</p>@endif
                                 <p>Setelah diajukan, Acknowledged by ditugaskan kepada {{ $submissionPlan['acknowledger']->name }}, lalu dilanjutkan ke CBO {{ $submissionPlan['cbo']->name }}{{ $submissionPlan['coo'] ? ' dan COO '.$submissionPlan['coo']->name : '' }}.</p>
                             @endif
-                            @if($canSignPrepared)<p>{{ $record->prepared_signed_at ? 'Tanda tangan pembuat sudah tersimpan. Klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').' untuk mengirim pengajuan.' : 'Tanda tangani Requested by, lalu klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').'.' }}</p>
-                            @else<p>Pemohon {{ $record->requester->name }} menandatangani Requested by dan mengajukan persetujuan melalui akunnya sendiri.</p>@endif
+                            @if($canSubmitRequest)<p>{{ $record->hasPreparedSignature() ? 'Tanda tangan pembuat sudah tersimpan. Klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').' untuk mengirim pengajuan.' : 'Tanda tangani Requested by, lalu klik Ajukan persetujuan '.($record->need_type === 'PROJECT' ? 'Project' : 'HO').'.' }}</p>@endif
                         @endif
                     </section>
                 @endif
@@ -119,7 +118,7 @@
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => false])
                 @include('filament.pages.scm.partials.approval-progress')
                 <div class="scm-actions">@if($canEditDraft)<button type="button" wire:click="editDraft">Edit draft</button>@endif
-                @if($canSignPrepared)<x-filament::button wire:click="submitRequest" wire:loading.attr="disabled" :disabled="filled($submissionIssue)">Ajukan persetujuan {{ $record->need_type === 'PROJECT' ? 'Project' : 'HO' }}</x-filament::button>@endif
+                @if($canSubmitRequest)<x-filament::button wire:click="submitRequest" wire:loading.attr="disabled" :disabled="filled($submissionIssue)">Ajukan persetujuan {{ $record->need_type === 'PROJECT' ? 'Project' : 'HO' }}</x-filament::button>@endif
                 </div>
                 @if($record->status === 'draft' && $submissionIssue)<p class="scm-help">Pengajuan belum dapat dikirim. Minta administrator melengkapi pemetaan atasan dan penandatangan yang ditampilkan di atas.</p>@endif
                 @if($canManage && $record->status === 'submitted')
@@ -127,27 +126,51 @@
                 @endif
                 <h3>Lampiran permintaan</h3>@forelse($record->attachments as $file)<p><a href="{{ route('scm.download', $file) }}">Unduh {{ $file->original_name }}</a></p>@empty<p>Belum ada lampiran permintaan.</p>@endforelse
                 @include('filament.pages.scm.partials.procurement-result')
+                @if ($record->kind === 'SR' && $record->purchaseOrder)
+                    <livewire:scm-service-receipts :order-id="$record->purchaseOrder->id" :key="'sr-receiving-'.$record->id" />
+                @elseif ($record->kind === 'SR' && $record->status === 'completed')
+                    <p class="scm-help">Penerimaan jasa tersedia setelah PO jasa disimpan.</p>
+                @endif
                 @if($canManage && $record->kind === 'PR' && $record->purchaseOrder)
                     <a href="{{ \App\Filament\Pages\Inventory::getUrl(['data'=>'requests','cari'=>$record->number]) }}">Lihat penerimaan barang di Inventori</a>
                 @endif
             @elseif($tab === 'quotes' && $canManage)
-                <h3>Kandidat vendor</h3><p>Bandingkan penawaran dari minimal tiga vendor. Pilih vendor yang sudah terdaftar atau tambahkan melalui Vendor & dokumen. Kandidat tercatat: <strong>{{ $record->candidates->count() }}</strong>.</p>
+                <h3>Kandidat vendor</h3><p>Bandingkan penawaran dari minimal tiga vendor. Kandidat tercatat: <strong>{{ $record->candidates->count() }}</strong>.</p>
                 @forelse($record->candidates as $c)<section class="scm-item" wire:key="candidate-{{ $c->id }}"><h4>{{ $c->vendor->name }}</h4><p>Tindak lanjut: {{ str_replace('_', ' ', $c->followup_status) }}. @if($c->requested_at)Diminta: {{ $c->requested_at }}.@endif</p>
                     @if(in_array($record->status, ['sourcing', 'quotations', 'evaluation']))<button type="button" wire:click="prepareQuotation({{ $c->id }})">{{ $c->quotations->isEmpty() ? 'Masukkan penawaran' : 'Buat revisi penawaran' }}</button>@endif
-                    @forelse($c->quotations as $q)<p>Versi {{ $q->version }} · {{ $q->number }} · {{ \App\Services\Scm\Decimal::money($q->total_minor, $q->currency) }}</p>@foreach($q->attachments as $file)<p><a href="{{ route('scm.download', $file) }}">Quotation: {{ $file->original_name }}</a></p>@endforeach @empty<p>Penawaran belum dicatat.</p>@endforelse
-                </section>@empty<p>Belum ada kandidat vendor. {{ $record->status === 'submitted' ? 'Terima permintaan oleh '.$processorLabel.' terlebih dahulu melalui tab Permintaan.' : 'Tambahkan kandidat melalui form berikut untuk mulai mencatat penawaran.' }}</p>@endforelse
+                    @forelse($c->quotations as $q)<p>Versi {{ $q->version }} · {{ $q->number }} · {{ \App\Services\Scm\Decimal::money($q->total_minor, $q->currency) }}</p>@foreach($q->attachments as $file)<p><a href="{{ route('scm.download', $file) }}">Dokumen penawaran: {{ $file->original_name }}</a></p>@endforeach @empty<p>Penawaran belum dicatat.</p>@endforelse
+                </section>@empty<p>Belum ada kandidat vendor. @if($record->status === 'submitted')Terima permintaan oleh {{ $processorLabel }} terlebih dahulu melalui tab Permintaan.@endif</p>@endforelse
                 @if(in_array($record->status, ['sourcing', 'quotations', 'evaluation']))
-                <form wire:submit="addCandidate" class="scm-item"><div class="scm-grid"><x-scm.select model="candidate.vendor_id" label="Vendor kandidat" :options="$candidateVendors->where('is_active', true)->pluck('name', 'id')" help="Perusahaan yang sudah menjadi kandidat tidak dapat ditambahkan lagi, meskipun kode vendornya berbeda." required /><x-scm.field model="candidate.requested_at" label="Tanggal diminta penawaran" type="date" /><x-scm.select model="candidate.followup_status" label="Tindak lanjut" :options="['belum_diminta'=>'Belum diminta','diminta'=>'Diminta','diterima'=>'Diterima','ditindaklanjuti'=>'Ditindaklanjuti']" required /></div><x-filament::button type="submit">Tambah kandidat</x-filament::button></form>
+                    @if($candidateVendors->isNotEmpty())
+                        <form wire:submit="addCandidate" class="scm-item">
+                            <div class="scm-grid">
+                                <x-scm.select model="candidate.vendor_id" label="Vendor kandidat" :options="$candidateVendors->pluck('name', 'id')" help="Setiap perusahaan hanya bisa ditambahkan sekali, meskipun kode vendornya berbeda." required />
+                                <x-scm.field model="candidate.requested_at" label="Tanggal diminta penawaran" type="date" />
+                                <x-scm.select model="candidate.followup_status" label="Tindak lanjut" :options="['belum_diminta'=>'Belum diminta','diminta'=>'Diminta','diterima'=>'Diterima','ditindaklanjuti'=>'Ditindaklanjuti']" required />
+                            </div>
+                            <x-filament::button type="submit">Tambah kandidat</x-filament::button>
+                        </form>
+                    @else
+                        <p class="scm-help" role="status">Tidak ada vendor lain yang bisa ditambahkan. Periksa vendor aktif dengan jenis penyedia {{ $record->kind === 'SR' ? 'Jasa' : 'Barang' }} atau Barang dan jasa di Master Vendor.</p>
+                    @endif
                 @endif
-                @if($quotation && in_array($record->status, ['sourcing', 'quotations', 'evaluation']))
-                <form wire:submit="saveQuotation" class="scm-item" wire:key="quotation-editor-{{ $quotation['candidate_id'] }}"><h3>Penawaran: {{ $record->candidates->firstWhere('id', $quotation['candidate_id'])?->vendor->name }}</h3><p>Nilai uang tanpa pemisah ribuan; gunakan koma untuk desimal. Pajak dan diskon diisi nominal, bukan persentase. Catat pajak sesuai quotation asli. Pada CBE, pajak dihitung ulang menggunakan PPN 11% atau Non PKP; pajak quotation tidak ditambahkan dua kali.</p><div class="scm-grid">
+                @if($quotationCandidateId && in_array($record->status, ['sourcing', 'quotations', 'evaluation']))
+                <form wire:submit="saveQuotation" class="scm-item" wire:key="quotation-editor-{{ $quotationCandidateId }}"><h3>Penawaran: {{ $record->candidates->firstWhere('id', $quotationCandidateId)?->vendor->name }}</h3><p>Nilai uang tanpa pemisah ribuan; gunakan koma untuk desimal. Pajak dan diskon diisi nominal, bukan persentase. Catat pajak sesuai quotation asli. Pada CBE, pajak dihitung ulang menggunakan PPN 11% atau Non PKP; pajak quotation tidak ditambahkan dua kali.</p><div class="scm-grid">
                     <x-scm.field model="quotation.number" label="Nomor quotation" required /><x-scm.field model="quotation.date" label="Tanggal quotation" type="date" required /><x-scm.field model="quotation.valid_until" label="Berlaku sampai" type="date" />
                     <x-scm.select model="quotation.currency" label="Mata uang" :options="array_combine(config('scm.currencies'), config('scm.currencies'))" required /><x-scm.field model="quotation.lead_time" label="Waktu penyediaan" required /><x-scm.field model="quotation.payment_terms" label="Syarat pembayaran" multiline required /><x-scm.field model="quotation.extra" label="Biaya tambahan header" inputmode="decimal" required /><x-scm.field model="quotation.notes" label="Catatan / hasil negosiasi" multiline />
                 </div>
                 @foreach($quotation['lines'] as $i => $line)<fieldset class="scm-item"><legend>Item {{ $i+1 }} · {{ $record->items->firstWhere('id', $line['request_item_id'])?->name }}</legend><div class="scm-grid">
                     <x-scm.field model="quotation.lines.{{ $i }}.description" label="Spesifikasi ditawarkan" multiline required /><x-scm.field model="quotation.lines.{{ $i }}.quantity" label="Jumlah ditawarkan" inputmode="decimal" required /><x-scm.field model="quotation.lines.{{ $i }}.unit" label="Satuan ditawarkan" required /><x-scm.field model="quotation.lines.{{ $i }}.price" label="Harga satuan" inputmode="decimal" required /><x-scm.field model="quotation.lines.{{ $i }}.discount" label="Diskon nominal baris" inputmode="decimal" required /><x-scm.field model="quotation.lines.{{ $i }}.tax" label="Pajak nominal atas neto baris" inputmode="decimal" required />
                 </div></fieldset>@endforeach
-                <div class="scm-actions"><x-filament::button type="submit" wire:loading.attr="disabled">Simpan versi penawaran</x-filament::button><button type="button" wire:click="cancelQuotation">Batal mengisi penawaran</button></div><p class="scm-help">Server menghitung jumlah × harga satuan, dikurangi diskon, ditambah pajak dan biaya tambahan header satu kali.</p></form>
+                <x-scm.field model="quotationFiles.{{ $quotationCandidateId }}" label="Dokumen penawaran vendor" type="file" accept=".pdf,.jpg,.jpeg,.png" help="PDF, JPG, atau PNG. Dokumen disimpan bersama versi penawaran ini." />
+                @if(($quotationFiles[$quotationCandidateId] ?? null) instanceof \Illuminate\Http\UploadedFile)
+                    <p class="scm-help">File dipilih: {{ $quotationFiles[$quotationCandidateId]->getClientOriginalName() }}</p>
+                @endif
+                <p class="scm-help" role="status" wire:loading wire:target="quotationFiles.{{ $quotationCandidateId }}">Mengunggah dokumen penawaran...</p>
+                <div class="scm-actions">
+                    <x-filament::button type="submit" wire:loading.attr="disabled" wire:target="quotationFiles.{{ $quotationCandidateId }},saveQuotation">Simpan versi penawaran</x-filament::button>
+                    <button type="button" wire:click="cancelQuotation" wire:loading.attr="disabled" wire:target="quotationFiles.{{ $quotationCandidateId }},saveQuotation">Batal mengisi penawaran</button>
+                </div><p class="scm-help">Server menghitung jumlah × harga satuan, dikurangi diskon, ditambah pajak dan biaya tambahan header satu kali.</p></form>
                 @endif
             @elseif($tab === 'cbe' && $canManage)
                 @if($record->status === 'submitted')
@@ -161,6 +184,7 @@
                 <h3>Kelengkapan administratif vendor terpilih</h3><p>Checklist menggunakan persyaratan saat pengumpulan dimulai. Kelengkapan ini tidak memverifikasi keaslian dokumen ke instansi penerbit.</p><p class="scm-help">Dokumen Form 005 yang diterima {{ $processorLabel }} tersedia sebagai versi dokumen vendor. Pilih versinya dan simpan status Diterima pada setiap checklist yang sesuai. Penerimaan Form 005 tidak otomatis menyelesaikan checklist pengadaan.</p>
                 @if(!$record->legalCase)<p>Finalkan CBE lalu mulai pengumpulan legalitas dari tab CBE.</p>@else
                 @if(($record->legalCase->document_basis_snapshot['source'] ?? null) === 'form005')<p class="scm-help" role="status">Checklist mengikuti Form 005 yang sudah diterima {{ $processorLabel }} untuk {{ $record->legalCase->document_basis === 'foreign_company' ? 'perusahaan luar Indonesia' : 'vendor Indonesia' }}. Dokumen tetap diperiksa dan diterima satu per satu pada pengadaan ini.</p>@endif
+                    @if(($record->legalCase->document_basis_snapshot['source'] ?? null) === \App\Services\Scm\ApcaVendorChecklist::PROFILE)<p class="scm-help" role="status">Checklist mengikuti Registrasi Vendor APCA yang diterima SCM. Periksa dokumen untuk pengadaan ini.</p>@endif
                 @if($record->legalCase->document_basis === 'npwp_ktp')
                     <p class="scm-help" role="status">{{ ($record->legalCase->document_basis_snapshot['source'] ?? null) === 'form005' ? 'Vendor Indonesia tanpa dokumen perusahaan: NPWP dan KTP wajib diterima beserta file.' : 'Pengganti SBU/NIB: NPWP dan KTP wajib diterima beserta file. SBU/NIB menjadi opsional; persyaratan lain pada checklist tetap berlaku.' }}</p>
                 @elseif($record->status === 'legal' && $record->legalCase->document_basis !== 'foreign_company')
@@ -181,10 +205,10 @@
             @elseif($tab === 'history' && $canManage)
                 <h3>Riwayat tindakan</h3>@forelse($record->audits as $audit)<article class="scm-item"><h4>{{ str_replace('_',' ',$audit->action) }}</h4><p>{{ $audit->actor->name }} · {{ $audit->created_at->format('d/m/Y H:i:s') }}</p>@if($audit->reason)<p>Alasan: {{ $audit->reason }}</p>@endif<details><summary>Rincian perubahan</summary><pre>{{ json_encode($audit->changes, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) }}</pre></details></article>@empty<p>Belum ada tindakan.</p>@endforelse
             @endif
-            @if(($tab === 'request' && $canEditDraft) || ($canManage && in_array($tab, ['quotes','cbe']) && in_array($record->status,['sourcing','quotations','evaluation']) && ($tab === 'quotes' ? $quotes->isNotEmpty() : $record->cbe)))
-            <form wire:submit="uploadAttachment" class="scm-item"><h3>Tambahkan lampiran {{ $tab === 'quotes' ? 'quotation' : ($tab === 'cbe' ? 'CBE' : 'permintaan') }}</h3><div class="scm-grid">
-                @if($record->status !== 'draft')
-                <x-scm.select model="attachmentTargetId" label="Target lampiran" :options="$attachmentTarget === 'quotation' ? $quotes->mapWithKeys(fn($q)=>[$q->id=>$q->candidate->vendor->name.' · versi '.$q->version]) : ($record->cbe ? [$record->cbe->id => $record->cbe->number] : [])" required />@endif
+            @if(($tab === 'request' && $canEditDraft) || ($tab === 'cbe' && $canManage && $record->cbe && in_array($record->status, ['sourcing', 'quotations', 'evaluation'])))
+            <form wire:submit="uploadAttachment" class="scm-item"><h3>Tambahkan lampiran {{ $tab === 'cbe' ? 'CBE' : 'permintaan' }}</h3><div class="scm-grid">
+                @if($tab === 'cbe')
+                <x-scm.select model="attachmentTargetId" label="Target lampiran" :options="[$record->cbe->id => $record->cbe->number]" required />@endif
                 <x-scm.field model="attachmentFile" label="File lampiran PDF/JPG/PNG" type="file" accept=".pdf,.jpg,.jpeg,.png" required help="Maksimal sesuai batas unggahan SCM; file tersimpan privat." />
             </div><button type="submit" wire:loading.attr="disabled">Unggah lampiran</button></form>@endif
         </section>

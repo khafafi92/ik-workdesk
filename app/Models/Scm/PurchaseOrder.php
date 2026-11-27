@@ -4,6 +4,7 @@ namespace App\Models\Scm;
 
 use App\Models\FinancePoPayment;
 use App\Models\InventoryReceipt;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PurchaseOrder extends Record
 {
@@ -32,5 +33,10 @@ class PurchaseOrder extends Record
     public function receipts()
     {
         return $this->hasMany(InventoryReceipt::class, 'purchase_order_id');
+    }
+
+    public function serviceReceipts(): HasMany
+    {
+        return $this->hasMany(ServiceReceipt::class);
     }
 }

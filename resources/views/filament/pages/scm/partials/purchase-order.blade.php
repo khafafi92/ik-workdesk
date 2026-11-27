@@ -13,7 +13,9 @@
     @elseif (! $poCanEdit && ! $record->purchaseOrder)
         <p role="status">Selesaikan legalitas vendor terpilih melalui tombol Selesaikan pengadaan pada tab Legalitas sebelum membuat PO.</p>
     @else
-        @if ($poCanEdit)
+        @if ($record->kind === 'SR' && $record->purchaseOrder?->serviceReceipts()->exists())
+            <p role="status">PO terkunci karena penerimaan jasa sudah tercatat.</p>
+        @elseif ($poCanEdit)
             <p>Vendor terpilih: <strong>{{ $selectedQuote['vendor']['name'] ?? '-' }}</strong> · Quotation: {{ $selectedQuote['number'] ?? '-' }} · CBE: {{ $record->cbe->number }}</p>
             <form wire:submit="savePurchaseOrder" class="scm-po-form">
                 <div class="scm-grid">

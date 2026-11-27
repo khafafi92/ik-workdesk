@@ -89,6 +89,12 @@ class Access
         return in_array($kind, ['PR', 'SR'], true) && $user?->isSystemAdministrator();
     }
 
+    public static function canSignRequestedBy(?User $user, string $kind, int $requesterId): bool
+    {
+        return self::has($user, 'scm.request')
+            && ($requesterId === (int) $user->id || ($kind === 'PR' && $user->isSystemAdministrator()));
+    }
+
     public static function authors(User $user, Procurement $request): bool
     {
         return $user->isSystemAdministrator() || (self::has($user, 'scm.request') && (int) $request->requester_id === (int) $user->id);

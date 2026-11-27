@@ -816,7 +816,6 @@
     padding: 0 46px;
     border: 1px solid rgba(255, 255, 255, 0.68);
     border-radius: 9px;
-    outline: none;
     color: #16232c;
     background: #ffffff;
     box-shadow: none;
@@ -825,13 +824,15 @@
 }
 
 .wd-login-input-wrap input::placeholder {
-    color: #9aa2a9;
+    color: #5b6070;
 }
 
-.wd-login-input-wrap input:focus {
-    border-color: #7cb9ff;
+.wd-login-input-wrap input:focus-visible {
+    border-color: #005fcc;
     background: #fff;
-    box-shadow: 0 0 0 4px rgba(53, 143, 246, 0.2), 0 5px 18px rgba(8, 20, 29, 0.12);
+    outline: 3px solid #005fcc;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(0, 95, 204, 0.16);
 }
 
 .wd-login-password-toggle {

@@ -102,6 +102,23 @@ class MenuAccessCatalogTest extends TestCase
         }
     }
 
+    public function test_workspace_rail_includes_navigable_modules_with_submenus(): void
+    {
+        $this->actingAs(User::factory()->create(['is_admin' => true]));
+
+        $response = $this->get(Dashboard::getUrl())->assertOk();
+        $html = $response->getContent();
+        $expectedCount = collect(Filament::getNavigation())
+            ->filter(fn ($group): bool => collect($group->getItems())->contains(fn ($item): bool => filled($item->getUrl())))
+            ->count();
+        preg_match_all('~class="[^"]*\bik-workspace-rail-item\b[^"]*"~', $html, $railItems);
+        preg_match_all('~class="ik-sidebar-flyout ik-workspace-rail-flyout"~', $html, $railFlyouts);
+
+        $this->assertGreaterThan(8, $expectedCount);
+        $this->assertCount($expectedCount, $railItems[0]);
+        $this->assertCount($expectedCount, $railFlyouts[0]);
+    }
+
     public function test_each_new_master_choice_opens_only_its_own_master(): void
     {
         $user = User::factory()->create(['is_admin' => false]);

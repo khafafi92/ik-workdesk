@@ -136,6 +136,7 @@ Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void 
     Route::get('/permintaan/{procurement}/ttd', [ScmDocumentController::class, 'preparedSignature'])->name('signature-prepared');
     Route::get('/persetujuan/{approval}/ttd', [ScmDocumentController::class, 'approvalSignature'])->name('signature-approval');
     Route::get('/lampiran/{attachment}', [ScmDocumentController::class, 'download'])->name('download');
+    Route::get('/penerimaan-jasa/{serviceReceipt}/bukti', [ScmDocumentController::class, 'serviceReceipt'])->name('service-receipt-download');
     Route::get('/cbe/{cbe}/cetak', [ScmDocumentController::class, 'print'])->name('print');
     Route::get('/cbe-persetujuan/{cbeApproval}/ttd', [ScmDocumentController::class, 'cbeSignature'])->name('signature-cbe');
     Route::get('/cbe/{cbe}/penawaran-terpilih', [ScmDocumentController::class, 'selectedQuotation'])->name('selected-quotation');

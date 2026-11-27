@@ -139,13 +139,16 @@ class ScmProcurement extends Page
 
     public $attachmentFile;
 
-    public string $attachmentTarget = 'request';
-
     public int $attachmentTargetId = 0;
 
     public array $candidate = ['vendor_id' => '', 'requested_at' => '', 'followup_status' => 'diminta'];
 
     public array $quotation = [];
+
+    #[Locked]
+    public int $quotationCandidateId = 0;
+
+    public array $quotationFiles = [];
 
     public array $cbeForm = [];
 
@@ -348,6 +351,7 @@ class ScmProcurement extends Page
         $this->selected = 0;
         $this->editing = false;
         $this->choosingCompany = false;
+        $this->reset('quotation', 'quotationCandidateId', 'quotationFiles');
         $this->resetPage();
         $this->resetValidation();
     }
@@ -364,11 +368,13 @@ class ScmProcurement extends Page
         abort_unless(static::$requestKind !== null
             ? Access::authors(auth()->user(), $record) && $record->kind === static::$requestKind
             : $record->need_type === static::$processingNeedType && Access::manages(auth()->user(), $record), 403);
+        if (static::$requestKind === null && $record->status === 'selected' && $record->cbe?->status === 'final') {
+            $record = app(Workflow::class)->completeLegalFromMaster(auth()->user(), $record->id);
+        }
         $this->selected = $id;
         $this->choosingCompany = false;
         $this->version = $record->version;
         $this->requestNumber = $record->number;
-        $this->attachmentTarget = $record->status === 'draft' ? 'request' : 'quotation';
         $this->attachmentTargetId = 0;
         $this->editing = false;
         $this->tab = 'request';
@@ -388,7 +394,7 @@ class ScmProcurement extends Page
             'commercial_terms' => $terms] : [];
         $this->legal = $allowed ? ($record->legalCase?->items->mapWithKeys(fn ($i) => [$i->id => ['status' => $i->status, 'vendor_document_id' => $i->vendor_document_id ?? '', 'correction_notes' => $i->correction_notes ?? '']])->all() ?? []) : [];
         $this->alternativeDocumentReason = '';
-        $this->quotation = [];
+        $this->reset('quotation', 'quotationCandidateId', 'quotationFiles');
         $this->attachmentFile = null;
         $this->resetValidation();
     }
@@ -409,15 +415,11 @@ class ScmProcurement extends Page
             }
             $this->version = $request->version;
         }
-        $this->tab = $tab;
-        if (in_array($tab, ['quotes', 'cbe'])) {
-            $target = $tab === 'cbe' ? 'cbe' : 'quotation';
-            if ($this->attachmentTarget !== $target) {
-                $this->attachmentFile = null;
-            }
-            $this->attachmentTarget = $target;
-            $this->attachmentTargetId = $tab === 'cbe' ? ($request->cbe?->id ?? 0) : 0;
+        if ($this->tab !== $tab) {
+            $this->attachmentFile = null;
         }
+        $this->tab = $tab;
+        $this->attachmentTargetId = $tab === 'cbe' ? ($request->cbe?->id ?? 0) : 0;
         $this->resetValidation();
     }
 
@@ -630,7 +632,9 @@ class ScmProcurement extends Page
         abort_unless(Access::manages(auth()->user(), $request), 403);
         $candidate = $request->candidates()->findOrFail($candidateId);
         $quote = $candidate->quotations()->with('lines')->first();
-        $this->quotation = ['candidate_id' => $candidateId, 'number' => $quote?->number ?? '', 'date' => today()->toDateString(), 'valid_until' => '',
+        $this->quotationCandidateId = $candidate->id;
+        $this->quotationFiles = [];
+        $this->quotation = ['number' => $quote?->number ?? '', 'date' => today()->toDateString(), 'valid_until' => '',
             'currency' => $quote?->currency ?? 'IDR', 'lead_time' => $quote?->lead_time ?? '', 'payment_terms' => $quote?->payment_terms ?? '',
             'notes' => '', 'extra' => Decimal::input($quote?->extra_minor ?? 0), 'lines' => $request->items->map(function ($item) use ($quote) {
                 $line = $quote?->lines->firstWhere('request_item_id', $item->id);
@@ -644,12 +648,18 @@ class ScmProcurement extends Page
 
     public function saveQuotation(): void
     {
-        $this->refreshed($this->processingWorkflow()->saveQuotation(auth()->user(), $this->selected, $this->version, $this->quotation), 'quotes');
+        $workflow = $this->processingWorkflow();
+        abort_unless($this->quotationCandidateId > 0, 403);
+        $fileField = 'quotationFiles.'.$this->quotationCandidateId;
+        $data = $this->validate([$fileField => 'nullable|file'], [], [$fileField => 'dokumen penawaran vendor']);
+        $file = $data['quotationFiles'][$this->quotationCandidateId] ?? null;
+        $quotation = [...$this->quotation, 'candidate_id' => $this->quotationCandidateId];
+        $this->refreshed($workflow->saveQuotation(auth()->user(), $this->selected, $this->version, $quotation, $file), 'quotes');
     }
 
     public function cancelQuotation(): void
     {
-        $this->quotation = [];
+        $this->reset('quotation', 'quotationCandidateId', 'quotationFiles');
         $this->resetValidation();
     }
 
@@ -721,11 +731,12 @@ class ScmProcurement extends Page
 
     public function uploadAttachment(): void
     {
-        if ($this->attachmentTarget !== 'request') {
+        abort_unless(in_array($this->tab, ['request', 'cbe'], true), 403);
+        if ($this->tab === 'cbe') {
             $this->assertProcessingContext();
         }
         $this->validate(['attachmentFile' => 'required|file|max:'.config('scm.upload_max_kb')], ['required' => 'Pilih file lampiran.', 'file' => 'Lampiran harus berupa file.', 'max' => 'Ukuran lampiran melebihi batas SCM.']);
-        $request = $this->workflow()->attach(auth()->user(), $this->selected, $this->version, $this->attachmentTarget, $this->attachmentTargetId, $this->attachmentFile);
+        $request = $this->workflow()->attach(auth()->user(), $this->selected, $this->version, $this->tab, $this->attachmentTargetId, $this->attachmentFile);
         $this->attachmentFile = null;
         $this->refreshed($request, $this->tab);
     }
@@ -976,10 +987,6 @@ class ScmProcurement extends Page
         if ($property === 'documentVendorFilter') {
             $this->resetPage('documentPage');
         }
-        if ($property === 'attachmentTarget') {
-            $this->attachmentTargetId = 0;
-            $this->attachmentFile = null;
-        }
     }
 
     protected function getViewData(): array
@@ -1020,14 +1027,18 @@ class ScmProcurement extends Page
             ->when($this->dateFrom, fn ($q) => $q->whereDate('date', '>=', $this->dateFrom))->when($this->dateUntil, fn ($q) => $q->whereDate('date', '<=', $this->dateUntil));
         $record = $this->selected ? (clone $visible)->with(['items', 'requester', 'numberReservation.requester', 'department', 'project', 'attachments', 'approvals.user', 'sourceAtkRequest'])->findOrFail($this->selected) : null;
         $canEditDraft = static::$requestKind !== null && $record?->status === 'draft' && Access::authors($user, $record);
-        $canSignPrepared = static::$requestKind !== null && Access::has($user, 'scm.request')
-            && ($this->editing ? ($isSuperuser || (int) ($this->draft['requester_id'] ?? $user->id) === (int) $user->id) : ($record?->status === 'draft' && ($isSuperuser || (int) $record->requester_id === (int) $user->id)));
+        $requesterId = (int) ($this->editing ? ($this->draft['requester_id'] ?? $user->id) : $record?->requester_id);
+        $canSignPrepared = static::$requestKind !== null && ($this->editing || $record?->status === 'draft')
+            && Access::canSignRequestedBy($user, static::$requestKind, $requesterId);
+        $canSubmitRequest = ! $this->editing && $canEditDraft && ($canSignPrepared || $record->hasPreparedSignature());
+        $waitingForRequestedSignature = static::$requestKind === 'SR' && $canChooseRequester && ! $canSignPrepared
+            && ($this->editing ? $draftRequester !== null : ($canEditDraft && ! $record->hasPreparedSignature()));
         $canManage = $isScm && $record && Access::manages($user, $record);
         if ($record && ! $canManage) {
             $this->tab = 'request';
             $this->cbeForm = [];
             $this->legal = [];
-            $this->quotation = [];
+            $this->reset('quotation', 'quotationCandidateId', 'quotationFiles');
         }
         if ($canManage) {
             $record->load(['candidates.vendor', 'candidates.quotations.lines', 'candidates.quotations.attachments', 'cbe', 'purchaseOrder', 'legalCase.items.document.attachments', 'audits.actor']);
@@ -1038,7 +1049,8 @@ class ScmProcurement extends Page
         $quotes = $canManage ? $record->candidates->flatMap(fn ($c) => $c->quotations) : collect();
         $vendors = $isScm ? Vendor::whereNull('archived_at')->orderBy('name')->get() : collect();
         $candidateCompanies = $canManage ? $record->candidates->map(fn ($candidate) => VendorIdentity::companyKey($candidate->vendor->name)) : collect();
-        $candidateVendors = $vendors->reject(fn ($vendor) => $candidateCompanies->contains(VendorIdentity::companyKey($vendor->name)));
+        $candidateVendors = $canManage ? $vendors->filter(fn (Vendor $vendor) => $vendor->is_active
+            && $vendor->supportsRequestKind($record->kind) && ! $candidateCompanies->contains(VendorIdentity::companyKey($vendor->name))) : collect();
         $documents = $isScm ? VendorDocument::with(['documentType', 'attachments'])->when($record?->legalCase, fn ($q) => $q->where('vendor_id', $record->legalCase->vendor_id))->orderByDesc('id')->get() : collect();
         $duplicate = $isScm && filled($this->vendor['name'] ?? '') ? Vendor::where('id', '!=', $this->vendorId)->where(fn ($q) => $q->whereRaw('LOWER(name) = ?', [mb_strtolower(trim($this->vendor['name']))])->when(filled($this->vendor['email'] ?? ''), fn ($q) => $q->orWhere('email', $this->vendor['email'])))->pluck('name') : collect();
         $statuses = Workflow::STATUSES;
@@ -1099,8 +1111,9 @@ class ScmProcurement extends Page
 
         return ['requestKind' => static::$requestKind, 'processorLabel' => $processorLabel, 'recordStatus' => $recordStatus, 'isScm' => $isScm, 'configure' => $configure, 'canRequest' => static::$requestKind !== null && Access::has($user, 'scm.request'), 'canManage' => $canManage,
             'canChooseRequester' => $canChooseRequester, 'canEditDraft' => $canEditDraft, 'canSignPrepared' => $canSignPrepared,
+            'canSubmitRequest' => $canSubmitRequest, 'waitingForRequestedSignature' => $waitingForRequestedSignature,
             'isSuperuser' => $isSuperuser,
-            'preparedSignatureLabel' => $isSuperuser && (int) ($this->editing ? ($this->draft['requester_id'] ?? $user->id) : $record?->requester_id) !== (int) $user->id ? 'Tanda tangani sebagai '.$user->name : 'Tanda tangani',
+            'preparedSignatureLabel' => $canSignPrepared && $requesterId !== (int) $user->id ? 'Tanda tangani sebagai '.$user->name : 'Tanda tangani',
             'draftRequesterName' => $draftRequester?->name ?? '',
             'inventoryItemOptions' => $this->editing && static::$requestKind === 'PR' && InventoryCatalogue::installed() ? InventoryItem::where('is_active', true)->orderBy('name')->get()->mapWithKeys(fn ($item) => [$item->id => $item->code.' / '.$item->name.' / '.$item->unit])->all() : [],
             'requesterOptions' => $requesterCandidates->mapWithKeys(fn ($account) => [$account->id => $account->name])->all(),

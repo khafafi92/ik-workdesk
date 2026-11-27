@@ -9,10 +9,12 @@ use App\Models\Scm\Procurement;
 use App\Models\Scm\PurchaseOrder;
 use App\Models\Scm\Quotation;
 use App\Models\Scm\RequestApproval;
+use App\Models\Scm\ServiceReceipt;
 use App\Models\Scm\UserSignature;
 use App\Services\Finance\PoPayments;
 use App\Services\Scm\Access;
 use App\Services\Scm\CbeApprovals;
+use App\Services\Scm\ServiceReceipts;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -28,7 +30,7 @@ class ScmDocumentController extends Controller
     public function preparedSignature(Request $http, Procurement $procurement)
     {
         abort_unless(Access::viewsRequest($http->user(), $procurement), 403);
-        abort_unless($procurement->prepared_signed_at && $procurement->preparedSignature, 404);
+        abort_unless($procurement->hasPreparedSignature(), 404);
 
         return $this->signatureImage($procurement->preparedSignature);
     }
@@ -83,6 +85,20 @@ class ScmDocumentController extends Controller
 
         return Storage::disk('scm')->download($attachment->path, $attachment->original_name, [
             'Content-Type' => $attachment->mime, 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    public function serviceReceipt(Request $http, ServiceReceipt $serviceReceipt)
+    {
+        app(ServiceReceipts::class)->order($http->user(), $serviceReceipt->purchase_order_id);
+        abort_unless($serviceReceipt->evidence_path
+            && preg_match('/^service-receipts\/\d{4}\/\d{2}\/[a-f0-9-]{36}\.(pdf|jpg|jpeg|png)$/D', $serviceReceipt->evidence_path), 404);
+        abort_unless(Storage::disk('scm')->exists($serviceReceipt->evidence_path), 404);
+
+        return Storage::disk('scm')->download($serviceReceipt->evidence_path, $serviceReceipt->evidence_name, [
+            'Content-Type' => $serviceReceipt->evidence_mime,
+            'X-Content-Type-Options' => 'nosniff',
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 
