@@ -1,0 +1,463 @@
+.finance-travel {
+    container-type: inline-size;
+}
+
+.finance-travel .fi-btn, .finance-master-workspace .fi-btn { min-height: 44px; }
+.finance-travel .fi-btn[aria-disabled="true"] { opacity: .6; cursor: not-allowed; }
+.finance-travel .travel-toolbar > * { max-width: 100%; }
+.finance-travel .travel-toolbar select { width: 100%; }
+.finance-travel .travel-list td { overflow-wrap: anywhere; }
+.finance-travel .travel-list th:first-child { width: 27%; }
+.finance-travel .travel-list td:first-child small { display: block; max-width: 28rem; }
+.finance-travel .travel-control { overflow-wrap: anywhere; }
+
+.finance-request-field { position: relative; display: grid; gap: .25rem; min-width: 0; }
+.finance-request-field :is(input, select, textarea) { min-width: 0; width: 100%; scroll-margin-block: 5rem 2rem; }
+.finance-request-field :is(input, select, textarea)[aria-invalid="true"] { border-color: #a02924; }
+.finance-request-error { color: #a02924; overflow-wrap: anywhere; }
+.finance-master-workspace .travel-rule-panel { display: grid; gap: .85rem; color: #111827; }
+
+.finance-travel .finance-travel-sheet {
+    min-width: 0;
+    border-color: #111;
+    color-scheme: light;
+    font-size: .875rem;
+    overflow-wrap: anywhere;
+}
+.finance-travel .finance-travel-sheet .travel-lpj-header { grid-template-columns: minmax(0, 1fr) minmax(15rem, 36%); }
+.finance-travel-sheet .travel-lpj-header .travel-logo { min-height: 4.5rem; }
+.finance-travel-sheet .travel-document-meta td { padding: .35rem; }
+.finance-travel-sheet .travel-lpj-person { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.finance-travel-sheet .travel-lpj-person dl > div { grid-template-columns: auto minmax(0, 1fr); gap: .5rem; }
+.finance-travel-sheet .finance-travel-preline { white-space: pre-line; }
+.finance-travel-sheet .finance-travel-money { font-variant-numeric: tabular-nums; }
+.finance-travel-sheet .finance-travel-expenses th { background: #f3f4f6; }
+.finance-travel-sheet .finance-travel-expenses th:nth-child(2) { width: 26%; }
+.finance-travel-sheet .finance-travel-expenses td { padding: .45rem; }
+.finance-travel-sheet .finance-travel-expenses td .finance-request-field + .finance-request-field { margin-top: .25rem; }
+.finance-travel-sheet .finance-travel-expenses td :is(input, select, textarea) { width: 100%; }
+.finance-travel-sheet .finance-travel-expenses td input[type="date"] { font-size: .82rem; }
+.finance-travel-sheet .finance-travel-cell label, .finance-travel-mobile-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+.finance-travel-sheet .finance-travel-add { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; padding: .65rem 1rem; border-bottom: 1px solid #111; }
+.finance-travel-sheet .finance-travel-payment { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; }
+.finance-travel-sheet .finance-travel-payment table th { width: 50%; }
+.finance-travel-sheet .finance-travel-bank { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; }
+.finance-travel-sheet .finance-travel-bank dl { grid-column: 1 / -1; display: grid; gap: .25rem; }
+.finance-travel-sheet .finance-travel-bank dl > div { display: grid; grid-template-columns: minmax(7rem, 1fr) minmax(0, 2fr); gap: .5rem; }
+.finance-travel-sheet .finance-travel-bank dt { font-weight: 600; }
+.finance-travel-sheet .finance-travel-signatures td { padding: .75rem .4rem; }
+.finance-travel-sheet .finance-travel-signatures small { display: block; }
+.finance-apca-sheet .finance-apca-heading { display: grid; grid-template-columns: minmax(0, 10rem) minmax(0, 1fr) minmax(0, 10rem); align-items: center; gap: .55rem; padding: 1rem; }
+.finance-apca-heading img { width: min(10rem, 100%); height: auto; max-height: 4.375rem; object-fit: contain; }
+.finance-apca-heading h2 { grid-column: 2; margin: 0; text-align: center; font-size: 1.2rem; font-weight: 700; }
+.finance-apca-details, .finance-apca-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+    gap: 1rem;
+    padding: .85rem 1rem;
+}
+.finance-apca-details { border-top: 1px solid #111; }
+.finance-apca-details > div { display: grid; align-content: start; gap: .55rem; }
+.finance-apca-details dl > div { display: grid; grid-template-columns: minmax(5.5rem, auto) minmax(0, 1fr); gap: .4rem; }
+.finance-apca-details dt { font-weight: 600; }
+.finance-apca-sheet .finance-apca-expenses { table-layout: auto; }
+.finance-apca-sheet .finance-apca-expenses thead th:nth-child(2) { width: auto; }
+.finance-apca-sheet .finance-apca-expenses thead tr:first-child th:nth-child(3) { width: 24%; }
+.finance-apca-sheet .finance-apca-expenses thead tr:first-child th:first-child, .finance-apca-sheet .finance-apca-currency { white-space: nowrap; }
+.finance-apca-sheet .finance-apca-expenses input[type="date"] { min-width: 7rem; padding-inline: .3rem; }
+.finance-apca-sheet .finance-apca-expenses tfoot th, .finance-apca-sheet .finance-apca-expenses tfoot td { font-weight: 700; }
+.finance-apca-sheet .finance-apca-footer .finance-travel-bank { grid-template-columns: minmax(0, 1fr); align-content: start; }
+.finance-apca-footer > table { align-self: start; }
+.finance-kpmog-sheet .finance-kpmog-block { display: grid; gap: .75rem; padding: .9rem 1rem; border-bottom: 1px solid #111; }
+.finance-kpmog-sheet .travel-logo { flex-wrap: wrap; gap: .5rem; }
+.finance-kpmog-sheet .finance-kpmog-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.finance-kpmog-sheet .finance-er-expenses th:nth-child(1) { width: 7%; }
+.finance-kpmog-sheet .finance-er-expenses th:nth-child(3) { width: 43%; }
+.finance-travel .kpmog-er-paper .travel-lpj-title { background: #8ea9db; color: #111; }
+.kpmog-er-paper .finance-er-expenses th { background: #e7e6e6; }
+.kpmog-er-paper .kpmog-er-overview { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.kpmog-er-paper .kpmog-er-details { display: grid; gap: .45rem; }
+
+.dark :is(.finance-travel, .finance-master-workspace) { color: #f1f5f9; }
+.dark .finance-travel .travel-help { color: #cbd5e1; }
+.dark .finance-travel .travel-control { color: #9bcaff; }
+.dark .finance-master-workspace .travel-control { color: #9bcaff; }
+.dark .finance-travel :is(.travel-attachments, .travel-approval-history, .travel-rule-notice, .travel-list) { color: #111827; }
+.dark .finance-travel :is(.travel-attachments, .travel-rule-notice) .travel-control { color: #1d4ed8; }
+.dark .finance-travel :is(.travel-toolbar, .travel-list-scroll) :focus-visible { outline-color: #8ac1ff; }
+.dark .finance-travel :is(.travel-attachments, .travel-approval-history, .travel-list) :focus-visible { outline-color: #005fcc; }
+
+@container (max-width: 56rem) {
+    .finance-travel-sheet .finance-travel-expenses thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+    }
+    .finance-travel-sheet :is(.finance-travel-expenses, .finance-travel-expenses tbody) { display: block; }
+    .finance-travel-sheet .finance-travel-expenses tbody tr {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: .5rem;
+        padding: .65rem;
+        border-top: 1px solid #6b7280;
+    }
+    .finance-travel-sheet .finance-travel-expenses td { display: block; border: 0; padding: .25rem; }
+    .finance-apca-sheet .finance-apca-expenses tfoot { display: block; border-top: 1px solid #111; }
+    .finance-apca-sheet .finance-apca-expenses tfoot tr { display: flex; flex-wrap: wrap; gap: .75rem; padding: .55rem .9rem; }
+    .finance-apca-sheet .finance-apca-expenses tfoot th { padding: .25rem 0; border: 0; }
+    .finance-apca-sheet .finance-apca-expenses :is(.finance-apca-currency, .finance-apca-unconverted) { display: none; }
+    .finance-travel-sheet .finance-travel-cell label, .finance-travel-mobile-label {
+        display: block;
+        position: static;
+        width: auto;
+        height: auto;
+        margin: 0;
+        clip-path: none;
+        overflow: visible;
+        white-space: normal;
+        font-weight: 600;
+    }
+}
+
+@container (max-width: 34rem) {
+    .finance-travel .finance-travel-sheet .travel-lpj-header,
+    .finance-travel-sheet :is(.travel-lpj-person, .finance-travel-payment) { grid-template-columns: minmax(0, 1fr); }
+    .finance-travel .finance-travel-sheet .travel-lpj-header .travel-logo { border-right: 0; }
+    .finance-travel-sheet .travel-lpj-title { font-size: 1rem; }
+    .finance-travel-sheet :is(.travel-lpj-identity, .finance-travel-payment) { padding: .75rem; }
+    .finance-kpmog-sheet .finance-kpmog-grid { grid-template-columns: minmax(0, 1fr); }
+    .kpmog-er-paper .kpmog-er-overview { grid-template-columns: minmax(0, 1fr); }
+    .finance-apca-details, .finance-apca-footer { grid-template-columns: minmax(0, 1fr); padding: .75rem; }
+    .finance-apca-sheet .finance-apca-heading { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+    .finance-apca-heading h2 { grid-column: auto; }
+}
+
+@container (max-width: 24rem) {
+    .finance-travel-sheet .finance-travel-bank,
+    .finance-travel-sheet .finance-travel-expenses tbody tr { grid-template-columns: minmax(0, 1fr); }
+    .finance-travel-sheet .finance-travel-expenses td:empty { display: none; }
+    .finance-travel-sheet .finance-travel-bank dl > div { grid-template-columns: minmax(0, 1fr); gap: 0; }
+}
+
+
+/* KPMOG Payment Voucher Paper Layout */
+.kpmog-pv-paper {
+    background: #ffffff;
+    color: #111111;
+    border: 1.5px solid #111111 !important;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 0.875rem;
+}
+
+.kpmog-pv-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.kpmog-pv-brand-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.kpmog-pv-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+}
+
+.kpmog-pv-brand-row strong {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111111;
+}
+
+.kpmog-pv-banner {
+    background: #c0c0c0;
+    color: #111111;
+    font-weight: 700;
+    text-align: center;
+    padding: 0.45rem 0.75rem;
+    letter-spacing: 0.03em;
+}
+
+.kpmog-pv-meta-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding-top: 1.25rem;
+}
+
+.kpmog-pv-submeta {
+    margin-left: auto;
+    width: 60%;
+    font-size: 0.8125rem;
+    color: #111111;
+}
+
+.kpmog-pv-line-row {
+    display: grid;
+    grid-template-columns: 7.25rem auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.kpmog-pv-bank-fields .kpmog-pv-line-row {
+    grid-template-columns: 8.25rem minmax(0, 1fr);
+}
+
+.kpmog-pv-paid-to {
+    display: grid;
+    grid-template-columns: 5.5rem auto minmax(0, 1fr);
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.kpmog-pv-underline-val {
+    border-bottom: 1.5px solid #111111;
+    min-height: 1.6rem;
+    display: flex;
+    align-items: center;
+    padding-bottom: 0.1rem;
+}
+
+.kpmog-pv-underline-val input {
+    width: 100%;
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0.1rem 0.2rem !important;
+    font-size: 0.875rem;
+    color: #111111 !important;
+    outline: none;
+    box-shadow: none !important;
+}
+
+.kpmog-pv-method-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.kpmog-pv-method-left {
+    display: grid;
+    grid-template-columns: 6rem minmax(0, 1fr);
+    gap: 0.75rem;
+    align-items: start;
+}
+
+.kpmog-pv-method-label {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.kpmog-pv-method-label small {
+    font-size: 0.72rem;
+    color: #374151;
+}
+
+.kpmog-pv-method-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.kpmog-pv-check-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.kpmog-pv-checkbox {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.5rem;
+    border: 1.5px solid #111111;
+    background: #ffffff;
+    color: #111111;
+    font-size: 0.875rem;
+    font-weight: 700;
+    flex: none;
+}
+
+button.kpmog-pv-checkbox {
+    cursor: pointer;
+}
+
+button.kpmog-pv-checkbox:focus-visible {
+    outline: 2px solid #005fcc;
+    outline-offset: 2px;
+}
+
+.kpmog-pv-cheque-input {
+    flex: 1;
+    min-width: 5rem;
+}
+
+.kpmog-pv-method-right {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+}
+
+.kpmog-pv-bank-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding-left: 2.35rem;
+}
+
+.kpmog-pv-amount-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.kpmog-pv-amount-left {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.kpmog-pv-currency-right {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.kpmog-pv-currency-val {
+    min-width: 4.5rem;
+    border-bottom: 1.5px solid #111111;
+    padding: 0.15rem 0.25rem;
+    font-weight: 600;
+}
+
+.kpmog-pv-box-field {
+    border: 1.5px solid #111111;
+    background: #ffffff;
+    padding: 0.35rem 0.55rem;
+    min-height: 2.1rem;
+    display: flex;
+    align-items: center;
+}
+
+.kpmog-pv-box-field input,
+.kpmog-pv-box-field textarea {
+    width: 100%;
+    border: 0 !important;
+    background: transparent !important;
+    color: #111111 !important;
+    font-size: 0.875rem;
+    outline: none;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.kpmog-pv-amount-box input {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.kpmog-pv-says-row {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.kpmog-pv-desc-row {
+    display: grid;
+    grid-template-columns: 7.5rem minmax(0, 1fr);
+    align-items: start;
+    gap: 0.75rem;
+}
+
+.kpmog-pv-desc-box {
+    min-height: 7.5rem;
+    align-items: stretch;
+}
+
+.kpmog-pv-desc-box p {
+    margin: 0;
+}
+
+.kpmog-pv-sign-wrap {
+    padding-left: 7.5rem;
+    margin-top: 0.25rem;
+}
+
+.kpmog-pv-sign-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.kpmog-pv-sign-table th,
+.kpmog-pv-sign-table td {
+    border: 1.5px solid #111111;
+    padding: 0.35rem 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.kpmog-pv-sign-table th {
+    font-weight: 700;
+    font-size: 0.8125rem;
+}
+
+.kpmog-pv-sign-space td {
+    height: 3.5rem;
+    vertical-align: bottom;
+    font-size: 0.75rem;
+    color: #374151;
+}
+
+.kpmog-pv-sign-names td {
+    min-height: 1.65rem;
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
+@container (max-width: 44rem) {
+    .kpmog-pv-top,
+    .kpmog-pv-method-grid,
+    .kpmog-pv-amount-row,
+    .kpmog-pv-method-left,
+    .kpmog-pv-amount-left,
+    .kpmog-pv-says-row,
+    .kpmog-pv-desc-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .kpmog-pv-meta-col {
+        padding-top: 0;
+    }
+
+    .kpmog-pv-bank-fields,
+    .kpmog-pv-sign-wrap {
+        padding-left: 0;
+    }
+}

@@ -5,6 +5,7 @@ namespace App\Models\Scm;
 use App\Models\AtkRequest;
 use App\Models\Department;
 use App\Models\FinanceBudgetLine;
+use App\Models\FinanceRequest;
 use App\Models\User;
 use App\Models\WorkProject;
 
@@ -55,6 +56,11 @@ class Procurement extends Record
     public function legalCase()
     {
         return $this->hasOne(LegalCase::class, 'request_id');
+    }
+
+    public function financeRequests(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(FinanceRequest::class);
     }
 
     public function requester()

@@ -6,10 +6,37 @@
     @elseif($this->creating || $record)
         <div class="travel-toolbar"><x-filament::button color="gray" wire:click="closeDocument" wire:confirm="Return to the list? Unsaved changes will be lost.">{{ __('Return to list') }}</x-filament::button>
             @if($record)<strong>{{ $record->displayNumber() }} · {{ $record->statusLabel() }}</strong><a class="travel-control" href="{{ route('travel.print', $record->id) }}" target="_blank" rel="noopener">Print / PDF</a>@endif
+            @if($kind === 'lpj' && $record?->status === 'approved' && !$employeeReimbursement
+                && \App\Services\Finance\Requests::canCreate(auth()->user(), $record->company === 'APCA' ? 'reimbursement' : 'payment', $record->company)
+                && auth()->user()->canAccessDepartment($record->department_id)
+                && $record->department?->is_active)
+                @if($record->company === 'APCA')
+                    <x-filament::button tag="a" color="gray" :href="\App\Filament\Pages\Reimbursements::getUrl(['spj' => $record->id])">Buat Reimbursement</x-filament::button>
+                @else
+                    <x-filament::button tag="a" :href="\App\Filament\Pages\FinanceRequests::paymentUrl($record->company, ['spj' => $record->id])">Buat PV</x-filament::button>
+                @endif
+            @endif
         </div>
         @if($errors->any())<div role="alert" class="travel-validation"><strong>{{ __('Review the following errors.') }}</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
         @if($editable)<p class="travel-help">{{ __('WorkDesk assigns the') }} {{ strtoupper($kind) }} {{ __('number when you save, for example 001/') }}{{ strtoupper($kind) }}/01-2026. Each company uses a yearly sequence. The issue date sets the month. You can correct the number while the document is a draft. @if($kind === 'spd')Select Time TBA if you do not know the time yet. Enter quantity and unit separately, for example 20 and Day. @endif Enter amounts without thousands separators, for example 15000 or 150000,50.</p>@endif
         @if($kind === 'lpj' && !$record)
+            <div class="travel-context">
+                <label for="travel-lpj-mode">Jenis LPJ</label>
+                <select id="travel-lpj-mode" wire:model.live="input.lpj_mode">
+                    <option value="spd">LPJ perjalanan dinas dengan SPD</option>
+                    <option value="reimbursement">LPJ reimbursement KPMOG</option>
+                </select>
+            </div>
+        @endif
+        @if($employeeReimbursement && $editable && !$canChooseRequester)
+            <div class="travel-context">
+                <label for="travel-lpj-employee">Karyawan</label>
+                <select id="travel-lpj-employee" wire:model.live="input.employee_id">
+                    <option value="">Pilih karyawan</option>
+                    @foreach($employees as $person)<option value="{{ $person->id }}">{{ $person->name }}</option>@endforeach
+                </select>
+            </div>
+        @elseif($kind === 'lpj' && !$record && !$employeeReimbursement)
             <div class="travel-context"><label for="travel-spd-reference">{{ __('Approved SPD') }}</label><select id="travel-spd-reference" wire:model.live="input.spd_id"><option value="">{{ __('Select SPD') }}</option>@foreach($spds as $item)<option value="{{ $item->id }}">{{ $item->number }} · {{ $item->employee_snapshot['name'] }}</option>@endforeach</select>
                 @if($spds->isEmpty())<p>{{ __('No approved SPD is available to link to this LPJ.') }}</p>@endif</div>
         @elseif($kind === 'lpj' && $spd)<p>{{ __('Linked SPD:') }} <strong>{{ $spd->number }}</strong></p>@endif
@@ -39,10 +66,14 @@
         @if($canArrange)
             <section class="travel-rule-panel" aria-labelledby="travel-administration-heading">
                 <h2 id="travel-administration-heading">{{ __('Khafafi Settings') }}</h2>
-                <div class="travel-context"><label for="travel-requester">{{ __('Creator / requester') }}</label>
-                    <select id="travel-requester" wire:model.live="input.requester_id"><option value="">{{ __('Select a requester') }}</option>@foreach($requesters as $user)<option value="{{ $user->id }}">{{ $user->name }} · {{ $user->employee->department?->name }}</option>@endforeach</select>
-                    @if($requesters->isEmpty())<p>{{ __('No active users are linked to employee and department records.') }}</p>@endif
-                </div>
+                @if($canChooseRequester)
+                    <div class="travel-context"><label for="travel-requester">Pemohon</label>
+                        <select id="travel-requester" wire:model.live="input.requester_id"><option value="">{{ __('Select a requester') }}</option>@foreach($requesters as $user)<option value="{{ $user->id }}">{{ $user->name }} · {{ $user->employee->department?->name }}</option>@endforeach</select>
+                        @if($requesters->isEmpty())<p>{{ __('No active users are linked to employee and department records.') }}</p>@endif
+                    </div>
+                @elseif($requesterSnapshot)
+                    <p>Pemohon sesuai SPD: {{ $requesterSnapshot['name'] }}.</p>
+                @endif
                 <label class="travel-rule-active"><input type="checkbox" wire:model.live="input.arrange_approvals">{{ __('Assign reviewers for this document') }}</label>
                 <p class="travel-help">{{ __('Choose the HR reviewer, Finance reviewer, and supervisor for this document. Clear the option to use the standard approval rules. The activity history records the change.') }}</p>
                 <span wire:loading wire:target="input.requester_id,input.arrange_approvals,input.approver_ids" role="status">{{ __('Updating settings…') }}</span>
@@ -55,10 +86,20 @@
         </div>
         @if($kind === 'lpj' && $totals)<p class="travel-balance" role="status">@if($totals['balance_minor'] < 0){{ __('Employee owes the company:') }} {{ \App\Services\Travel\TravelPresentation::money(abs($totals['balance_minor'])) }}.@elseif($totals['balance_minor'] > 0)Company owes the employee: {{ \App\Services\Travel\TravelPresentation::money($totals['balance_minor']) }}.@else Expenses match the advance.@endif</p>@endif
         <section class="travel-attachments" aria-labelledby="travel-attachments-heading"><h2 id="travel-attachments-heading">{{ $kind === 'lpj' ? __('Expense receipts') : __('Travel attachments') }}</h2>
+            @if($editable && $kind === 'lpj' && ($employeeReimbursement || (($input['company'] ?? '') === 'KPMOG' && ($totals['balance_minor'] ?? 0) > 0)))
+                <p>LPJ reimbursement KPMOG memerlukan struk, bon, atau bukti pengeluaran sebelum dikirim.</p>
+            @endif
             @foreach($record?->files ?? [] as $file)<div class="travel-toolbar"><a class="travel-control" href="{{ route('travel.file', $file) }}">{{ $file->original_name }}</a>@if($editable)<x-filament::button color="danger" size="sm" wire:click="removeAttachment({{ $file->id }})" wire:confirm="Remove this attachment?">{{ __('Remove attachment') }}</x-filament::button>@endif</div>@endforeach
             @if($editable)<label for="travel-uploads">{{ __('Attach up to 20 PDF, JPG, or PNG files, each up to 10 MB.') }}</label><input id="travel-uploads" type="file" multiple accept="application/pdf,image/png,image/jpeg" wire:model="uploads"><span wire:loading wire:target="uploads" role="status">{{ __('Uploading attachment…') }}</span>@foreach($this->uploads as $file)<span>{{ $file->getClientOriginalName() }}</span>@endforeach @elseif(!$record?->files->count())<p>{{ __('No attachments yet.') }}</p>@endif
         </section>
-        @if($editable)<div class="travel-toolbar"><x-filament::button color="gray" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft,submitDocument,uploads">{{ __('Save Draft') }}</x-filament::button><x-filament::button wire:click="submitDocument" wire:confirm="Submit this document to the listed reviewers? Editing will be locked during review." wire:loading.attr="disabled" wire:target="saveDraft,submitDocument,uploads">{{ __('Submit for Approval') }}</x-filament::button></div><p class="travel-help">@if($arrangingApprovals)This document uses its assigned reviewers.@else This document uses the standard approval rules.@endif</p>@endif
+        @if($editable)
+            <div class="travel-toolbar">
+                <x-filament::button color="gray" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft,submitDocument,uploads">{{ __('Save Draft') }}</x-filament::button>
+                @if(!$onBehalf)<x-filament::button wire:click="submitDocument" wire:confirm="Submit this document to the listed reviewers? Editing will be locked during review." wire:loading.attr="disabled" wire:target="saveDraft,submitDocument,uploads">{{ __('Submit for Approval') }}</x-filament::button>@endif
+            </div>
+            @if($onBehalf)<p class="travel-help">{{ $requesterSnapshot['name'] ?? 'Pemohon' }} menandatangani dan mengirim draft dari akunnya.</p>@endif
+            <p class="travel-help">@if($arrangingApprovals)This document uses its assigned reviewers.@else This document uses the standard approval rules.@endif</p>
+        @endif
         @if($record)
             <section class="travel-approval-history"><h2>{{ __('Online Approvals') }}</h2><ol>@forelse($record->approvals->where('round',$record->approval_round) as $approval)<li><strong>{{ __($approval->role === 'finance' ? \App\Services\Travel\TravelApprovalPolicies::reviewerLabel(\App\Services\Travel\TravelWorkflow::travelType($record->project_numbering_id)) : \App\Services\Travel\TravelWorkflow::ROLES[$approval->role]) }}: {{ $approval->assigned_name }}</strong> · {{ ['pending' => 'Pending', 'approved' => 'Approved', 'returned' => 'Returned'][$approval->status] }}@if($approval->decided_at) · {{ $approval->decided_at->format('d/m/Y H:i') }}@endif @if($approval->reason)<p>{{ $approval->reason }}</p>@endif</li>@empty<li>This document has not been submitted.</li>@endforelse</ol>
             @if(app(\App\Services\Travel\TravelWorkflow::class)->canDecide(auth()->user(),$record))<div class="travel-toolbar"><x-filament::button wire:click="approveDocument" wire:confirm="Approve this document and all its costs?" wire:loading.attr="disabled">{{ __('Approve document') }}</x-filament::button></div><label for="travel-return-reason">{{ __('Reason for return') }}</label><textarea id="travel-return-reason" wire:model="returnReason" rows="3"></textarea><x-filament::button color="danger" wire:click="returnDocument" wire:loading.attr="disabled">{{ __('Return for revision') }}</x-filament::button>@endif

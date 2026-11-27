@@ -4,12 +4,15 @@ namespace App\Filament\Pages;
 
 use App\Filament\LocalizedPage as Page;
 use App\Models\Department;
+use App\Models\FinanceRequest;
 use App\Models\TravelApprovalPolicy;
 use App\Models\User;
+use App\Services\Finance\RequestApprovals;
 use App\Services\Travel\TravelAccess;
 use App\Services\Travel\TravelApprovalPolicies;
 use Filament\Notifications\Notification;
 use Livewire\Attributes\Locked;
+use Livewire\Attributes\Url;
 use Livewire\WithPagination;
 use UnitEnum;
 
@@ -19,13 +22,17 @@ class TravelApprovalRules extends Page
 
     protected static ?string $slug = 'perjalanan-dinas/master-approval';
 
-    protected static ?string $title = 'SPD/LPJ Approval Rules';
+    protected static ?string $title = 'Master Approval';
 
-    protected static ?string $navigationLabel = 'Approval Rules';
+    protected static ?string $navigationLabel = 'Master Approval';
 
     protected static string|UnitEnum|null $navigationGroup = 'Perjalanan Dinas';
 
     protected string $view = 'filament.pages.travel-approval-rules';
+
+    #[Locked]
+    #[Url(as: 'dokumen', except: 'travel')]
+    public string $documentGroup = 'travel';
 
     #[Locked]
     public ?int $editingId = null;
@@ -41,12 +48,22 @@ class TravelApprovalRules extends Page
 
     public static function canAccess(): bool
     {
+        return self::canConfigureTravel() || RequestApprovals::canConfigure(auth()->user());
+    }
+
+    private static function canConfigureTravel(): bool
+    {
         return TravelAccess::has(auth()->user(), 'travel.configure');
     }
 
     public function mount(): void
     {
         abort_unless(static::canAccess(), 403);
+        $groups = $this->documentGroups();
+        if ($this->documentGroup === 'travel' && ! isset($groups['travel'])) {
+            $this->documentGroup = array_key_first($groups);
+        }
+        abort_unless(isset($groups[$this->documentGroup]), 403);
         $this->rule = TravelApprovalPolicies::defaults();
     }
 
@@ -57,7 +74,7 @@ class TravelApprovalRules extends Page
 
     public function newRule(): void
     {
-        abort_unless(static::canAccess(), 403);
+        abort_unless(self::canConfigureTravel(), 403);
         $this->editingId = null;
         $this->version = 0;
         $this->rule = TravelApprovalPolicies::defaults();
@@ -67,7 +84,7 @@ class TravelApprovalRules extends Page
 
     public function editRule(int $id): void
     {
-        abort_unless(static::canAccess(), 403);
+        abort_unless(self::canConfigureTravel(), 403);
         $rule = TravelApprovalPolicy::findOrFail($id);
         $this->editingId = $rule->id;
         $this->version = $rule->version;
@@ -84,7 +101,7 @@ class TravelApprovalRules extends Page
 
     public function saveRule(): void
     {
-        abort_unless(static::canAccess(), 403);
+        abort_unless(self::canConfigureTravel(), 403);
         app(TravelApprovalPolicies::class)->save(auth()->user(), $this->rule, $this->editingId, $this->version);
         $this->newRule();
         Notification::make()->title(__('SPD/LPJ approval rules saved'))->success()->send();
@@ -92,7 +109,7 @@ class TravelApprovalRules extends Page
 
     public function deleteRule(int $id, int $version): void
     {
-        abort_unless(static::canAccess(), 403);
+        abort_unless(self::canConfigureTravel(), 403);
         app(TravelApprovalPolicies::class)->delete(auth()->user(), $id, $version);
         if ($this->editingId === $id) {
             $this->newRule();
@@ -102,7 +119,11 @@ class TravelApprovalRules extends Page
 
     protected function getViewData(): array
     {
-        abort_unless(static::canAccess(), 403);
+        $groups = $this->documentGroups();
+        abort_unless(isset($groups[$this->documentGroup]), 403);
+        if ($this->documentGroup !== 'travel') {
+            return compact('groups');
+        }
         $missing = ! app(TravelApprovalPolicies::class)->installed();
         $users = User::with(['employee.department', 'roles.permissions', 'directPermissions'])->orderBy('name')->get();
         $signerOptions = array_fill_keys(['hr', 'finance', 'supervisor'], []);
@@ -135,6 +156,12 @@ class TravelApprovalRules extends Page
         $rules = $missing ? null : TravelApprovalPolicy::with(['department', 'hr', 'finance', 'supervisor'])
             ->when($this->companyFilter !== '', fn ($query) => $query->where('company', $this->companyFilter))->orderBy('company')->orderBy('department_id')->orderBy('document_kind')->paginate(15);
 
-        return compact('missing', 'signerOptions', 'eligibleCounts', 'departments', 'rules', 'canAssignActive');
+        return compact('groups', 'missing', 'signerOptions', 'eligibleCounts', 'departments', 'rules', 'canAssignActive');
+    }
+
+    private function documentGroups(): array
+    {
+        return (self::canConfigureTravel() ? ['travel' => 'SPD / LPJ'] : [])
+            + (RequestApprovals::canConfigure(auth()->user()) ? ['payment_request' => FinanceRequest::paymentLabel('APCA')] + FinanceRequest::KINDS : []);
     }
 }

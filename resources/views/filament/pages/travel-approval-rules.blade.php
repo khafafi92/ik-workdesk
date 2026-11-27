@@ -1,6 +1,20 @@
 <x-filament-panels::page>
 <link rel="stylesheet" href="{{ asset('css/travel.css') }}?v={{ filemtime(public_path('css/travel.css')) }}">
 <div class="travel-workspace">
+    @if(count($groups) > 1)
+        <nav class="travel-toolbar" aria-label="Jenis dokumen">
+            @foreach($groups as $key => $label)
+                <x-filament::button tag="a" :color="$documentGroup === $key ? 'primary' : 'gray'"
+                    :href="\App\Filament\Pages\TravelApprovalRules::getUrl($key === 'travel' ? [] : ['dokumen' => $key])"
+                    :aria-current="$documentGroup === $key ? 'page' : null">{{ $label }}</x-filament::button>
+            @endforeach
+        </nav>
+    @endif
+    @if($documentGroup !== 'travel')
+        <livewire:finance-request-approval-settings :kind="$documentGroup === 'payment_request' ? 'payment' : $documentGroup"
+            :fixed-company="match ($documentGroup) { 'payment_request' => 'APCA', 'payment' => 'KPMOG', default => null }"
+            :key="'finance-approval-'.$documentGroup" />
+    @else
     @if($missing)<p role="alert">{{ __('Master Approval SPD/LPJ is not set up. Contact administrator.') }}</p>@else
     <p>{{ __('Assign reviewers by company, department, document type, and travel type. Finance reviews head office requests. Project Managers review requests with a project code. Rules specific to SPD or LPJ take precedence over rules for both. Changes apply to new submissions.') }}</p>
     @if($errors->any())<div class="travel-validation" role="alert"><strong>{{ __('Check the rules below.') }}</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
@@ -34,6 +48,7 @@
         @forelse($rules as $rule)<tr wire:key="travel-policy-{{ $rule->id }}"><td>{{ $rule->company }}<br>{{ $rule->department->name }}</td><td>{{ \App\Services\Travel\TravelApprovalPolicies::KINDS[$rule->document_kind] }}<br>{{ \App\Services\Travel\TravelApprovalPolicies::TRAVEL_TYPES[$rule->travel_type] }}</td><td>{{ $rule->hr->name }}</td><td>{{ \App\Services\Travel\TravelApprovalPolicies::reviewerLabel($rule->travel_type) }}<br>{{ $rule->finance->name }}</td><td>{{ $rule->supervisor?->name ?? __('From Master Employee') }}</td><td>{{ $rule->is_active ? __('Active') : __('Inactive') }}</td><td><div class="travel-rule-actions"><x-filament::button color="gray" size="sm" wire:click="editRule({{ $rule->id }})">{{ __('Edit') }}</x-filament::button><x-filament::button color="gray" size="sm" wire:click="copyRule({{ $rule->id }})">{{ __('Copy') }}</x-filament::button><x-filament::button color="danger" size="sm" wire:click="deleteRule({{ $rule->id }},{{ $rule->version }})" wire:confirm="Delete this approval rule? New requests will use another matching rule or wait for a new one. Existing reviews and approval history are retained.">{{ __('Delete') }}</x-filament::button></div></td></tr>
         @empty<tr><td colspan="7">{{ __('Add approval rules for each company, department, and travel type that submits SPD or LPJ.') }}</td></tr>@endforelse
     </tbody></table></div>{{ $rules->links() }}
+    @endif
     @endif
 </div>
 </x-filament-panels::page>

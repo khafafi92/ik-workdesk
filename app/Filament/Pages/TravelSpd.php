@@ -66,6 +66,10 @@ class TravelSpd extends Page
         $this->input = app(TravelWorkflow::class)->defaults(auth()->user(), static::$kind);
         if ($this->selected) {
             $this->openDocument($this->selected);
+        } elseif (static::$kind === 'lpj' && request()->boolean('reimbursement')) {
+            $this->createDocument();
+            $this->input['lpj_mode'] = 'reimbursement';
+            $this->updatedInputLpjMode();
         }
     }
 
@@ -123,21 +127,18 @@ class TravelSpd extends Page
     {
         $this->assertEditing();
         abort_unless(TravelAccess::canArrangeDocument(auth()->user()), 403);
+        abort_unless(static::$kind === 'spd' || ($this->input['lpj_mode'] ?? 'spd') === 'reimbursement', 403);
         if (blank($this->input['requester_id'] ?? null)) {
-            if (static::$kind === 'spd') {
-                $this->input['employee_id'] = '';
-                $this->syncBudgetLineSelection();
-            }
+            $this->input['employee_id'] = '';
+            $this->syncBudgetLineSelection();
             return;
         }
         $requester = app(TravelDocumentAdministration::class)->requesters()->find($this->input['requester_id']);
         if (! $requester) {
             throw ValidationException::withMessages(['input.requester_id' => 'Select the active driver/juggler connected to Master Employee and department.']);
         }
-        if (static::$kind === 'spd') {
-            $this->input['employee_id'] = (string) $requester->employee->id;
-            $this->syncBudgetLineSelection();
-        }
+        $this->input['employee_id'] = (string) $requester->employee->id;
+        $this->syncBudgetLineSelection();
     }
 
     public function updatedInputCompany(): void
@@ -255,6 +256,19 @@ class TravelSpd extends Page
         $this->input['expenses'][0]['date'] = substr($spd->data['depart_at'], 0, 10);
     }
 
+    public function updatedInputLpjMode(): void
+    {
+        abort_unless(static::$kind === 'lpj' && $this->creating && ! $this->selected, 403);
+        $mode = $this->input['lpj_mode'] ?? 'spd';
+        abort_unless(in_array($mode, ['spd', 'reimbursement'], true), 422);
+        $this->input = app(TravelWorkflow::class)->defaults(auth()->user(), 'lpj');
+        $this->input['lpj_mode'] = $mode;
+        if ($mode === 'reimbursement') {
+            $this->input['company'] = 'KPMOG';
+        }
+        $this->resetValidation();
+    }
+
     public function addRow(string $section): void
     {
         $this->assertEditing();
@@ -335,10 +349,11 @@ class TravelSpd extends Page
         $missing = ! Schema::hasTable('travel_documents');
         $record = ! $missing && $this->selected ? app(TravelWorkflow::class)->document(auth()->user(), $this->selected, $kind) : null;
         $editable = ! $missing && ($record ? TravelAccess::editable(auth()->user(), $record) : $this->creating);
+        $employeeReimbursement = $kind === 'lpj' && ($record?->isEmployeeReimbursement() ?? (($this->input['lpj_mode'] ?? null) === 'reimbursement'));
         $canCreate = TravelAccess::canCreate(auth()->user(), $kind);
         $employees = $canCreate ? TravelAccess::employees(auth()->user(), $kind, $record)->orderBy('name')->get() : collect();
         $spd = $record?->spd;
-        $spds = ! $missing && $kind === 'lpj' && $canCreate ? app(TravelWorkflow::class)->eligibleSpds(auth()->user(), $record?->id)->latest('id')->limit(100)->get() : collect();
+        $spds = ! $missing && $kind === 'lpj' && $canCreate && ! $employeeReimbursement ? app(TravelWorkflow::class)->eligibleSpds(auth()->user(), $record?->id)->latest('id')->limit(100)->get() : collect();
         if (! $spd && $kind === 'lpj' && ! empty($this->input['spd_id'])) {
             $spd = $spds->firstWhere('id', $this->input['spd_id']);
         }
@@ -346,10 +361,12 @@ class TravelSpd extends Page
         $personSnapshot = ['name' => $person?->name, 'position' => $person?->position,
             'department' => $person?->department?->name, 'user_id' => $person?->user_id, 'supervisor' => $person?->supervisor?->name,
             'supervisor_user_id' => $person?->supervisor?->user_id];
-        $employee = $editable && $kind === 'spd' ? $personSnapshot : ($record?->employee_snapshot ?? $spd?->employee_snapshot ?? $personSnapshot);
+        $employee = $editable && ($kind === 'spd' || $employeeReimbursement) ? $personSnapshot : ($record?->employee_snapshot ?? $spd?->employee_snapshot ?? $personSnapshot);
         $canArrange = $editable && TravelAccess::canArrangeDocument(auth()->user());
         $requesters = $canArrange ? app(TravelDocumentAdministration::class)->requesters()->get() : collect();
         $requesterId = (int) ($canArrange ? ($this->input['requester_id'] ?? auth()->id()) : ($record?->data['requester_id'] ?? $record?->created_by ?? auth()->id()));
+        $canChooseRequester = $canArrange && ($kind === 'spd' || $employeeReimbursement);
+        $onBehalf = $editable && $requesterId > 0 && $requesterId !== (int) auth()->id();
         $requester = $canArrange ? $requesters->firstWhere('id', $requesterId) : null;
         $requesterSnapshot = $requester ? ['name' => $requester->name, 'position' => $requester->employee?->position]
             : ($record?->data['requester_snapshot'] ?? null);
@@ -361,7 +378,7 @@ class TravelSpd extends Page
         $approvalPlan = null;
         $approvalPlanError = null;
         if ($editable || ($record && in_array($record->status, ['draft', 'returned'], true))) {
-            $departmentId = $kind === 'spd' && $editable ? $person?->department_id : ($record?->department_id ?? $spd?->department_id);
+            $departmentId = ($kind === 'spd' || $employeeReimbursement) && $editable ? $person?->department_id : ($record?->department_id ?? $spd?->department_id);
             if ($departmentId) {
                 $projectNumberingId = $kind === 'spd' && $editable ? ($this->input['project_numbering_id'] ?? null) : ($record?->project_numbering_id ?? $spd?->project_numbering_id);
                 $preview = app(TravelDocumentAdministration::class)->preview((string) ($editable ? ($this->input['company'] ?? '') : $record->company),
@@ -369,7 +386,7 @@ class TravelSpd extends Page
                 $approvalPlan = $preview['plan'];
                 $approvalPlanError = $preview['error'];
             } else {
-                $approvalPlanError = $kind === 'lpj' ? 'Select the SPD reference to see the approval rules.' : 'Select employees to see the approval rules.';
+                $approvalPlanError = $kind === 'lpj' && ! $employeeReimbursement ? 'Select the SPD reference to see the approval rules.' : 'Select employees to see the approval rules.';
             }
         }
         $totals = null;
@@ -419,8 +436,8 @@ class TravelSpd extends Page
             ->when(trim($this->search) !== '', fn ($query) => $query->where(fn ($search) => $search->where('number', 'like', '%'.trim($this->search).'%')->orWhere('employee_snapshot->name', 'like', '%'.trim($this->search).'%')))
             ->when($this->statusFilter !== '', fn ($query) => $query->where('status', $this->statusFilter))->latest('id')->paginate(15);
 
-        return compact('kind', 'missing', 'record', 'editable', 'canCreate', 'employees', 'employee', 'totals', 'records', 'spds', 'spd', 'projectCodes',
-            'approvalPlan', 'approvalPlanError', 'canArrange', 'requesters', 'requesterSnapshot', 'arrangingApprovals', 'approvers', 'duration', 'durationError',
+        return compact('kind', 'missing', 'record', 'editable', 'canCreate', 'employees', 'employee', 'totals', 'records', 'spds', 'spd', 'projectCodes', 'employeeReimbursement',
+            'approvalPlan', 'approvalPlanError', 'canArrange', 'canChooseRequester', 'onBehalf', 'requesters', 'requesterSnapshot', 'arrangingApprovals', 'approvers', 'duration', 'durationError',
             'budgetLineOptions', 'budgetLine', 'budgetUsage');
     }
 }

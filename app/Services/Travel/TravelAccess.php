@@ -30,8 +30,7 @@ class TravelAccess
 
     public static function canArrangeDocument(?User $user): bool
     {
-        return $user?->isSystemAdministrator()
-            && strtolower($user->email) === 'riyankhafafi@kpmog.com';
+        return $user?->canChooseDocumentRequester() === true;
     }
 
     public static function canCreate(?User $user, string $kind): bool

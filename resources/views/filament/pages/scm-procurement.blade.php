@@ -79,6 +79,13 @@
                 @include('filament.pages.scm.partials.next-action')
             @endif
             @if($tab === 'request')
+                @if($record->kind === 'PR' && $record->company === 'APCA'
+                    && \App\Services\Scm\Access::authors(auth()->user(), $record)
+                    && \Illuminate\Support\Facades\Schema::hasColumn('finance_requests', 'procurement_id')
+                    && (\App\Services\Finance\Requests::canOpen(auth()->user(), 'payment', 'APCA')
+                        || \App\Services\Finance\Requests::canOpen(auth()->user(), 'reimbursement')))
+                    @include('filament.pages.scm.partials.apca-finance-documents')
+                @endif
                 @if($record->status === 'submitted')<p role="status">Sudah dikirim pada {{ $record->submitted_at?->format('d/m/Y H:i') }}. Menunggu penerimaan {{ $processorLabel }}.</p>@endif
                 @if($record->sourceAtkRequest)
                     <p class="scm-help">Sumber permintaan ATK: {{ $record->sourceAtkRequest->request_number }}. Jumlah awal PR berasal dari kekurangan stok saat draft dibuat; periksa kembali sebelum mengajukan persetujuan.</p>

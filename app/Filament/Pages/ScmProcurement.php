@@ -171,17 +171,25 @@ class ScmProcurement extends Page
 
     public string $approvalDocument = 'PRSR';
 
+    public const FINANCE_APPROVAL_DOCUMENTS = [
+        'payment_request' => ['payment', 'APCA', 'Payment Request APCA'],
+        'reimbursement' => ['reimbursement', 'APCA', 'Form Reimbursement APCA'],
+        'payment' => ['payment', 'KPMOG', 'PV KPMOG'],
+        'expense_report' => ['expense_report', 'KPMOG', 'ER KPMOG'],
+    ];
+
     public function updatedApprovalDocument(): void
     {
         abort_unless(Access::has(auth()->user(), 'scm.configure'), 403);
-        abort_unless(in_array($this->approvalDocument, ['PRSR', 'CBE', 'PO', 'BUDGET'], true), 422);
+        abort_unless(in_array($this->approvalDocument, ['PRSR', 'CBE', 'PO', 'BUDGET'], true)
+            || isset(self::FINANCE_APPROVAL_DOCUMENTS[$this->approvalDocument]), 422);
         if ($this->approvalDocument === 'CBE') {
             $this->newCbeApprovalPolicy();
         } elseif ($this->approvalDocument === 'PO') {
             $this->newPoApprovalPolicy();
         } elseif ($this->approvalDocument === 'BUDGET') {
             $this->newBudgetApprovalPolicy();
-        } else {
+        } elseif ($this->approvalDocument === 'PRSR') {
             $this->newApprovalPolicy();
         }
     }
@@ -314,6 +322,11 @@ class ScmProcurement extends Page
             $this->section = 'mine';
         } elseif (! Access::canProcessNeedType(auth()->user(), static::$processingNeedType) && Access::has(auth()->user(), 'scm.configure')) {
             $this->section = 'settings';
+        }
+        $document = request()->query('dokumen');
+        if ($this->section === 'settings' && Access::has(auth()->user(), 'scm.configure')
+            && is_string($document) && isset(self::FINANCE_APPROVAL_DOCUMENTS[$document])) {
+            $this->approvalDocument = $document;
         }
         if ($this->selected) {
             $this->open($this->selected);

@@ -140,6 +140,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->roles->contains(fn (Role $role): bool => $role->is_active && $role->code === 'system-admin');
     }
 
+    public function canChooseDocumentRequester(): bool
+    {
+        return $this->isSystemAdministrator() && strcasecmp($this->email, 'riyankhafafi@kpmog.com') === 0;
+    }
+
     public function hasRole(string ...$roleCodes): bool
     {
         if (! $this->isActiveForAccess()) {

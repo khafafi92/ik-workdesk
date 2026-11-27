@@ -36,6 +36,11 @@
 @page scm-po-letterhead{size:A4 portrait;margin:0}
 @media print{.scm-po-print--letterhead{page:scm-po-letterhead}.scm-po-print .scm-po-sheet--letterhead{position:static;min-height:0;padding:46mm 14mm 20mm;background:transparent;isolation:auto}.scm-po-sheet--letterhead>.scm-po-letterhead{display:none}.scm-po-signoff{grid-template-columns:auto minmax(0,1fr);break-inside:avoid}.scm-po-form-revision{white-space:nowrap}.scm-po-condition td{print-color-adjust:exact;-webkit-print-color-adjust:exact}}
 .scm-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}.scm-heading{display:flex;flex-wrap:wrap;justify-content:space-between;gap:1rem;align-items:center}
+.scm-workspace .submission-report-types a { border: 1px solid var(--scm-line); color: var(--scm-text); background: var(--scm-bg); text-decoration: none; }
+.scm-workspace .submission-report-types a[aria-current="page"] { box-shadow: inset 0 -3px var(--scm-accent); font-weight: 700; }
+.submission-report-filters { display: grid; gap: 1rem; }
+.submission-report-table :is(th, td):nth-child(8) { min-width: 7.25rem; }
+@media (min-width: 1050px) { .scm-workspace .submission-report-filters .scm-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .scm-next-action{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;padding:1rem;background:var(--scm-soft);border:1px solid var(--scm-line);border-radius:.375rem}.scm-next-action>div{flex:1 1 18rem;min-width:0}.scm-next-action p{font-size:.875rem;color:var(--scm-muted)}
 .scm-workspace .fi-btn{min-height:44px!important}
 .scm-workspace button,.scm-workspace a{min-height:44px;display:inline-flex;align-items:center;justify-content:center;padding:.625rem .875rem;max-width:100%;overflow-wrap:anywhere;white-space:normal;border-radius:.375rem}.scm-workspace button:not(.fi-btn){border:1px solid var(--scm-line);background:var(--scm-bg);color:var(--scm-text)}.scm-workspace a{color:var(--scm-accent);text-decoration:underline;text-underline-offset:3px}.scm-workspace button[aria-current=page]{font-weight:700;border-width:2px;border-color:var(--scm-accent)}.scm-workspace button:disabled{cursor:wait;opacity:.65}

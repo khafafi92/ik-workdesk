@@ -8,6 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class TravelDocument extends Model
 {
+    public function isEmployeeReimbursement(): bool
+    {
+        return $this->kind === 'lpj' && $this->company === 'KPMOG' && $this->spd_id === null
+            && ($this->data['expense_reimbursement'] ?? false) === true;
+    }
+
     protected $guarded = ['id'];
 
     protected function casts(): array

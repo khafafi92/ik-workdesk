@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TravelFile;
+use App\Services\ModuleAccessService;
 use App\Services\Travel\TravelAmounts;
 use App\Services\Travel\TravelDocumentAdministration;
 use App\Services\Travel\TravelWorkflow;
@@ -13,6 +14,7 @@ class TravelDocumentController extends Controller
 {
     public function print(Request $request, int $document, TravelWorkflow $workflow)
     {
+        $this->ensureEnabled();
         $record = $workflow->document($request->user(), $document);
         $values = $workflow->formData($record);
         $totals = $record->kind === 'spd' ? app(TravelAmounts::class)->estimate($values['costs'])
@@ -29,11 +31,17 @@ class TravelDocumentController extends Controller
 
     public function file(Request $request, TravelFile $file, TravelWorkflow $workflow)
     {
+        $this->ensureEnabled();
         $workflow->document($request->user(), $file->travel_document_id);
         abort_unless(preg_match('~^travel/\d{4}/\d{2}/[a-f0-9-]{36}\.(pdf|png|jpg)$~D', $file->path)
             && Storage::disk('local')->exists($file->path), 404);
 
         return Storage::disk('local')->download($file->path, $file->original_name,
             ['Content-Type' => $file->mime, 'X-Content-Type-Options' => 'nosniff', 'Cache-Control' => 'private, no-store']);
+    }
+
+    private function ensureEnabled(): void
+    {
+        abort_unless(app(ModuleAccessService::class)->isEnabled('Perjalanan Dinas'), 403);
     }
 }

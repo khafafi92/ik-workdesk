@@ -496,6 +496,31 @@ class TravelDocumentsTest extends TestCase
         }
     }
 
+    public function test_employee_reimbursement_lpj_requires_expense_evidence_before_submission(): void
+    {
+        $workflow = app(TravelWorkflow::class);
+        $input = [...$workflow->defaults($this->requester, 'lpj'), 'company' => 'KPMOG', 'lpj_mode' => 'reimbursement',
+            'purpose' => 'Transportasi operasional QA',
+            'expenses' => [['date' => '2026-11-25', 'description' => 'Transportasi lokal', 'transport' => '100000']]];
+        $document = $workflow->save($this->requester, 'lpj', null, 0, $input);
+        $this->assertTrue($document->isEmployeeReimbursement());
+        $this->assertSame(10000000, $document->balance_minor);
+
+        try {
+            $workflow->submit($this->requester, $document->id, $document->version);
+            $this->fail('LPJ reimbursement without expense evidence was accepted.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('travel', $exception->errors());
+            $this->assertSame('draft', $document->fresh()->status);
+        }
+
+        $document = $workflow->save($this->requester, 'lpj', $document->id, $document->version,
+            $workflow->formData($document), [UploadedFile::fake()->create('struk.pdf', 10, 'application/pdf')]);
+        $this->assertCount(1, $document->files);
+        $document = $workflow->submit($this->requester, $document->id, $document->version);
+        $this->assertSame('submitted', $document->status);
+    }
+
     public function test_invalid_money_remains_editable_and_returns_a_field_error(): void
     {
         Livewire::test(TravelSpd::class)->call('createDocument')->set('input', $this->input())

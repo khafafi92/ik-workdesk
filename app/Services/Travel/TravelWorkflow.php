@@ -6,6 +6,7 @@ use App\Filament\Pages\TravelLpj;
 use App\Filament\Pages\TravelSpd;
 use App\Models\Scm\ProjectNumbering;
 use App\Models\FinanceBudgetLine;
+use App\Models\Employee;
 use App\Models\TravelDocument;
 use App\Models\TravelEvent;
 use App\Models\User;
@@ -69,7 +70,7 @@ class TravelWorkflow
         return ['company' => 'APCA', 'number' => '', 'revision' => '-', 'issued_on' => today()->toDateString(), 'applied_on' => today()->toDateString(),
             'requester_id' => (string) $actor->id, 'arrange_approvals' => false,
             'employee_id' => (string) (TravelAccess::employees($actor, $kind)->where('user_id', $actor->id)->value('id') ?? ''),
-            'spd_id' => '', 'project_numbering_id' => '', 'finance_budget_line_id' => '', 'travel_type' => 'HO', 'urgency' => 'normal', 'job_code' => '', 'purpose' => '', 'depart_at' => '', 'return_at' => '',
+            'spd_id' => '', 'lpj_mode' => 'spd', 'project_numbering_id' => '', 'finance_budget_line_id' => '', 'travel_type' => 'HO', 'urgency' => 'normal', 'job_code' => '', 'purpose' => '', 'depart_at' => '', 'return_at' => '',
             'depart_time' => '', 'return_time' => '', 'depart_time_tba' => true, 'return_time_tba' => true,
             'routes' => [['from' => '', 'to' => '', 'mode' => '']], 'lodgings' => [],
             'costs' => array_map(fn ($description, $unit) => ['description' => $description, 'quantity' => '1', 'unit' => $unit, 'unit_cost' => '0', 'notes' => ''],
@@ -97,6 +98,7 @@ class TravelWorkflow
             'number' => $document->number, 'company' => $document->company, 'revision' => $document->revision,
             'issued_on' => $document->issued_on->toDateString(), 'applied_on' => $document->applied_on->toDateString(),
             'employee_id' => (string) $document->employee_id, 'spd_id' => (string) ($document->spd_id ?? ''),
+            'lpj_mode' => $document->isEmployeeReimbursement() ? 'reimbursement' : 'spd',
             'project_numbering_id' => (string) ($document->project_numbering_id ?? ''),
             'finance_budget_line_id' => (string) ($document->finance_budget_line_id ?? ''),
             'advance_one' => Decimal::input($document->advance_one_minor), 'advance_two' => Decimal::input($document->advance_two_minor)];
@@ -164,7 +166,7 @@ class TravelWorkflow
     private function normalize(User $actor, string $kind, array $input, ?TravelDocument $document): array
     {
         $administration = app(TravelDocumentAdministration::class);
-        $assignment = $administration->normalize($actor, $input, $document);
+        $assigningRequester = TravelAccess::canArrangeDocument($actor);
         $header = Validator::make($input, ['number' => ['nullable', 'string', 'max:190'], 'revision' => ['required', 'string', 'max:30'],
             'issued_on' => ['required', 'date_format:Y-m-d'], 'applied_on' => ['required', 'date_format:Y-m-d'],
             'notes' => ['nullable', 'string', 'max:5000'], 'cost_notes' => ['nullable', 'string', 'max:5000']])->validate();
@@ -176,11 +178,44 @@ class TravelWorkflow
         }
         $amounts = app(TravelAmounts::class);
         $spd = null;
-        if ($kind === 'lpj') {
+        $employeeReimbursement = $kind === 'lpj' && ($input['lpj_mode'] ?? 'spd') === 'reimbursement';
+        if ($kind === 'lpj' && $document && $document->isEmployeeReimbursement() !== $employeeReimbursement) {
+            throw ValidationException::withMessages(['lpj_mode' => 'Jenis LPJ sudah tercatat saat draft disimpan.']);
+        }
+        if ($assigningRequester && $employeeReimbursement) {
+            $requesterId = filter_var($input['requester_id'] ?? null, FILTER_VALIDATE_INT);
+            $previousRequester = $document ? (int) ($document->data['requester_id'] ?? $document->created_by) : (int) $actor->id;
+            if ($requesterId && $requesterId !== (int) $actor->id && (! $document || $requesterId !== $previousRequester)) {
+                $input['employee_id'] = $administration->requesters()->find($requesterId)?->employee->id;
+            }
+        }
+        if ($employeeReimbursement) {
+            Validator::make($input, ['company' => ['required', 'in:KPMOG'], 'spd_id' => ['prohibited'],
+                'employee_id' => ['required', 'integer'], 'purpose' => ['required', 'string', 'max:3000']])->validate();
+            $employee = TravelAccess::employees($actor, 'lpj', $document)->findOrFail($input['employee_id']);
+            $employeeId = $employee->id;
+            $departmentId = $employee->department_id;
+            $employeeSnapshot = $this->employeeSnapshot($employee);
+            $company = 'KPMOG';
+            $number = app(TravelDocumentNumbering::class)->resolve($company, $header['issued_on'], $number, $document, 'lpj');
+            $projectNumberingId = null;
+            $travelType = 'HO';
+            $actual = $amounts->actual($input['expenses'] ?? [], '0', '0');
+            $dates = array_column($actual['rows'], 'date');
+            $data = ['expense_reimbursement' => true, 'purpose' => trim($input['purpose']), 'travel_type' => $travelType,
+                'depart_at' => $dates ? min($dates) : $header['issued_on'], 'return_at' => $dates ? max($dates) : $header['issued_on'],
+                'expenses' => $actual['rows']];
+            $total = $actual['total_minor'];
+        } elseif ($kind === 'lpj') {
             Validator::make($input, ['spd_id' => ['required', 'integer']])->validate();
             $spd = $this->eligibleSpds($actor, $document?->id)->lockForUpdate()->findOrFail($input['spd_id']);
             if ($document && (int) $document->spd_id !== (int) $spd->id) {
                 throw ValidationException::withMessages(['spd_id' => 'SPD references cannot be replaced after LPJ is saved.']);
+            }
+            if ($assigningRequester) {
+                $input['requester_id'] = $document
+                    ? ($document->data['requester_id'] ?? $document->created_by)
+                    : ($spd->data['requester_id'] ?? $spd->created_by);
             }
             $employeeSnapshot = $spd->employee_snapshot;
             $employeeId = $spd->employee_id;
@@ -207,9 +242,7 @@ class TravelWorkflow
             $employee = TravelAccess::employees($actor, 'spd', $document)->findOrFail($input['employee_id']);
             $employeeId = $employee->id;
             $departmentId = $employee->department_id;
-            $employeeSnapshot = ['name' => $employee->name, 'position' => $employee->position, 'employee_no' => $employee->employee_no,
-                'department' => $employee->department->name, 'user_id' => $employee->user_id,
-                'supervisor' => $employee->supervisor?->name, 'supervisor_user_id' => $employee->supervisor?->user_id];
+            $employeeSnapshot = $this->employeeSnapshot($employee);
             $company = $input['company'];
             $project = null;
             if (filled($input['project_numbering_id'] ?? null)) {
@@ -247,6 +280,7 @@ class TravelWorkflow
             $total = $estimate['total_minor'];
         }
         $data['notes'] = trim($header['notes'] ?? '');
+        $assignment = $administration->normalize($actor, $input, $document);
         $data = [...$data, ...$assignment];
         $budgetLine = $kind === 'spd' && Schema::hasColumn('travel_documents', 'finance_budget_line_id')
             ? app(BudgetLedger::class)->resolveLine(
@@ -269,6 +303,13 @@ class TravelWorkflow
             'advance_two_minor' => $actual['advance_two_minor'] ?? 0, 'balance_minor' => $actual['balance_minor'] ?? 0];
     }
 
+    private function employeeSnapshot(Employee $employee): array
+    {
+        return ['name' => $employee->name, 'position' => $employee->position, 'employee_no' => $employee->employee_no,
+            'department' => $employee->department->name, 'user_id' => $employee->user_id,
+            'supervisor' => $employee->supervisor?->name, 'supervisor_user_id' => $employee->supervisor?->user_id];
+    }
+
     public function submit(User $actor, int $id, int $version): TravelDocument
     {
         return DB::transaction(function () use ($actor, $id, $version): TravelDocument {
@@ -278,7 +319,16 @@ class TravelWorkflow
                 throw ValidationException::withMessages(['travel' => $document->kind === 'spd' ? 'Fill in at least one travel route before filing SPD.' : 'Fill in at least a line of expenses before filing LPJ.']);
             }
             if ($document->kind === 'lpj') {
-                $this->eligibleSpds($actor, $document->id)->lockForUpdate()->findOrFail($document->spd_id);
+                if ($document->isEmployeeReimbursement()) {
+                    if ($document->total_minor <= 0) {
+                        throw ValidationException::withMessages(['travel' => 'Isi nominal pengeluaran untuk LPJ reimbursement.']);
+                    }
+                } else {
+                    $this->eligibleSpds($actor, $document->id)->lockForUpdate()->findOrFail($document->spd_id);
+                }
+                if ($document->company === 'KPMOG' && $document->balance_minor > 0 && ! $document->files()->exists()) {
+                    throw ValidationException::withMessages(['travel' => 'Lampirkan struk, bon, atau bukti pengeluaran sebelum mengirim LPJ reimbursement KPMOG.']);
+                }
             } elseif (Schema::hasColumn('travel_documents', 'finance_budget_line_id') && $document->finance_budget_line_id) {
                 $line = FinanceBudgetLine::lockForUpdate()->findOrFail($document->finance_budget_line_id);
                 $available = app(BudgetLedger::class)->lineSummary($line)['available_minor'];

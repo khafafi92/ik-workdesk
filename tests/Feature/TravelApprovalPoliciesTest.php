@@ -18,6 +18,7 @@ use App\Services\Travel\TravelApprovalPolicies;
 use App\Services\Travel\TravelWorkflow;
 use Filament\Facades\Filament;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -100,6 +101,32 @@ class TravelApprovalPoliciesTest extends TestCase
         $this->hr->employee->update(['position_level' => 'staff']);
         $this->hr->unsetRelation('employee');
         $this->assertFalse(TravelAccess::manager($this->hr));
+    }
+
+    public function test_kpmog_employee_lpj_submits_without_spd_after_receipts_are_attached(): void
+    {
+        $this->savePolicy(['company' => 'KPMOG', 'document_kind' => 'LPJ']);
+        $this->get(TravelLpj::getUrl(['reimbursement' => 1]))->assertOk()->assertSee('LPJ REIMBURSEMENT')
+            ->assertSee('Keperluan reimbursement');
+        $workflow = app(TravelWorkflow::class);
+        $input = [...$workflow->defaults($this->author, 'lpj'), 'company' => 'KPMOG', 'lpj_mode' => 'reimbursement',
+            'purpose' => 'Penggantian bensin', 'expenses' => [['date' => '2026-11-25', 'description' => 'Bensin', 'transport' => '50000']]];
+        $draft = $workflow->save($this->author, 'lpj', null, 0, $input);
+        $this->assertTrue($draft->isEmployeeReimbursement());
+        $this->assertNull($draft->spd_id);
+        $this->assertSame(5000000, $draft->balance_minor);
+        try {
+            $workflow->submit($this->author, $draft->id, $draft->version);
+            $this->fail('LPJ reimbursement requires a receipt.');
+        } catch (ValidationException $error) {
+            $this->assertStringContainsString('bukti pengeluaran', $error->errors()['travel'][0]);
+        }
+        $draft = $workflow->save($this->author, 'lpj', $draft->id, $draft->version, $input,
+            [UploadedFile::fake()->createWithContent('struk-bensin.pdf', "%PDF-1.4\n")]);
+        $filed = $workflow->submit($this->author, $draft->id, $draft->version);
+        $this->assertSame('submitted', $filed->status);
+        $this->assertSame(1, $filed->files()->count());
+        $this->get(route('travel.print', $filed->id))->assertOk()->assertSee('LPJ REIMBURSEMENT')->assertSee('Penggantian bensin');
     }
 
     private function savePolicy(array $extra = []): TravelApprovalPolicy
@@ -201,6 +228,32 @@ class TravelApprovalPoliciesTest extends TestCase
                 ->assertDontSee('wire:model.live="input.requester_id"', false)
                 ->assertDontSee('wire:model.live="input.approver_ids.', false);
         }
+    }
+
+    public function test_khafafi_can_prepare_lpj_for_an_employee_or_from_their_spd(): void
+    {
+        $khafafi = $this->khafafi();
+        $draft = Livewire::actingAs($khafafi)->test(TravelLpj::class)->call('createDocument')
+            ->set('input.lpj_mode', 'reimbursement')->set('input.requester_id', (string) $this->author->id)
+            ->assertSet('input.employee_id', (string) $this->author->employee->id)
+            ->set('input.purpose', 'Penggantian bensin')
+            ->set('input.expenses.0.description', 'Bensin')->set('input.expenses.0.transport', '50000')
+            ->call('saveDraft')->assertHasNoErrors();
+        $standalone = TravelDocument::findOrFail($draft->get('selected'));
+        $this->assertSame($khafafi->id, $standalone->created_by);
+        $this->assertSame($this->author->id, $standalone->data['requester_id']);
+        $this->assertSame($this->author->employee->id, $standalone->employee_id);
+
+        $spd = $this->document(false);
+        $spd->update(['status' => 'approved']);
+        $lpj = Livewire::actingAs($khafafi)->test(TravelLpj::class)->call('createDocument')
+            ->set('input.spd_id', (string) $spd->id)->assertSet('input.requester_id', (string) $this->author->id)
+            ->assertSee('Pemohon sesuai SPD')->set('input.expenses.0.description', 'Taksi')->set('input.expenses.0.transport', '50000')
+            ->call('saveDraft')->assertHasNoErrors();
+        $linked = TravelDocument::findOrFail($lpj->get('selected'));
+        $this->assertSame($this->author->id, $linked->data['requester_id']);
+        $this->assertSame($spd->id, $linked->spd_id);
+        $this->actingAs($this->author)->get(TravelLpj::getUrl(['dokumen' => $linked->id]))->assertOk()->assertSee('Submit for Approval');
     }
 
     public function test_requester_can_edit_and_submit_but_cannot_change_khafafi_assignments(): void

@@ -70,6 +70,7 @@ class MenuAccessCatalogTest extends TestCase
             AiAssistantChat::class => 'Signed-in users, own conversations',
             GlobalChatRoom::class => 'Signed-in users, company scope',
             AiAssistantSettingsPage::class => 'System administrator only',
+            \App\Filament\Pages\LanguageSettings::class => 'Signed-in users can set their own language',
             UserResource::class => 'Administrator access level',
             \App\Filament\Pages\ModuleAccessSettingsPage::class => 'System administrator only',
             ScmApprovals::class => 'Assigned PR/SR or CBE approval, SCM processor, or system administrator',
@@ -81,7 +82,10 @@ class MenuAccessCatalogTest extends TestCase
             SignatureProfile::class => 'SCM requester, processor or assigned approver',
             Inventory::class => 'Catalogue, stock, and transactions follow inventory and existing module permissions',
         ];
-        $aliases = ['Business Travel' => ['SPD' => 'View department SPD', 'LPJ' => 'View department LPJ', 'Approval Rules' => 'Manage Master Approval SPD/LPJ'], 'Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR', 'Department budget' => 'Anggaran departemen'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'], 'IT Infrastructure' => [
+        $aliases = ['Business Travel' => ['SPD' => 'View department SPD', 'LPJ' => 'View department LPJ', 'Master Approval' => 'Manage Master Approval SPD/LPJ'], 'Permintaan' => ['PR' => 'PR dan SR', 'SR' => 'PR dan SR', 'Department budget' => 'Anggaran departemen'], 'SCM' => ['SCM' => 'Proses Pengadaan SCM', 'Data Vendor' => 'Proses Pengadaan SCM'],
+            'Finance' => ['Payment Voucher (PV)' => 'Buat Payment Voucher (PV) KPMOG', 'Payment Request' => 'Buat Payment Request APCA',
+                'Expense Report (ER)' => 'Buat Expense Report (ER) KPMOG', 'Reimbursement' => 'Buat Form Reimbursement APCA'],
+            'Reports' => ['Laporan Pengajuan' => 'Lihat Laporan Pengajuan'], 'IT Infrastructure' => [
             'Device Catalog' => 'View Device Catalog',
             'Infrastructure Inspections' => 'View Inspections',
             'Daily IT Monitoring' => 'View Inspections',

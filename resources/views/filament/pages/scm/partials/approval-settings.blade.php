@@ -2,7 +2,11 @@
     <h2 id="scm-approval-master-title">Master Approval</h2>
     <div class="scm-field">
         <label for="scm-approvalDocument">Dokumen persetujuan</label>
-        <select id="scm-approvalDocument" wire:model.live="approvalDocument"><option value="PRSR">PR/SR</option><option value="CBE">CBE</option><option value="PO">PO</option><option value="BUDGET">Kelebihan anggaran</option></select>
+        <select id="scm-approvalDocument" wire:model.live="approvalDocument"><option value="PRSR">PR/SR</option><option value="CBE">CBE</option><option value="PO">PO</option><option value="BUDGET">Kelebihan anggaran</option>
+            @foreach(\App\Filament\Pages\ScmProcurement::FINANCE_APPROVAL_DOCUMENTS as $key => [$kind, $company, $label])
+                <option value="{{ $key }}">{{ $label }}</option>
+            @endforeach
+        </select>
     </div>
     @if($approvalDocument === 'CBE')
         @include('filament.pages.scm.partials.cbe-approval-settings')
@@ -10,6 +14,10 @@
         @include('filament.pages.scm.partials.po-approval-settings')
     @elseif($approvalDocument === 'BUDGET')
         @include('filament.pages.scm.partials.budget-approval-settings')
+    @elseif(isset(\App\Filament\Pages\ScmProcurement::FINANCE_APPROVAL_DOCUMENTS[$approvalDocument]))
+        @php([$kind, $company, $label] = \App\Filament\Pages\ScmProcurement::FINANCE_APPROVAL_DOCUMENTS[$approvalDocument])
+        <link rel="stylesheet" href="{{ asset('css/travel.css') }}?v={{ filemtime(public_path('css/travel.css')) }}">
+        <livewire:finance-request-approval-settings :kind="$kind" :fixed-company="$company" :key="'scm-approval-'.$approvalDocument" />
     @else
     <p>Atur penandatangan per perusahaan, divisi, jenis kebutuhan, dan PR/SR. Kebutuhan HO dan Project memakai master terpisah. CBO hanya untuk HO. Perubahan berlaku saat pengajuan berikutnya diajukan.</p>
     <p class="scm-help">Pada HO, CBO tetap wajib menyetujui. Jika Approved by diisi pejabat selain CBO, pilih CBO pada Crosschecked by; tahap tersebut wajib.</p>

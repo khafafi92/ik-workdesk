@@ -4,11 +4,13 @@ use App\Http\Controllers\Admin\AttendanceReportDownloadController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\FinancePaymentFileController;
+use App\Http\Controllers\FinanceRequestDocumentController;
 use App\Http\Controllers\FindingAttachmentDownloadController;
 use App\Http\Controllers\GlobalChatAttachmentDownloadController;
 use App\Http\Controllers\LtroMttrImportController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScmDocumentController;
+use App\Http\Controllers\SubmissionReportDownloadController;
 use App\Http\Controllers\TicketAttachmentDownloadController;
 use App\Http\Controllers\TicketCommentAttachmentDownloadController;
 use App\Http\Controllers\TravelDocumentController;
@@ -141,6 +143,12 @@ Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void 
 });
 
 Route::get('/finance/pembayaran/file/{file}', FinancePaymentFileController::class)->middleware('auth')->name('finance.payment-file');
+Route::get('/reports/pengajuan/{type}/csv', SubmissionReportDownloadController::class)->middleware('auth')->name('reports.submissions.download');
+Route::middleware('auth')->prefix('finance/pengajuan')->name('finance.requests.')->group(function (): void {
+    Route::get('/{id}/excel', [FinanceRequestDocumentController::class, 'spreadsheet'])->whereNumber('id')->name('excel');
+    Route::get('/{id}/cetak', [FinanceRequestDocumentController::class, 'print'])->whereNumber('id')->name('print');
+    Route::get('/lampiran/{file}', [FinanceRequestDocumentController::class, 'download'])->whereNumber('file')->name('file');
+});
 
 Route::middleware('auth')->prefix('perjalanan-dinas')->name('travel.')->group(function (): void {
     Route::get('/dokumen/{document}/cetak', [TravelDocumentController::class, 'print'])->whereNumber('document')->name('print');
