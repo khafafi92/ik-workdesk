@@ -12,6 +12,7 @@ use App\Models\Scm\RequestApproval;
 use App\Models\Scm\ServiceReceipt;
 use App\Models\Scm\UserSignature;
 use App\Services\Finance\PoPayments;
+use App\Services\ModuleAccessService;
 use App\Services\Scm\Access;
 use App\Services\Scm\CbeApprovals;
 use App\Services\Scm\ServiceReceipts;
@@ -20,6 +21,18 @@ use Illuminate\Support\Facades\Storage;
 
 class ScmDocumentController extends Controller
 {
+    public function printRequest(Request $http, Procurement $procurement)
+    {
+        $modules = app(ModuleAccessService::class);
+        $actor = $http->user();
+        abort_unless(($modules->isEnabled('Permintaan') && Access::viewsRequest($actor, $procurement))
+            || ($modules->isEnabled('Pengadaan') && Access::manages($actor, $procurement)), 403);
+
+        $record = $procurement->load(['items', 'requester', 'department', 'project', 'preparedSignature', 'approvals.signature', 'attachments']);
+
+        return response()->view('scm.request-print', ['record' => $record])->header('Cache-Control', 'private, no-store');
+    }
+
     public function profileSignature(Request $http, UserSignature $signature)
     {
         abort_unless($http->user()->isSystemAdministrator() || (Access::signs($http->user()) && (int) $signature->user_id === (int) $http->user()->id), 403);

@@ -57,7 +57,7 @@
     $logo = $record->company === 'KPMOG' ? 'img/brands/kpmog.png' : 'img/brands/apca.png';
 @endphp
 <main>
-    <div class="screen-controls"><button type="button" onclick="window.print()" lang="id">Cetak / PDF</button></div>
+    <div class="screen-controls" lang="id">@include('documents.print-button', ['files' => $record->files])</div>
     <header>
         <img src="{{ asset($logo) }}" alt="{{ $record->company }}">
         <div>
@@ -142,6 +142,7 @@
             <div><dt>Amount</dt><dd>{{ \App\Services\Scm\Decimal::money($record->total_minor) }}</dd></div>
         </dl>
     </div>
+    @include('documents.print-attachments', ['files' => $record->files, 'downloadRoute' => 'finance.requests.file', 'documentNumber' => $record->reference()])
 </main>
 </body>
 </html>

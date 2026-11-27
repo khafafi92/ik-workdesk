@@ -248,7 +248,6 @@ class TravelDocumentsTest extends TestCase
         foreach ([$this->hr, $this->finance, $this->supervisor] as $actor) {
             $document = $workflow->decide($actor, $document->id, $document->version, true);
         }
-
         return $document;
     }
 
@@ -270,6 +269,7 @@ class TravelDocumentsTest extends TestCase
         $this->assertSame('Karyawan QA', $document->employee_snapshot['name']);
         $file = $document->files()->sole();
         Storage::disk('local')->assertExists($file->path);
+        $this->get(route('travel.print', $document))->assertOk()->assertSeeInOrder([$document->displayNumber(), 'Lampiran '.$document->displayNumber(), 'Rencana perjalanan.pdf']);
         $this->get(route('travel.file', $file))->assertOk()->assertHeader('Cache-Control', 'no-store, private');
         $this->actingAs($this->outsider)->get(route('travel.file', $file))->assertNotFound();
         $this->get(route('travel.print', $document))->assertNotFound();
@@ -280,6 +280,8 @@ class TravelDocumentsTest extends TestCase
         $workflow = app(TravelWorkflow::class);
         $document = $this->draft();
         $document = $workflow->submit($this->requester, $document->id, $document->version);
+        $progress = Livewire::actingAs($this->requester)->test(TravelSpd::class)->call('openDocument', $document->id)
+            ->assertSee('wire:poll.10s.visible', false)->assertSee($this->hr->name);
         $this->assertTrue($workflow->canDecide($this->hr, $document));
         $this->assertFalse($workflow->canDecide($this->finance, $document));
         $this->assertFalse($workflow->canDecide($this->outsider, $document));
@@ -294,6 +296,7 @@ class TravelDocumentsTest extends TestCase
         foreach ([$this->hr, $this->finance, $this->supervisor] as $actor) {
             $document = $workflow->decide($actor, $document->id, $document->version, true);
         }
+        $progress->call('refreshProgress')->assertSet('version', $document->version)->assertSet('waitingForApproval', false);
         $this->assertSame('approved', $document->status);
         $this->assertNotNull($document->approved_at);
         $this->assertSame(3, $document->currentApprovals()->where('status', 'approved')->count());

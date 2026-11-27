@@ -9,14 +9,15 @@
         $financeApprovalTabs = ['expense_report' => 'expense_report', 'reimbursement' => 'reimbursement',
             'payment' => $fixedCompany === 'APCA' ? 'payment_request' : 'payment'];
     @endphp
-    <div @class(['travel-workspace', 'finance-travel', 'travel-editor' => $editable])>
+    <div @class(['travel-workspace', 'finance-travel', 'travel-editor' => $editable])
+        @if(!$editable && (!$record || ($record->status === 'submitted' && !$canDecide))) wire:poll.10s.visible="refreshProgress" @endif>
         @if($errors->any())
             <div class="travel-validation" role="alert">
                 <strong>Periksa pengajuan</strong>
                 <ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
             </div>
         @endif
-        <p class="travel-help" wire:loading.delay role="status">Memproses pengajuan…</p>
+        <p class="travel-help" wire:loading.delay wire:target.except="refreshProgress" role="status">Memproses pengajuan…</p>
         @if($kind === 'reimbursement' && (!$record || $record->company === 'KPMOG'))
             <p class="travel-rule-notice">Untuk reimbursement KPMOG, pilih ER atau LPJ.
                 @if(\App\Filament\Pages\ExpenseReports::canAccess())
@@ -33,7 +34,7 @@
             <div class="travel-toolbar">
                 <x-filament::button color="gray" wire:click="closeRequest" :wire:confirm="$editable ? 'Kembali ke daftar? Perubahan yang belum disimpan akan hilang.' : null">Kembali ke daftar</x-filament::button>
                 @if($record)
-                    <strong>{{ $record->reference() }} · {{ $statuses[$record->status] }}</strong>
+                    <strong role="status">{{ $record->reference() }} · {{ $statuses[$record->status] }}</strong>
                     <a class="travel-control" href="{{ route('finance.requests.print', $record->id) }}" target="_blank" rel="noopener">Cetak / PDF</a>
                     @if(\App\Services\Finance\KpmogForms::supports($record) || \App\Services\Finance\ApcaForms::supports($record))
                         <a class="travel-control" href="{{ route('finance.requests.excel', $record->id) }}">Unduh Excel master</a>
@@ -161,7 +162,7 @@
             @if($record)
                 <section class="travel-approval-history" aria-labelledby="finance-approvals-title">
                     <h2 id="finance-approvals-title">Persetujuan online</h2>
-                    @if($currentStep)<p>Menunggu {{ $currentStep->label }} dari <strong>{{ $currentStep->reviewer_name }}</strong>.</p>@endif
+                    <p role="status" @if(!$currentStep) hidden @endif>@if($currentStep)Menunggu {{ $currentStep->label }} dari <strong>{{ $currentStep->reviewer_name }}</strong>.@endif</p>
                     @foreach($record->approvals->groupBy('round')->reverse() as $round => $approvals)
                         <div>
                             <h3>Pengajuan ke-{{ $round }}</h3>

@@ -6,8 +6,8 @@ use App\Exports\ReportExport;
 use App\Filament\Resources\Reports\Pages\ListDepartmentActivityReports;
 use App\Models\DailyActivity;
 use App\Models\Department;
-use App\Models\Ticket;
 use App\Models\WorkTask;
+use App\Services\Reports\ReportQueryService;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
@@ -39,18 +39,27 @@ class DepartmentActivityReportResource extends ReportResource
     public static function getEloquentQuery(): Builder
     {
         $user = auth()->user();
+        $tickets = app(ReportQueryService::class)->visibleTickets($user);
+        $assigned = (clone $tickets)->where(function (Builder $query): void {
+            $query->whereColumn('tickets.handler_department_id', 'departments.id')
+                ->orWhereHas('assignments', fn (Builder $assignments) => $assignments->whereColumn('ticket_assignments.department_id', 'departments.id'));
+        });
+        $completed = (clone $assigned)->whereIn('tickets.status', ['resolved', 'closed']);
+        $resolution = match ($tickets->getConnection()->getDriverName()) {
+            'pgsql' => 'EXTRACT(EPOCH FROM (tickets.resolved_at - tickets.created_at)) / 60',
+            'sqlite' => '(julianday(tickets.resolved_at) - julianday(tickets.created_at)) * 1440',
+            'mysql', 'mariadb' => 'TIMESTAMPDIFF(SECOND, tickets.created_at, tickets.resolved_at) / 60',
+        };
+
         $query = parent::getEloquentQuery()
             ->select('departments.*')
-            ->selectSub(Ticket::query()->selectRaw('COUNT(*)')->whereColumn('tickets.requester_department_id', 'departments.id'), 'total_requests')
-            ->selectSub(WorkTask::query()->selectRaw('COUNT(DISTINCT ticket_id)')->whereColumn('work_tasks.department_id', 'departments.id')->whereNotNull('ticket_id'), 'assigned_tickets')
-            ->selectSub(Ticket::query()->selectRaw('COUNT(*)')->whereColumn('tickets.handler_department_id', 'departments.id')->whereIn('status', ['resolved', 'closed']), 'completed_tickets')
-            ->selectSub(Ticket::query()->selectRaw('COUNT(*)')->whereColumn('tickets.handler_department_id', 'departments.id')->whereNotIn('status', ['resolved', 'closed', 'cancel', 'cancelled']), 'outstanding_tickets')
+            ->selectSub($tickets->selectRaw('COUNT(*)')->whereColumn('tickets.requester_department_id', 'departments.id'), 'total_requests')
+            ->selectSub((clone $assigned)->selectRaw('COUNT(*)'), 'assigned_tickets')
+            ->selectSub((clone $completed)->selectRaw('COUNT(*)'), 'completed_tickets')
+            ->selectSub((clone $assigned)->selectRaw('COUNT(*)')->whereNotIn('tickets.status', ['resolved', 'closed', 'cancel', 'cancelled']), 'outstanding_tickets')
+            ->selectSub($completed->selectRaw("ROUND(AVG($resolution))")->whereColumn('tickets.resolved_at', '>=', 'tickets.created_at'), 'average_resolution_minutes')
             ->selectSub(WorkTask::query()->selectRaw('COUNT(*)')->whereColumn('work_tasks.department_id', 'departments.id'), 'total_work_logs')
             ->selectSub(DailyActivity::query()->selectRaw('COALESCE(SUM(daily_activities.duration_minutes), 0)')->join('users', 'users.id', '=', 'daily_activities.user_id')->join('employees', 'employees.user_id', '=', 'users.id')->whereColumn('employees.department_id', 'departments.id'), 'work_duration_minutes');
-        if (config('database.default') === 'mysql') {
-            $query->selectSub(Ticket::query()->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, created_at, resolved_at))')->whereColumn('tickets.handler_department_id', 'departments.id')->whereNotNull('resolved_at'), 'average_resolution_minutes');
-        }
-
         if (! $user) {
             return $query->whereRaw('1 = 0');
         }

@@ -99,13 +99,13 @@ class ItDailyMonitoringResource extends Resource
                     'vsphere' => 'vCenter / hostname',
                     default => 'System / device name',
                 }))->required()->maxLength(255),
-                DateTimePicker::make('checked_at')->label(__('Check time'))->seconds(false)->required()->default(now())->maxDate(now()),
+                DateTimePicker::make('checked_at')->label(__('Check time'))->seconds(false)->required()->default(fn () => now())->maxDate(fn () => now()),
                 DatePicker::make('backup_date')->label(__('Backup date checked'))->default(today())->required()->visible(fn (Get $get): bool => static::selectedVersion($get) === 1 && $get('monitoring_type') === 'synology')
                     ->helperText(__('The backup runs daily at 00:01 WIB. Record when you reviewed the result.')),
                 Section::make(__('Location & note (optional)'))->compact()->collapsible()
                     ->collapsed(fn (Get $get): bool => blank($get('location')) && blank($get('notes')))->columns(['md' => 2])->schema([
                         TextInput::make('location')->label(__('Location'))->maxLength(255),
-                        Textarea::make('notes')->label(__('Inspection notes'))->rows(2)->autosize()->maxLength(3000)->placeholder(__('Notes (optional)')),
+                        Textarea::make('notes')->label(__('Inspection notes'))->rows(2)->maxLength(3000)->placeholder(__('Notes (optional)')),
                     ])->columnSpanFull()->extraAttributes(['class' => 'it-monitoring-context']),
                 TextEntry::make('inspector_name')->label(__('Inspector'))->visible(fn (?ItDailyMonitoring $record): bool => $record !== null),
                 TextEntry::make('status')->label(__('Note status'))->formatStateUsing(fn (ItInspectionStatus $state): string => $state->label())->visible(fn (?ItDailyMonitoring $record): bool => $record !== null),
@@ -218,7 +218,7 @@ class ItDailyMonitoringResource extends Resource
             default => [],
         };
         array_push($fields, ...$details);
-        $fields[] = Textarea::make('notes')->label(__('Problem / followup'))->rows(2)->autosize()->maxLength(3000)->columnSpanFull()
+        $fields[] = Textarea::make('notes')->label(__('Problem / followup'))->rows(2)->live(condition: false)->maxLength(3000)->columnSpanFull()
             ->placeholder(__('Fill obstacles and actions if there\'s a problem.'))
             ->required(fn (Get $get): bool => $type?->needsAttention(['status' => $get('status'), 'data_present' => $get('data_present'), 'expected_power_state' => $get('expected_power_state'), 'health' => $get('health')]) ?? false);
 
@@ -250,16 +250,16 @@ class ItDailyMonitoringResource extends Resource
                 ->options($type?->statuses(2) ?? [])->default('unchecked')->required()->native()->live();
         }
         if ($type === ItMonitoringType::Firewall) {
-            $fields[] = Textarea::make('quarantine_ips')->label(__('Quarantine (blocked IPs)'))->rows(3)->autosize()->maxLength(4000)
+            $fields[] = Textarea::make('quarantine_ips')->label(__('Quarantine (blocked IPs)'))->rows(3)->live(condition: false)->maxLength(4000)
                 ->helperText(__('One IP address per row. Empty if no IP is blocked.'));
         }
         if ($type === ItMonitoringType::Vsphere) {
             $fields[] = TextInput::make('update_version')->label(__('Update version description'))->maxLength(1000)
                 ->visible(fn (Get $get): bool => $get('status') === 'update')->required(fn (Get $get): bool => $get('status') === 'update');
         }
-        $fields[] = DateTimePicker::make('checked_at')->label(__('Date and hour'))->seconds(false)->maxDate(now())
+        $fields[] = DateTimePicker::make('checked_at')->label(__('Date and hour'))->seconds(false)->live(condition: false)->maxDate(fn () => now())
             ->required(fn (Get $get): bool => $type === ItMonitoringType::ServerRoom ? filled($get('temperature_c')) : $get('status') !== 'unchecked');
-        $fields[] = Textarea::make('notes')->label(__('Description'))->rows(2)->autosize()->maxLength(3000)->columnSpanFull()
+        $fields[] = Textarea::make('notes')->label(__('Description'))->rows(2)->live(condition: false)->maxLength(3000)->columnSpanFull()
             ->required(fn (Get $get): bool => $get('status') === 'issue');
 
         return $fields;

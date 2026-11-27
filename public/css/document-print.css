@@ -1,0 +1,29 @@
+.document-attachments {
+    margin-block-start: 1.5rem;
+    overflow-wrap: anywhere;
+}
+
+.document-attachments-title { font-size: 1.125rem; }
+.document-attachment-link { margin-block: .5rem; }
+.document-attachment-link a { color: #004ca7; }
+.document-attachment-error { color: #991b1b; }
+.document-attachment-page { margin: 1rem 0; }
+.document-attachment-page figcaption { font: 10pt/1.35 Arial, sans-serif; margin-bottom: .5rem; }
+.document-attachment-page img { display: block; max-width: 100%; max-height: 75vh; margin-inline: auto; object-fit: contain; }
+[data-document-print]:disabled { color: #475569; cursor: wait; }
+[data-document-print]:focus-visible, .document-attachment-link a:focus-visible { outline: 3px solid #005fcc; outline-offset: 2px; }
+
+@page document-attachment { size: A4 portrait; margin: 12mm; }
+
+@media print {
+    .document-attachments { margin: 0; }
+    .document-attachments-title, .document-attachment[data-ready] .document-attachment-link { display: none; }
+    .document-attachment-page {
+        page: document-attachment;
+        break-before: page;
+        break-inside: avoid;
+        margin: 0;
+    }
+    .document-attachment-page img { max-width: 100%; max-height: 245mm; }
+    .document-attachment[data-failed] { break-inside: avoid; }
+}

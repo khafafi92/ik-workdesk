@@ -15,6 +15,13 @@ class EditAteGeneralLetter extends EditRecord
         return __('Complete a General APCA Letter');
     }
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        unset($data['pin']);
+
+        return $data;
+    }
+
     protected function afterSave(): void
     {
         app(AteGeneralLetterService::class)->refreshNumber($this->record);

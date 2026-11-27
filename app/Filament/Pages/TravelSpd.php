@@ -45,6 +45,9 @@ class TravelSpd extends Page
     #[Locked]
     public bool $creating = false;
 
+    #[Locked]
+    public bool $waitingForApproval = false;
+
     public array $input = [];
 
     public array $uploads = [];
@@ -204,6 +207,7 @@ class TravelSpd extends Page
         abort_unless(TravelAccess::canCreate(auth()->user(), static::$kind), 403);
         $this->selected = $this->version = 0;
         $this->creating = true;
+        $this->waitingForApproval = false;
         $this->input = app(TravelWorkflow::class)->defaults(auth()->user(), static::$kind);
         $this->syncBudgetLineSelection();
         $this->reset('uploads', 'returnReason');
@@ -216,6 +220,7 @@ class TravelSpd extends Page
         $this->selected = $document->id;
         $this->version = $document->version;
         $this->creating = false;
+        $this->waitingForApproval = $document->status === 'submitted';
         $this->input = [...app(TravelWorkflow::class)->defaults(auth()->user(), static::$kind), ...app(TravelWorkflow::class)->formData($document)];
         $this->syncBudgetLineSelection();
         $this->reset('uploads', 'returnReason');
@@ -226,6 +231,7 @@ class TravelSpd extends Page
     {
         $this->selected = $this->version = 0;
         $this->creating = false;
+        $this->waitingForApproval = false;
         $this->reset('uploads', 'returnReason');
         $this->resetValidation();
     }
@@ -254,6 +260,18 @@ class TravelSpd extends Page
             $this->input['requester_id'] = (string) ($spd->data['requester_id'] ?? $spd->created_by);
         }
         $this->input['expenses'][0]['date'] = substr($spd->data['depart_at'], 0, 10);
+    }
+
+    public function refreshProgress(TravelWorkflow $workflow): void
+    {
+        if (! $this->waitingForApproval || ! $this->selected || filled($this->returnReason) || $this->uploads) {
+            return;
+        }
+
+        $document = $workflow->document(auth()->user(), $this->selected, static::$kind);
+        if ($document->version !== $this->version) {
+            $this->openDocument($document->id);
+        }
     }
 
     public function updatedInputLpjMode(): void

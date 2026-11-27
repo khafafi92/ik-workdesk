@@ -134,6 +134,7 @@ Route::middleware('auth')->prefix('scm')->name('scm.')->group(function (): void 
     Route::get('/vendor-form/{registration}/file/{file}', [VendorPortalController::class, 'reviewDownload'])->whereNumber('file')->name('vendor-review-download');
     Route::get('/ttd-profil/{signature}', [ScmDocumentController::class, 'profileSignature'])->name('signature-profile');
     Route::get('/permintaan/{procurement}/ttd', [ScmDocumentController::class, 'preparedSignature'])->name('signature-prepared');
+    Route::get('/permintaan/{procurement}/cetak', [ScmDocumentController::class, 'printRequest'])->whereNumber('procurement')->name('request-print');
     Route::get('/persetujuan/{approval}/ttd', [ScmDocumentController::class, 'approvalSignature'])->name('signature-approval');
     Route::get('/lampiran/{attachment}', [ScmDocumentController::class, 'download'])->name('download');
     Route::get('/penerimaan-jasa/{serviceReceipt}/bukti', [ScmDocumentController::class, 'serviceReceipt'])->name('service-receipt-download');

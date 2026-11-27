@@ -124,7 +124,8 @@ class FinanceRequestsTest extends TestCase
         $receipt = route('finance.requests.file', $file);
         $this->actingAs($other)->get($print)->assertNotFound();
         $this->get($receipt)->assertNotFound();
-        $this->actingAs($applicant)->get($print)->assertOk()->assertSee('img/brands/apca.png')->assertSee('INV-42')->assertSee($pr->number);
+        $this->actingAs($applicant)->get($print)->assertOk()->assertSee('img/brands/apca.png')->assertSee('INV-42')->assertSee($pr->number)
+            ->assertSeeInOrder(['INV-42', 'Lampiran '.$record->reference(), 'receipt.pdf'])->assertSee($receipt, false);
         $this->get($receipt)->assertOk()->assertDownload('receipt.pdf');
         $this->get(PaymentRequests::getUrl(['pengajuan' => $record->id]))->assertOk()->assertSee($record->reference());
         $this->get(FinanceRequests::getUrl(['pengajuan' => $record->id]))->assertRedirect(PaymentRequests::getUrl(['pengajuan' => $record->id]));
@@ -240,6 +241,7 @@ class FinanceRequestsTest extends TestCase
         foreach ($reviewers as $reviewer) {
             $voucher = $requests->decide($reviewer, $voucher->id, $voucher->version, true, '');
         }
+        $component->call('refreshProgress')->assertSet('version', $voucher->version)->assertSee('Disetujui')->assertSee('Buat ER Penyelesaian');
         $this->get(FinanceRequests::urlFor($voucher))->assertOk()->assertSee('Buat ER Penyelesaian');
         $this->get($newEr)->assertOk()->assertSee('KPM_OG-FRM-082a')->assertSee('IDR 100.000,00');
 
@@ -255,7 +257,8 @@ class FinanceRequestsTest extends TestCase
         $this->assertSame(8449950, $er->data['balance_to_vendor_minor']);
         $this->assertSame('submitted', $er->status);
         $this->get($newEr)->assertNotFound();
-        $this->get(route('finance.requests.print', $er->id))->assertOk()->assertSee('Balance to Vendor')->assertSee('IDR 84.499,50');
+        $this->get(route('finance.requests.print', $er->id))->assertOk()->assertSee('Balance to Vendor')->assertSee('IDR 84.499,50')
+            ->assertSee('struk.pdf')->assertDontSee('invoice.pdf');
         $this->get(route('finance.requests.excel', $er->id))->assertDownload('er-'.$er->id.'.xlsx');
         try {
             $requests->save($applicant, $input, null, 0);

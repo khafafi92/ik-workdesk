@@ -54,6 +54,9 @@ class FinanceRequests extends Page
     #[Locked]
     public int $version = 0;
 
+    #[Locked]
+    public bool $waitingForApproval = false;
+
     public string $search = '';
 
     public string $companyFilter = '';
@@ -215,6 +218,7 @@ class FinanceRequests extends Page
         $this->closeRequest();
         $this->selected = $record->id;
         $this->version = $record->version;
+        $this->waitingForApproval = $record->status === 'submitted';
         $this->attachmentKind = $record->requiresInvoice() ? 'invoice' : 'support';
         $this->input = [
             'kind' => $record->kind, 'company' => $record->company, 'department_id' => (string) $record->department_id,
@@ -243,8 +247,20 @@ class FinanceRequests extends Page
 
     public function closeRequest(): void
     {
-        $this->reset('creating', 'selected', 'version', 'input', 'note', 'attachment', 'attachmentKind');
+        $this->reset('creating', 'selected', 'version', 'waitingForApproval', 'input', 'note', 'attachment', 'attachmentKind');
         $this->resetValidation();
+    }
+
+    public function refreshProgress(Requests $requests): void
+    {
+        if (! $this->waitingForApproval || ! $this->selected || filled($this->note) || $this->attachment) {
+            return;
+        }
+
+        $record = $this->documents($requests)->findOrFail($this->selected);
+        if ($record->version !== $this->version) {
+            $this->openRequest($record->id);
+        }
     }
 
     public function addLine(): void

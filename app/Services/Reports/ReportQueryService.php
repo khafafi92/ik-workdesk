@@ -14,15 +14,13 @@ class ReportQueryService
 {
     public function tickets(?User $user = null): Builder
     {
-        $user ??= auth()->user();
-
         $workDurationExpression = match (DB::connection()->getDriverName()) {
             'pgsql' => 'EXTRACT(EPOCH FROM (work_tasks.completed_at - work_tasks.start_at)) / 60',
             'sqlite' => '(julianday(work_tasks.completed_at) - julianday(work_tasks.start_at)) * 1440',
             'mysql', 'mariadb' => 'TIMESTAMPDIFF(MINUTE, work_tasks.start_at, work_tasks.completed_at)',
         };
 
-        $query = Ticket::query()->with([
+        return $this->visibleTickets($user)->with([
             'employee.department',
             'requesterDepartment',
             'handlerDepartment',
@@ -37,6 +35,12 @@ class ReportQueryService
                     ->whereColumn('work_tasks.ticket_id', 'tickets.id'),
                 'work_duration_minutes'
             );
+    }
+
+    public function visibleTickets(?User $user = null): Builder
+    {
+        $user ??= auth()->user();
+        $query = Ticket::query();
 
         if (! $user) {
             return $query->whereRaw('1 = 0');
@@ -48,6 +52,9 @@ class ReportQueryService
 
         $departmentIds = $user->accessibleDepartmentIds();
         $employeeId = $user->employee?->id;
+        if ($departmentIds === [] && ! $employeeId) {
+            return $query->whereRaw('1 = 0');
+        }
 
         return $query->where(function (Builder $scope) use ($departmentIds, $employeeId): void {
             if ($employeeId) {

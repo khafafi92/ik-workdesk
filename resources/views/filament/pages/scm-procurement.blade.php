@@ -1,5 +1,6 @@
 <x-filament-panels::page>
-<div class="scm-workspace" x-on:scm-focus.window="$nextTick(() => document.getElementById($event.detail.id)?.focus())">
+<div class="scm-workspace" x-on:scm-focus.window="$nextTick(() => document.getElementById($event.detail.id)?.focus())"
+    @if($requestKind && $section === 'mine' && !$editing && !$choosingCompany && (!$record || !in_array($record->status, ['draft', 'completed'], true))) wire:poll.10s.visible="refreshProgress" @endif>
     @if($isSuperuser)<p class="scm-help">Akses superuser: seluruh pengguna dan departemen. Tanda tangan dan riwayat tindakan memakai identitas {{ auth()->user()->name }}.</p>@endif
     @if($isScm || $configure)<nav class="scm-actions" aria-label="Bagian pengadaan">
         @foreach([($requestKind ? 'mine' : 'queue') => ($requestKind ?? 'Permintaan'), 'vendors' => 'Master Vendor', 'settings' => 'Pengaturan'] as $key => $label)
@@ -8,7 +9,7 @@
             @endif
         @endforeach
     </nav>@endif
-    <p role="status" wire:loading.delay>Memuat atau menyimpan data pengadaan. Mohon tunggu...</p>
+    <p role="status" wire:loading.delay wire:target.except="refreshProgress">Memuat atau menyimpan data pengadaan. Mohon tunggu...</p>
     @if($errors->any())<div class="scm-error" role="alert"><h2>Periksa data berikut</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
 
     @if(in_array($section, ['mine', 'queue']))
@@ -71,7 +72,7 @@
             <p class="scm-help">Nomor tetap sama sejak draft. Lengkapi isi dan lampiran, pilih alur persetujuan, lalu tanda tangani Requested by. Seluruh persetujuan harus selesai sebelum masuk antrean pengadaan.</p>
         </form>
         @elseif($record)
-        <section class="{{ $tab === 'request' ? 'scm-request-view' : 'scm-panel' }}"><header class="scm-heading"><div>@if($tab !== 'request')<h2>{{ $record->number }}</h2>@endif<p>{{ $record->title }} · {{ $recordStatus }}</p></div><button type="button" wire:click="switchSection('{{ $section === 'queue' ? 'queue' : 'mine' }}')">Kembali ke daftar</button></header>
+        <section class="{{ $tab === 'request' ? 'scm-request-view' : 'scm-panel' }}"><header class="scm-heading"><div>@if($tab !== 'request')<h2>{{ $record->number }}</h2>@endif<p>{{ $record->title }} · <span role="status">{{ $recordStatus }}</span></p></div><button type="button" wire:click="switchSection('{{ $section === 'queue' ? 'queue' : 'mine' }}')">Kembali ke daftar</button></header>
             @if($canManage)<nav class="scm-actions" aria-label="Rincian pengadaan">@foreach(['request' => 'Permintaan', 'quotes' => 'Vendor & penawaran', 'cbe' => 'CBE', 'po' => 'Purchase Order', 'legal' => 'Legalitas', 'history' => 'Riwayat'] as $key => $label)
             @if($key === 'request' || $canManage)<button type="button" wire:click="showTab('{{ $key }}')" @if($tab === $key) aria-current="page" @endif>{{ $label }}</button>@endif
             @endforeach</nav>@endif
@@ -117,7 +118,7 @@
                 @include('filament.pages.scm.partials.request-routing', ['routingEditing' => false])
                 @include('filament.pages.scm.partials.request-sheet', ['sheetEditing' => false])
                 @include('filament.pages.scm.partials.approval-progress')
-                <div class="scm-actions">@if($canEditDraft)<button type="button" wire:click="editDraft">Edit draft</button>@endif
+                <div class="scm-actions"><a href="{{ route('scm.request-print', $record) }}" target="_blank" rel="noopener">Cetak / PDF</a>@if($canEditDraft)<button type="button" wire:click="editDraft">Edit draft</button>@endif
                 @if($canSubmitRequest)<x-filament::button wire:click="submitRequest" wire:loading.attr="disabled" :disabled="filled($submissionIssue)">Ajukan persetujuan {{ $record->need_type === 'PROJECT' ? 'Project' : 'HO' }}</x-filament::button>@endif
                 </div>
                 @if($record->status === 'draft' && $submissionIssue)<p class="scm-help">Pengajuan belum dapat dikirim. Minta administrator melengkapi pemetaan atasan dan penandatangan yang ditampilkan di atas.</p>@endif

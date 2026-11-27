@@ -70,7 +70,6 @@ class AteGeneralLetterResource extends Resource
                 ->columns(2)
                 ->schema([
                     TextInput::make('recipient')->label(__('Mail destination'))->maxLength(255),
-                    TextInput::make('pin')->label('PIN')->maxLength(255),
                     TextInput::make('pic_name')->label('PIC')->maxLength(255),
                     TextInput::make('subject')
                         ->label(__('Mail description'))

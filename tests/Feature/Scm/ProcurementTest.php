@@ -440,6 +440,10 @@ class ProcurementTest extends TestCase
         $this->assertSame($this->requester->name, $request->prepared_signed_name);
         $this->assertNotNull($request->prepared_signed_at);
         $this->assertSame(1, Audit::where('request_id', $request->id)->where('action', 'tanda_tangan_prepared')->where('actor_id', $this->requester->id)->count());
+
+        $page->assertSee('wire:poll.10s.visible', false);
+        $request = $this->approve($request);
+        $page->call('refreshProgress')->assertSet('version', $request->version)->assertSee('Menunggu penerimaan');
     }
 
     public function test_signature_is_invalidated_by_draft_and_attachment_changes_but_not_profile_replacement(): void
@@ -1621,15 +1625,20 @@ class ProcurementTest extends TestCase
         $this->travelBack();
     }
 
-    public function test_upload_signature_and_direct_download_ownership(): void
+    #[DataProvider('kinds')]
+    public function test_upload_signature_and_direct_download_ownership(string $kind): void
     {
-        $r = $this->draft();
+        $r = $this->draft($kind);
         $this->rejects(fn () => $this->flow->attach($this->requester, $r->id, $r->version, 'request', $r->id, UploadedFile::fake()->createWithContent('pretend.pdf', '<?php echo 1;')));
         $r = $this->flow->attach($this->requester, $r->id, $r->version, 'request', $r->id, $this->pdf('../name.pdf'));
         $file = $r->attachments->first();
         $this->assertStringNotContainsString('..', $file->path);
         $this->actingAs($this->user('scm.request'))->get(route('scm.download', $file))->assertForbidden();
+        $this->get(route('scm.request-print', $r))->assertForbidden();
         $this->actingAs($this->requester)->get(route('scm.download', $file))->assertOk();
+        $this->get(route('scm.request-print', $r))->assertOk()->assertSeeInOrder([
+            $kind === 'PR' ? 'PURCHASE REQUEST' : 'SERVICE REQUEST', 'Lampiran '.$r->number, 'name.pdf',
+        ]);
         $file->update(['path' => '../../.env']);
         $this->get(route('scm.download', $file))->assertNotFound();
     }

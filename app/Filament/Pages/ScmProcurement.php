@@ -399,6 +399,18 @@ class ScmProcurement extends Page
         $this->resetValidation();
     }
 
+    public function refreshProgress(): void
+    {
+        if (static::$requestKind === null || $this->section !== 'mine' || ! $this->selected || $this->editing || $this->attachmentFile) {
+            return;
+        }
+
+        $record = Access::scopeMine(Procurement::query(), auth()->user())->where('kind', static::$requestKind)->findOrFail($this->selected);
+        if ($record->version !== $this->version) {
+            $this->open($record->id);
+        }
+    }
+
     public function showTab(string $tab): void
     {
         abort_unless(in_array($tab, ['request', 'quotes', 'cbe', 'po', 'legal', 'history']), 404);

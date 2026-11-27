@@ -17,7 +17,7 @@ class FinanceRequestDocumentController extends Controller
     public function print(Request $request, int $id, Requests $requests)
     {
         $this->ensureEnabled();
-        $record = $requests->visible($request->user())->with(['approvals', 'travelDocument', 'paymentVoucher', 'procurement'])->findOrFail($id);
+        $record = $requests->visible($request->user())->with(['approvals', 'travelDocument', 'paymentVoucher', 'procurement', 'files'])->findOrFail($id);
 
         $master = $record->kind === 'expense_report' || ($record->requiresInvoice() && array_key_exists('paid_to', $record->data));
 

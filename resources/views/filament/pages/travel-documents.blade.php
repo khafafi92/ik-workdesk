@@ -1,11 +1,13 @@
 <x-filament-panels::page>
 <link rel="stylesheet" href="{{ asset('css/travel.css') }}?v={{ filemtime(public_path('css/travel.css')) }}">
-<div @class(['travel-workspace', 'travel-editor' => $editable])>
+@php $canDecide = $record && app(\App\Services\Travel\TravelWorkflow::class)->canDecide(auth()->user(), $record); @endphp
+<div @class(['travel-workspace', 'travel-editor' => $editable])
+    @if(!$missing && !$editable && (!$record || ($record->status === 'submitted' && !$canDecide))) wire:poll.10s.visible="refreshProgress" @endif>
     @if($missing)
         <p role="alert">{{ __('Business Travel is unavailable. Contact your administrator.') }}</p>
     @elseif($this->creating || $record)
         <div class="travel-toolbar"><x-filament::button color="gray" wire:click="closeDocument" wire:confirm="Return to the list? Unsaved changes will be lost.">{{ __('Return to list') }}</x-filament::button>
-            @if($record)<strong>{{ $record->displayNumber() }} · {{ $record->statusLabel() }}</strong><a class="travel-control" href="{{ route('travel.print', $record->id) }}" target="_blank" rel="noopener">Print / PDF</a>@endif
+            @if($record)<strong role="status">{{ $record->displayNumber() }} · {{ $record->statusLabel() }}</strong><a class="travel-control" href="{{ route('travel.print', $record->id) }}" target="_blank" rel="noopener">Print / PDF</a>@endif
             @if($kind === 'lpj' && $record?->status === 'approved' && !$employeeReimbursement
                 && \App\Services\Finance\Requests::canCreate(auth()->user(), $record->company === 'APCA' ? 'reimbursement' : 'payment', $record->company)
                 && auth()->user()->canAccessDepartment($record->department_id)
@@ -101,8 +103,10 @@
             <p class="travel-help">@if($arrangingApprovals)This document uses its assigned reviewers.@else This document uses the standard approval rules.@endif</p>
         @endif
         @if($record)
+            @php $currentApproval = $record->status === 'submitted' ? $record->approvals->where('round', $record->approval_round)->firstWhere('status', 'pending') : null; @endphp
+            @if($currentApproval)<p role="status">{{ __('Waiting for approval from :name.', ['name' => $currentApproval->assigned_name]) }}</p>@endif
             <section class="travel-approval-history"><h2>{{ __('Online Approvals') }}</h2><ol>@forelse($record->approvals->where('round',$record->approval_round) as $approval)<li><strong>{{ __($approval->role === 'finance' ? \App\Services\Travel\TravelApprovalPolicies::reviewerLabel(\App\Services\Travel\TravelWorkflow::travelType($record->project_numbering_id)) : \App\Services\Travel\TravelWorkflow::ROLES[$approval->role]) }}: {{ $approval->assigned_name }}</strong> · {{ ['pending' => 'Pending', 'approved' => 'Approved', 'returned' => 'Returned'][$approval->status] }}@if($approval->decided_at) · {{ $approval->decided_at->format('d/m/Y H:i') }}@endif @if($approval->reason)<p>{{ $approval->reason }}</p>@endif</li>@empty<li>This document has not been submitted.</li>@endforelse</ol>
-            @if(app(\App\Services\Travel\TravelWorkflow::class)->canDecide(auth()->user(),$record))<div class="travel-toolbar"><x-filament::button wire:click="approveDocument" wire:confirm="Approve this document and all its costs?" wire:loading.attr="disabled">{{ __('Approve document') }}</x-filament::button></div><label for="travel-return-reason">{{ __('Reason for return') }}</label><textarea id="travel-return-reason" wire:model="returnReason" rows="3"></textarea><x-filament::button color="danger" wire:click="returnDocument" wire:loading.attr="disabled">{{ __('Return for revision') }}</x-filament::button>@endif
+            @if($canDecide)<div class="travel-toolbar"><x-filament::button wire:click="approveDocument" wire:confirm="Approve this document and all its costs?" wire:loading.attr="disabled">{{ __('Approve document') }}</x-filament::button></div><label for="travel-return-reason">{{ __('Reason for return') }}</label><textarea id="travel-return-reason" wire:model="returnReason" rows="3"></textarea><x-filament::button color="danger" wire:click="returnDocument" wire:loading.attr="disabled">{{ __('Return for revision') }}</x-filament::button>@endif
             </section><details class="travel-audit"><summary>{{ __('Document history') }}</summary><ol>@foreach($record->events as $event)<li>{{ $event->created_at->format('d/m/Y H:i') }} · {{ $event->actor->name }} · {{ ['draft_created'=>'Draft created','draft_updated'=>'Draft updated','submitted'=>'Submitted','step_approved'=>'Approved','returned'=>'Returned','attachment_removed'=>'Attachment deleted'][$event->action] ?? $event->action }}</li>@endforeach</ol></details>
         @endif
     @else

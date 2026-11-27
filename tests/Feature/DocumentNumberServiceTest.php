@@ -803,6 +803,7 @@ class DocumentNumberServiceTest extends TestCase
         $letter = app(AteGeneralLetterService::class)->createDraft($user, '2025-08-15', 'tugas', $user->employee->department_id);
 
         Livewire::test(EditAteGeneralLetter::class, ['record' => $letter->id])
+            ->assertFormFieldDoesNotExist('pin')
             ->fillForm(['subject' => 'Surat tugas inspeksi'])
             ->call('save')
             ->assertRedirect(AteGeneralLetterResource::getUrl('index'));

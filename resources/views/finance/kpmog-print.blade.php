@@ -23,10 +23,11 @@
 </head>
 <body>
 <main class="finance-travel">
-    <div class="finance-print-toolbar"><span>{{ $record->reference() }} · {{ \App\Models\FinanceRequest::STATUSES[$record->status] }}</span><button type="button" onclick="window.print()">Cetak / PDF</button></div>
+    <div class="finance-print-toolbar"><span>{{ $record->reference() }} · {{ \App\Models\FinanceRequest::STATUSES[$record->status] }}</span>@include('documents.print-button', ['files' => $record->files])</div>
     @include('finance.partials.kpmog-form', [
         'kind' => $record->kind, 'editable' => false, 'advance' => $record->data['advance_minor'] ?? 0, 'statuses' => \App\Models\FinanceRequest::STATUSES,
     ])
+    @include('documents.print-attachments', ['files' => $record->files, 'downloadRoute' => 'finance.requests.file', 'documentNumber' => $record->reference()])
 </main>
 </body>
 </html>

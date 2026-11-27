@@ -80,6 +80,25 @@ class ItDailyMonitoringFormatTest extends ItInfrastructureTestCase
         }
     }
 
+    public function test_monitoring_time_and_each_row_time_can_be_edited_independently(): void
+    {
+        $data = $this->data(ItMonitoringType::Synology);
+        $component = Livewire::test(CreateItDailyMonitoring::class)->fillForm($data)->call('create')->assertHasNoFormErrors();
+        $record = ItDailyMonitoring::findOrFail($component->get('record')->id);
+        $generalTime = now()->subHours(2)->toDateTimeString();
+        $rowTime = now()->subDay()->setTime(15, 30)->toDateTimeString();
+        $edit = Livewire::test(EditItDailyMonitoring::class, ['record' => $record->id]);
+        $key = array_key_first($edit->get('data.checks'));
+        $edit->set('data.checks.'.$key.'.checked_at', $rowTime)
+            ->set('data.checked_at', $generalTime)
+            ->assertSet('data.checks.'.$key.'.checked_at', $rowTime)
+            ->call('save')->assertHasNoFormErrors();
+
+        $record->refresh();
+        $this->assertSame($generalTime, $record->checked_at->toDateTimeString());
+        $this->assertSame($rowTime, $record->checks[0]['checked_at']);
+    }
+
     public function test_firewall_accepts_multiple_ipv4_and_ipv6_addresses_and_rejects_invalid_ips(): void
     {
         $data = $this->data(ItMonitoringType::Firewall);
